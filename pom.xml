@@ -1,0 +1,19 @@
+ 
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <name>wv-cci-parent</name>
+    <groupId>org.esa.cci.wv</groupId>
+    <artifactId>wv-cci-parent</artifactId>
+    <version>1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <description>Water Wapour CCI Parent project</description>
+
+    <modules>
+        <module>snap-tcwv</module>
+    </modules>
+</project>   
