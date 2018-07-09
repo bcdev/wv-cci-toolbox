@@ -5,7 +5,7 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <name>wv-cci-parent</name>
+    <name>wv-cci-toolbox</name>
     <groupId>org.esa.cci.wv</groupId>
     <artifactId>wv-cci-parent</artifactId>
     <version>1-SNAPSHOT</version>

@@ -1,0 +1,7 @@
+Read and try to understand the tests in lut2func.py
+
+
+(For OE you need jacobians. Precalculated and interpolated 
+Jacobian can be an option. lut2jacobian does it for you.)
+  
+
