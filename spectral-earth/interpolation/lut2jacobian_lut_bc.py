@@ -114,7 +114,7 @@ def lut2ncdf(jlut,nfile):
     '''
     stores the  jacobian-lut and auxillary data
     in a ncdf
-
+    
     '''
     with Dataset(nfile, 'w', format='NETCDF4') as nco:
         dim_ids=[]
@@ -136,19 +136,19 @@ def lut2ncdf(jlut,nfile):
             nco.xidx='None'
         else:
             nco.xidx=','.join([str(_) for _ in jlut['xidx']])
-
+        
 def ncdf2func(nfile):
     '''
     reads jlut ncdf and makes a func from it
     '''
-    with Dataset(nfile, 'r', format='NETCDF4') as nco:
+    with Dataset(nfile, 'r', format='NETCDF4') as nco:        
         jdims=nco.variables['jlut'].dimensions
-
+        
         axes=tuple([nco.variables['axes_%i'%i][:] for i in range(len(jdims[:-1]))])
         jlut=nco.variables['jlut'][:]
         nynx=nco.variables['ny_nx'][:]
 
-    dum={'lut':jlut,'ny':nynx[0],'nx':nynx[1],'axes':axes}
+    dum={'lut':jlut,'ny':nynx[0],'nx':nynx[1],'axes':axes}   
     return jlut2func(dum)
 
 def jlut2func(dum):
@@ -191,15 +191,14 @@ if __name__ == '__main__':
     #for the jacobians
     #use the function luts
     jlut= generate_jacobian_lut(luts2,axes,xidx=[0,2])
-
-    #save the jacobians
+    #save the jacobians 
     lut2ncdf(jlut,'jlut3_test.nc')
     #and make a function from it
     jfun=ncdf2func('jlut3_test.nc')
-
+    
     # now test the jacobian function:
     print('interploated:')
-    print(jfun([3.,10.,1.]))
+    print(jfun([3.,10.,1.])) 
     #and compare it with a numerical_jacoby
     a=np.array([3.,-10.,-1.])
     b=np.array([15,30.,3.])
@@ -208,8 +207,8 @@ if __name__ == '__main__':
     print(numerical_jacoby(a, b, x, func1, 2, 4, delta=0.01,xidx=[0,2,]))
     print('delta [%]:')
     print((numerical_jacoby(a, b, x, func1, 2, 4, delta=0.01,xidx=[0,2,])-jfun(x))/jfun([3.,10.,1.])*100.)
-
-
+    
+    
     import time
     t=time.time()
     for i in range(10000): dum=jfun(x)

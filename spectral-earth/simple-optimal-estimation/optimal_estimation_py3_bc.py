@@ -420,8 +420,8 @@ def my_inverter(func, a, b, **args):
                                                               , full=full, dtype=dtype)
         if check_input:
             for ele in ('a', 'b', 'yyy', 'xa', 'fg', 'sei', 'sai'):
-                print(ele, eval('type(%s)' % ele), end=' ')
-                print(eval('%s.flags' % ele), end=' ')
+                # print(ele, eval('type(%s)' % ele), end=' ')
+                # print(eval('%s.flags' % ele), end=' ')
                 print(eval('%s.dtype' % ele))
         if full is False:
             return xxx
@@ -750,9 +750,9 @@ if __name__ == '__main__':
     #  c: linear R^3-->R^2
     # method = ('Newton', 'Newton+SE', 'OE')
     #  provide index 0, 1, 2
-    test_single('a', 0)
+    # test_single('a', 0)
     # test_single('b', 0)
-    # test_single('a', 1)
+    test_single('a', 1)
     # test_single('b', 1)
     # test_single('a', 2)
     # test_single('b', 2)
