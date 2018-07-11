@@ -5,7 +5,7 @@ package org.esa.snap.wvcci.tcwv;
  *
  * @author olafd
  */
-public interface ForwardFunction {
+public interface TcwvFunction {
 
     /**
      * Parametric multivariate function f: R^n --> R^m.

@@ -21,31 +21,6 @@ EPSIX = np.finfo(np.float32).resolution
 # if you like *besser* naming, change it here
 result = collections.namedtuple('result', 'x j conv ni g a sr cost')
 
-GR = (np.sqrt(5) + 1) / 2
-
-
-def golden_section_search(f, a, b):
-    '''
-    golden section search
-    to find the minimum of f on [a,b]
-    f: a strictly unimodal function on [a,b]
-    (source from wikipedia)
-
-    '''
-    c = b - (b - a) / GR
-    d = a + (b - a) / GR
-    while abs(c - d) > EPSIX:
-        if f(c) < f(d):
-            b = d
-        else:
-            a = c
-        # we recompute both c and d here 
-        # to avoid loss of precision which 
-        # may lead to incorrect results or infinite loop
-        c = b - (b - a) / GR
-        d = a + (b - a) / GR
-    return (b + a) / 2
-
 
 def numerical_jacoby(a, b, x, fnc, nx, ny, delta, dtype=np.float64):
     '''
@@ -70,31 +45,6 @@ def numerical_jacoby(a, b, x, fnc, nx, ny, delta, dtype=np.float64):
         dxp[ix] = dxp[ix] + dx[ix]
         dyy = fnc(dxp) - fnc(dxm)
         jac[:, ix] = dyy / dx[ix] / 2.
-    return jac
-
-
-def numerical_jacoby_minus(a, b, x, fnc, nx, ny, delta, dtype=np.float64):
-    '''
-
-    :param a:
-    :param b:
-    :param x:
-    :param fnc:
-    :param nx:
-    :param ny:
-    :param delta:
-    :return: Jacobian of fnc
-    '''
-    # very coarse but sufficient for this excercise
-    # dx = np.array((b - a) * delta)
-    dx = (b - a) * delta
-    jac = np.empty((ny, nx), order='F', dtype=dtype)  # zeilen zuerst, spalten später!!!!!!!
-    fnc_x = fnc(x)
-    for ix in range(nx):
-        dxm = x * 1.
-        dxm[ix] = dxm[ix] - dx[ix]
-        dyy = fnc_x - fnc(dxm)
-        jac[:, ix] = dyy / dx[ix]
     return jac
 
 
@@ -190,68 +140,9 @@ def my_optimizer(
 
         def diagnose(x, y, k, sr):
             return oec.oe_gain_aver_cost(x, y, k, xa, sei, sai, sr)
-    elif method == 3:
-        # Levenberg Marquardt
-        def operator(x, y, k):
-            def lm_cstfnc(y):
-                return oec.leve_marq_cost(y)
 
-            def lm_operat(l):
-                return oec.leve_marq_operator(a, b, x, y, k, l)
-
-            return lm_scaler(lm_cstfnc, lm_operat, lm_cstfnc(y))
-
-        def reterrcov(k):
-            return np.zeros((k.shape[1], k.shape[1]))
-
-        def diagnose(x, y, k, sr):
-            return oec.leve_marq_gain_aver_cost(x, y, k)
-    elif method == 4:
-        # Levenberg Marquardt with measurement error
-        def operator(x, y, k):
-            def lm_cstfnc(y):
-                return oec.leve_marq_se_cost(y, sei)
-
-            def lm_operat(l):
-                return oec.leve_marq_operator_with_se(a, b, x, y, k, sei, l)
-
-            return lm_scaler(lm_cstfnc, lm_operat, lm_cstfnc(y))
-
-        def reterrcov(k):
-            return oec.leve_marq_se_ret_err_cov(k, sei)
-
-        def diagnose(x, y, k, sr):
-            return oec.leve_marq_se_gain_aver_cost(x, y, k, sei, sr)
-    elif method == 5:
-        # Levenberg Marquardt optimal estimation
-        def operator(x, y, k):
-            def lm_cstfnc(y):
-                return oec.oe_leve_marq_cost(x, xa, y, sei, sai)
-
-            def lm_operat(l):
-                return oec.oe_leve_marq_operator(a, b, x, y, k, sei, sai, xa, l)
-
-            return lm_scaler(lm_cstfnc, lm_operat, lm_cstfnc(y))
-
-        def reterrcov(k):
-            return oec.oe_leve_marq_ret_err_cov(k, sei, sai)
-
-        def diagnose(x, y, k, sr):
-            return oec.oe_leve_marq_gain_aver_cost(x, y, k, xa, sei, sai, sr)
-
-    if method >= 3:
-        # levenberg marquardt damping optimizer
-        #        def lm_scaler(cstf,oper, x, y, k):
-        def lm_scaler(cstf, oper, cst_0):
-            def ffff(llll):
-                xxxx = oper(2 ** llll)
-                out = cstf(fnc(xxxx[0]))
-                # print 'out',out,llll#,cst_0
-                return out
-
-            lam = golden_section_search(ffff, -15., 5.)
-            print(lam, ffff(lam), oper(2 ** lam)[0])
-            return oper(2 ** lam)
+    # forget Levenberg-Marquardt for the moment (RP, July 2018)
+    # ...
 
     # prior as first guess ...
     if fg is None:
@@ -282,12 +173,6 @@ def my_optimizer(
             if oec.norm_y(yn) < epsy:
                 conv = True
                 break
-
-        # if x doesnt change ,  stop
-        # if normx(ix) < epsx:
-        #    print 'epsx',epsx,ix,xn
-        #    conv=True
-        #    break
 
         # if maxiter is reached,  no-converge and stop
         if ii > maxiter:
@@ -431,201 +316,6 @@ def my_inverter(func, a, b, **args):
     return func_inverse
 
 
-def test():
-    """
-    Tested are 3 cases 'funca', 'funcb', 'funcc'
-    a:  linear R^2 --> R^3
-    b:  nonlinear R^2 --> R^3
-    c:  nonlinear R^3 --> R^2  (only OE)
-    """
-    dtype = np.float32
-    # dtype=np.float64
-
-    # lower bound of state
-    A = np.array([0.1, 0.1, 0.1], order='F', dtype=dtype)
-    # upper bound of state
-    B = np.array([10., 10., 10.], order='F', dtype=dtype)
-    AA = {'a': A[0:2], 'b': A[0:2], 'c': A}
-    BB = {'a': B[0:2], 'b': B[0:2], 'c': B}
-
-    # SE measurement error covariance
-    SEa = np.array([[10., 0., 0.], [0., 10., 0.], [0., 0., 100.]], order='F', dtype=dtype) * .1
-    SEb = np.array([[10., 0., 0.], [0., 10., 0.], [0., 0., 10.]], order='F', dtype=dtype) * 10.
-    SEc = np.array([[10., 0.], [0., 10.]], order='F', dtype=dtype) * 0.1
-    SE = {'a': SEa, 'b': SEb, 'c': SEc}
-
-    # SA apriori error covariance
-    SAa = np.array([[1., 0.], [0., 1.]], order='F', dtype=dtype) * 1.
-    SAb = np.array([[1., 0.], [0., 1.]], order='F', dtype=dtype) * 1.
-    SAc = np.array([[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]], order='F', dtype=dtype) * 100.
-    SA = {'a': SAa, 'b': SAb, 'c': SAc}
-
-    # XA prior knowledge
-    XA = {'a': np.array([3.7, 5.6], order='F', dtype=dtype),
-          'b': np.array([3.7, 5.6], order='F', dtype=dtype),
-          'c': np.array([3.7, 5.6, 8.5], order='F', dtype=dtype)
-          }
-
-    # XT to test
-    XT = {'a': np.array([3.5, 6.5], order='F', dtype=dtype),
-          'b': np.array([3.5, 6.5], order='F', dtype=dtype),
-          'c': np.array([3.5, 6.5, 5.8], order='F', dtype=dtype)
-          }
-
-    def funca(x, *args, **kwargs):
-        '''
-        simple linear R^2-->R^3 test function
-        '''
-        return np.array([13. + 6 * x[0] + 4 * x[1]
-                            , 2. - 3 * x[0] + 2 * x[1]
-                            , x[0] - 5 * x[1]
-                         ], order='F', dtype=dtype)
-
-    def funcb(x, *args, **kwargs):
-        '''
-        simple non-linear R^2-->R^3 test function
-        '''
-        return np.array([13 + 6 * x[0] + 4 * x[1] + 0.7 * np.power(x[0] * x[1], 2)
-                            , 2 - 3 * x[0] + 2 * x[1] + np.sqrt(x[0]) * np.log(x[1])
-                            , x[0] - 5 * x[1] - np.sqrt(x[0] * x[1])
-                         ], order='F', dtype=dtype)
-
-    def funcc(x, *args, **kwargs):
-        '''
-        simple linear R^3-->R^2 test function.
-        '''
-        return np.array([13 + 6 * x[0] + 4 * x[1] - 2 * x[2]
-                            , 2 - 3. * x[0] + 5. * x[1] + 7 * x[2]
-                         ], order='F', dtype=dtype)
-
-    FUNC = {'a': funca, 'b': funcb, 'c': funcc}
-
-    method = ('Newton', 'Newton+SE', 'OE')
-
-    #    for func_key in ['b',]:
-    for func_key in ['a', 'b', 'c']:
-        print('-' * 30)
-        print(func_key * 30)
-        print('-' * 30)
-        # func_key,rr='b',range(0,3)
-        # func_key,rr='a',range(0,3)
-        print('XA', XA[func_key], '--> YA:', FUNC[func_key](XA[func_key]))
-        print('SE')
-        print(SE[func_key])
-        print('SA')
-        print(SA[func_key])
-        yt = FUNC[func_key](XT[func_key])
-        inv_func = my_inverter(FUNC[func_key], AA[func_key], BB[func_key], dtype=dtype)
-
-        print()
-        print('Test with x =', XT[func_key], '-->  y=', yt)
-        for i, meth in enumerate(method):
-            if i != 2 and func_key == 'c':
-                continue
-            erg = inv_func(yt, full=True, sa=SA[func_key], se=SE[func_key], xa=XA[func_key], eps=0.001, method=i,
-                           maxiter=100)
-            print('    retrieved X: ', erg.x)
-            if i > 0:
-                print('    diag avKern: ', [erg.a[j, j] for j in range(erg.a.shape[0])])
-                print('    diag ret.er: ', [erg.sr[j, j] for j in range(erg.sr.shape[0])])
-            print('         nitter: ', erg.ni)
-            print('           cost: ', erg.cost)
-            print('    f(retrie X): ', FUNC[func_key](erg.x))
-            print('    -')
-
-        yt[-1] = yt[-1] + 1
-        print()
-        print('Test with x =', XT[func_key], '-->  disturbed y=', yt)
-        for i, meth in enumerate(method):
-            if i != 2 and func_key == 'c':
-                continue
-            erg = inv_func(yt, full=True, sa=SA[func_key], se=SE[func_key], xa=XA[func_key], eps=0.001, method=i)
-            # for _ in range(1000): dum=inv_func(yt,full=True,sa=SA[func_key],se=SE[func_key],xa=XA[func_key], eps=0.001,method=i)
-            print('    retrieved X: ', erg.x)
-            if i > 0:
-                print('    diag avKern: ', [erg.a[j, j] for j in range(erg.a.shape[0])])
-                print('    diag ret.er: ', [(erg.sr[j, j]) for j in range(erg.sr.shape[0])])
-            print('         nitter: ', erg.ni)
-            print('           cost: ', erg.cost)
-            print('    f(retrie X): ', FUNC[func_key](erg.x))
-            print('    -')
-
-
-def test_lm():
-    '''
-    Tested are 3 cases 'funca', 'funcb', 'funcc'
-    a:  linear R^2 --> R^3
-    b:  nonlinear R^2 --> R^3
-    c:  nonlinear R^3 --> R^2  (only OE)
-    '''
-    # dtype=np.float32
-    dtype = np.float64
-
-    # lower bound of state
-    A = np.array([0.1, 0.1, 0.1], order='F', dtype=dtype)
-    # upper bound of state
-    B = np.array([10., 10., 10.], order='F', dtype=dtype)
-    AA = {'a': A[0:2], 'b': A[0:2], 'c': A}
-    BB = {'a': B[0:2], 'b': B[0:2], 'c': B}
-
-    # SE measurement error covariance
-    SEa = np.array([[10., 0., 0.], [0., 10., 0.], [0., 0., 100.]], order='F', dtype=dtype) * .1
-    SEb = np.array([[10., 0., 0.], [0., 10., 0.], [0., 0., 10.]], order='F', dtype=dtype) * 10.
-    SEc = np.array([[10., 0.], [0., 10.]], order='F', dtype=dtype) * 0.1
-    SE = {'a': SEa, 'b': SEb, 'c': SEc}
-
-    # SA apriori error covariance
-    SAa = np.array([[1., 0.], [0., 1.]], order='F', dtype=dtype) * 1.
-    SAb = np.array([[1., 0.], [0., 1.]], order='F', dtype=dtype) * 1.
-    SAc = np.array([[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]], order='F', dtype=dtype) * 1.
-    SA = {'a': SAa, 'b': SAb, 'c': SAc}
-
-    # XA prior knowledge
-    XA = {'a': np.array([3.7, 5.6], order='F', dtype=dtype),
-          'b': np.array([3.7, 5.6], order='F', dtype=dtype),
-          'c': np.array([3.7, 5.6, 8.5], order='F', dtype=dtype)
-          }
-
-    # XT to test
-    XT = {'a': np.array([3.5, 6.5], order='F', dtype=dtype),
-          'b': np.array([3.5, 6.5], order='F', dtype=dtype),
-          'c': np.array([3.5, 6.5, 5.8], order='F', dtype=dtype)
-          }
-
-    def funca(x, *args, **kwargs):
-        '''
-        simple linear R^2-->R^3 test function
-        '''
-        return np.array([13. + 6 * x[0] + 4 * x[1]
-                            , 2. - 3 * x[0] + 2 * x[1]
-                            , x[0] - 5 * x[1]
-                         ], order='F', dtype=dtype)
-
-    def funcb(x, *args, **kwargs):
-        '''
-        simple non-linear R^2-->R^3 test function
-        '''
-        return np.array([13 + 6 * x[0] + 4 * x[1] + 0.7 * np.power(x[0] * x[1], 3.4)
-                            , 2 - 3 * x[0] + 2 * x[1] + np.sqrt(x[0]) * np.log(x[1])
-                            , x[0] - 5 * x[1] - np.sqrt(x[0] * x[1])
-                         ], order='F', dtype=dtype)
-
-    def funcc(x, *args, **kwargs):
-        '''
-        simple linear R^3-->R^2 test function.
-        '''
-        return np.array([13 + 6 * x[0] + 4 * x[1] - 2 * x[2]
-                            , 2 - 3. * x[0] + 5. * x[1] + 7 * x[2]
-                         ], order='F', dtype=dtype)
-
-    FUNC = {'a': funca, 'b': funcb, 'c': funcc}
-    func_key = 'c'
-    yt = FUNC[func_key](XT[func_key])
-    inv_func = my_inverter(FUNC[func_key], AA[func_key], BB[func_key], dtype=dtype)
-    print(inv_func(yt, full=True, sa=SA[func_key], se=SE[func_key], xa=XA[func_key], eps=0.001, method=2, maxiter=10))
-    print(inv_func(yt, full=True, sa=SA[func_key], se=SE[func_key], xa=XA[func_key], eps=0.001, method=5, maxiter=100))
-
-
 def test_single(func_key, method):
     """
     Tested are 3 cases 'funca', 'funcb', 'funcc'
@@ -757,3 +447,4 @@ if __name__ == '__main__':
     # test_single('a', 2)
     # test_single('b', 2)
     # test_single('c', 2)
+

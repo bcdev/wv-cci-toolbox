@@ -2,6 +2,7 @@ package org.esa.snap.wvcci.tcwv;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -97,18 +98,52 @@ public class OptimalEstimationTest {
         // todo: test inversion
     }
 
+    @Test
+    @Ignore
+    public void testClip1D() {
+        final double[] x = new double[]{0, 1, 2, 3, 4, 5};
+        final double[] a = new double[]{2, 3, 0, -1, 4, 1};
+        final double[] b = new double[]{3, 5, 3, 2, 4, 4};
+        final double[] clipped = OptimalEstimation.clip1D(x, a, b);
+        assertNotNull(clipped);
+        assertEquals(a.length, clipped.length);
+        assertEquals(2, clipped[0], 0.);
+        assertEquals(3, clipped[1], 0.);
+        assertEquals(2, clipped[2], 0.);
+        assertEquals(2, clipped[3], 0.);
+        assertEquals(4, clipped[4], 0.);
+        assertEquals(4, clipped[5], 0.);
+    }
 
-    private ForwardFunction testFunctionLinR2R3 =
+    @Test
+    public void testNorm() {
+        double[] a = {0, 1, 2, 3};
+        assertEquals(3.5, OptimalEstimation.norm(a), 1.E-6);
+    }
+
+    @Test
+    public void testNormErrorWeighted() {
+        double[] a = {0, 1, 2, 3};
+        double[][] b = new double[][]{
+                {2.5, 2.5, 2.5, 2.5},
+                {2.5, 2.5, 2.5, 2.5},
+                {2.5, 2.5, 2.5, 2.5},
+                {2.5, 2.5, 2.5, 2.5}
+        };
+        assertEquals(90.0, OptimalEstimation.normErrorWeighted(a, b), 1.E-6);
+    }
+
+    private TcwvFunction testFunctionLinR2R3 =
             (x, params) -> new double[]{13.0 + 6.0 * x[0] + 4.0 * x[1],
                     2.0 - 3.0 * x[0] + 2.0 * x[1],
                     x[0] - 5.0 * x[1]};
 
-    private ForwardFunction testFunctionNonlinR2R3 =
+    private TcwvFunction testFunctionNonlinR2R3 =
             (x, params) -> new double[]{13.0 + 6.0 * x[0] + 4.0 * x[1] + 0.7 * Math.pow(x[0] * x[1], 2),
                     2.0 - 3 * x[0] + 2 * x[1] + Math.sqrt(x[0]) * Math.log(x[1]),
                     x[0] - 5 * x[1] - Math.sqrt(x[0] * x[1])};
 
-    private ForwardFunction testFunctionLinR3R2 =
+    private TcwvFunction testFunctionLinR3R2 =
             (x, params) -> new double[]{13.0 + 6.0 * x[0] + 4.0 * x[1] - 2.0 * x[2],
                     2.0 - 3.0 * x[0] + 5.0 * x[1] + 7.0 * x[2]};
 }

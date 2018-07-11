@@ -96,11 +96,11 @@
             <version>18.0</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.github.haifengl</groupId>
-            <artifactId>smile-core</artifactId>
-            <version>1.5.0</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>com.github.haifengl</groupId>-->
+            <!--<artifactId>smile-core</artifactId>-->
+            <!--<version>1.5.0</version>-->
+        <!--</dependency>-->
 
         <dependency>
         <groupId>org.apache.commons</groupId>
