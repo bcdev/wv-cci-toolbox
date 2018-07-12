@@ -23,7 +23,7 @@ public class ClippedDifferenceFunction implements TcwvFunction {
 
     @Override
     public double[] f(double[] x, double[] params) {
-        final double[] clippedResult = func.f(OptimalEstimation.clip1D(a, b, x), params);
+        final double[] clippedResult = func.f(OptimalEstimationUtils.clip1D(a, b, x), params);
 
         double[] clippedDiffResult = new double[clippedResult.length];
         for (int i = 0; i < clippedDiffResult.length; i++) {

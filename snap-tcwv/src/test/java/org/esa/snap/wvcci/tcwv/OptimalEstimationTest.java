@@ -2,7 +2,6 @@ package org.esa.snap.wvcci.tcwv;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -31,7 +30,22 @@ public class OptimalEstimationTest {
         assertEquals(4.5, y[1], 1.E-6);
         assertEquals(-29.0, y[2], 1.E-6);
 
-        // todo: test inversion
+        double[] a = {0.1, 0.1};
+        double[] b = {10., 10.};
+        double[] xa = {3.7, 5.6};
+
+        OptimalEstimation oe = new OptimalEstimation(testFunctionLinR2R3, a, b, x, null, null);
+        double[][] se = new double[][] {
+                {1., 0., 0.},
+                {0., 1., 0.},
+                {0., 0., 10.}
+        };
+        double[][] sa = new double[][] {
+                {1., 0.},
+                {0., 1.}
+        };
+        final OptimalEstimationResult result = oe.invert(InversionMethod.NEWTON, se, sa, xa, OEOutputMode.BASIC);
+        assertNotNull(result);
 
     }
 
@@ -96,41 +110,6 @@ public class OptimalEstimationTest {
         assertEquals(78.4, y[1], 1.E-6);
 
         // todo: test inversion
-    }
-
-    @Test
-    @Ignore
-    public void testClip1D() {
-        final double[] x = new double[]{0, 1, 2, 3, 4, 5};
-        final double[] a = new double[]{2, 3, 0, -1, 4, 1};
-        final double[] b = new double[]{3, 5, 3, 2, 4, 4};
-        final double[] clipped = OptimalEstimation.clip1D(x, a, b);
-        assertNotNull(clipped);
-        assertEquals(a.length, clipped.length);
-        assertEquals(2, clipped[0], 0.);
-        assertEquals(3, clipped[1], 0.);
-        assertEquals(2, clipped[2], 0.);
-        assertEquals(2, clipped[3], 0.);
-        assertEquals(4, clipped[4], 0.);
-        assertEquals(4, clipped[5], 0.);
-    }
-
-    @Test
-    public void testNorm() {
-        double[] a = {0, 1, 2, 3};
-        assertEquals(3.5, OptimalEstimation.norm(a), 1.E-6);
-    }
-
-    @Test
-    public void testNormErrorWeighted() {
-        double[] a = {0, 1, 2, 3};
-        double[][] b = new double[][]{
-                {2.5, 2.5, 2.5, 2.5},
-                {2.5, 2.5, 2.5, 2.5},
-                {2.5, 2.5, 2.5, 2.5},
-                {2.5, 2.5, 2.5, 2.5}
-        };
-        assertEquals(90.0, OptimalEstimation.normErrorWeighted(a, b), 1.E-6);
     }
 
     private TcwvFunction testFunctionLinR2R3 =

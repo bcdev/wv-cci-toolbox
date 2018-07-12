@@ -1,17 +1,17 @@
 package org.esa.snap.wvcci.tcwv;
 
 /**
- * Function object providing a 'LUT Jacoby' function from a Jacoby LUT generated from the original LUT.
+ * Function object providing a 'LUT Jacoby' function from a Jacobi LUT generated from the original LUT.
  * See Python breadboard:
  * lut2jacobian_lut.py --> generate_jacobian_lut, jlut2func
  *
  * @author olafd
  */
-public class LutJacobyFunction implements JacobyFunction {
+public class LutJacobiFunction implements JacobiFunction {
 
     // todo
 
-    public LutJacobyFunction() {
+    public LutJacobiFunction() {
     }
 
     @Override

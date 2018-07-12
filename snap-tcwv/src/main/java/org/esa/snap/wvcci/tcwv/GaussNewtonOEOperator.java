@@ -3,13 +3,13 @@ package org.esa.snap.wvcci.tcwv;
 import Jama.Matrix;
 
 /**
- * Gauss Newton Operator
+ * Optimal estmation with Gauss Newton
  * See breadboard code:
- *      optimal_estimation_core_pure_python --> gauss_newton_operator
+ *      optimal_estimation_core_pure_python --> optimal_estimation_gauss_newton_operator
  *
  * @author olafd
  */
-public class GaussNewtonOperator implements OEOperator {
+public class GaussNewtonOEOperator implements OEOperator {
 
     @Override
     public OeOperatorResult result(double[] a, double[] b, double[] x, double[] y, double[][] jaco,
@@ -27,8 +27,8 @@ public class GaussNewtonOperator implements OEOperator {
         }
 
         final Matrix incrX = jacoLeftInverse.times(yMatrix);
-        final Matrix incrXMinus = xMatrix.minus(incrX);
-        final double[] incrX0 = incrXMinus.transpose().getArray()[0];
+        xMatrix.minus(incrX).getArray();
+        final double[] incrX0 = xMatrix.minus(incrX).getArray()[0];
 
         final double[] cnx = OptimalEstimationUtils.clip1D(a, b, incrX0);
 

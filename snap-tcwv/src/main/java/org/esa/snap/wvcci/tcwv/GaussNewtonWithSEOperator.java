@@ -17,23 +17,24 @@ public class GaussNewtonWithSEOperator implements OEOperator {
 
         // todo: adapt from GaussNewtonOperator!
 
-        final Matrix jacoLeftInverse = leftInverse(jaco);
-        final Matrix xMatrix = new Matrix(x, 1);
-        final Matrix yMatrix = new Matrix(y, 1);
+        final Matrix jacoLeftInverse = OptimalEstimationUtils.leftInverse(jaco);
+
+        Matrix xMatrix = new Matrix(x.length, 1);
+        for (int i = 0; i < x.length; i++) {
+            xMatrix.set(i, 0, x[i]);
+        }
+        Matrix yMatrix = new Matrix(y.length, 1);
+        for (int i = 0; i < y.length; i++) {
+            yMatrix.set(i, 0, y[i]);
+        }
+
         final Matrix incrX = jacoLeftInverse.times(yMatrix);
         xMatrix.minus(incrX).getArray();
         final double[] incrX0 = xMatrix.minus(incrX).getArray()[0];
 
-        final double[] cnx = OptimalEstimation.clip1D(a, b, incrX0);
+        final double[] cnx = OptimalEstimationUtils.clip1D(a, b, incrX0);
 
         return new OeOperatorResult(cnx, incrX0, null, null);
     }
 
-    private static Matrix leftInverse(double[][] src) {
-        // todo: move to some utils!
-        // return np.dot(inverse(np.dot(inn.T, inn)), inn.T)
-        final Matrix srcMatrix = new Matrix(src);
-        final Matrix srcMatrixT = srcMatrix.transpose();
-        return ((srcMatrix.times(srcMatrixT)).inverse()).times(srcMatrixT);
-    }
 }
