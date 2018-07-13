@@ -73,4 +73,33 @@ public class OptimalEstimationUtilsTest {
         assertEquals(0.068911, leftInverseArray[1][1], 1.E-5);
         assertEquals(-0.127827, leftInverseArray[1][2], 1.E-5);
     }
+
+    @Test
+    public void testGetNumericalJacobi() {
+
+        double[] a = {0.1, 0.1};
+        double[] b = {10., 10.};
+        double[] x = {5.05, 5.05};
+        final TcwvFunction testFunctionLinR2R3 =
+                (xx, params) -> new double[]{13.0 + 6.0 * xx[0] + 4.0 * xx[1],
+                        2.0 - 3.0 * xx[0] + 2.0 * xx[1],
+                        xx[0] - 5.0 * xx[1]};
+
+        double[] y = {60.0, 4.5, -29.0};
+        double delta = 0.001;
+
+        final ClippedDifferenceFunction fnc = new ClippedDifferenceFunction(a, b, testFunctionLinR2R3, y);
+        double[][] jac = OptimalEstimationUtils.getNumericalJacobi(a, b, x, fnc, null, x.length, y.length, delta);
+
+        assertNotNull(jac);
+        assertEquals(3, jac.length);
+        assertEquals(2, jac[0].length);
+        assertEquals(6.0, jac[0][0], 1.E-6);
+        assertEquals(4.0, jac[0][1], 1.E-6);
+        assertEquals(-3.0, jac[1][0], 1.E-6);
+        assertEquals(2.0, jac[1][1], 1.E-6);
+        assertEquals(1.0, jac[2][0], 1.E-6);
+        assertEquals(-5.0, jac[2][1], 1.E-6);
+    }
+
 }

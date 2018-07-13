@@ -13,7 +13,7 @@ public class GaussNewtonOperator implements OEOperator {
 
     @Override
     public OeOperatorResult result(double[] a, double[] b, double[] x, double[] y, double[][] jaco,
-                                   double[][] sei, double[][] sai, double[][] sa) {
+                                   double[][] sei, double[][] sai, double[] xa) {
 
         final Matrix jacoLeftInverse = OptimalEstimationUtils.leftInverse(jaco);
 

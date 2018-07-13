@@ -17,7 +17,7 @@ public interface OEOperator {
      * @param jaco - dfnc(x) (Jacobian)
      * @param sei - inverse of measurement error co-variance
      * @param sai - inverse of prior error co-variance
-     * @param sa  - prior
+     * @param xa  - prior
      *
      * @return  OeOperatorResult result:
      * - cnx (clipped) optimal solution for  fnc-1 for the linear case,
@@ -26,5 +26,5 @@ public interface OEOperator {
      * last retrieval error co.-variance
      */
     OeOperatorResult result(double[] a, double[] b, double[] x, double[] y,
-                            double[][] jaco, double[][] sei, double[][] sai, double[][] sa);
+                            double[][] jaco, double[][] sei, double[][] sai, double[] xa);
 }

@@ -14,6 +14,7 @@ public class OptimalEstimation {
 
     private TcwvFunction func;
     private JacobiFunction jfunc;
+    private double[] yy;
     private double[] a;
     private double[] b;
     private double[] xx;
@@ -31,6 +32,7 @@ public class OptimalEstimation {
                              double[] a, double[] b, double[] xx, double[] params,
                              JacobiFunction jfunc) {
         this.func = func;
+        this.yy = func.f(xx, params);;
         this.a = a;
         this.b = b;
         this.xx = xx;
@@ -51,12 +53,13 @@ public class OptimalEstimation {
                                           double[][] se,
                                           double[][] sa,
                                           double[] xa,
-                                          OEOutputMode outputMode) {
+                                          OEOutputMode outputMode,
+                                          int maxiter) {
 
 //        inv_func = my_inverter(FUNC[func_key], AA[func_key], BB[func_key], dtype=dtype
 //        erg = inv_func(yt, full=True, sa=SA[func_key], se=SE[func_key], xa=XA[func_key], eps=0.001, method=i,maxiter=100)
 
-        final double[] yy = func.f(xx, params);
+//        final double[] yy = func.f(xx, params);
 
         double[][] sei;
         double[][] sai;
@@ -71,14 +74,21 @@ public class OptimalEstimation {
             sei = new Matrix(se).inverse().getArray();
         }
 
-        return optimize(yy, xa, sei, sai, sa, method, outputMode);
+        return optimize(xa, sei, sai, sa, method, outputMode, maxiter);
     }
 
+    /**
+     *  This setter should be needed only to map weird test construct in breadboard
+     *
+     * @param yy
+     */
+    void setYy(double[] yy) {
+        this.yy = yy;
+    }
 
     /**
      * Java version of RPs optimal_estimation_py3 --> my_optimizer
      *
-     * @param yy - measurement
      * @param xa - prior state
      * @param sei - inverse of measurement error covariance matrix
      * @param sai - inverse of prior error covariance matrix
@@ -88,13 +98,13 @@ public class OptimalEstimation {
      *
      * @return OptimalEstimationResult
      */
-    private OptimalEstimationResult optimize(double[] yy, double[] xa,
+    private OptimalEstimationResult optimize(double[] xa,
                                              double[][] sei, double[][] sai, double[][] sa,
                                              InversionMethod method,
-                                             OEOutputMode outputMode) {
+                                             OEOutputMode outputMode,
+                                             int maxiter) {
 
         // some default settings from breadboard (same as in Cawa):
-        final int maxiter = 20;
         final double delta = 0.001;
         final double epsy = 0.000001;
         double[] firstGuessVector = new double[a.length];
@@ -152,7 +162,12 @@ public class OptimalEstimation {
             ii++;
             yn = fnc.f(xn, params);
             kk = jfunc.f(xn, params);
-            result = operator.result(a, b, xn, yn, kk, sei, sai, sa);
+
+//            operator: return cnx, incr_x, None, None
+//            xn, ix, sri, sr = operator(xn, yn, kk)
+
+            result = operator.result(a, b, xn, yn, kk, sei, sai, xa);
+            xn = result.getCnx();
             if (method == InversionMethod.NEWTON) {
                 if (OptimalEstimationUtils.norm(yn) < epsy) {
                     convergence = true;
