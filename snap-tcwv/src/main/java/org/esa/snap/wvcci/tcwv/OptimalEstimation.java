@@ -4,9 +4,6 @@ import Jama.Matrix;
 
 /**
  * Class providing the Optimal Estimation algorithm, i.e. the inversion.
- * To change this template use File | Settings | File Templates.
- * Date: 10.07.2018
- * Time: 10:10
  *
  * @author olafd
  */
@@ -17,7 +14,6 @@ public class OptimalEstimation {
     private double[] yy;
     private double[] a;
     private double[] b;
-    private double[] xx;
     private double[] params;
 
     /**
@@ -28,14 +24,13 @@ public class OptimalEstimation {
      * @param params - optional input parameters for func
      * @param jfunc  - corresponding 'Jacobi function' (see LutJacobiFunction)
      */
-    public OptimalEstimation(TcwvFunction func,
-                             double[] a, double[] b, double[] xx, double[] params,
-                             JacobiFunction jfunc) {
+    OptimalEstimation(TcwvFunction func,
+                      double[] a, double[] b, double[] xx, double[] params,
+                      JacobiFunction jfunc) {
         this.func = func;
-        this.yy = func.f(xx, params);;
+        this.yy = func.f(xx, params);
         this.a = a;
         this.b = b;
-        this.xx = xx;
         this.params = params;
         this.jfunc = jfunc;
     }
@@ -56,11 +51,6 @@ public class OptimalEstimation {
                                           OEOutputMode outputMode,
                                           int maxiter) {
 
-//        inv_func = my_inverter(FUNC[func_key], AA[func_key], BB[func_key], dtype=dtype
-//        erg = inv_func(yt, full=True, sa=SA[func_key], se=SE[func_key], xa=XA[func_key], eps=0.001, method=i,maxiter=100)
-
-//        final double[] yy = func.f(xx, params);
-
         double[][] sei;
         double[][] sai;
         if (method == InversionMethod.NEWTON) {
@@ -74,13 +64,13 @@ public class OptimalEstimation {
             sei = new Matrix(se).inverse().getArray();
         }
 
-        return optimize(xa, sei, sai, sa, method, outputMode, maxiter);
+        return optimize(xa, sei, sai, method, outputMode, maxiter);
     }
 
     /**
      *  This setter should be needed only to map weird test construct in breadboard
      *
-     * @param yy
+     * @param yy - 'measurements' vector
      */
     void setYy(double[] yy) {
         this.yy = yy;
@@ -92,14 +82,13 @@ public class OptimalEstimation {
      * @param xa - prior state
      * @param sei - inverse of measurement error covariance matrix
      * @param sai - inverse of prior error covariance matrix
-     * @param sa - prior error covariance
      * @param method - inversion method
      * @param outputMode - output mode
      *
      * @return OptimalEstimationResult
      */
     private OptimalEstimationResult optimize(double[] xa,
-                                             double[][] sei, double[][] sai, double[][] sa,
+                                             double[][] sei, double[][] sai,
                                              InversionMethod method,
                                              OEOutputMode outputMode,
                                              int maxiter) {
@@ -143,16 +132,15 @@ public class OptimalEstimation {
                 throw new IllegalArgumentException("Method '" + method.getName() + "' not supported.");
         }
 
-//        # prior as first guess ...
+        // if available, prior as first guess ...
         double[] xn;
         if (xa != null) {
             xn = xa;
         } else {
             xn = firstGuessVector;
         }
-        xn = firstGuessVector;
 
-//        ### Do the iteration
+        // Do the iteration
         int ii = 0;
         double[] yn;
         double[][] kk;
@@ -163,9 +151,6 @@ public class OptimalEstimation {
             yn = fnc.f(xn, params);
             kk = jfunc.f(xn, params);
 
-//            operator: return cnx, incr_x, None, None
-//            xn, ix, sri, sr = operator(xn, yn, kk)
-
             result = operator.result(a, b, xn, yn, kk, sei, sai, xa);
             xn = result.getCnx();
             if (method == InversionMethod.NEWTON) {
@@ -175,7 +160,8 @@ public class OptimalEstimation {
                 }
             } else {
                 final double[][] sri = result.getRetErrCovI();
-                if (OptimalEstimationUtils.normErrorWeighted(result.getIncrX(), sri) < epsy) {
+                final double normErrorWeighted = OptimalEstimationUtils.normErrorWeighted(result.getIncrX(), sri);
+                if (normErrorWeighted < epsy) {
                     convergence = true;
                     break;
                 }
@@ -191,9 +177,13 @@ public class OptimalEstimation {
             case BASIC:
                 return new OptimalEstimationResult(xn, kk, convergence, ii, null, null);
             case FULL:
-                sr = result.getRetErrCov();
-                diagnoseResult = diagnose.diagnose(xn, yn, kk, xa, sei, sai, sr);
-                return new OptimalEstimationResult(xn, kk, convergence, ii, sr, diagnoseResult);
+                if (result != null && result.getRetErrCov() != null) {
+                    sr = result.getRetErrCov();
+                    diagnoseResult = diagnose.diagnose(xn, yn, kk, xa, sei, sai, sr);
+                    return new OptimalEstimationResult(xn, kk, convergence, ii, sr, diagnoseResult);
+                } else {
+                    return new OptimalEstimationResult(xn, kk, convergence, ii, null, null);
+                }
             case EXTENDED:
                 sr = retErrCov.compute(kk, sei, sai);
                 diagnoseResult = diagnose.diagnose(xn, yn, kk, xa, sei, sai, sr);

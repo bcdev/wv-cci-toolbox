@@ -3,10 +3,8 @@ package org.esa.snap.wvcci.tcwv;
 import Jama.Matrix;
 
 /**
- * todo: add comment
- * To change this template use File | Settings | File Templates.
- * Date: 12.07.2018
- * Time: 10:42
+ * Provides diagnose for Gauss-Newton with standard error.
+ * See breadboard: optimal_estimation_core_pure_python --> gauss_newton_gain_aver_cost_with_se(a, b, x, y, k, sei)
  *
  * @author olafd
  */
@@ -14,15 +12,6 @@ public class GaussNewtonWithSEDiagnose implements Diagnose {
     @Override
     public DiagnoseResult diagnose(double[] xn, double[] yn, double[][] kk, double[] xa,
                                    double[][] sei, double[][] sai, double[][] sr) {
-
-//         #retrieval error co-varince
-//        gain = np.dot(ret_err_cov, np.dot(k.T, sei))
-//        # averaging kernel
-//        # aver=np.dot(gain,k)
-//            aver = np.identity(x.size)
-//        # cost function
-//            cost = np.dot(y.T, np.dot(sei, y))
-//            return gain, aver, cost
 
         final Matrix kkMatrix = new Matrix(kk);
         final Matrix seiMatrix = new Matrix(sei);

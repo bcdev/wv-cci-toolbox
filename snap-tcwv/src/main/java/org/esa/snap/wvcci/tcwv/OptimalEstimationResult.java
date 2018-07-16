@@ -1,10 +1,7 @@
 package org.esa.snap.wvcci.tcwv;
 
 /**
- * todo: add comment
- * To change this template use File | Settings | File Templates.
- * Date: 10.07.2018
- * Time: 10:14
+ * Object holding result from optimal estimation algorithm.
  *
  * @author olafd
  */
@@ -12,15 +9,15 @@ public class OptimalEstimationResult {
 
     private double[] xn;
     private double[][] kk;
-    private boolean success;
+    private boolean convergence;
     private int ii;
     private double[][] sr;
     private DiagnoseResult diagnoseResult;
 
-    public OptimalEstimationResult(double[] xn, double[][] kk, boolean success, int ii, double[][] sr, DiagnoseResult diagnoseResult) {
+    OptimalEstimationResult(double[] xn, double[][] kk, boolean convergence, int ii, double[][] sr, DiagnoseResult diagnoseResult) {
         this.xn = xn;
         this.kk = kk;
-        this.success = success;
+        this.convergence = convergence;
         this.ii = ii;
         this.sr = sr;
         this.diagnoseResult = diagnoseResult;
@@ -34,8 +31,8 @@ public class OptimalEstimationResult {
         return kk;
     }
 
-    public boolean isSuccess() {
-        return success;
+    public boolean isConvergence() {
+        return convergence;
     }
 
     public int getIi() {

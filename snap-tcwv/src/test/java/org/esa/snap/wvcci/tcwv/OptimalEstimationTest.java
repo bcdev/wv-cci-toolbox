@@ -1,22 +1,11 @@
 package org.esa.snap.wvcci.tcwv;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 
 
 public class OptimalEstimationTest {
-
-    @Before
-    public void setUp() throws Exception {
-    }
-
-    @After
-    public void tearDown() throws Exception {
-
-    }
 
     @Test
     public void testNewton_linear_r2r3() {
@@ -54,16 +43,16 @@ public class OptimalEstimationTest {
         assertNull(result.getDiagnoseResult());
         assertEquals(2, result.getIi());
         assertEquals(2, result.getXn().length);
-        assertEquals(3.5, result.getXn()[0], 1.E-6);
-        assertEquals(6.5, result.getXn()[1], 1.E-6);
+        assertEquals(3.5, result.getXn()[0], 1.E-4);
+        assertEquals(6.5, result.getXn()[1], 1.E-4);
         assertEquals(3, result.getKk().length);
         assertEquals(2, result.getKk()[0].length);
-        assertEquals(6.0, result.getKk()[0][0], 1.E-6);
-        assertEquals(4.0, result.getKk()[0][1], 1.E-6);
-        assertEquals(-3.0, result.getKk()[1][0], 1.E-6);
-        assertEquals(2.0, result.getKk()[1][1], 1.E-6);
-        assertEquals(1.0, result.getKk()[2][0], 1.E-6);
-        assertEquals(-5.0, result.getKk()[2][1], 1.E-6);
+        assertEquals(6.0, result.getKk()[0][0], 1.E-3);
+        assertEquals(4.0, result.getKk()[0][1], 1.E-3);
+        assertEquals(-3.0, result.getKk()[1][0], 1.E-3);
+        assertEquals(2.0, result.getKk()[1][1], 1.E-3);
+        assertEquals(1.0, result.getKk()[2][0], 1.E-3);
+        assertEquals(-5.0, result.getKk()[2][1], 1.E-3);
 
         // 'disturbed' test: as in breadboard code:
         y[y.length-1] += 1.0;
@@ -74,11 +63,11 @@ public class OptimalEstimationTest {
         assertNotNull(result);
         assertEquals(20, result.getIi());
         assertEquals(2, result.getXn().length);
-        assertEquals(3.557864, result.getXn()[0], 1.E-6);
-        assertEquals(6.372172, result.getXn()[1], 1.E-6);
+        assertEquals(3.5579, result.getXn()[0], 1.E-4);
+        assertEquals(6.3722, result.getXn()[1], 1.E-4);
         assertNotNull(result.getSr());
         assertNotNull(result.getDiagnoseResult());
-        assertEquals(0.302999, result.getDiagnoseResult().getCost(), 1.E-6);
+        assertEquals(0.303, result.getDiagnoseResult().getCost(), 1.E-4);
     }
 
     @Test
@@ -116,10 +105,10 @@ public class OptimalEstimationTest {
         assertNotNull(result.getKk());
         assertNull(result.getSr());
         assertNull(result.getDiagnoseResult());
-        assertEquals(5, result.getIi());
+        assertEquals(4, result.getIi());
         assertEquals(2, result.getXn().length);
-        assertEquals(3.5, result.getXn()[0], 1.E-6);
-        assertEquals(6.5, result.getXn()[1], 1.E-6);
+        assertEquals(3.5, result.getXn()[0], 1.E-4);
+        assertEquals(6.5, result.getXn()[1], 1.E-4);
         assertEquals(3, result.getKk().length);
         assertEquals(2, result.getKk()[0].length);
         assertEquals(213.025, result.getKk()[0][0], 1.E-3);
@@ -138,11 +127,11 @@ public class OptimalEstimationTest {
         assertNotNull(result);
         assertEquals(20, result.getIi());
         assertEquals(2, result.getXn().length);
-        assertEquals(3.569013, result.getXn()[0], 1.E-6);
-        assertEquals(6.375022, result.getXn()[1], 1.E-6);
+        assertEquals(3.569, result.getXn()[0], 1.E-4);
+        assertEquals(6.375, result.getXn()[1], 1.E-4);
         assertNotNull(result.getSr());
         assertNotNull(result.getDiagnoseResult());
-        assertEquals(0.304855, result.getDiagnoseResult().getCost(), 1.E-6);
+        assertEquals(0.3049, result.getDiagnoseResult().getCost(), 1.E-4);
     }
 
     @Test
@@ -182,16 +171,16 @@ public class OptimalEstimationTest {
         assertNull(result.getDiagnoseResult());
         assertEquals(2, result.getIi());
         assertEquals(2, result.getXn().length);
-        assertEquals(3.5, result.getXn()[0], 1.E-6);
-        assertEquals(6.5, result.getXn()[1], 1.E-6);
+        assertEquals(3.5, result.getXn()[0], 1.E-4);
+        assertEquals(6.5, result.getXn()[1], 1.E-4);
         assertEquals(3, result.getKk().length);
         assertEquals(2, result.getKk()[0].length);
-        assertEquals(6.0, result.getKk()[0][0], 1.E-6);
-        assertEquals(4.0, result.getKk()[0][1], 1.E-6);
-        assertEquals(-3.0, result.getKk()[1][0], 1.E-6);
-        assertEquals(2.0, result.getKk()[1][1], 1.E-6);
-        assertEquals(1.0, result.getKk()[2][0], 1.E-6);
-        assertEquals(-5.0, result.getKk()[2][1], 1.E-6);
+        assertEquals(6.0, result.getKk()[0][0], 1.E-3);
+        assertEquals(4.0, result.getKk()[0][1], 1.E-3);
+        assertEquals(-3.0, result.getKk()[1][0], 1.E-3);
+        assertEquals(2.0, result.getKk()[1][1], 1.E-3);
+        assertEquals(1.0, result.getKk()[2][0], 1.E-3);
+        assertEquals(-5.0, result.getKk()[2][1], 1.E-3);
 
         // 'disturbed' test: as in breadboard code:
         y[y.length-1] += 1.0;
@@ -202,11 +191,11 @@ public class OptimalEstimationTest {
         assertNotNull(result);
         assertEquals(2, result.getIi());
         assertEquals(2, result.getXn().length);
-        assertEquals(3.515526, result.getXn()[0], 1.E-6);
-        assertEquals(6.465702, result.getXn()[1], 1.E-6);
+        assertEquals(3.5155, result.getXn()[0], 1.E-4);
+        assertEquals(6.4657, result.getXn()[1], 1.E-4);
         assertNotNull(result.getSr());
         assertNotNull(result.getDiagnoseResult());
-        assertEquals(0.081298, result.getDiagnoseResult().getCost(), 1.E-6);
+        assertEquals(0.0813, result.getDiagnoseResult().getCost(), 1.E-4);
     }
 
     @Test
@@ -245,7 +234,7 @@ public class OptimalEstimationTest {
         assertNotNull(result.getKk());
         assertNull(result.getSr());
         assertNull(result.getDiagnoseResult());
-        assertEquals(5, result.getIi());
+        assertEquals(3, result.getIi());
         assertEquals(2, result.getXn().length);
         assertEquals(3.5, result.getXn()[0], 1.E-6);
         assertEquals(6.5, result.getXn()[1], 1.E-6);
@@ -265,13 +254,13 @@ public class OptimalEstimationTest {
         maxiter = 20;
         result = oe.invert(InversionMethod.NEWTON_SE, se, sa, xa, OEOutputMode.EXTENDED, maxiter);
         assertNotNull(result);
-        assertEquals(4, result.getIi());
+        assertEquals(3, result.getIi());
         assertEquals(2, result.getXn().length);
         assertEquals(3.569013, result.getXn()[0], 1.E-6);
         assertEquals(6.375022, result.getXn()[1], 1.E-6);
         assertNotNull(result.getSr());
         assertNotNull(result.getDiagnoseResult());
-        assertEquals(0.003048, result.getDiagnoseResult().getCost(), 1.E-6);
+        assertEquals(0.003, result.getDiagnoseResult().getCost(), 1.E-4);
     }
 
     @Test
@@ -310,16 +299,16 @@ public class OptimalEstimationTest {
         assertNull(result.getDiagnoseResult());
         assertEquals(2, result.getIi());
         assertEquals(2, result.getXn().length);
-        assertEquals(3.526315, result.getXn()[0], 1.E-6);
-        assertEquals(6.442105, result.getXn()[1], 1.E-6);
+        assertEquals(3.5263, result.getXn()[0], 1.E-4);
+        assertEquals(6.4421, result.getXn()[1], 1.E-4);
         assertEquals(3, result.getKk().length);
         assertEquals(2, result.getKk()[0].length);
-        assertEquals(6.0, result.getKk()[0][0], 1.E-6);
-        assertEquals(4.0, result.getKk()[0][1], 1.E-6);
-        assertEquals(-3.0, result.getKk()[1][0], 1.E-6);
-        assertEquals(2.0, result.getKk()[1][1], 1.E-6);
-        assertEquals(1.0, result.getKk()[2][0], 1.E-6);
-        assertEquals(-5.0, result.getKk()[2][1], 1.E-6);
+        assertEquals(6.0, result.getKk()[0][0], 1.E-3);
+        assertEquals(4.0, result.getKk()[0][1], 1.E-3);
+        assertEquals(-3.0, result.getKk()[1][0], 1.E-3);
+        assertEquals(2.0, result.getKk()[1][1], 1.E-3);
+        assertEquals(1.0, result.getKk()[2][0], 1.E-3);
+        assertEquals(-5.0, result.getKk()[2][1], 1.E-3);
 
         // 'disturbed' test: as in breadboard code:
         y[y.length-1] += 1.0;
@@ -330,11 +319,11 @@ public class OptimalEstimationTest {
         assertNotNull(result);
         assertEquals(2, result.getIi());
         assertEquals(2, result.getXn().length);
-        assertEquals(3.540599, result.getXn()[0], 1.E-6);
-        assertEquals(6.410192, result.getXn()[1], 1.E-6);
+        assertEquals(3.5406, result.getXn()[0], 1.E-4);
+        assertEquals(6.4102, result.getXn()[1], 1.E-4);
         assertNotNull(result.getSr());
         assertNotNull(result.getDiagnoseResult());
-        assertEquals(0.812088, result.getDiagnoseResult().getCost(), 1.E-6);
+        assertEquals(0.8121, result.getDiagnoseResult().getCost(), 1.E-4);
     }
 
     @Test
@@ -374,11 +363,11 @@ public class OptimalEstimationTest {
         assertNull(result.getDiagnoseResult());
         assertEquals(4, result.getIi());
         assertEquals(2, result.getXn().length);
-        assertEquals(3.828916, result.getXn()[0], 1.E-6);
-        assertEquals(5.942902, result.getXn()[1], 1.E-6);
+        assertEquals(3.8289, result.getXn()[0], 1.E-4);
+        assertEquals(5.9429, result.getXn()[1], 1.E-4);
         assertEquals(3, result.getKk().length);
         assertEquals(2, result.getKk()[0].length);
-        assertEquals(195.321, result.getKk()[0][0], 1.E-3);
+        assertEquals(195.322, result.getKk()[0][0], 1.E-3);
         assertEquals(125.977, result.getKk()[0][1], 1.E-3);
         assertEquals(-2.544, result.getKk()[1][0], 1.E-3);
         assertEquals(2.329, result.getKk()[1][1], 1.E-3);
@@ -394,24 +383,77 @@ public class OptimalEstimationTest {
         assertNotNull(result);
         assertEquals(4, result.getIi());
         assertEquals(2, result.getXn().length);
-        assertEquals(3.847675, result.getXn()[0], 1.E-6);
-        assertEquals(5.913874, result.getXn()[1], 1.E-6);
+        assertEquals(3.8477, result.getXn()[0], 1.E-4);
+        assertEquals(5.9139, result.getXn()[1], 1.E-4);
         assertNotNull(result.getSr());
         assertNotNull(result.getDiagnoseResult());
-        assertEquals(0.222096, result.getDiagnoseResult().getCost(), 1.E-6);
+        assertEquals(0.2221, result.getDiagnoseResult().getCost(), 1.E-4);
     }
 
     @Test
     public void testOptimalEstimation_linear_r3r2() {
         // test of Optimal Estimation method, linear R^3-->R^2 test function
-        double[] x = {3.7, 5.6, 8.5};
+        double[] x = {3.5, 6.5, 5.8};
         final double[] y = testFunctionLinR3R2.f(x, null);
         assertNotNull(y);
         assertEquals(2, y.length);
-        assertEquals(40.6, y[0], 1.E-6);
-        assertEquals(78.4, y[1], 1.E-6);
+        assertEquals(48.4, y[0], 1.E-6);
+        assertEquals(64.6, y[1], 1.E-6);
 
-        // todo: test inversion
+        double[] a = {0.1, 0.1, 0.1};
+        double[] b = {10., 10., 10.};
+        double[] xa = {3.7, 5.6, 8.5};
+
+        OptimalEstimation oe = new OptimalEstimation(testFunctionLinR3R2, a, b, x, null, null);
+        double[][] se = new double[][] {
+                {1.0, 0.},
+                {0., 1.0}
+        };
+        double[][] sa = new double[][] {
+                {100., 0., 0.},
+                {0., 100., 0.},
+                {0., 0., 100.}
+        };
+
+        int maxiter = 100;
+        OptimalEstimationResult result = oe.invert(InversionMethod.OE, se, sa, xa, OEOutputMode.BASIC, maxiter);
+
+        assertNotNull(result);
+        assertNotNull(result.getXn());
+        assertNotNull(result.getKk());
+        assertNull(result.getSr());
+        assertNull(result.getDiagnoseResult());
+        assertEquals(2, result.getIi());
+        assertEquals(3, result.getXn().length);
+        assertEquals(4.7941, result.getXn()[0], 1.E-4);
+        assertEquals(5.2739, result.getXn()[1], 1.E-4);
+        assertEquals(7.2306, result.getXn()[2], 1.E-4);
+        assertEquals(2, result.getKk().length);
+        assertEquals(3, result.getKk()[0].length);
+        assertEquals(6.0, result.getKk()[0][0], 1.E-3);
+        assertEquals(4.0, result.getKk()[0][1], 1.E-3);
+        assertEquals(-2.0, result.getKk()[0][2], 1.E-3);
+        assertEquals(-3.0, result.getKk()[1][0], 1.E-3);
+        assertEquals(5.0, result.getKk()[1][1], 1.E-3);
+        assertEquals(7.0, result.getKk()[1][2], 1.E-3);
+
+        // 'disturbed' test: as in breadboard code:
+        y[y.length-1] += 1.0;
+        oe.setYy(y);
+
+        maxiter = 20;
+        result = oe.invert(InversionMethod.OE, se, sa, xa, OEOutputMode.EXTENDED, maxiter);
+        assertNotNull(result);
+        assertEquals(2, result.getIi());
+        assertEquals(3, result.getXn().length);
+        assertEquals(4.7728, result.getXn()[0], 1.E-4);
+        assertEquals(5.3467, result.getXn()[1], 1.E-4);
+        assertEquals(7.3123, result.getXn()[2], 1.E-4);
+        assertNotNull(result.getSr());
+        assertNotNull(result.getDiagnoseResult());
+        assertEquals(0.0262, result.getDiagnoseResult().getCost(), 1.E-4);
+
+
     }
 
     private TcwvFunction testFunctionLinR2R3 =

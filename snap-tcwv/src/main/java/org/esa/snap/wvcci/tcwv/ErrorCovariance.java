@@ -1,10 +1,7 @@
 package org.esa.snap.wvcci.tcwv;
 
 /**
- * todo: add comment
- * To change this template use File | Settings | File Templates.
- * Date: 12.07.2018
- * Time: 13:18
+ * Interface for covariance error computation in OE.
  *
  * @author olafd
  */

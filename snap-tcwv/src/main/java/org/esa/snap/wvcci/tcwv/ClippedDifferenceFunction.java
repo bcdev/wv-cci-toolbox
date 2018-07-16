@@ -14,7 +14,7 @@ public class ClippedDifferenceFunction implements TcwvFunction {
     private double[] yDiff;
     private TcwvFunction func;
 
-    public ClippedDifferenceFunction(double[] a, double[] b, TcwvFunction func, double[] yDiff) {
+    ClippedDifferenceFunction(double[] a, double[] b, TcwvFunction func, double[] yDiff) {
         this.a = a;
         this.b = b;
         this.func = func;

@@ -18,6 +18,9 @@ import org.esa.snap.core.gpf.annotations.OperatorMetadata;
         copyright = "Copyright (C) 2018 by Spectral Earth, Brockmann Consult",
         description = "TCWV main operator for Water_Vapour_cci.")
 public class TcwvOp extends Operator {
+
+    // todo
+
     @Override
     public void initialize() throws OperatorException {
 

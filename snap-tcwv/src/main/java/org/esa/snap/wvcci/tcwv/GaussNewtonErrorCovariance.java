@@ -1,10 +1,8 @@
 package org.esa.snap.wvcci.tcwv;
 
 /**
- * todo: add comment
- * To change this template use File | Settings | File Templates.
- * Date: 12.07.2018
- * Time: 13:23
+ * Provides covariance error computation for Gauss-Newton.
+ * See breadboard: optimal_estimation_core_pure_python --> gauss_newton_ret_err_cov
  *
  * @author olafd
  */

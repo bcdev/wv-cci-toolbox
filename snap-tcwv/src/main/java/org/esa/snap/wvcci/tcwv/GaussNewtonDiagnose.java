@@ -3,10 +3,8 @@ package org.esa.snap.wvcci.tcwv;
 import Jama.Matrix;
 
 /**
- * todo: add comment
- * To change this template use File | Settings | File Templates.
- * Date: 12.07.2018
- * Time: 10:42
+ * Provides diagnose for Gauss-Newton.
+ * See breadboard: optimal_estimation_core_pure_python --> gauss_newton_gain_aver_cost(x, y, k)
  *
  * @author olafd
  */
@@ -15,21 +13,6 @@ public class GaussNewtonDiagnose implements Diagnose {
     @Override
     public DiagnoseResult diagnose(double[] xn, double[] yn, double[][] kk, double[] xa,
                                    double[][] sei, double[][] sai, double[][] sr) {
-
-//        '''
-//        Calculates Gain, averagiong kernel matrix and cost
-//        :param y:
-//        :param x:
-//        :param k:
-//        :return:
-//            '''
-//        # gain matrix
-//            gain = left_inverse(k)
-//        # averaging kernel
-//            aver = np.identity(x.size)
-//        # cost function
-//            cost = np.dot(y.T, y)
-//            return gain, aver, cost
 
         final Matrix gain = OptimalEstimationUtils.leftInverse(kk);
         final Matrix aver = Matrix.identity(xa.length, xa.length);

@@ -3,10 +3,7 @@ package org.esa.snap.wvcci.tcwv;
 import Jama.Matrix;
 
 /**
- * todo: add comment
- * To change this template use File | Settings | File Templates.
- * Date: 12.07.2018
- * Time: 10:54
+ * Utility methods for optimal estimation algorithm
  *
  * @author olafd
  */
@@ -69,7 +66,6 @@ public class OptimalEstimationUtils {
     }
 
     public static Matrix leftInverse(double[][] src) {
-        // todo: move to some utils!
         // return np.dot(inverse(np.dot(inn.T, inn)), inn.T)
         final Matrix srcMatrix = new Matrix(src);
         final Matrix srcMatrixT = srcMatrix.transpose();

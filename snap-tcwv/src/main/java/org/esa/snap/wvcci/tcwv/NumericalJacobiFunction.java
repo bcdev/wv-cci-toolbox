@@ -1,14 +1,8 @@
 package org.esa.snap.wvcci.tcwv;
 
 /**
- * Function object mapping the Python breadboard equivalent:
- * //        # numerical derivation of fnc (central differential ...)
- * //        if jaco is None:
- * //           def dfnc(x):
- * //              return numerical_jacoby(a, b, x, fnc, x.size, y.size, delta, dtype=dtype)
- * //        else:
- * //           def dfnc(x):
- * //              return jaco(x, jparams)
+ * Numerical Jacobi Function:
+ * See breadboard: optimal_estimation.py --> numerical_jacoby
  *
  * @author olafd
  */
@@ -20,7 +14,7 @@ public class NumericalJacobiFunction implements JacobiFunction {
     private ClippedDifferenceFunction fnc;
     private double delta;
 
-    public NumericalJacobiFunction(double[] a, double[] b, ClippedDifferenceFunction fnc, double[] y, double delta) {
+    NumericalJacobiFunction(double[] a, double[] b, ClippedDifferenceFunction fnc, double[] y, double delta) {
         this.a = a;
         this.b = b;
         this.fnc = fnc;

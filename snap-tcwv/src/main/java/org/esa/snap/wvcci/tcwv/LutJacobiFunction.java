@@ -1,7 +1,7 @@
 package org.esa.snap.wvcci.tcwv;
 
 /**
- * Function object providing a 'LUT Jacoby' function from a Jacobi LUT generated from the original LUT.
+ * Function object providing a 'LUT Jacobi' function from a Jacobi LUT generated from the original LUT.
  * See Python breadboard:
  * lut2jacobian_lut.py --> generate_jacobian_lut, jlut2func
  *

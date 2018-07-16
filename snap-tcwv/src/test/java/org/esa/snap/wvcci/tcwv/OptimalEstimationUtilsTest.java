@@ -12,11 +12,11 @@ import static org.junit.Assert.assertNotNull;
 public class OptimalEstimationUtilsTest {
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
 
     }
 

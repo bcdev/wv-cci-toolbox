@@ -7,10 +7,10 @@ package org.esa.snap.wvcci.tcwv;
  */
 public class OeOperatorResult {
 
-    double[] cnx;
-    double[] incrX;
-    double[][] retErrCovI;
-    double[][] retErrCov;
+    private double[] cnx;
+    private double[] incrX;
+    private double[][] retErrCovI;
+    private double[][] retErrCov;
 
     /**
      * Result from OE operator
@@ -20,7 +20,7 @@ public class OeOperatorResult {
      * @param retErrCovI - last increment of x
      * @param retErrCov - last retrieval error covariance
      */
-    public OeOperatorResult(double[] cnx, double[] incrX, double[][] retErrCovI, double[][] retErrCov) {
+    OeOperatorResult(double[] cnx, double[] incrX, double[][] retErrCovI, double[][] retErrCov) {
         this.cnx = cnx;
         this.incrX = incrX;
         this.retErrCovI = retErrCovI;
