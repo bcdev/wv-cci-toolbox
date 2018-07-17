@@ -5,8 +5,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 
 public class OptimalEstimationUtilsTest {
@@ -101,5 +100,4 @@ public class OptimalEstimationUtilsTest {
         assertEquals(1.0, jac[2][0], 1.E-6);
         assertEquals(-5.0, jac[2][1], 1.E-6);
     }
-
 }
