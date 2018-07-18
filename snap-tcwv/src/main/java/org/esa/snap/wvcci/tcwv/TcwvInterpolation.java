@@ -31,4 +31,23 @@ public class TcwvInterpolation {
         return tcwvFunction;
     }
 
+    public TcwvFunction jacobiLut2Function(double[][] luts, final double[][] axes, int nx, int ny)  {
+
+        LookupTable[] lookupTables = new LookupTable[luts.length];
+        for (int i = 0; i < luts.length; i++) {
+            lookupTables[i] = new LookupTable(luts[i], axes);
+        }
+
+        TcwvFunction tcwvFunction = (x, params) -> {
+            double[] values = new double[luts.length];
+            for (int i = 0; i < values.length; i++) {
+                values[i] = lookupTables[i].getValue(x);
+            }
+            return values;
+        };
+
+        return tcwvFunction;
+    }
+
+
 }
