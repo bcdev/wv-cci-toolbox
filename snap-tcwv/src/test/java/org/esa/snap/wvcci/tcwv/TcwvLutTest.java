@@ -1,5 +1,6 @@
 package org.esa.snap.wvcci.tcwv;
 
+import Jama.Matrix;
 import org.esa.snap.core.util.math.LookupTable;
 import org.junit.Test;
 import ucar.ma2.DataType;
@@ -230,7 +231,7 @@ public class TcwvLutTest {
             assertEquals(-0.919192, axes2Array[2], 1.E-6);
             assertEquals(3.0, axes2Array[99], 1.E-6);
 
-            final int[] nynxArray = TcwvInterpolationUtils.getIntt1DArrayFromNetcdfVariable(nynxVariable);
+            final int[] nynxArray = TcwvInterpolationUtils.getInt1DArrayFromNetcdfVariable(nynxVariable);
             assertNotNull(nynxArray);
             assertEquals(2, nynxArray.length);
             assertEquals(4, nynxArray[0]);
@@ -263,9 +264,9 @@ public class TcwvLutTest {
             final double[][] axesArray = {axes0Array, axes1Array, axes2Array};
             final TcwvInterpolation tcwvInterpolation = new TcwvInterpolation();
             final JacobiFunction jacobiFunction = tcwvInterpolation.jacobiLut2Function(jlutArray2D,
-                                                                                     axesArray,
-                                                                                     nynxArray[0],
-                                                                                     nynxArray[1]);
+                                                                                       axesArray,
+                                                                                       nynxArray[0],
+                                                                                       nynxArray[1]);
             final double[] testVector = new double[]{3., 10., 1.};
             final double[][] jacobiMatrixArr = jacobiFunction.f(testVector, null);
             assertNotNull(jacobiMatrixArr);
@@ -308,7 +309,7 @@ public class TcwvLutTest {
         final List<Variable> variables = ncFile.getVariables();
 
         testTcwvLutMetadata(globalAttributes, dimensions, variables);
-        testTcwvLutContentContent(variables);
+        testTcwvLutContent(globalAttributes, variables);
     }
 
     private void testTcwvLutMetadata(List<Attribute> globalAttributes, List<Dimension> dimensions, List<Variable> variables) {
@@ -392,9 +393,12 @@ public class TcwvLutTest {
         assertEquals(DataType.DOUBLE, variables.get(11).getDataType());
     }
 
-    private void testTcwvLutContentContent(List<Variable> variables) {
+    private void testTcwvLutContent(List<Attribute> globalAttributes, List<Variable> variables) {
         final Variable wvcVariable = variables.get(0);
+        final Variable aotVariable = variables.get(1);
+        final Variable wspVariable = variables.get(2);
         final Variable aziVariable = variables.get(3);
+        final Variable vieVariable = variables.get(4);
         final Variable suzVariable = variables.get(5);
         final Variable jacoVariable = variables.get(6);
         final Variable lutVariable = variables.get(7);
@@ -407,12 +411,33 @@ public class TcwvLutTest {
             assertEquals(5.347897, wvcArray[2], 1.E-6);
             assertEquals(8.3666, wvcArray[5], 1.E-6);
 
+            final double[] aotArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(aotVariable);
+            assertNotNull(aotArray);
+            assertEquals(6, aotArray.length);
+            assertEquals(0.0, aotArray[0], 1.E-6);
+            assertEquals(0.080126, aotArray[2], 1.E-6);
+            assertEquals(0.961517, aotArray[5], 1.E-6);
+
+            final double[] wspArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(wspVariable);
+            assertNotNull(wspArray);
+            assertEquals(11, wspArray.length);
+            assertEquals(2.0, wspArray[0], 1.E-6);
+            assertEquals(4.6, wspArray[2], 1.E-6);
+            assertEquals(8.5, wspArray[5], 1.E-6);
+
             final double[] aziArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(aziVariable);
             assertNotNull(aziArray);
             assertEquals(11, aziArray.length);
             assertEquals(0.0, aziArray[0], 1.E-6);
             assertEquals(36.0, aziArray[2], 1.E-6);
             assertEquals(180.0, aziArray[10], 1.E-6);
+
+            final double[] vieArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(vieVariable);
+            assertNotNull(vieArray);
+            assertEquals(9, vieArray.length);
+            assertEquals(0.0, vieArray[0], 1.E-6);
+            assertEquals(18.889799, vieArray[2], 1.E-6);
+            assertEquals(73.359497, vieArray[8], 1.E-6);
 
             final double[] suzArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(suzVariable);
             assertNotNull(suzArray);
@@ -421,7 +446,7 @@ public class TcwvLutTest {
             assertEquals(18.889799, suzArray[2], 1.E-6);
             assertEquals(73.359497, suzArray[8], 1.E-6);
 
-            final int[] jacoArray = TcwvInterpolationUtils.getIntt1DArrayFromNetcdfVariable(jacoVariable);
+            final int[] jacoArray = TcwvInterpolationUtils.getInt1DArrayFromNetcdfVariable(jacoVariable);
             assertNotNull(jacoArray);
             assertEquals(2, jacoArray.length);
             assertEquals(3, jacoArray[0]);
@@ -472,6 +497,79 @@ public class TcwvLutTest {
             assertEquals(-1.461916E-5, jlutArray[5][1][2][7][0][8][2], 1.E-6);
             assertEquals(0.024714, jlutArray[3][0][3][6][7][2][1], 1.E-6);
             assertEquals(-2.977509E-5, jlutArray[5][5][10][10][8][8][2], 1.E-6);   // last value
+
+            // todo: continue with TCWV retrieval for CAWA test pixel
+
+            // 6*6*11*11*9*9*3 --> 3*6*6*11*11*9*9 :
+            // we will store 3 (6*6*11*11*9*9) LUTs, each one holding one element for one band
+            final double[][][][][][][] lutArraySwapped = TcwvInterpolationUtils.change7DArrayLastToFirstDimension(lutArray);
+            final double[][] lutArrays1D = new double[lutArraySwapped.length][];
+            for (int i = 0; i < lutArraySwapped.length; i++) {
+                lutArrays1D[i] = TcwvInterpolationUtils.convert6Dto1DArray(lutArraySwapped[i]);
+            }
+
+            TcwvInterpolation tcwvInterpolation = new TcwvInterpolation();
+            final double[][] axes = new double[][]{wvcArray, aotArray, wspArray, aziArray, vieArray, suzArray};
+            // Python: self._forward
+            final TcwvFunction tcwvFunction = tcwvInterpolation.lut2Function(lutArrays1D, axes);
+
+            // 6*6*11*11*9*9*18 --> 18*6*6*11*11*9*9 :
+            // we will store 18 (6*6*11*11*9*9) LUTs, each one holding one Jacobi element
+            final double[][][][][][][] jlutArraySwapped = TcwvInterpolationUtils.change7DArrayLastToFirstDimension(jlutArray);
+            final double[][] jlutArrays1D = new double[jlutArraySwapped.length][];
+            for (int i = 0; i < jlutArraySwapped.length; i++) {
+                jlutArrays1D[i] = TcwvInterpolationUtils.convert6Dto1DArray(jlutArraySwapped[i]);
+            }
+
+            // Python: self._jacobi
+            final JacobiFunction jacobiFunction = tcwvInterpolation.jacobiLut2Function(jlutArrays1D,
+                                                                                       axes,   // jaxes = axes
+                                                                                       jacoArray[0],
+                                                                                       jacoArray[1]);
+
+//            #min_state
+//            a = np.array([self.axes[i].min() for i in range(3)])
+            final double[] a = {wvcArray[0], aotArray[0], wspArray[0]};      // constant for all retrievals!
+//            #max_state
+//            b = np.array([self.axes[i].max() for i in range(3)])
+            final double[] b = {wvcArray[wvcArray.length-1], aotArray[aotArray.length-1], wspArray[wspArray.length-1]};
+//            self.inverter = oe.my_inverter(self.forward, a, b, jaco = self.jforward)
+//
+//            #finaly preset SE
+//            sew = [0.0001 for i in self.wb]
+//            sea = [0.001 for i in self.ab]
+//            self.SE = np.diag(sew + sea)
+
+//            assertEquals("win_bnd", globalAttributes.get(2).getName());
+//            assertEquals("13,14", globalAttributes.get(2).getValue(0));
+//            assertEquals("abs_bnd", globalAttributes.get(4).getName());
+//            assertEquals("15", globalAttributes.get(4).getValue(0));
+            final String wbString = (String) globalAttributes.get(2).getValue(0);
+            final String[] wbElems = wbString.split(",");
+            double[] sew = new double[wbElems.length];
+            for (int i = 0; i < sew.length; i++) {
+                sew[i] = 0.0001;
+            }
+            final String abString = (String) globalAttributes.get(4).getValue(0);
+            final String[] abElems = abString.split(",");
+            double[] sea = new double[abElems.length];
+            for (int i = 0; i < sea.length; i++) {
+                sea[i] = 0.001;
+            }
+            final int seLength = sew.length + sea.length;
+            Matrix se = new Matrix(seLength, seLength);
+            for (int i = 0; i < sew.length; i++) {
+                se.set(i, i, sew[i]);
+            }
+            for (int i = sew.length; i < seLength; i++) {
+                se.set(i, i, sea[i-sew.length]);
+            }
+            final double[][] seArray = se.getArray();   // constant for all retrievals!
+            System.out.println();
+
+
+//            data['tcwv'] = self.cawa_ocean.estimator(data)['tcwv']
+//            self._do_inversion(data, sa=sa, se=se)
 
         } catch (IOException e) {
             e.printStackTrace();
