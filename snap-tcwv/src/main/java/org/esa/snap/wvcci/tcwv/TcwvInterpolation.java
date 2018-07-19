@@ -1,6 +1,5 @@
 package org.esa.snap.wvcci.tcwv;
 
-import org.esa.snap.core.gpf.OperatorException;
 import org.esa.snap.core.util.math.LookupTable;
 
 /**
@@ -31,22 +30,39 @@ public class TcwvInterpolation {
         return tcwvFunction;
     }
 
-    public TcwvFunction jacobiLut2Function(double[][] luts, final double[][] axes, int nx, int ny)  {
+    public JacobiFunction jacobiLut2Function(double[][] luts, final double[][] axes, int ny, int nx)  {
+
+        // luts: 8*6*400*100: we will store 8 (6*400*100) LUTs, each one holding one Jacobi element
+
+        if (luts.length != ny*nx) {
+            // should never happen!
+            throw new IllegalStateException("Jacobi matrix dimensions do not match.");
+        }
 
         LookupTable[] lookupTables = new LookupTable[luts.length];
         for (int i = 0; i < luts.length; i++) {
             lookupTables[i] = new LookupTable(luts[i], axes);
         }
 
-        TcwvFunction tcwvFunction = (x, params) -> {
+        JacobiFunction lutJacobiFunction = (x, params) -> {
             double[] values = new double[luts.length];
             for (int i = 0; i < values.length; i++) {
                 values[i] = lookupTables[i].getValue(x);
             }
-            return values;
+
+            double[][] jaco = new double[ny][nx];
+            // resort as ny*nx array...
+            int index = 0;
+            for (int i = 0; i < ny; i++) {
+                for (int j = 0; j < nx; j++) {
+                    jaco[i][j] = values[index++];
+                }
+            }
+
+            return jaco;
         };
 
-        return tcwvFunction;
+        return lutJacobiFunction;
     }
 
 

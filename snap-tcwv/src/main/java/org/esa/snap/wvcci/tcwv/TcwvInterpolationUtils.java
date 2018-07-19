@@ -15,8 +15,8 @@ import java.io.IOException;
 public class TcwvInterpolationUtils {
 
     public static boolean isMontonicallyIncreasing(double[] arr) {
-        for(int i=0 ; i < arr.length-1; i++) {
-            if (arr[i+1] <= arr[i]) {
+        for (int i = 0; i < arr.length - 1; i++) {
+            if (arr[i + 1] <= arr[i]) {
                 return false;
             }
         }
@@ -24,8 +24,8 @@ public class TcwvInterpolationUtils {
     }
 
     public static boolean isMontonicallyDecreasing(double[] arr) {
-        for(int i=0 ; i < arr.length-1; i++) {
-            if (arr[i+1] >= arr[i]) {
+        for (int i = 0; i < arr.length - 1; i++) {
+            if (arr[i + 1] >= arr[i]) {
                 return false;
             }
         }
@@ -37,7 +37,7 @@ public class TcwvInterpolationUtils {
         int index = 0;
         for (int i = 0; i < src.length; i++) {
             for (int j = 0; j < src[0].length; j++) {
-                      result[index++] = src[i][j];
+                result[index++] = src[i][j];
             }
         }
         return result;
@@ -57,9 +57,9 @@ public class TcwvInterpolationUtils {
     }
 
 
-    static int[] getShort1DArrayFromNetcdfVariable(Variable variable) throws IOException {
+    static int[] getIntt1DArrayFromNetcdfVariable(Variable variable) throws IOException {
         final Array arrayInt = getDataArray(DataType.INT, variable, Integer.class);
-        return (int[]) arrayInt.copyToNDJavaArray();
+        return (int[]) (arrayInt != null ? arrayInt.copyToNDJavaArray() : null);
     }
 
     static double[] getDouble1DArrayFromNetcdfVariable(Variable variable) throws IOException {
@@ -82,15 +82,26 @@ public class TcwvInterpolationUtils {
         return (double[][][][][][][]) (arrayDouble != null ? arrayDouble.copyToNDJavaArray() : null);
     }
 
-    static float[][] getFloat2DArrayFromNetcdfVariable(Variable variable) throws IOException {
-        final Array arrayFloat = getDataArray(DataType.FLOAT, variable, Float.class);
-        return (float[][]) (arrayFloat != null ? arrayFloat.copyToNDJavaArray() : null);
+    static double[][][][] change4DArrayLastToFirstDimension(double[][][][] src) {
+        final int[] newDims = new int[]{src[0][0][0].length, src.length, src[0].length, src[0][0].length};
+        double[][][][] result = new double[newDims[0]][newDims[1]][newDims[2]][newDims[3]];
+
+        for (int i = 0; i < newDims[0]; i++) {
+            for (int j = 0; j < newDims[1]; j++) {
+                for (int k = 0; k < newDims[2]; k++) {
+                    for (int l = 0; l < newDims[3]; l++) {
+                        result[i][j][k][l] = src[j][k][l][i];
+                    }
+                }
+            }
+        }
+        return result;
     }
 
     private static Array getDataArray(DataType type, Variable variable, Class clazz) throws IOException {
         final int[] origin = new int[variable.getRank()];
         final int[] shape = variable.getShape();
-        Array array = null;
+        Array array;
         try {
             array = variable.read(new Section(origin, shape));
         } catch (Exception e) {

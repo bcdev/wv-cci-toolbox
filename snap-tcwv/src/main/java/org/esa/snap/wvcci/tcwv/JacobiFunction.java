@@ -7,5 +7,5 @@ package org.esa.snap.wvcci.tcwv;
  */
 public interface JacobiFunction {
 
-    public double[][] f(double[] x, double[] params);
+    double[][] f(double[] x, double[] params);
 }

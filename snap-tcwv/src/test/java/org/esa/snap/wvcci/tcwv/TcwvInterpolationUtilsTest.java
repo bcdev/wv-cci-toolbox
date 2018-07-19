@@ -41,4 +41,32 @@ public class TcwvInterpolationUtilsTest {
         assertFalse(TcwvInterpolationUtils.isMontonicallyIncreasing(a));
         assertTrue(TcwvInterpolationUtils.isMontonicallyDecreasing(a));
     }
+
+    @Test
+    public void testChange4DArrayLastToFirstDimension() {
+        double[][][][] src4DArr = new double[5][2][4][3];
+        int index = 0;
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < 2; j++) {
+                for (int k = 0; k < 4; k++) {
+                    for (int l = 0; l < 3; l++) {
+                        src4DArr[i][j][k][l] = (double) index++;
+                    }
+                }
+            }
+        }
+
+        final double[][][][] result4DArr = TcwvInterpolationUtils.change4DArrayLastToFirstDimension(src4DArr);
+        assertNotNull(result4DArr);
+        for (int i = 0; i < 5; i++) {
+            for (int j = 0; j < 2; j++) {
+                for (int k = 0; k < 4; k++) {
+                    for (int l = 0; l < 3; l++) {
+                        assertEquals(result4DArr[l][i][j][k], src4DArr[i][j][k][l], 1.E-8);
+                    }
+                }
+            }
+        }
+
+    }
 }

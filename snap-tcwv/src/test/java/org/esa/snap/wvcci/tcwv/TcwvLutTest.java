@@ -160,7 +160,7 @@ public class TcwvLutTest {
         final List<Variable> variables = ncFile.getVariables();
 
         testTcwvJacobiLutMetadata(globalAttributes, dimensions, variables);
-        testTcwvJacobiLutContentContent(variables);
+        testTcwvJacobiLutContent(variables);
     }
 
     private void testTcwvJacobiLutMetadata(List<Attribute> globalAttributes, List<Dimension> dimensions, List<Variable> variables) {
@@ -201,7 +201,7 @@ public class TcwvLutTest {
         assertEquals(DataType.INT, variables.get(4).getDataType());
     }
 
-    private void testTcwvJacobiLutContentContent(List<Variable> variables) {
+    private void testTcwvJacobiLutContent(List<Variable> variables) {
         final Variable axes0Variable = variables.get(0);
         final Variable axes1Variable = variables.get(1);
         final Variable axes2Variable = variables.get(2);
@@ -230,8 +230,14 @@ public class TcwvLutTest {
             assertEquals(-0.919192, axes2Array[2], 1.E-6);
             assertEquals(3.0, axes2Array[99], 1.E-6);
 
+            final int[] nynxArray = TcwvInterpolationUtils.getIntt1DArrayFromNetcdfVariable(nynxVariable);
+            assertNotNull(nynxArray);
+            assertEquals(2, nynxArray.length);
+            assertEquals(4, nynxArray[0]);
+            assertEquals(2, nynxArray[1]);
+
             final double[][][][] jlutArray = TcwvInterpolationUtils.getDouble4DArrayFromNetcdfVariable(jlutVariable);
-            // 6**400*100*100*8
+            // 6*400*100*8
             assertNotNull(jlutArray);
             assertEquals(6, jlutArray.length);
             assertEquals(400, jlutArray[0].length);
@@ -247,16 +253,32 @@ public class TcwvLutTest {
             assertEquals(24.749975, jlutArray[2][334][11][1], 1.E-6);
             assertEquals(-1.041643E-6, jlutArray[5][399][99][7], 1.E-6);   // last value
 
-            double[][] jlutArray2D = new double[jlutArray.length][];
-            for (int i = 0; i < jlutArray.length; i++) {
-                jlutArray2D[i] = TcwvInterpolationUtils.convert3Dto1DArray(jlutArray[i]);
+            // 8*6*400*100: we will store 8 (6*400*100) LUTs, each one holding one Jacobi element
+            final double[][][][] jlutArraySwapped = TcwvInterpolationUtils.change4DArrayLastToFirstDimension(jlutArray);
+            double[][] jlutArray2D = new double[jlutArraySwapped.length][];
+            for (int i = 0; i < jlutArraySwapped.length; i++) {
+                jlutArray2D[i] = TcwvInterpolationUtils.convert3Dto1DArray(jlutArraySwapped[i]);
             }
 
             final double[][] axesArray = {axes0Array, axes1Array, axes2Array};
             final TcwvInterpolation tcwvInterpolation = new TcwvInterpolation();
-            final TcwvFunction jacobiFunction = tcwvInterpolation.jacobiLut2Function(jlutArray2D, axesArray, 1, 1);
-            double[] testVector = new double[]{3., 10., 1.};
-            final double[] testValue = jacobiFunction.f(testVector, null);
+            final JacobiFunction jacobiFunction = tcwvInterpolation.jacobiLut2Function(jlutArray2D,
+                                                                                     axesArray,
+                                                                                     nynxArray[0],
+                                                                                     nynxArray[1]);
+            final double[] testVector = new double[]{3., 10., 1.};
+            final double[][] jacobiMatrixArr = jacobiFunction.f(testVector, null);
+            assertNotNull(jacobiMatrixArr);
+            assertEquals(4, jacobiMatrixArr.length);
+            assertEquals(2, jacobiMatrixArr[0].length);
+            assertEquals(40000.0, jacobiMatrixArr[0][0], 1.E-6);
+            assertEquals(24.749975, jacobiMatrixArr[0][1], 1.E-6);
+            assertEquals(239616.0, jacobiMatrixArr[1][0], 1.E-6);
+            assertEquals(1.4255630848E10, jacobiMatrixArr[1][1], 1.E-6);
+            assertEquals(0.00143433, jacobiMatrixArr[2][0], 1.E-6);
+            assertEquals(85.74498, jacobiMatrixArr[2][1], 1.E-6);
+            assertEquals(-6.86668e-11, jacobiMatrixArr[3][0], 1.E-15);
+            assertEquals(-4.12802e-06, jacobiMatrixArr[3][1], 1.E-10);
             System.out.println();
 
         } catch (IOException e) {
@@ -399,7 +421,7 @@ public class TcwvLutTest {
             assertEquals(18.889799, suzArray[2], 1.E-6);
             assertEquals(73.359497, suzArray[8], 1.E-6);
 
-            final int[] jacoArray = TcwvInterpolationUtils.getShort1DArrayFromNetcdfVariable(jacoVariable);
+            final int[] jacoArray = TcwvInterpolationUtils.getIntt1DArrayFromNetcdfVariable(jacoVariable);
             assertNotNull(jacoArray);
             assertEquals(2, jacoArray.length);
             assertEquals(3, jacoArray[0]);
