@@ -1,6 +1,7 @@
 package org.esa.snap.wvcci.tcwv;
 
 import Jama.Matrix;
+import ucar.nc2.NetcdfFile;
 
 /**
  * Utility methods for optimal estimation algorithm
@@ -70,6 +71,28 @@ public class OptimalEstimationUtils {
         final Matrix srcMatrix = new Matrix(src);
         final Matrix srcMatrixT = srcMatrix.transpose();
         return ((srcMatrixT.times(srcMatrix)).inverse()).times(srcMatrixT);
+    }
+
+    public static double[][] getSe(String wbString, String abString) {
+        final String[] wbElems = wbString.split(",");
+        double[] sew = new double[wbElems.length];
+        for (int i = 0; i < sew.length; i++) {
+            sew[i] = 0.0001;
+        }
+        final String[] abElems = abString.split(",");
+        double[] sea = new double[abElems.length];
+        for (int i = 0; i < sea.length; i++) {
+            sea[i] = 0.001;
+        }
+        final int seLength = sew.length + sea.length;
+        Matrix se = new Matrix(seLength, seLength);
+        for (int i = 0; i < sew.length; i++) {
+            se.set(i, i, sew[i]);
+        }
+        for (int i = sew.length; i < seLength; i++) {
+            se.set(i, i, sea[i-sew.length]);
+        }
+        return se.getArray();   // constant for all retrievals!
     }
 
 }

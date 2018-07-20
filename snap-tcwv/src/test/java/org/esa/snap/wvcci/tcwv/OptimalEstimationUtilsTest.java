@@ -100,4 +100,23 @@ public class OptimalEstimationUtilsTest {
         assertEquals(1.0, jac[2][0], 1.E-6);
         assertEquals(-5.0, jac[2][1], 1.E-6);
     }
+
+    @Test
+    public void testGetSe() {
+        String wbString = "13,14";
+        String abString = "15";
+        final double[][] se = OptimalEstimationUtils.getSe(wbString, abString);
+        assertNotNull(se);
+        assertEquals(3, se.length);
+        assertEquals(3, se[0].length);
+        assertEquals(0.0001, se[0][0], 1.E-6);
+        assertEquals(0.0001, se[1][1], 1.E-6);
+        assertEquals(0.001, se[2][2], 1.E-6);
+        assertEquals(0.0, se[0][1], 1.E-6);
+        assertEquals(0.0, se[0][2], 1.E-6);
+        assertEquals(0.0, se[1][0], 1.E-6);
+        assertEquals(0.0, se[1][2], 1.E-6);
+        assertEquals(0.0, se[2][0], 1.E-6);
+        assertEquals(0.0, se[2][1], 1.E-6);
+    }
 }

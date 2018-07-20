@@ -10,7 +10,6 @@ import ucar.nc2.NetcdfFile;
 import ucar.nc2.Variable;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -129,8 +128,7 @@ public class TcwvLutTest {
         axes[1] = axis2;
 
         double[] coordinates = {3.5, 11.0};
-        TcwvInterpolation tcwvInterpolation = new TcwvInterpolation();
-        final TcwvFunction tcwvFunction = tcwvInterpolation.lut2Function(allLuts, axes);
+        final TcwvFunction tcwvFunction = TcwvInterpolation.lut2Function(allLuts, axes);
 
         final double[] values = tcwvFunction.f(coordinates, null);
         assertEquals(3, values.length);
@@ -143,17 +141,7 @@ public class TcwvLutTest {
     public void testTcwvJacobiLut() throws IOException {
         // uses a dummy LUT generated from test in lut2jacobian_lut.py
         // not a real TCWV LUT!
-        final URL resource = TcwvLut.class.getResource("jlut3_test.nc");
-        if (resource == null) {
-            System.out.println("WARNING: NetCDF file 'jlut3_test.nc' does not exist in test resources." +
-                                       " Test will be ignored.");
-            System.out.println("This large file shall not be committed to GitHub repository!");
-            System.out.println("Get it from CAWA and copy manually to " +
-                                       "../wv-cci-toolbox/snap-tcwv/src/test/resources/org/esa/snap/wvcci/tcwv," +
-                                       " but make sure not to add it to GitHub!");
-            return;
-        }
-        final NetcdfFile ncFile = NetcdfFile.open(resource.getPath());
+        final NetcdfFile ncFile = TcwvIO.getTcwvLookupTableNcFile("jlut3_test.nc");
         assertNotNull(ncFile);
 
         final List<Attribute> globalAttributes = ncFile.getGlobalAttributes();
@@ -262,8 +250,7 @@ public class TcwvLutTest {
             }
 
             final double[][] axesArray = {axes0Array, axes1Array, axes2Array};
-            final TcwvInterpolation tcwvInterpolation = new TcwvInterpolation();
-            final JacobiFunction jacobiFunction = tcwvInterpolation.jacobiLut2Function(jlutArray2D,
+            final JacobiFunction jacobiFunction = TcwvInterpolation.jacobiLut2Function(jlutArray2D,
                                                                                        axesArray,
                                                                                        nynxArray[0],
                                                                                        nynxArray[1]);
@@ -271,15 +258,11 @@ public class TcwvLutTest {
             final double[][] jacobiMatrixArr = jacobiFunction.f(testVector, null);
             assertNotNull(jacobiMatrixArr);
             assertEquals(4, jacobiMatrixArr.length);
-            assertEquals(2, jacobiMatrixArr[0].length);
+            assertEquals(1, jacobiMatrixArr[0].length);
             assertEquals(40000.0, jacobiMatrixArr[0][0], 1.E-6);
-            assertEquals(24.749975, jacobiMatrixArr[0][1], 1.E-6);
             assertEquals(239616.0, jacobiMatrixArr[1][0], 1.E-6);
-            assertEquals(1.4255630848E10, jacobiMatrixArr[1][1], 1.E-6);
             assertEquals(0.00143433, jacobiMatrixArr[2][0], 1.E-6);
-            assertEquals(85.74498, jacobiMatrixArr[2][1], 1.E-6);
             assertEquals(-6.86668e-11, jacobiMatrixArr[3][0], 1.E-15);
-            assertEquals(-4.12802e-06, jacobiMatrixArr[3][1], 1.E-10);
             System.out.println();
 
         } catch (IOException e) {
@@ -289,30 +272,20 @@ public class TcwvLutTest {
     }
 
     @Test
-    public void testGetTcwvLutFromNc4() throws IOException {
-
-        final URL resource = TcwvLut.class.getResource("ocean_core_meris.nc4");
-        if (resource == null) {
-            System.out.println("WARNING: NetCDF file 'ocean_core_meris.nc4' does not exist in test resources." +
-                                       " Test will be ignored.");
-            System.out.println("This large file shall not be committed to GitHub repository!");
-            System.out.println("Get it from CAWA and copy manually to " +
-                                       "../wv-cci-toolbox/snap-tcwv/src/test/resources/org/esa/snap/wvcci/tcwv," +
-                                       " but make sure not to add it to GitHub!");
-            return;
-        }
-        final NetcdfFile ncFile = NetcdfFile.open(resource.getPath());
+    public void testGetTcwvLutFromNc4_ocean() throws IOException {
+        // todo: add test for land lut (has more variables!)
+        final NetcdfFile ncFile = TcwvIO.getTcwvLookupTableNcFile("ocean_core_meris.nc4");
         assertNotNull(ncFile);
 
         final List<Attribute> globalAttributes = ncFile.getGlobalAttributes();
         final List<Dimension> dimensions = ncFile.getDimensions();
         final List<Variable> variables = ncFile.getVariables();
 
-        testTcwvLutMetadata(globalAttributes, dimensions, variables);
-        testTcwvLutContent(globalAttributes, variables);
+        testTcwvLutMetadata_ocean(globalAttributes, dimensions, variables);
+        testTcwvLutContent_ocean(globalAttributes, variables);
     }
 
-    private void testTcwvLutMetadata(List<Attribute> globalAttributes, List<Dimension> dimensions, List<Variable> variables) {
+    private void testTcwvLutMetadata_ocean(List<Attribute> globalAttributes, List<Dimension> dimensions, List<Variable> variables) {
         assertNotNull(globalAttributes);
         assertEquals(15, globalAttributes.size());
         assertEquals("instrument", globalAttributes.get(1).getName());
@@ -393,7 +366,7 @@ public class TcwvLutTest {
         assertEquals(DataType.DOUBLE, variables.get(11).getDataType());
     }
 
-    private void testTcwvLutContent(List<Attribute> globalAttributes, List<Variable> variables) {
+    private void testTcwvLutContent_ocean(List<Attribute> globalAttributes, List<Variable> variables) {
         final Variable wvcVariable = variables.get(0);
         final Variable aotVariable = variables.get(1);
         final Variable wspVariable = variables.get(2);
@@ -508,10 +481,9 @@ public class TcwvLutTest {
                 lutArrays1D[i] = TcwvInterpolationUtils.convert6Dto1DArray(lutArraySwapped[i]);
             }
 
-            TcwvInterpolation tcwvInterpolation = new TcwvInterpolation();
             final double[][] axes = new double[][]{wvcArray, aotArray, wspArray, aziArray, vieArray, suzArray};
             // Python: self._forward
-            final TcwvFunction tcwvFunction = tcwvInterpolation.lut2Function(lutArrays1D, axes);
+            final TcwvFunction tcwvFunction = TcwvInterpolation.lut2Function(lutArrays1D, axes);
 
             // 6*6*11*11*9*9*18 --> 18*6*6*11*11*9*9 :
             // we will store 18 (6*6*11*11*9*9) LUTs, each one holding one Jacobi element
@@ -522,7 +494,7 @@ public class TcwvLutTest {
             }
 
             // Python: self._jacobi
-            final JacobiFunction jacobiFunction = tcwvInterpolation.jacobiLut2Function(jlutArrays1D,
+            final JacobiFunction jacobiFunction = TcwvInterpolation.jacobiLut2Function(jlutArrays1D,
                                                                                        axes,   // jaxes = axes
                                                                                        jacoArray[0],
                                                                                        jacoArray[1]);

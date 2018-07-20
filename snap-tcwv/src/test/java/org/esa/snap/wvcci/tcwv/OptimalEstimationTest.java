@@ -1,6 +1,14 @@
 package org.esa.snap.wvcci.tcwv;
 
+import Jama.Matrix;
 import org.junit.Test;
+import ucar.nc2.Attribute;
+import ucar.nc2.Dimension;
+import ucar.nc2.NetcdfFile;
+import ucar.nc2.Variable;
+
+import java.io.IOException;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -105,7 +113,7 @@ public class OptimalEstimationTest {
         assertNotNull(result.getKk());
         assertNull(result.getSr());
         assertNull(result.getDiagnoseResult());
-        assertEquals(4, result.getIi());
+        assertEquals(5, result.getIi());
         assertEquals(2, result.getXn().length);
         assertEquals(3.5, result.getXn()[0], 1.E-4);
         assertEquals(6.5, result.getXn()[1], 1.E-4);
@@ -234,7 +242,8 @@ public class OptimalEstimationTest {
         assertNotNull(result.getKk());
         assertNull(result.getSr());
         assertNull(result.getDiagnoseResult());
-        assertEquals(3, result.getIi());
+//        assertEquals(3, result.getIi());
+        assertEquals(5, result.getIi());
         assertEquals(2, result.getXn().length);
         assertEquals(3.5, result.getXn()[0], 1.E-6);
         assertEquals(6.5, result.getXn()[1], 1.E-6);
@@ -254,7 +263,8 @@ public class OptimalEstimationTest {
         maxiter = 20;
         result = oe.invert(InversionMethod.NEWTON_SE, se, sa, xa, OEOutputMode.EXTENDED, maxiter);
         assertNotNull(result);
-        assertEquals(3, result.getIi());
+//        assertEquals(3, result.getIi());
+        assertEquals(4, result.getIi());
         assertEquals(2, result.getXn().length);
         assertEquals(3.569013, result.getXn()[0], 1.E-6);
         assertEquals(6.375022, result.getXn()[1], 1.E-6);
@@ -455,6 +465,63 @@ public class OptimalEstimationTest {
 
 
     }
+
+    @Test
+    public void testOptimalEstimation_cawa_ocean() {
+
+        // 1. read LUT file
+        final NetcdfFile ncFile;
+        try {
+            ncFile = TcwvIO.getTcwvLookupTableNcFile("ocean_core_meris.nc4");
+            final TcwvOceanLut tcwvOceanLut = TcwvIO.getTcwvOceanLut(ncFile);
+            // Python: self._forward
+            final TcwvFunction tcwvFunction = TcwvInterpolation.getForwardFunctionOcean(tcwvOceanLut);
+            // Python: self._jacobi
+            final JacobiFunction jacobiFunction = TcwvInterpolation.getJForwardFunctionOcean(tcwvOceanLut);
+
+//            #min_state
+//            a = np.array([self.axes[i].min() for i in range(3)])
+            final double[] wvc = tcwvOceanLut.getWvc();
+            final double[] aot = tcwvOceanLut.getAot();
+            final double[] wsp = tcwvOceanLut.getWsp();
+            final double[] a = {wvc[0], aot[0], wsp[0]}; // constant for all retrievals!
+//            #max_state
+//            b = np.array([self.axes[i].max() for i in range(3)])
+            final double[] b = {wvc[wvc.length-1], aot[aot.length-1], wsp[wsp.length-1]};
+//            self.inverter = oe.my_inverter(self.forward, a, b, jaco = self.jforward)
+            final String wbString = (String) ncFile.getGlobalAttributes().get(2).getValue(0);
+            final String abString = (String) ncFile.getGlobalAttributes().get(4).getValue(0);
+            final double[][] seArray = OptimalEstimationUtils.getSe(wbString, abString);
+            System.out.println();
+
+            // single ocean pixel:
+            final double[] mes = {0.19034228, 0.18969933, 0.21104884};
+            final double[] par = {135.61277771, 28.43509483, 61.43579102};
+            final double[][] se = {
+                    {0.0001, 0.0, 0.0},
+                    {0.0, 0.0001, 0.0},
+                    {0.0, 0.0, 0.001}
+            };
+            final double[][] sa = {
+                    {8.0, 0.0, 0.0},
+                    {0.0, 0.1, 0.0},
+                    {0.0, 0.0, 25.0}
+            };
+            final double[] xa = {5.47722558, 0.15, 7.5};
+
+            OptimalEstimation oe = new OptimalEstimation(tcwvFunction, a, b, mes, par, jacobiFunction);
+            oe.setYy(mes);
+            OptimalEstimationResult result = oe.invert(InversionMethod.OE, se, sa, xa, OEOutputMode.BASIC, 3);
+
+            System.out.println();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail();
+        }
+
+    }
+
 
     private TcwvFunction testFunctionLinR2R3 =
             (x, params) -> new double[]{13.0 + 6.0 * x[0] + 4.0 * x[1],

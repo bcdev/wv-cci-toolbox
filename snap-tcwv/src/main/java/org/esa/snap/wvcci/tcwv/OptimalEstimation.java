@@ -28,7 +28,7 @@ public class OptimalEstimation {
                       double[] a, double[] b, double[] xx, double[] params,
                       JacobiFunction jfunc) {
         this.func = func;
-        this.yy = func.f(xx, params);
+        this.yy = func.f(xx, params);   // ???
         this.a = a;
         this.b = b;
         this.params = params;
@@ -101,6 +101,7 @@ public class OptimalEstimation {
             firstGuessVector[i] = 0.5 * (a[i] + b[i]);
         }
 
+        // todo: check this!! yy must be the 'mes' in Cawa test case
         final ClippedDifferenceFunction fnc = new ClippedDifferenceFunction(a, b, func, yy);
         if (jfunc == null) {
             jfunc = new NumericalJacobiFunction(a, b, fnc, yy, delta);
@@ -134,7 +135,18 @@ public class OptimalEstimation {
 
         // if available, prior as first guess ...
         double[] xn;
-        if (xa != null) {
+//        if (xa != null) {
+//            xn = xa;
+//        } else {
+//            xn = firstGuessVector;
+//        }
+
+        // actual CAWA Python code, but seems to be wrong?! Here we always take the first guess...
+//        if fg is None:
+//            xn = xa
+//        else:
+//             xn = fg
+        if (firstGuessVector == null) {
             xn = xa;
         } else {
             xn = firstGuessVector;
