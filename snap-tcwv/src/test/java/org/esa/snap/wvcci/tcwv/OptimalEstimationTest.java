@@ -1,25 +1,23 @@
 package org.esa.snap.wvcci.tcwv;
 
-import Jama.Matrix;
 import org.junit.Test;
-import ucar.nc2.Attribute;
-import ucar.nc2.Dimension;
 import ucar.nc2.NetcdfFile;
-import ucar.nc2.Variable;
 
 import java.io.IOException;
-import java.util.List;
 
 import static org.junit.Assert.*;
 
 
 public class OptimalEstimationTest {
 
+    // Java version of tests from Python breadboard 'optimal_estimation_py3_bc.py'
+    // (BC sandbox of RP code 'optimal_estimation.py', 'optimal_estimation_py3.py').
+
     @Test
     public void testNewton_linear_r2r3() {
-        // test of Newton method, linear R^2-->R^3 test function
-        double[] x = {3.5, 6.5};
-        double[] y = testFunctionLinR2R3.f(x, null);
+        // test of Newton method, linear R^2-->R^3 FORWARD test function: 'state' --> 'measurement'
+        double[] x = {3.5, 6.5};                          // 'x' is the 'state'
+        double[] y = testFunctionLinR2R3.f(x, null);      // 'y' is the 'measurement', which is 'mes' in Cawa BB!
         assertNotNull(y);
         assertEquals(3, y.length);
         assertEquals(60.0, y[0], 1.E-6);
@@ -31,7 +29,7 @@ public class OptimalEstimationTest {
         double[] xa = {3.7, 5.6};
 
         // test of optimal estimation
-        OptimalEstimation oe = new OptimalEstimation(testFunctionLinR2R3, a, b, x, null, null);
+        OptimalEstimation oe = new OptimalEstimation(testFunctionLinR2R3, a, b, y, null, null);
         double[][] se = new double[][] {
                 {1., 0., 0.},
                 {0., 1., 0.},
@@ -43,7 +41,7 @@ public class OptimalEstimationTest {
         };
 
         int maxiter = 100;
-        OptimalEstimationResult result = oe.invert(InversionMethod.NEWTON, se, sa, xa, OEOutputMode.BASIC, maxiter);
+        OptimalEstimationResult result = oe.invert(InversionMethod.NEWTON, y, se, sa, xa, OEOutputMode.BASIC, maxiter);
         assertNotNull(result);
         assertNotNull(result.getXn());
         assertNotNull(result.getKk());
@@ -51,6 +49,7 @@ public class OptimalEstimationTest {
         assertNull(result.getDiagnoseResult());
         assertEquals(2, result.getIi());
         assertEquals(2, result.getXn().length);
+        // result from inversion 'measurement --> 'state': same as state vector x = {3.5, 6.5} above
         assertEquals(3.5, result.getXn()[0], 1.E-4);
         assertEquals(6.5, result.getXn()[1], 1.E-4);
         assertEquals(3, result.getKk().length);
@@ -64,13 +63,14 @@ public class OptimalEstimationTest {
 
         // 'disturbed' test: as in breadboard code:
         y[y.length-1] += 1.0;
-        oe.setYy(y);
 
         maxiter = 20;
-        result = oe.invert(InversionMethod.NEWTON, se, sa, xa, OEOutputMode.EXTENDED, maxiter);
+        result = oe.invert(InversionMethod.NEWTON, y, se, sa, xa, OEOutputMode.EXTENDED, maxiter);
         assertNotNull(result);
         assertEquals(21, result.getIi());
         assertEquals(2, result.getXn().length);
+        // from disturbance we get an inversion result which deviates from initial 'state' vector
+        // todo: ask RP how to interpret this
         assertEquals(3.5579, result.getXn()[0], 1.E-4);
         assertEquals(6.3722, result.getXn()[1], 1.E-4);
         assertNotNull(result.getSr());
@@ -94,7 +94,7 @@ public class OptimalEstimationTest {
         double[] xa = {3.7, 5.6};
 
         // test of optimal estimation
-        OptimalEstimation oe = new OptimalEstimation(testFunctionNonlinR2R3, a, b, x, null, null);
+        OptimalEstimation oe = new OptimalEstimation(testFunctionNonlinR2R3, a, b, y, null, null);
         double[][] se = new double[][] {
                 {100., 0., 0.},
                 {0., 100., 0.},
@@ -106,7 +106,7 @@ public class OptimalEstimationTest {
         };
 
         int maxiter = 100;
-        OptimalEstimationResult result = oe.invert(InversionMethod.NEWTON, se, sa, xa, OEOutputMode.BASIC, maxiter);
+        OptimalEstimationResult result = oe.invert(InversionMethod.NEWTON, y, se, sa, xa, OEOutputMode.BASIC, maxiter);
 
         assertNotNull(result);
         assertNotNull(result.getXn());
@@ -128,10 +128,9 @@ public class OptimalEstimationTest {
 
         // 'disturbed' test: as in breadboard code:
         y[y.length-1] += 1.0;
-        oe.setYy(y);
 
         maxiter = 20;
-        result = oe.invert(InversionMethod.NEWTON, se, sa, xa, OEOutputMode.EXTENDED, maxiter);
+        result = oe.invert(InversionMethod.NEWTON, y, se, sa, xa, OEOutputMode.EXTENDED, maxiter);
         assertNotNull(result);
         assertEquals(21, result.getIi());
         assertEquals(2, result.getXn().length);
@@ -159,7 +158,7 @@ public class OptimalEstimationTest {
         double[] xa = {3.7, 5.6};
 
         // test of optimal estimation
-        OptimalEstimation oe = new OptimalEstimation(testFunctionLinR2R3, a, b, x, null, null);
+        OptimalEstimation oe = new OptimalEstimation(testFunctionLinR2R3, a, b, y, null, null);
         double[][] se = new double[][] {
                 {1., 0., 0.},
                 {0., 1., 0.},
@@ -171,7 +170,7 @@ public class OptimalEstimationTest {
         };
 
         int maxiter = 100;
-        OptimalEstimationResult result = oe.invert(InversionMethod.NEWTON_SE, se, sa, xa, OEOutputMode.BASIC, maxiter);
+        OptimalEstimationResult result = oe.invert(InversionMethod.NEWTON_SE, y, se, sa, xa, OEOutputMode.BASIC, maxiter);
         assertNotNull(result);
         assertNotNull(result.getXn());
         assertNotNull(result.getKk());
@@ -192,10 +191,9 @@ public class OptimalEstimationTest {
 
         // 'disturbed' test: as in breadboard code:
         y[y.length-1] += 1.0;
-        oe.setYy(y);
 
         maxiter = 20;
-        result = oe.invert(InversionMethod.NEWTON_SE, se, sa, xa, OEOutputMode.EXTENDED, maxiter);
+        result = oe.invert(InversionMethod.NEWTON_SE, y, se, sa, xa, OEOutputMode.EXTENDED, maxiter);
         assertNotNull(result);
         assertEquals(2, result.getIi());
         assertEquals(2, result.getXn().length);
@@ -223,7 +221,7 @@ public class OptimalEstimationTest {
         double[] xa = {3.7, 5.6};
 
         // test of optimal estimation
-        OptimalEstimation oe = new OptimalEstimation(testFunctionNonlinR2R3, a, b, x, null, null);
+        OptimalEstimation oe = new OptimalEstimation(testFunctionNonlinR2R3, a, b, y, null, null);
         double[][] se = new double[][] {
                 {100., 0., 0.},
                 {0., 100., 0.},
@@ -235,14 +233,13 @@ public class OptimalEstimationTest {
         };
 
         int maxiter = 100;
-        OptimalEstimationResult result = oe.invert(InversionMethod.NEWTON_SE, se, sa, xa, OEOutputMode.BASIC, maxiter);
+        OptimalEstimationResult result = oe.invert(InversionMethod.NEWTON_SE, y, se, sa, xa, OEOutputMode.BASIC, maxiter);
 
         assertNotNull(result);
         assertNotNull(result.getXn());
         assertNotNull(result.getKk());
         assertNull(result.getSr());
         assertNull(result.getDiagnoseResult());
-//        assertEquals(3, result.getIi());
         assertEquals(5, result.getIi());
         assertEquals(2, result.getXn().length);
         assertEquals(3.5, result.getXn()[0], 1.E-6);
@@ -258,12 +255,10 @@ public class OptimalEstimationTest {
 
         // 'disturbed' test: as in breadboard code:
         y[y.length-1] += 1.0;
-        oe.setYy(y);
 
         maxiter = 20;
-        result = oe.invert(InversionMethod.NEWTON_SE, se, sa, xa, OEOutputMode.EXTENDED, maxiter);
+        result = oe.invert(InversionMethod.NEWTON_SE, y, se, sa, xa, OEOutputMode.EXTENDED, maxiter);
         assertNotNull(result);
-//        assertEquals(3, result.getIi());
         assertEquals(4, result.getIi());
         assertEquals(2, result.getXn().length);
         assertEquals(3.569013, result.getXn()[0], 1.E-6);
@@ -289,7 +284,7 @@ public class OptimalEstimationTest {
         double[] xa = {3.7, 5.6};
 
         // test of optimal estimation
-        OptimalEstimation oe = new OptimalEstimation(testFunctionLinR2R3, a, b, x, null, null);
+        OptimalEstimation oe = new OptimalEstimation(testFunctionLinR2R3, a, b, y, null, null);
         double[][] se = new double[][] {
                 {1., 0., 0.},
                 {0., 1., 0.},
@@ -301,7 +296,7 @@ public class OptimalEstimationTest {
         };
 
         int maxiter = 100;
-        OptimalEstimationResult result = oe.invert(InversionMethod.OE, se, sa, xa, OEOutputMode.BASIC, maxiter);
+        OptimalEstimationResult result = oe.invert(InversionMethod.OE, y, se, sa, xa, OEOutputMode.BASIC, maxiter);
         assertNotNull(result);
         assertNotNull(result.getXn());
         assertNotNull(result.getKk());
@@ -322,10 +317,9 @@ public class OptimalEstimationTest {
 
         // 'disturbed' test: as in breadboard code:
         y[y.length-1] += 1.0;
-        oe.setYy(y);
 
         maxiter = 20;
-        result = oe.invert(InversionMethod.OE, se, sa, xa, OEOutputMode.EXTENDED, maxiter);
+        result = oe.invert(InversionMethod.OE, y, se, sa, xa, OEOutputMode.EXTENDED, maxiter);
         assertNotNull(result);
         assertEquals(2, result.getIi());
         assertEquals(2, result.getXn().length);
@@ -352,7 +346,7 @@ public class OptimalEstimationTest {
         double[] xa = {3.7, 5.6};
 
         // test of optimal estimation
-        OptimalEstimation oe = new OptimalEstimation(testFunctionNonlinR2R3, a, b, x, null, null);
+        OptimalEstimation oe = new OptimalEstimation(testFunctionNonlinR2R3, a, b, y, null, null);
         double[][] se = new double[][] {
                 {100., 0., 0.},
                 {0., 100., 0.},
@@ -364,7 +358,7 @@ public class OptimalEstimationTest {
         };
 
         int maxiter = 100;
-        OptimalEstimationResult result = oe.invert(InversionMethod.OE, se, sa, xa, OEOutputMode.BASIC, maxiter);
+        OptimalEstimationResult result = oe.invert(InversionMethod.OE, y, se, sa, xa, OEOutputMode.BASIC, maxiter);
 
         assertNotNull(result);
         assertNotNull(result.getXn());
@@ -386,10 +380,9 @@ public class OptimalEstimationTest {
 
         // 'disturbed' test: as in breadboard code:
         y[y.length-1] += 1.0;
-        oe.setYy(y);
 
         maxiter = 20;
-        result = oe.invert(InversionMethod.OE, se, sa, xa, OEOutputMode.EXTENDED, maxiter);
+        result = oe.invert(InversionMethod.OE, y, se, sa, xa, OEOutputMode.EXTENDED, maxiter);
         assertNotNull(result);
         assertEquals(4, result.getIi());
         assertEquals(2, result.getXn().length);
@@ -414,7 +407,7 @@ public class OptimalEstimationTest {
         double[] b = {10., 10., 10.};
         double[] xa = {3.7, 5.6, 8.5};
 
-        OptimalEstimation oe = new OptimalEstimation(testFunctionLinR3R2, a, b, x, null, null);
+        OptimalEstimation oe = new OptimalEstimation(testFunctionLinR3R2, a, b, y, null, null);
         double[][] se = new double[][] {
                 {1.0, 0.},
                 {0., 1.0}
@@ -426,7 +419,7 @@ public class OptimalEstimationTest {
         };
 
         int maxiter = 100;
-        OptimalEstimationResult result = oe.invert(InversionMethod.OE, se, sa, xa, OEOutputMode.BASIC, maxiter);
+        OptimalEstimationResult result = oe.invert(InversionMethod.OE, y, se, sa, xa, OEOutputMode.BASIC, maxiter);
 
         assertNotNull(result);
         assertNotNull(result.getXn());
@@ -449,10 +442,9 @@ public class OptimalEstimationTest {
 
         // 'disturbed' test: as in breadboard code:
         y[y.length-1] += 1.0;
-        oe.setYy(y);
 
         maxiter = 20;
-        result = oe.invert(InversionMethod.OE, se, sa, xa, OEOutputMode.EXTENDED, maxiter);
+        result = oe.invert(InversionMethod.OE, y, se, sa, xa, OEOutputMode.EXTENDED, maxiter);
         assertNotNull(result);
         assertEquals(2, result.getIi());
         assertEquals(3, result.getXn().length);
@@ -466,70 +458,7 @@ public class OptimalEstimationTest {
 
     }
 
-    @Test
-    public void testOptimalEstimation_cawa_ocean() {
-
-        // 1. read LUT file
-        final NetcdfFile ncFile;
-        try {
-            ncFile = TcwvIO.getTcwvLookupTableNcFile("ocean_core_meris.nc4");
-            final TcwvOceanLut tcwvOceanLut = TcwvIO.getTcwvOceanLut(ncFile);
-            // Python: self._forward
-            final TcwvFunction tcwvFunction = TcwvInterpolation.getForwardFunctionOcean(tcwvOceanLut);
-            // Python: self._jacobi
-            final JacobiFunction jacobiFunction = TcwvInterpolation.getJForwardFunctionOcean(tcwvOceanLut);
-
-//            #min_state
-//            a = np.array([self.axes[i].min() for i in range(3)])
-            final double[] wvc = tcwvOceanLut.getWvc();
-            final double[] aot = tcwvOceanLut.getAot();
-            final double[] wsp = tcwvOceanLut.getWsp();
-            final double[] a = {wvc[0], aot[0], wsp[0]}; // constant for all retrievals!
-//            #max_state
-//            b = np.array([self.axes[i].max() for i in range(3)])
-            final double[] b = {wvc[wvc.length-1], aot[aot.length-1], wsp[wsp.length-1]};
-//            self.inverter = oe.my_inverter(self.forward, a, b, jaco = self.jforward)
-            final String wbString = (String) ncFile.getGlobalAttributes().get(2).getValue(0);
-            final String abString = (String) ncFile.getGlobalAttributes().get(4).getValue(0);
-            final double[][] seArray = OptimalEstimationUtils.getSe(wbString, abString);
-            System.out.println();
-
-            // single ocean pixel:
-            final double[] mes = {0.19034228, 0.18969933, 0.21104884};
-            final double[] par = {135.61277771, 28.43509483, 61.43579102};
-            final double[][] se = {
-                    {0.0001, 0.0, 0.0},
-                    {0.0, 0.0001, 0.0},
-                    {0.0, 0.0, 0.001}
-            };
-            final double[][] sa = {
-                    {8.0, 0.0, 0.0},
-                    {0.0, 0.1, 0.0},
-                    {0.0, 0.0, 25.0}
-            };
-            final double[] xa = {5.47722558, 0.15, 7.5};
-
-            OptimalEstimation oe = new OptimalEstimation(tcwvFunction, a, b, mes, par, jacobiFunction);
-            oe.setYy(mes);
-            OptimalEstimationResult result = oe.invert(InversionMethod.OE, se, sa, xa, OEOutputMode.BASIC, 3);
-            assertNotNull(result);
-            final double resultTcwv = Math.pow(result.getXn()[0], 2.0);
-            assertEquals(28.007107, resultTcwv, 1.E-6);
-            final double resultAot = result.getXn()[1];
-            assertEquals(0.961517, resultAot, 1.E-6);
-            final double resultWsp = result.getXn()[2];
-            assertEquals(6.510984, resultWsp, 1.E-6);
-
-
-            System.out.println();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            fail();
-        }
-
-    }
-
+    //// test forward functions: ////
 
     private TcwvFunction testFunctionLinR2R3 =
             (x, params) -> new double[]{13.0 + 6.0 * x[0] + 4.0 * x[1],

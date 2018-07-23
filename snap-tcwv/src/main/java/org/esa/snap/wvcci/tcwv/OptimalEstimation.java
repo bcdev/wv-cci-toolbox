@@ -9,7 +9,11 @@ import Jama.Matrix;
  */
 public class OptimalEstimation {
 
-    private TcwvFunction func;
+    // some default settings from breadboard (same as in Cawa):
+    final double DELTA = 0.001;
+    final double EPSY = 0.000001;
+
+    private ClippedDifferenceFunction clippedDiffFunc;
     private JacobiFunction jfunc;
     private double[] yy;
     private double[] a;
@@ -20,20 +24,26 @@ public class OptimalEstimation {
      * @param func   - 'forward function' from 'state vector' to 'measurements' (e.g. as in lut2func.py)
      * @param a      - lower bound of state
      * @param b      - upper bound of state
-     * @param xx     - state vector (e.g. LUT)
+     * @param yy     - measurements vector
      * @param params - optional input parameters for func
      * @param jfunc  - corresponding 'Jacobi function' (see LutJacobiFunction)
      */
     OptimalEstimation(TcwvFunction func,
-                      double[] a, double[] b, double[] xx, double[] params,
+                      double[] a, double[] b, double[] yy, double[] params,
                       JacobiFunction jfunc) {
-        this.func = func;
-        this.yy = func.f(xx, params);   // ???
+        this.yy = yy;   // ???
         this.a = a;
         this.b = b;
         this.params = params;
         this.jfunc = jfunc;
+
+        // todo: check this!! yy must be the 'mes' in Cawa test case
+        clippedDiffFunc = new ClippedDifferenceFunction(a, b, func, yy);
+        if (jfunc == null) {
+            this.jfunc = new NumericalJacobiFunction(a, b, clippedDiffFunc, yy, DELTA);
+        }
     }
+
 
     /**
      * Provides the inverse of a function.
@@ -45,6 +55,7 @@ public class OptimalEstimation {
      * @return - double[] the inverse function
      */
     public OptimalEstimationResult invert(InversionMethod method,
+                                          double[] y,
                                           double[][] se,
                                           double[][] sa,
                                           double[] xa,
@@ -54,7 +65,7 @@ public class OptimalEstimation {
         double[][] sei;
         double[][] sai;
         if (method == InversionMethod.NEWTON) {
-            sei = new double[yy.length][yy.length];
+            sei = new double[y.length][y.length];
             sai = new double[a.length][a.length];
         } else if (method == InversionMethod.NEWTON_SE) {
             sai = new double[a.length][a.length];
@@ -72,9 +83,9 @@ public class OptimalEstimation {
      *
      * @param yy - 'measurements' vector
      */
-    void setYy(double[] yy) {
-        this.yy = yy;
-    }
+//    void setYy(double[] yy) {
+//        this.yy = yy;
+//    }
 
     /**
      * Java version of RPs optimal_estimation_py3 --> my_optimizer
@@ -93,18 +104,9 @@ public class OptimalEstimation {
                                              OEOutputMode outputMode,
                                              int maxiter) {
 
-        // some default settings from breadboard (same as in Cawa):
-        final double delta = 0.001;
-        final double epsy = 0.000001;
         double[] firstGuessVector = new double[a.length];
         for (int i = 0; i < firstGuessVector.length; i++) {
             firstGuessVector[i] = 0.5 * (a[i] + b[i]);
-        }
-
-        // todo: check this!! yy must be the 'mes' in Cawa test case
-        final ClippedDifferenceFunction fnc = new ClippedDifferenceFunction(a, b, func, yy);
-        if (jfunc == null) {
-            jfunc = new NumericalJacobiFunction(a, b, fnc, yy, delta);
         }
 
         OEOperator operator;
@@ -160,27 +162,27 @@ public class OptimalEstimation {
         boolean convergence = false;
         while (ii <= maxiter) {
             ii++;
-            yn = fnc.f(xn, params);
+            yn = clippedDiffFunc.f(xn, params);
             kk = jfunc.f(xn, params);
 
             result = operator.result(a, b, xn, yn, kk, sei, sai, xa);
             xn = result.getCnx();
             if (method == InversionMethod.NEWTON) {
-                if (OptimalEstimationUtils.norm(yn) < epsy) {
+                if (OptimalEstimationUtils.norm(yn) < EPSY) {
                     convergence = true;
                     break;
                 }
             } else {
                 final double[][] sri = result.getRetErrCovI();
                 final double normErrorWeighted = OptimalEstimationUtils.normErrorWeighted(result.getIncrX(), sri);
-                if (normErrorWeighted < epsy) {
+                if (normErrorWeighted < EPSY) {
                     convergence = true;
                     break;
                 }
             }
         }
 
-        yn = fnc.f(xn, params);
+        yn = clippedDiffFunc.f(xn, params);
         kk = jfunc.f(xn, params);
         double[][] sr;
         DiagnoseResult diagnoseResult;
