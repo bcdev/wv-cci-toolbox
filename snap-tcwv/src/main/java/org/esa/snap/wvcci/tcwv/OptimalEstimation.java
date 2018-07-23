@@ -158,7 +158,7 @@ public class OptimalEstimation {
         double[][] kk;
         OeOperatorResult result = null;
         boolean convergence = false;
-        while (ii < maxiter) {
+        while (ii <= maxiter) {
             ii++;
             yn = fnc.f(xn, params);
             kk = jfunc.f(xn, params);

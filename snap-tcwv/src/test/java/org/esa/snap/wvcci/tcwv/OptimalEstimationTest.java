@@ -69,7 +69,7 @@ public class OptimalEstimationTest {
         maxiter = 20;
         result = oe.invert(InversionMethod.NEWTON, se, sa, xa, OEOutputMode.EXTENDED, maxiter);
         assertNotNull(result);
-        assertEquals(20, result.getIi());
+        assertEquals(21, result.getIi());
         assertEquals(2, result.getXn().length);
         assertEquals(3.5579, result.getXn()[0], 1.E-4);
         assertEquals(6.3722, result.getXn()[1], 1.E-4);
@@ -133,7 +133,7 @@ public class OptimalEstimationTest {
         maxiter = 20;
         result = oe.invert(InversionMethod.NEWTON, se, sa, xa, OEOutputMode.EXTENDED, maxiter);
         assertNotNull(result);
-        assertEquals(20, result.getIi());
+        assertEquals(21, result.getIi());
         assertEquals(2, result.getXn().length);
         assertEquals(3.569, result.getXn()[0], 1.E-4);
         assertEquals(6.375, result.getXn()[1], 1.E-4);
@@ -512,6 +512,14 @@ public class OptimalEstimationTest {
             OptimalEstimation oe = new OptimalEstimation(tcwvFunction, a, b, mes, par, jacobiFunction);
             oe.setYy(mes);
             OptimalEstimationResult result = oe.invert(InversionMethod.OE, se, sa, xa, OEOutputMode.BASIC, 3);
+            assertNotNull(result);
+            final double resultTcwv = Math.pow(result.getXn()[0], 2.0);
+            assertEquals(28.007107, resultTcwv, 1.E-6);
+            final double resultAot = result.getXn()[1];
+            assertEquals(0.961517, resultAot, 1.E-6);
+            final double resultWsp = result.getXn()[2];
+            assertEquals(6.510984, resultWsp, 1.E-6);
+
 
             System.out.println();
 
