@@ -1,6 +1,5 @@
 package org.esa.snap.wvcci.tcwv;
 
-import Jama.Matrix;
 import org.esa.snap.core.util.math.LookupTable;
 import org.junit.Test;
 import ucar.ma2.DataType;
@@ -252,17 +251,17 @@ public class TcwvLutTest {
             final double[][] axesArray = {axes0Array, axes1Array, axes2Array};
             final JacobiFunction jacobiFunction = TcwvInterpolation.jacobiLut2Function(jlutArray2D,
                                                                                        axesArray,
-                                                                                       nynxArray[0],
-                                                                                       nynxArray[1]);
+                                                                                       nynxArray[1],
+                                                                                       nynxArray[0]);
             final double[] testVector = new double[]{3., 10., 1.};
             final double[][] jacobiMatrixArr = jacobiFunction.f(testVector, null);
             assertNotNull(jacobiMatrixArr);
-            assertEquals(4, jacobiMatrixArr.length);
-            assertEquals(1, jacobiMatrixArr[0].length);
+            assertEquals(2, jacobiMatrixArr.length);
+            assertEquals(2, jacobiMatrixArr[0].length);
             assertEquals(40000.0, jacobiMatrixArr[0][0], 1.E-6);
-            assertEquals(239616.0, jacobiMatrixArr[1][0], 1.E-6);
-            assertEquals(0.00143433, jacobiMatrixArr[2][0], 1.E-6);
-            assertEquals(-6.86668e-11, jacobiMatrixArr[3][0], 1.E-15);
+            assertEquals(0.00143433, jacobiMatrixArr[1][0], 1.E-6);
+            assertEquals(24.749975, jacobiMatrixArr[0][1], 1.E-6);
+            assertEquals(85.744979, jacobiMatrixArr[1][1], 1.E-6);
             System.out.println();
 
         } catch (IOException e) {

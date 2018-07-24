@@ -110,65 +110,56 @@ public class TcwvCawaMerisOceanLutTest {
     }
 
     private void testTcwvLutContent_ocean(List<Variable> variables) {
-        final Variable wvcVariable = variables.get(0);
-        final Variable aotVariable = variables.get(1);
-        final Variable wspVariable = variables.get(2);
-        final Variable aziVariable = variables.get(3);
-        final Variable vieVariable = variables.get(4);
-        final Variable suzVariable = variables.get(5);
-        final Variable jacoVariable = variables.get(6);
-        final Variable lutVariable = variables.get(7);
-        final Variable jlutVariable = variables.get(8);
         try {
-            final double[] wvcArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(wvcVariable);
+            final double[] wvcArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(variables.get(0));
             assertNotNull(wvcArray);
             assertEquals(6, wvcArray.length);
             assertEquals(1.0, wvcArray[0], 1.E-6);
             assertEquals(5.347897, wvcArray[2], 1.E-6);
             assertEquals(8.3666, wvcArray[5], 1.E-6);
 
-            final double[] aotArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(aotVariable);
+            final double[] aotArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(variables.get(1));
             assertNotNull(aotArray);
             assertEquals(6, aotArray.length);
             assertEquals(0.0, aotArray[0], 1.E-6);
             assertEquals(0.080126, aotArray[2], 1.E-6);
             assertEquals(0.961517, aotArray[5], 1.E-6);
 
-            final double[] wspArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(wspVariable);
+            final double[] wspArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(variables.get(2));
             assertNotNull(wspArray);
             assertEquals(11, wspArray.length);
             assertEquals(2.0, wspArray[0], 1.E-6);
             assertEquals(4.6, wspArray[2], 1.E-6);
             assertEquals(8.5, wspArray[5], 1.E-6);
 
-            final double[] aziArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(aziVariable);
+            final double[] aziArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(variables.get(3));
             assertNotNull(aziArray);
             assertEquals(11, aziArray.length);
             assertEquals(0.0, aziArray[0], 1.E-6);
             assertEquals(36.0, aziArray[2], 1.E-6);
             assertEquals(180.0, aziArray[10], 1.E-6);
 
-            final double[] vieArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(vieVariable);
+            final double[] vieArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(variables.get(4));
             assertNotNull(vieArray);
             assertEquals(9, vieArray.length);
             assertEquals(0.0, vieArray[0], 1.E-6);
             assertEquals(18.889799, vieArray[2], 1.E-6);
             assertEquals(73.359497, vieArray[8], 1.E-6);
 
-            final double[] suzArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(suzVariable);
+            final double[] suzArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(variables.get(5));
             assertNotNull(suzArray);
             assertEquals(9, suzArray.length);
             assertEquals(0.0, suzArray[0], 1.E-6);
             assertEquals(18.889799, suzArray[2], 1.E-6);
             assertEquals(73.359497, suzArray[8], 1.E-6);
 
-            final int[] jacoArray = TcwvInterpolationUtils.getInt1DArrayFromNetcdfVariable(jacoVariable);
+            final int[] jacoArray = TcwvInterpolationUtils.getInt1DArrayFromNetcdfVariable(variables.get(6));
             assertNotNull(jacoArray);
             assertEquals(2, jacoArray.length);
             assertEquals(3, jacoArray[0]);
             assertEquals(6, jacoArray[1]);
 
-            final double[][][][][][][] lutArray = TcwvInterpolationUtils.getDouble7DArrayFromNetcdfVariable(lutVariable);
+            final double[][][][][][][] lutArray = TcwvInterpolationUtils.getDouble7DArrayFromNetcdfVariable(variables.get(7));
             // 6*6*11*11*9*9*3
             assertNotNull(lutArray);
             assertEquals(6, lutArray.length);
@@ -191,7 +182,7 @@ public class TcwvCawaMerisOceanLutTest {
             assertEquals(0.002756, lutArray[3][0][3][6][7][2][1], 1.E-6);
             assertEquals(0.193763, lutArray[5][5][10][10][8][8][2], 1.E-6);   // last value
 
-            final double[][][][][][][] jlutArray = TcwvInterpolationUtils.getDouble7DArrayFromNetcdfVariable(jlutVariable);
+            final double[][][][][][][] jlutArray = TcwvInterpolationUtils.getDouble7DArrayFromNetcdfVariable(variables.get(8));
             // 6*6*11*11*9*9*18
             assertNotNull(jlutArray);
             assertEquals(6, jlutArray.length);

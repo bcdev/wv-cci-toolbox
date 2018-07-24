@@ -76,9 +76,10 @@ public class TcwvInterpolationUtils {
         return result;
     }
 
-    public static double[] convert7Dto1DArray(double[][][][][][][] src) {
+    public static double[] convert9Dto1DArray(double[][][][][][][][][] src) {
         double[] result = new double[src.length * src[0].length * src[0][0].length * src[0][0][0].length
-                * src[0][0][0][0].length * src[0][0][0][0][0].length * src[0][0][0][0][0][0].length];
+                * src[0][0][0][0].length * src[0][0][0][0][0].length * src[0][0][0][0][0][0].length
+                * src[0][0][0][0][0][0][0].length * src[0][0][0][0][0][0][0][0].length];
         int index = 0;
         for (int i = 0; i < src.length; i++) {
             for (int j = 0; j < src[0].length; j++) {
@@ -87,7 +88,11 @@ public class TcwvInterpolationUtils {
                         for (int m = 0; m < src[0][0][0][0].length; m++) {
                             for (int n = 0; n < src[0][0][0][0][0].length; n++) {
                                 for (int o = 0; o < src[0][0][0][0][0][0].length; o++) {
-                                    result[index++] = src[i][j][k][l][m][n][o];
+                                    for (int p = 0; p < src[0][0][0][0][0][0][0].length; p++) {
+                                        for (int q = 0; q < src[0][0][0][0][0][0][0][0].length; q++) {
+                                            result[index++] = src[i][j][k][l][m][n][o][p][q];
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -124,6 +129,11 @@ public class TcwvInterpolationUtils {
         return (double[][][][][][][]) (arrayDouble != null ? arrayDouble.copyToNDJavaArray() : null);
     }
 
+    static double[][][][][][][][][][] getDouble10DArrayFromNetcdfVariable(Variable variable) throws IOException {
+        final Array arrayDouble = getDataArray(DataType.DOUBLE, variable, Double.class);
+        return (double[][][][][][][][][][]) (arrayDouble != null ? arrayDouble.copyToNDJavaArray() : null);
+    }
+
     static double[][][][] change4DArrayLastToFirstDimension(double[][][][] src) {
         final int[] newDims = new int[]{src[0][0][0].length, src.length, src[0].length, src[0][0].length};
         double[][][][] result = new double[newDims[0]][newDims[1]][newDims[2]][newDims[3]];
@@ -140,7 +150,7 @@ public class TcwvInterpolationUtils {
         return result;
     }
 
-    public static double[][][][][][][] change7DArrayLastToFirstDimension(double[][][][][][][] src) {
+    static double[][][][][][][] change7DArrayLastToFirstDimension(double[][][][][][][] src) {
         final int[] newDims = new int[]{src[0][0][0][0][0][0].length, src.length, src[0].length, src[0][0].length,
                 src[0][0][0].length, src[0][0][0][0].length, src[0][0][0][0][0].length};
         double[][][][][][][] result =
@@ -154,6 +164,38 @@ public class TcwvInterpolationUtils {
                             for (int n = 0; n < newDims[5]; n++) {
                                 for (int o = 0; o < newDims[6]; o++) {
                                     result[i][j][k][l][m][n][o] = src[j][k][l][m][n][o][i];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    static double[][][][][][][][][][] change10DArrayLastToFirstDimension(double[][][][][][][][][][] src) {
+        final int[] newDims = new int[]{src[0][0][0][0][0][0][0][0][0].length, src.length, src[0].length, src[0][0].length,
+                src[0][0][0].length, src[0][0][0][0].length, src[0][0][0][0][0].length,
+                src[0][0][0][0][0][0].length, src[0][0][0][0][0][0][0].length, src[0][0][0][0][0][0][0][0].length,};
+        double[][][][][][][][][][] result =
+                new double[newDims[0]][newDims[1]][newDims[2]][newDims[3]][newDims[4]][newDims[5]][newDims[6]]
+                        [newDims[7]][newDims[8]][newDims[9]];
+
+        for (int i = 0; i < newDims[0]; i++) {
+            for (int j = 0; j < newDims[1]; j++) {
+                for (int k = 0; k < newDims[2]; k++) {
+                    for (int l = 0; l < newDims[3]; l++) {
+                        for (int m = 0; m < newDims[4]; m++) {
+                            for (int n = 0; n < newDims[5]; n++) {
+                                for (int o = 0; o < newDims[6]; o++) {
+                                    for (int p = 0; p < newDims[7]; p++) {
+                                        for (int q = 0; q < newDims[8]; q++) {
+                                            for (int r = 0; r < newDims[9]; r++) {
+                                                result[i][j][k][l][m][n][o][p][q][r] = src[j][k][l][m][n][o][p][q][r][i];
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }

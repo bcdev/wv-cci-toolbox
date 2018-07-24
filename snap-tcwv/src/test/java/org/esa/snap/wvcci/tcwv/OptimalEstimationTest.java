@@ -1,9 +1,6 @@
 package org.esa.snap.wvcci.tcwv;
 
 import org.junit.Test;
-import ucar.nc2.NetcdfFile;
-
-import java.io.IOException;
 
 import static org.junit.Assert.*;
 

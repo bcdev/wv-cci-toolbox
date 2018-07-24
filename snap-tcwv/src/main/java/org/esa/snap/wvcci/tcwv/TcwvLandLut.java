@@ -15,7 +15,7 @@ public class TcwvLandLut {
     private double[] azi;
     private double[] vie;
     private double[] suz;
-    private double[] jaco;
+    private int[] jaco;
 
     private double[][][][][][][][][][] lutArray;   // 10D for land, 7D for ocean
     private double[][][][][][][][][][] jlutArray;   // 10D for land, 7D for ocean
@@ -26,7 +26,7 @@ public class TcwvLandLut {
     private double[] prs;
     private double[] tmp;
 
-    public TcwvLandLut(double[] wvc, double[] aot, double[] azi, double[] vie, double[] suz, double[] jaco,
+    TcwvLandLut(double[] wvc, double[] aot, double[] azi, double[] vie, double[] suz, int[] jaco,
                        double[][][][][][][][][][] lutArray, double[][][][][][][][][][] jlutArray,
                        double[] al0, double[] al1, double[] prs, double[] tmp) {
         this.wvc = wvc;
@@ -63,7 +63,7 @@ public class TcwvLandLut {
         return suz;
     }
 
-    public double[] getJaco() {
+    public int[] getJaco() {
         return jaco;
     }
 
@@ -89,5 +89,9 @@ public class TcwvLandLut {
 
     public double[] getTmp() {
         return tmp;
+    }
+
+    public double[][] getAxes() {
+        return new double[][]{wvc, al0, al1, aot, prs, tmp, azi, vie, suz};
     }
 }

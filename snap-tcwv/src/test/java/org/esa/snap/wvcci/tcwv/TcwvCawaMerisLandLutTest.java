@@ -1,6 +1,5 @@
 package org.esa.snap.wvcci.tcwv;
 
-import Jama.Matrix;
 import org.junit.Test;
 import ucar.ma2.DataType;
 import ucar.nc2.Attribute;
@@ -16,7 +15,7 @@ import static org.junit.Assert.*;
 public class TcwvCawaMerisLandLutTest {
 
     @Test
-    public void testGetTcwvLutFromNc4_ocean() throws IOException {
+    public void testGetTcwvLutFromNc4_land() throws IOException {
         final NetcdfFile ncFile = TcwvIO.getTcwvLookupTableNcFile("land_core_meris.nc4");
         assertNotNull(ncFile);
 
@@ -24,11 +23,11 @@ public class TcwvCawaMerisLandLutTest {
         final List<Dimension> dimensions = ncFile.getDimensions();
         final List<Variable> variables = ncFile.getVariables();
 
-        testTcwvLutMetadata_ocean(globalAttributes, dimensions, variables);
-        testTcwvLutContent_ocean(variables);
+        testTcwvLutMetadata_land(globalAttributes, dimensions, variables);
+        testTcwvLutContent_land(variables);
     }
 
-    private void testTcwvLutMetadata_ocean(List<Attribute> globalAttributes, List<Dimension> dimensions, List<Variable> variables) {
+    private void testTcwvLutMetadata_land(List<Attribute> globalAttributes, List<Dimension> dimensions, List<Variable> variables) {
         assertNotNull(globalAttributes);
         assertEquals(15, globalAttributes.size());
         assertEquals("instrument", globalAttributes.get(1).getName());
@@ -99,11 +98,9 @@ public class TcwvCawaMerisLandLutTest {
         assertEquals(6, variables.get(6).getSize());
         assertEquals(DataType.DOUBLE, variables.get(6).getDataType());
         assertEquals("vie", variables.get(7).getName());
-//        assertEquals(6 * 6 * 11 * 11 * 9 * 9 * 3, variables.get(7).getSize());
         assertEquals(5, variables.get(7).getSize());
         assertEquals(DataType.DOUBLE, variables.get(7).getDataType());
         assertEquals("suz", variables.get(8).getName());
-//        assertEquals(6 * 6 * 11 * 11 * 9 * 9 * 18, variables.get(8).getSize());
         assertEquals(5, variables.get(8).getSize());
         assertEquals(DataType.DOUBLE, variables.get(8).getDataType());
         assertEquals("jaco", variables.get(9).getName());
@@ -126,136 +123,129 @@ public class TcwvCawaMerisLandLutTest {
         assertEquals(DataType.DOUBLE, variables.get(14).getDataType());
     }
 
-    private void testTcwvLutContent_ocean(List<Variable> variables) {
-        final Variable wvcVariable = variables.get(0);
-        final Variable al0Variable = variables.get(1);
-        final Variable al1Variable = variables.get(2);
-        final Variable aotVariable = variables.get(3);
-        final Variable prsVariable = variables.get(4);
-        final Variable tmpVariable = variables.get(5);
-        final Variable aziVariable = variables.get(6);
-        final Variable vieVariable = variables.get(7);
-        final Variable suzVariable = variables.get(8);
-        final Variable jacoVariable = variables.get(9);
-        final Variable lutVariable = variables.get(10);
-        final Variable jlutVariable = variables.get(11);
+    private void testTcwvLutContent_land(List<Variable> variables) {
         try {
-            final double[] wvcArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(wvcVariable);
+            final double[] wvcArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(variables.get(0));
             assertNotNull(wvcArray);
             assertEquals(5, wvcArray.length);
-            assertEquals(1.0, wvcArray[0], 1.E-6);
-            assertEquals(5.347897, wvcArray[2], 1.E-6);
-            assertEquals(8.3666, wvcArray[5], 1.E-6);
+            assertEquals(0.707106, wvcArray[0], 1.E-6);
+            assertEquals(4.472136, wvcArray[2], 1.E-6);
+            assertEquals(8.660254, wvcArray[4], 1.E-6);
 
-            final double[] al0Array = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(al0Variable);
+            final double[] al0Array = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(variables.get(1));
             assertNotNull(al0Array);
-            assertEquals(6, al0Array.length);
-            assertEquals(0.0, al0Array[0], 1.E-6);
-            assertEquals(0.080126, al0Array[2], 1.E-6);
-            assertEquals(0.961517, al0Array[5], 1.E-6);
+            assertEquals(5, al0Array.length);
+            assertEquals(0.001, al0Array[0], 1.E-6);
+            assertEquals(0.1, al0Array[2], 1.E-6);
+            assertEquals(1.0, al0Array[4], 1.E-6);
 
-            final double[] al1Array = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(al1Variable);
+            final double[] al1Array = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(variables.get(2));
             assertNotNull(al1Array);
-            assertEquals(6, al1Array.length);
-            assertEquals(0.0, al1Array[0], 1.E-6);
-            assertEquals(0.080126, al1Array[2], 1.E-6);
-            assertEquals(0.961517, al1Array[5], 1.E-6);
+            assertEquals(5, al1Array.length);
+            assertEquals(0.001, al1Array[0], 1.E-6);
+            assertEquals(0.1, al1Array[2], 1.E-6);
+            assertEquals(1.0, al1Array[4], 1.E-6);
 
-            final double[] aotArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(aotVariable);
+            final double[] aotArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(variables.get(3));
             assertNotNull(aotArray);
-            assertEquals(6, aotArray.length);
+            assertEquals(5, aotArray.length);
             assertEquals(0.0, aotArray[0], 1.E-6);
-            assertEquals(0.080126, aotArray[2], 1.E-6);
-            assertEquals(0.961517, aotArray[5], 1.E-6);
+            assertEquals(0.1, aotArray[2], 1.E-6);
+            assertEquals(0.7, aotArray[4], 1.E-6);
 
-            final double[] prsArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(prsVariable);
+            final double[] prsArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(variables.get(4));
             assertNotNull(prsArray);
-            assertEquals(6, prsArray.length);
-            assertEquals(0.0, prsArray[0], 1.E-6);
-            assertEquals(0.080126, prsArray[2], 1.E-6);
-            assertEquals(0.961517, prsArray[5], 1.E-6);
+            assertEquals(3, prsArray.length);
+            assertEquals(6.937314, prsArray[0], 1.E-6);
+            assertEquals(6.272877, prsArray[2], 1.E-6);
 
-
-            final double[] tmpArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(tmpVariable);
+            final double[] tmpArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(variables.get(5));
             assertNotNull(tmpArray);
-            assertEquals(6, tmpArray.length);
-            assertEquals(0.0, tmpArray[0], 1.E-6);
-            assertEquals(0.080126, tmpArray[2], 1.E-6);
-            assertEquals(0.961517, tmpArray[5], 1.E-6);
+            assertEquals(3, tmpArray.length);
+            assertEquals(263.13, tmpArray[0], 1.E-6);
+            assertEquals(288.13, tmpArray[1], 1.E-6);
+            assertEquals(313.13, tmpArray[2], 1.E-6);
 
-
-            final double[] aziArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(aziVariable);
+            final double[] aziArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(variables.get(6));
             assertNotNull(aziArray);
-            assertEquals(11, aziArray.length);
+            assertEquals(6, aziArray.length);
             assertEquals(0.0, aziArray[0], 1.E-6);
-            assertEquals(36.0, aziArray[2], 1.E-6);
-            assertEquals(180.0, aziArray[10], 1.E-6);
+            assertEquals(72.0, aziArray[2], 1.E-6);
+            assertEquals(180.0, aziArray[5], 1.E-6);
 
-            final double[] vieArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(vieVariable);
+            final double[] vieArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(variables.get(7));
             assertNotNull(vieArray);
-            assertEquals(9, vieArray.length);
+            assertEquals(5, vieArray.length);
             assertEquals(0.0, vieArray[0], 1.E-6);
-            assertEquals(18.889799, vieArray[2], 1.E-6);
-            assertEquals(73.359497, vieArray[8], 1.E-6);
+            assertEquals(18.889799, vieArray[1], 1.E-6);
+            assertEquals(73.359497, vieArray[4], 1.E-6);
 
-            final double[] suzArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(suzVariable);
+            final double[] suzArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(variables.get(8));
             assertNotNull(suzArray);
-            assertEquals(9, suzArray.length);
+            assertEquals(5, suzArray.length);
             assertEquals(0.0, suzArray[0], 1.E-6);
-            assertEquals(18.889799, suzArray[2], 1.E-6);
-            assertEquals(73.359497, suzArray[8], 1.E-6);
+            assertEquals(18.889799, suzArray[1], 1.E-6);
+            assertEquals(73.359497, suzArray[4], 1.E-6);
 
-            final int[] jacoArray = TcwvInterpolationUtils.getInt1DArrayFromNetcdfVariable(jacoVariable);
+            final int[] jacoArray = TcwvInterpolationUtils.getInt1DArrayFromNetcdfVariable(variables.get(9));
             assertNotNull(jacoArray);
             assertEquals(2, jacoArray.length);
             assertEquals(3, jacoArray[0]);
-            assertEquals(6, jacoArray[1]);
+            assertEquals(9, jacoArray[1]);
 
-            final double[][][][][][][] lutArray = TcwvInterpolationUtils.getDouble7DArrayFromNetcdfVariable(lutVariable);
-            // 6*6*11*11*9*9*3
+            final double[][][][][][][][][][] lutArray = TcwvInterpolationUtils.getDouble10DArrayFromNetcdfVariable(variables.get(10));
+            // 5 * 5 * 5 * 5 * 3 * 3 * 6 * 5 * 5 * 3
             assertNotNull(lutArray);
-            assertEquals(6, lutArray.length);
-            assertEquals(6, lutArray[0].length);
-            assertEquals(11, lutArray[0][0].length);
-            assertEquals(11, lutArray[0][0][0].length);
-            assertEquals(9, lutArray[0][0][0][0].length);
-            assertEquals(9, lutArray[0][0][0][0][0].length);
-            assertEquals(3, lutArray[0][0][0][0][0][0].length);
+            assertEquals(5, lutArray.length);
+            assertEquals(5, lutArray[0].length);
+            assertEquals(5, lutArray[0][0].length);
+            assertEquals(5, lutArray[0][0][0].length);
+            assertEquals(3, lutArray[0][0][0][0].length);
+            assertEquals(3, lutArray[0][0][0][0][0].length);
+            assertEquals(6, lutArray[0][0][0][0][0][0].length);
+            assertEquals(5, lutArray[0][0][0][0][0][0][0].length);
+            assertEquals(5, lutArray[0][0][0][0][0][0][0][0].length);
+            assertEquals(3, lutArray[0][0][0][0][0][0][0][0][0].length);
 
             // compare some values against LUT being read in Python CAWA code...
-            assertEquals(0.120378, lutArray[0][0][0][0][0][0][0], 1.E-6);
-            assertEquals(0.239316, lutArray[3][3][8][0][8][1][2], 1.E-6);
-            assertEquals(0.010825, lutArray[2][4][6][3][2][7][1], 1.E-6);
-            assertEquals(0.237486, lutArray[4][2][5][4][1][7][2], 1.E-6);
-            assertEquals(0.015133, lutArray[1][5][4][5][3][6][0], 1.E-6);
-            assertEquals(0.02134, lutArray[0][5][0][8][6][3][0], 1.E-6);
-            assertEquals(0.187777, lutArray[2][4][1][8][8][1][2], 1.E-6);
-            assertEquals(0.234266, lutArray[5][1][2][7][0][8][2], 1.E-6);
-            assertEquals(0.002756, lutArray[3][0][3][6][7][2][1], 1.E-6);
-            assertEquals(0.193763, lutArray[5][5][10][10][8][8][2], 1.E-6);   // last value
+            assertEquals(0.00217,  lutArray[0][0][0][0][0][0][0][0][0][0], 1.E-6);
+            assertEquals(0.030852, lutArray[3][3][2][0][2][1][2][2][1][2], 1.E-6);
+            assertEquals(0.030852, lutArray[3][3][2][0][2][2][2][2][1][2], 1.E-6);
+            assertEquals(0.087302, lutArray[2][4][3][3][2][0][1][2][1][1], 1.E-6);
+            assertEquals(0.286687, lutArray[4][2][1][4][1][1][2][1][1][2], 1.E-6);
+            assertEquals(0.006068, lutArray[1][1][4][1][1][2][0][3][2][0], 1.E-6);
+            assertEquals(0.011468, lutArray[0][1][0][2][1][0][0][3][3][0], 1.E-6);
+            assertEquals(0.127377, lutArray[2][4][1][3][1][1][2][3][1][2], 1.E-6);
+            assertEquals(0.125949, lutArray[1][1][2][2][0][2][2][0][3][2], 1.E-6);
+            assertEquals(0.075416, lutArray[3][0][3][1][1][0][1][4][2][1], 1.E-6);
+            assertEquals(0.196411, lutArray[4][4][4][4][2][1][5][4][4][2], 1.E-6);   // last value
 
-            final double[][][][][][][] jlutArray = TcwvInterpolationUtils.getDouble7DArrayFromNetcdfVariable(jlutVariable);
-            // 6*6*11*11*9*9*18
+            final double[][][][][][][][][][] jlutArray = TcwvInterpolationUtils.getDouble10DArrayFromNetcdfVariable(variables.get(11));
+            // 5 * 5 * 5 * 5 * 3 * 3 * 6 * 5 * 5 * 27
             assertNotNull(jlutArray);
-            assertEquals(6, jlutArray.length);
-            assertEquals(6, jlutArray[0].length);
-            assertEquals(11, jlutArray[0][0].length);
-            assertEquals(11, jlutArray[0][0][0].length);
-            assertEquals(9, jlutArray[0][0][0][0].length);
-            assertEquals(9, jlutArray[0][0][0][0][0].length);
-            assertEquals(18, jlutArray[0][0][0][0][0][0].length);
+            assertEquals(5, jlutArray.length);
+            assertEquals(5, jlutArray[0].length);
+            assertEquals(5, jlutArray[0][0].length);
+            assertEquals(5, jlutArray[0][0][0].length);
+            assertEquals(3, jlutArray[0][0][0][0].length);
+            assertEquals(3, jlutArray[0][0][0][0][0].length);
+            assertEquals(6, jlutArray[0][0][0][0][0][0].length);
+            assertEquals(5, jlutArray[0][0][0][0][0][0][0].length);
+            assertEquals(5, jlutArray[0][0][0][0][0][0][0][0].length);
+            assertEquals(27, jlutArray[0][0][0][0][0][0][0][0][0].length);
 
             // compare some values against LUT being read in Python CAWA code...
-            assertEquals(-1.115856E-5, jlutArray[0][0][0][0][0][0][0], 1.E-6);
-            assertEquals(0.00012, jlutArray[3][3][8][0][8][1][2], 1.E-6);
-            assertEquals(0.01366, jlutArray[2][4][6][3][2][7][1], 1.E-6);
-            assertEquals(1.518494E-5, jlutArray[4][2][5][4][1][7][2], 1.E-6);
-            assertEquals(-1.03756E-6, jlutArray[1][5][4][5][3][6][0], 1.E-6);
-            assertEquals(-8.60967E-7, jlutArray[0][5][0][8][6][3][0], 1.E-6);
-            assertEquals(-0.00011, jlutArray[2][4][1][8][8][1][2], 1.E-6);
-            assertEquals(-1.461916E-5, jlutArray[5][1][2][7][0][8][2], 1.E-6);
-            assertEquals(0.024714, jlutArray[3][0][3][6][7][2][1], 1.E-6);
-            assertEquals(-2.977509E-5, jlutArray[5][5][10][10][8][8][2], 1.E-6);   // last value
+            assertEquals(-7.45e-07,  jlutArray[0][0][0][0][0][0][0][0][0][0], 1.E-6);
+            assertEquals(0.0,        jlutArray[3][3][2][0][2][1][2][2][1][2], 1.E-6);
+            assertEquals(0.0,        jlutArray[3][3][2][0][2][2][2][2][1][2], 1.E-6);
+            assertEquals(0.294927,   jlutArray[2][4][3][3][2][0][1][2][1][1], 1.E-6);
+            assertEquals(0.0,        jlutArray[4][2][1][4][1][1][2][1][1][2], 1.E-6);
+            assertEquals(-5.083e-06, jlutArray[1][1][4][1][1][2][0][3][2][0], 1.E-6);
+            assertEquals(-6.572e-06, jlutArray[0][1][0][2][1][0][0][3][3][0], 1.E-6);
+            assertEquals(0.0,        jlutArray[2][4][1][3][1][1][2][3][1][2], 1.E-6);
+            assertEquals(0.0,        jlutArray[1][1][2][2][0][2][2][0][3][2], 1.E-6);
+            assertEquals(0.226023,   jlutArray[3][0][3][1][1][0][1][4][2][1], 1.E-6);
+            assertEquals(0.0,        jlutArray[4][4][4][4][2][1][5][4][4][2], 1.E-6);   // last value
         } catch (IOException e) {
             e.printStackTrace();
             fail();
