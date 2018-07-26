@@ -1,4 +1,4 @@
-package org.esa.snap.wvcci.tcwv;
+package org.esa.snap.wvcci.tcwv.oe;
 
 /**
  * Object holding result from OE operator.

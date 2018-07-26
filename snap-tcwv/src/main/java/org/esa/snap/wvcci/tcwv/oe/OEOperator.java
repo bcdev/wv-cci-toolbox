@@ -1,4 +1,4 @@
-package org.esa.snap.wvcci.tcwv;
+package org.esa.snap.wvcci.tcwv.oe;
 
 /**
  * Optimal Estimation Operator interface for different OE methods

@@ -1,4 +1,7 @@
-package org.esa.snap.wvcci.tcwv;
+package org.esa.snap.wvcci.tcwv.interpolation;
+
+import org.esa.snap.wvcci.tcwv.oe.OptimalEstimationUtils;
+import org.esa.snap.wvcci.tcwv.TcwvFunction;
 
 /**
  * Function object mapping the Python breadboard equivalent:
@@ -7,16 +10,18 @@ package org.esa.snap.wvcci.tcwv;
  *
  * @author olafd
  */
-public class TcwvForwardFunction implements TcwvFunction {
+public class ClippedDifferenceFunction implements TcwvFunction {
 
     private double[] a;
     private double[] b;
+    private double[] yDiff;
     private TcwvFunction func;
 
-    TcwvForwardFunction(double[] a, double[] b, TcwvFunction func) {
+    public ClippedDifferenceFunction(double[] a, double[] b, TcwvFunction func, double[] yDiff) {
         this.a = a;
         this.b = b;
         this.func = func;
+        this.yDiff = yDiff;
     }
 
     @Override
@@ -25,7 +30,7 @@ public class TcwvForwardFunction implements TcwvFunction {
 
         double[] clippedDiffResult = new double[clippedResult.length];
         for (int i = 0; i < clippedDiffResult.length; i++) {
-            clippedDiffResult[i] = clippedResult[i];
+            clippedDiffResult[i] = clippedResult[i] - yDiff[i];
         }
         return clippedDiffResult;
     }

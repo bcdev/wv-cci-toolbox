@@ -1,4 +1,4 @@
-package org.esa.snap.wvcci.tcwv;
+package org.esa.snap.wvcci.tcwv.oe;
 
 /**
  * Interface for covariance error computation in OE.

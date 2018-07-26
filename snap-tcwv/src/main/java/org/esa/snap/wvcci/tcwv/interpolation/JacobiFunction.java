@@ -1,4 +1,4 @@
-package org.esa.snap.wvcci.tcwv;
+package org.esa.snap.wvcci.tcwv.interpolation;
 
 /**
  * Function object providing a Jacobi matrix

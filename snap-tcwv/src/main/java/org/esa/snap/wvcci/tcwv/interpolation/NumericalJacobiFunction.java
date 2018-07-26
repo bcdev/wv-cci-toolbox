@@ -1,4 +1,6 @@
-package org.esa.snap.wvcci.tcwv;
+package org.esa.snap.wvcci.tcwv.interpolation;
+
+import org.esa.snap.wvcci.tcwv.oe.OptimalEstimationUtils;
 
 /**
  * Numerical Jacobi Function:
@@ -14,7 +16,7 @@ public class NumericalJacobiFunction implements JacobiFunction {
     private ClippedDifferenceFunction fnc;
     private double delta;
 
-    NumericalJacobiFunction(double[] a, double[] b, ClippedDifferenceFunction fnc, double[] y, double delta) {
+    public NumericalJacobiFunction(double[] a, double[] b, ClippedDifferenceFunction fnc, double[] y, double delta) {
         this.a = a;
         this.b = b;
         this.fnc = fnc;

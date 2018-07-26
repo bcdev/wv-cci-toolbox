@@ -1,4 +1,4 @@
-package org.esa.snap.wvcci.tcwv;
+package org.esa.snap.wvcci.tcwv.oe;
 
 /**
  * Enumeration for output mode of OE optimization.

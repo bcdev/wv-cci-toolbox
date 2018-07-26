@@ -1,4 +1,4 @@
-package org.esa.snap.wvcci.tcwv;
+package org.esa.snap.wvcci.tcwv.interpolation;
 
 import ucar.ma2.Array;
 import ucar.ma2.DataType;
@@ -104,37 +104,37 @@ public class TcwvInterpolationUtils {
     }
 
 
-    static int[] getInt1DArrayFromNetcdfVariable(Variable variable) throws IOException {
+    public static int[] getInt1DArrayFromNetcdfVariable(Variable variable) throws IOException {
         final Array arrayInt = getDataArray(DataType.INT, variable, Integer.class);
         return (int[]) (arrayInt != null ? arrayInt.copyToNDJavaArray() : null);
     }
 
-    static double[] getDouble1DArrayFromNetcdfVariable(Variable variable) throws IOException {
+    public static double[] getDouble1DArrayFromNetcdfVariable(Variable variable) throws IOException {
         final Array arrayDouble = getDataArray(DataType.DOUBLE, variable, Double.class);
         return (double[]) (arrayDouble != null ? arrayDouble.copyToNDJavaArray() : null);
     }
 
-    static double[][] getDouble2DArrayFromNetcdfVariable(Variable variable) throws IOException {
+    public static double[][] getDouble2DArrayFromNetcdfVariable(Variable variable) throws IOException {
         final Array arrayDouble = getDataArray(DataType.DOUBLE, variable, Double.class);
         return (double[][]) (arrayDouble != null ? arrayDouble.copyToNDJavaArray() : null);
     }
 
-    static double[][][][] getDouble4DArrayFromNetcdfVariable(Variable variable) throws IOException {
+    public static double[][][][] getDouble4DArrayFromNetcdfVariable(Variable variable) throws IOException {
         final Array arrayDouble = getDataArray(DataType.DOUBLE, variable, Double.class);
         return (double[][][][]) (arrayDouble != null ? arrayDouble.copyToNDJavaArray() : null);
     }
 
-    static double[][][][][][][] getDouble7DArrayFromNetcdfVariable(Variable variable) throws IOException {
+    public static double[][][][][][][] getDouble7DArrayFromNetcdfVariable(Variable variable) throws IOException {
         final Array arrayDouble = getDataArray(DataType.DOUBLE, variable, Double.class);
         return (double[][][][][][][]) (arrayDouble != null ? arrayDouble.copyToNDJavaArray() : null);
     }
 
-    static double[][][][][][][][][][] getDouble10DArrayFromNetcdfVariable(Variable variable) throws IOException {
+    public static double[][][][][][][][][][] getDouble10DArrayFromNetcdfVariable(Variable variable) throws IOException {
         final Array arrayDouble = getDataArray(DataType.DOUBLE, variable, Double.class);
         return (double[][][][][][][][][][]) (arrayDouble != null ? arrayDouble.copyToNDJavaArray() : null);
     }
 
-    static double[][][][] change4DArrayLastToFirstDimension(double[][][][] src) {
+    public static double[][][][] change4DArrayLastToFirstDimension(double[][][][] src) {
         final int[] newDims = new int[]{src[0][0][0].length, src.length, src[0].length, src[0][0].length};
         double[][][][] result = new double[newDims[0]][newDims[1]][newDims[2]][newDims[3]];
 
@@ -150,7 +150,7 @@ public class TcwvInterpolationUtils {
         return result;
     }
 
-    static double[][][][][][][] change7DArrayLastToFirstDimension(double[][][][][][][] src) {
+    public static double[][][][][][][] change7DArrayLastToFirstDimension(double[][][][][][][] src) {
         final int[] newDims = new int[]{src[0][0][0][0][0][0].length, src.length, src[0].length, src[0][0].length,
                 src[0][0][0].length, src[0][0][0][0].length, src[0][0][0][0][0].length};
         double[][][][][][][] result =
@@ -174,7 +174,7 @@ public class TcwvInterpolationUtils {
         return result;
     }
 
-    static double[][][][][][][][][][] change10DArrayLastToFirstDimension(double[][][][][][][][][][] src) {
+    public static double[][][][][][][][][][] change10DArrayLastToFirstDimension(double[][][][][][][][][][] src) {
         final int[] newDims = new int[]{src[0][0][0][0][0][0][0][0][0].length, src.length, src[0].length, src[0][0].length,
                 src[0][0][0].length, src[0][0][0][0].length, src[0][0][0][0][0].length,
                 src[0][0][0][0][0][0].length, src[0][0][0][0][0][0][0].length, src[0][0][0][0][0][0][0][0].length,};

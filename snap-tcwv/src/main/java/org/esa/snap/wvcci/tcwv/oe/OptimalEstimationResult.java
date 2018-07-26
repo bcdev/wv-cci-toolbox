@@ -1,4 +1,6 @@
-package org.esa.snap.wvcci.tcwv;
+package org.esa.snap.wvcci.tcwv.oe;
+
+import org.esa.snap.wvcci.tcwv.oe.DiagnoseResult;
 
 /**
  * Object holding result from optimal estimation algorithm.

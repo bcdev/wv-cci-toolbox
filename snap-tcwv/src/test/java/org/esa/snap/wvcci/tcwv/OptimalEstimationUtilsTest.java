@@ -1,6 +1,8 @@
 package org.esa.snap.wvcci.tcwv;
 
 import Jama.Matrix;
+import org.esa.snap.wvcci.tcwv.interpolation.ClippedDifferenceFunction;
+import org.esa.snap.wvcci.tcwv.oe.OptimalEstimationUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

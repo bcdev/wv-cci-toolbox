@@ -1,6 +1,10 @@
-package org.esa.snap.wvcci.tcwv;
+package org.esa.snap.wvcci.tcwv.oe;
 
 import Jama.Matrix;
+import org.esa.snap.wvcci.tcwv.TcwvFunction;
+import org.esa.snap.wvcci.tcwv.interpolation.ClippedDifferenceFunction;
+import org.esa.snap.wvcci.tcwv.interpolation.JacobiFunction;
+import org.esa.snap.wvcci.tcwv.interpolation.NumericalJacobiFunction;
 
 /**
  * Class providing the Optimal Estimation algorithm, i.e. the inversion.
@@ -28,9 +32,9 @@ public class OptimalEstimation {
      * @param params - optional input parameters for func
      * @param jfunc  - corresponding 'Jacobi function' (see LutJacobiFunction)
      */
-    OptimalEstimation(TcwvFunction func,
-                      double[] a, double[] b, double[] yy, double[] params,
-                      JacobiFunction jfunc) {
+    public OptimalEstimation(TcwvFunction func,
+                             double[] a, double[] b, double[] yy, double[] params,
+                             JacobiFunction jfunc) {
         this.yy = yy;   // ???
         this.a = a;
         this.b = b;

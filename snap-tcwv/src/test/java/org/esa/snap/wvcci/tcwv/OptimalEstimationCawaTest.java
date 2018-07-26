@@ -1,5 +1,11 @@
 package org.esa.snap.wvcci.tcwv;
 
+import org.esa.snap.wvcci.tcwv.interpolation.JacobiFunction;
+import org.esa.snap.wvcci.tcwv.interpolation.TcwvInterpolation;
+import org.esa.snap.wvcci.tcwv.oe.InversionMethod;
+import org.esa.snap.wvcci.tcwv.oe.OEOutputMode;
+import org.esa.snap.wvcci.tcwv.oe.OptimalEstimation;
+import org.esa.snap.wvcci.tcwv.oe.OptimalEstimationResult;
 import org.junit.Test;
 import ucar.nc2.NetcdfFile;
 
