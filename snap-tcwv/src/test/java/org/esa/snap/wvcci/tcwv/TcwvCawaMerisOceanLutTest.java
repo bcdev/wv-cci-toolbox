@@ -1,6 +1,7 @@
 package org.esa.snap.wvcci.tcwv;
 
 import org.esa.snap.wvcci.tcwv.interpolation.TcwvInterpolationUtils;
+import org.junit.Before;
 import org.junit.Test;
 import ucar.ma2.DataType;
 import ucar.nc2.Attribute;
@@ -9,16 +10,30 @@ import ucar.nc2.NetcdfFile;
 import ucar.nc2.Variable;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.Assert.*;
 
 public class TcwvCawaMerisOceanLutTest {
 
+    private Path auxdataPath;
+
+    @Before
+    public void setUp() throws Exception {
+        auxdataPath = TcwvIO.installAuxdata();
+    }
+
+    @Test
+    public void testInstallAuxdata() {
+        assertNotNull(auxdataPath);
+    }
+
+
     @Test
     public void testGetTcwvLutFromNc4_ocean() throws IOException {
         // todo: add test for land lut (has more variables!)
-        final NetcdfFile ncFile = TcwvIO.getTcwvLookupTableNcFile("ocean_core_meris.nc4");
+        final NetcdfFile ncFile = TcwvIO.getTcwvLookupTableNcFile(auxdataPath.toString(), "ocean_core_meris.nc4");
         assertNotNull(ncFile);
 
         final List<Attribute> globalAttributes = ncFile.getGlobalAttributes();

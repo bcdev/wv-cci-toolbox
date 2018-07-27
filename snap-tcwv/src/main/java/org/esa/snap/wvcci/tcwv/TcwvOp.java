@@ -13,10 +13,10 @@ import org.esa.snap.core.gpf.annotations.Parameter;
 import org.esa.snap.core.gpf.annotations.SourceProduct;
 import org.esa.snap.core.util.ProductUtils;
 import org.esa.snap.core.util.math.MathUtils;
-import ucar.nc2.NetcdfFile;
 
 import java.awt.*;
 import java.io.IOException;
+import java.nio.file.Path;
 
 /**
  * TCWV main operator for Water_Vapour_cci.
@@ -84,8 +84,13 @@ public class TcwvOp extends Operator {
 
         validateSourceProduct(sourceProduct);
 
-        landLut = TcwvIO.readLandLookupTable(sensor);
-        oceanLut = TcwvIO.readOceanLookupTable(sensor);
+        try {
+            final Path auxdataPath = TcwvIO.installAuxdata();
+            landLut = TcwvIO.readLandLookupTable(auxdataPath.toString(), sensor);
+            oceanLut = TcwvIO.readOceanLookupTable(auxdataPath.toString(), sensor);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         width = sourceProduct.getSceneRasterWidth();
         height = sourceProduct.getSceneRasterHeight();

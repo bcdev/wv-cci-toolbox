@@ -6,16 +6,25 @@ import org.esa.snap.wvcci.tcwv.oe.InversionMethod;
 import org.esa.snap.wvcci.tcwv.oe.OEOutputMode;
 import org.esa.snap.wvcci.tcwv.oe.OptimalEstimation;
 import org.esa.snap.wvcci.tcwv.oe.OptimalEstimationResult;
-import org.junit.Ignore;
+import org.junit.Before;
 import org.junit.Test;
 import ucar.nc2.NetcdfFile;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
 import static org.junit.Assert.*;
 
 
 public class OptimalEstimationCawaTest {
+
+    private Path auxdataPath;
+
+    @Before
+    public void setUp() throws Exception {
+        auxdataPath = TcwvIO.installAuxdata();
+    }
+
 
     // Java version of tests from Python breadboard 'test_cawa.py', which in return is a standalone version
     // of GPF operator code 'cawa_tcwv_meris_op.py', 'cawa_tcwv_modis_op.py' for a single test pixel,
@@ -33,7 +42,8 @@ public class OptimalEstimationCawaTest {
         // 1. read LUT file
         final NetcdfFile ncFile;
         try {
-            ncFile = TcwvIO.getTcwvLookupTableNcFile("ocean_core_meris.nc4");
+//            ncFile = TcwvIO.getTcwvLookupTableNcFile("ocean_core_meris.nc4");
+            ncFile = TcwvIO.getTcwvLookupTableNcFile(auxdataPath.toString(), "ocean_core_meris.nc4");
             final TcwvOceanLut tcwvOceanLut = TcwvIO.getTcwvOceanLut(ncFile);
             // Python: self._forward
             final TcwvFunction tcwvFunction = TcwvInterpolation.getForwardFunctionOcean(tcwvOceanLut);
@@ -91,7 +101,7 @@ public class OptimalEstimationCawaTest {
         // 1. read LUT file
         final NetcdfFile ncFile;
         try {
-            ncFile = TcwvIO.getTcwvLookupTableNcFile("land_core_meris.nc4");
+            ncFile = TcwvIO.getTcwvLookupTableNcFile(auxdataPath.toString(), "land_core_meris.nc4");
             final TcwvLandLut tcwvLandLut = TcwvIO.getTcwvLandLut(ncFile);
             final TcwvFunction tcwvFunction = TcwvInterpolation.getForwardFunctionLand(tcwvLandLut);
             final JacobiFunction jacobiFunction = TcwvInterpolation.getJForwardFunctionLand(tcwvLandLut);
@@ -150,8 +160,8 @@ public class OptimalEstimationCawaTest {
     public void testComputeTcwv_meris_land() {
         final Sensor sensor = Sensor.MERIS;
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
-        final TcwvLandLut landLut = TcwvIO.readLandLookupTable(sensor);
-        final TcwvOceanLut oceanLut = TcwvIO.readOceanLookupTable(sensor);
+        final TcwvLandLut landLut = TcwvIO.readLandLookupTable(auxdataPath.toString(), sensor);
+        final TcwvOceanLut oceanLut = TcwvIO.readOceanLookupTable(auxdataPath.toString(), sensor);
         double[] rhoToaWin = new double[]{0.192909659591, 0.191403549212};
         double[] rhoToaAbs = new double[]{0.15064498747946906};
         double sza = 52.9114494;
@@ -178,8 +188,8 @@ public class OptimalEstimationCawaTest {
     public void testComputeTcwv_meris_ocean() {
         final Sensor sensor = Sensor.MERIS;
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
-        final TcwvLandLut landLut = TcwvIO.readLandLookupTable(sensor);
-        final TcwvOceanLut oceanLut = TcwvIO.readOceanLookupTable(sensor);
+        final TcwvLandLut landLut = TcwvIO.readLandLookupTable(auxdataPath.toString(), sensor);
+        final TcwvOceanLut oceanLut = TcwvIO.readOceanLookupTable(auxdataPath.toString(), sensor);
         double[] rhoToaWin = new double[]{0.190342278759, 0.189699328631};
         double[] rhoToaAbs = new double[]{0.129829271947};
         double sza = 61.435791;

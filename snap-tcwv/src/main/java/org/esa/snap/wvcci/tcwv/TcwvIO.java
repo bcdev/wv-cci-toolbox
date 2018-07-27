@@ -1,13 +1,16 @@
 package org.esa.snap.wvcci.tcwv;
 
+import com.bc.ceres.core.ProgressMonitor;
 import org.esa.snap.core.gpf.OperatorException;
+import org.esa.snap.core.util.ResourceInstaller;
+import org.esa.snap.core.util.SystemUtils;
 import org.esa.snap.wvcci.tcwv.interpolation.TcwvInterpolationUtils;
 import ucar.nc2.NetcdfFile;
 import ucar.nc2.Variable;
 
+import java.io.File;
 import java.io.IOException;
-import java.net.URL;
-import java.util.Arrays;
+import java.nio.file.Path;
 import java.util.List;
 
 /**
@@ -17,20 +20,35 @@ import java.util.List;
  */
 public class TcwvIO {
 
-    public static TcwvOceanLut readOceanLookupTable(Sensor sensor) {
+    /**
+     * Installs auxiliary data (i.e. lookup tables for desmiling).
+     *
+     * @return - the auxdata path for O2 correction
+     * @throws IOException -
+     */
+    static Path installAuxdata() throws IOException {
+        Path auxdataDirectory = SystemUtils.getAuxDataPath().resolve("wvcci");
+        final Path sourceDirPath = ResourceInstaller.findModuleCodeBasePath(TcwvOp.class).resolve("auxdata/luts");
+        final ResourceInstaller resourceInstaller = new ResourceInstaller(sourceDirPath, auxdataDirectory);
+        resourceInstaller.install(".*", ProgressMonitor.NULL);
+        return auxdataDirectory;
+    }
+
+
+    public static TcwvOceanLut readOceanLookupTable(String auxdataPath, Sensor sensor) {
         final NetcdfFile ncFile;
         try {
-            ncFile = TcwvIO.getTcwvLookupTableNcFile(sensor.getOceanLutName());
+            ncFile = TcwvIO.getTcwvLookupTableNcFile(auxdataPath, sensor.getOceanLutName());
             return TcwvIO.getTcwvOceanLut(ncFile);
         } catch (IOException e) {
             throw new OperatorException("Cannot read ocean LUT for sensor '" + sensor.getName() + "'.");
         }
     }
 
-    public static TcwvLandLut readLandLookupTable(Sensor sensor) {
+    public static TcwvLandLut readLandLookupTable(String auxdataPath, Sensor sensor) {
         final NetcdfFile ncFile;
         try {
-            ncFile = TcwvIO.getTcwvLookupTableNcFile(sensor.getLandLutName());
+            ncFile = TcwvIO.getTcwvLookupTableNcFile(auxdataPath, sensor.getLandLutName());
             return TcwvIO.getTcwvLandLut(ncFile);
         } catch (IOException e) {
             throw new OperatorException("Cannot read land LUT for sensor '" + sensor.getName() + "'.");
@@ -38,19 +56,8 @@ public class TcwvIO {
     }
 
 
-    public static NetcdfFile getTcwvLookupTableNcFile(String lutFileName) throws IOException {
-        // todo: read all LUTs as auxdata !!!
-        final URL resource = TcwvLandLut.class.getResource(lutFileName);
-        if (resource == null) {
-            // todo: get rid of this!
-            System.out.println("WARNING: NetCDF file '" + lutFileName + "' does not exist in test resources." +
-                                       " Test will be ignored.");
-            System.out.println("This large file shall not be committed to GitHub repository!");
-            System.out.println("Get it from CAWA and copy manually to " +
-                                       "../wv-cci-toolbox/snap-tcwv/src/main/resources/org/esa/snap/wvcci/tcwv," +
-                                       " but make sure not to add it to GitHub!");
-        }
-        return NetcdfFile.open(resource.getPath());
+    public static NetcdfFile getTcwvLookupTableNcFile(String auxdataPath, String lutFileName) throws IOException {
+        return NetcdfFile.open(auxdataPath + File.separator + lutFileName);
     }
 
     public static TcwvOceanLut getTcwvOceanLut(NetcdfFile lutNcFile) throws IOException {

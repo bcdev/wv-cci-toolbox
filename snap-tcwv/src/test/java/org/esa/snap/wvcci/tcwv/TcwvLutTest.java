@@ -12,6 +12,7 @@ import ucar.nc2.NetcdfFile;
 import ucar.nc2.Variable;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -143,7 +144,11 @@ public class TcwvLutTest {
     public void testTcwvJacobiLut() throws IOException {
         // uses a dummy LUT generated from test in lut2jacobian_lut.py
         // not a real TCWV LUT!
-        final NetcdfFile ncFile = TcwvIO.getTcwvLookupTableNcFile("jlut3_test.nc");
+        final URL resource = TcwvLandLut.class.getResource("jlut3_test.nc");
+        if (resource == null) {
+            fail();
+        }
+        final NetcdfFile ncFile = NetcdfFile.open(resource.getPath());
         assertNotNull(ncFile);
 
         final List<Attribute> globalAttributes = ncFile.getGlobalAttributes();
