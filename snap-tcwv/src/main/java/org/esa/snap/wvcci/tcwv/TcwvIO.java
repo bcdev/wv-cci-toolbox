@@ -1,5 +1,6 @@
 package org.esa.snap.wvcci.tcwv;
 
+import org.esa.snap.core.gpf.OperatorException;
 import org.esa.snap.wvcci.tcwv.interpolation.TcwvInterpolationUtils;
 import ucar.nc2.NetcdfFile;
 import ucar.nc2.Variable;
@@ -15,6 +16,27 @@ import java.util.List;
  * @author olafd
  */
 public class TcwvIO {
+
+    public static TcwvOceanLut readOceanLookupTable(Sensor sensor) {
+        final NetcdfFile ncFile;
+        try {
+            ncFile = TcwvIO.getTcwvLookupTableNcFile(sensor.getOceanLutName());
+            return TcwvIO.getTcwvOceanLut(ncFile);
+        } catch (IOException e) {
+            throw new OperatorException("Cannot read ocean LUT for sensor '" + sensor.getName() + "'.");
+        }
+    }
+
+    public static TcwvLandLut readLandLookupTable(Sensor sensor) {
+        final NetcdfFile ncFile;
+        try {
+            ncFile = TcwvIO.getTcwvLookupTableNcFile(sensor.getLandLutName());
+            return TcwvIO.getTcwvLandLut(ncFile);
+        } catch (IOException e) {
+            throw new OperatorException("Cannot read land LUT for sensor '" + sensor.getName() + "'.");
+        }
+    }
+
 
     public static NetcdfFile getTcwvLookupTableNcFile(String lutFileName) throws IOException {
         // todo: read all LUTs as auxdata !!!
@@ -83,14 +105,11 @@ public class TcwvIO {
                 TcwvInterpolationUtils.getDouble10DArrayFromNetcdfVariable(variables.get(11));
 
 
-        Arrays.sort(prsArray);   // todo: prs array seems to be totally wrong in MERIS Land LUT. Report to RP!
-//        for (int i = 0; i < prsArray.length; i++) {
-//            prsArray[i] = 1./prsArray[i];   // for testing, invert to make ascending
-//        }
-        // obviously we have a fractional index of 0.0 anyway, so it does not matter how we make the axis ascending,
-        // as long as we are out of range anyway.
-        // if we are inside range, we need to map descending axis to ascending axis, with keeping the fractional
-        // index!
+        // todo: prs array seems to be totally wrong in MERIS Land LUT. Report to RP!
+        for (int i = 0; i < prsArray.length; i++) {
+            // for testing, mirror into negative axis. This should be ok as it gives same fractional indices.
+            prsArray[i] = -prsArray[i];
+        }
 
         return new TcwvLandLut(wvcArray, aotArray, aziArray, vieArray, suzArray,
                                jacoArray, lutArray, jlutArray, al0Array, al1Array, prsArray, tmpArray);

@@ -6,6 +6,7 @@ import org.esa.snap.wvcci.tcwv.oe.InversionMethod;
 import org.esa.snap.wvcci.tcwv.oe.OEOutputMode;
 import org.esa.snap.wvcci.tcwv.oe.OptimalEstimation;
 import org.esa.snap.wvcci.tcwv.oe.OptimalEstimationResult;
+import org.junit.Ignore;
 import org.junit.Test;
 import ucar.nc2.NetcdfFile;
 
@@ -103,7 +104,7 @@ public class OptimalEstimationCawaTest {
 
             // single land pixel:
             final double[] mes = {0.19290966, 0.19140355, 0.14358414};
-            final double[] par = {1.00000000e-01, 1./1.01325000e+01, 3.03000000e+02, 4.48835754e+01,
+            final double[] par = {1.00000000e-01, -1.01325000e+01, 3.03000000e+02, 4.48835754e+01,
                     2.70720062e+01, 5.29114494e+01};
             final double[][] se = {
                     {0.0001, 0.0, 0.0},
@@ -143,5 +144,61 @@ public class OptimalEstimationCawaTest {
     @Test
     public void testOptimalEstimation_modis_land() {
         // todo
+    }
+
+    @Test
+    public void testComputeTcwv_meris_land() {
+        final Sensor sensor = Sensor.MERIS;
+        TcwvAlgorithm algorithm = new TcwvAlgorithm();
+        final TcwvLandLut landLut = TcwvIO.readLandLookupTable(sensor);
+        final TcwvOceanLut oceanLut = TcwvIO.readOceanLookupTable(sensor);
+        double[] rhoToaWin = new double[]{0.192909659591, 0.191403549212};
+        double[] rhoToaAbs = new double[]{0.15064498747946906};
+        double sza = 52.9114494;
+        double vza = 27.0720062;
+        double relAzi = 44.8835754;
+        double amf = 2.78128741934;
+        double aot865 = 0.1;
+        double priorAot = 0.15;
+        double priorAl0 = 0.13;
+        double priorAl1 = 0.13;
+        double priorT2m = 303.0;
+        double priorMslPress = -1013.25/100.0;  // todo: to be fixed by RP
+        double priorWsp = Double.NaN;     // not needed for land
+        double priorTcwv = 30.0;
+        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf, aot865,
+                                                          priorAot, priorAl0, priorAl1, priorT2m, priorMslPress,
+                                                          priorWsp, priorTcwv);
+        final TcwvResult result = algorithm.compute(sensor, landLut, oceanLut, input, true);
+
+        assertEquals(7.16992, result.getTcwv(), 1.E-6);
+    }
+
+    @Test
+    public void testComputeTcwv_meris_ocean() {
+        final Sensor sensor = Sensor.MERIS;
+        TcwvAlgorithm algorithm = new TcwvAlgorithm();
+        final TcwvLandLut landLut = TcwvIO.readLandLookupTable(sensor);
+        final TcwvOceanLut oceanLut = TcwvIO.readOceanLookupTable(sensor);
+        double[] rhoToaWin = new double[]{0.190342278759, 0.189699328631};
+        double[] rhoToaAbs = new double[]{0.129829271947};
+        double sza = 61.435791;
+        double vza = 28.435095;
+        double relAzi = 135.61277770996094;
+        double amf = 3.22861762089;
+        double aot865 = 0.1;
+        double priorAot = 0.15;
+        double priorAl0 = 0.13;
+        double priorAl1 = 0.13;
+        double priorT2m = Double.NaN;            // not needed for ocean
+        double priorMslPress = Double.NaN;       // not needed for ocean
+        double priorWsp = 7.5;
+        double priorTcwv = 30.0;
+        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf, aot865,
+                                                          priorAot, priorAl0, priorAl1, priorT2m, priorMslPress,
+                                                          priorWsp, priorTcwv);
+        final TcwvResult result = algorithm.compute(sensor, landLut, oceanLut, input, false);
+
+        assertEquals(28.007107, result.getTcwv(), 1.E-6);
     }
 }

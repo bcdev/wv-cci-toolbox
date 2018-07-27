@@ -32,6 +32,7 @@ public enum Sensor {
         this.reflBandNames = reflBandNames;
         this.winBandNames = winBandNames;
         this.absBandNames = absBandNames;
+        this.tpgNames = tpgNames;
         this.oceanLutName = oceanLutName;
         this.landLutName = landLutName;
         this.se = se;

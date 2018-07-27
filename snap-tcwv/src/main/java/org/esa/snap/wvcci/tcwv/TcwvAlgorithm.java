@@ -39,7 +39,7 @@ public class TcwvAlgorithm {
         for (int i = 0; i < input.getRhoToaWin().length; i++) {
             mes[i] = input.getRhoToaWin()[i];
         }
-        for (int i = 0; i < input.getRhoToaWin().length; i++) {
+        for (int i = 0; i < input.getRhoToaAbs().length; i++) {
 //            self.mes[len(self.wb) + ich] = -np.log(
 //                    data['rtoa'][ch] /
 //                            data['rtoa'][self.wb[-1]]) / np.sqrt(data['amf'])
@@ -89,7 +89,7 @@ public class TcwvAlgorithm {
         for (int i = 0; i < input.getRhoToaWin().length; i++) {
             mes[i] = input.getRhoToaWin()[i];
         }
-        for (int i = 0; i < input.getRhoToaWin().length; i++) {
+        for (int i = 0; i < input.getRhoToaAbs().length; i++) {
 //            self.mes[len(self.wb) + ich] = -np.log(
 //                    data['rtoa'][ch] /
 //                            data['rtoa'][self.wb[-1]]) / np.sqrt(data['amf'])

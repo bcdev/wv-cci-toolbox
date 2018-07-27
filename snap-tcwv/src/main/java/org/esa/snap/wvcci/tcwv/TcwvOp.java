@@ -84,8 +84,8 @@ public class TcwvOp extends Operator {
 
         validateSourceProduct(sourceProduct);
 
-        landLut = readLandLookupTable(sensor);
-        oceanLut = readOceanLookupTable(sensor);
+        landLut = TcwvIO.readLandLookupTable(sensor);
+        oceanLut = TcwvIO.readOceanLookupTable(sensor);
 
         width = sourceProduct.getSceneRasterWidth();
         height = sourceProduct.getSceneRasterHeight();
@@ -231,26 +231,6 @@ public class TcwvOp extends Operator {
         }
 
 
-    }
-
-    private TcwvOceanLut readOceanLookupTable(Sensor sensor) {
-        final NetcdfFile ncFile;
-        try {
-            ncFile = TcwvIO.getTcwvLookupTableNcFile(sensor.getOceanLutName());
-            return TcwvIO.getTcwvOceanLut(ncFile);
-        } catch (IOException e) {
-            throw new OperatorException("Cannot read ocean LUT for sensor '" + sensor.getName() + "'.");
-        }
-    }
-
-    private TcwvLandLut readLandLookupTable(Sensor sensor) {
-        final NetcdfFile ncFile;
-        try {
-            ncFile = TcwvIO.getTcwvLookupTableNcFile(sensor.getLandLutName());
-            return TcwvIO.getTcwvLandLut(ncFile);
-        } catch (IOException e) {
-            throw new OperatorException("Cannot read land LUT for sensor '" + sensor.getName() + "'.");
-        }
     }
 
     private void validateSourceProduct(Product sourceProduct) {
