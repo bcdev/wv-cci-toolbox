@@ -147,21 +147,15 @@ public class OptimalEstimationCawaTest {
     }
 
     @Test
-    public void testOptimalEstimation_modis_ocean() {
-        // todo
-    }
-
-    @Test
-    public void testOptimalEstimation_modis_land() {
-        // todo
-    }
-
-    @Test
     public void testComputeTcwv_meris_land() {
         final Sensor sensor = Sensor.MERIS;
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
         final TcwvLandLut landLut = TcwvIO.readLandLookupTable(auxdataPath.toString(), sensor);
         final TcwvOceanLut oceanLut = TcwvIO.readOceanLookupTable(auxdataPath.toString(), sensor);
+        final TcwvFunction tcwvFunctionLand = TcwvInterpolation.getForwardFunctionLand(landLut);
+        final JacobiFunction jacobiFunctionland = TcwvInterpolation.getJForwardFunctionLand(landLut);
+        final TcwvFunction tcwvFunctionOcean = TcwvInterpolation.getForwardFunctionOcean(oceanLut);
+        final JacobiFunction jacobiFunctionOcean = TcwvInterpolation.getJForwardFunctionOcean(oceanLut);
         double[] rhoToaWin = new double[]{0.192909659591, 0.191403549212};
         double[] rhoToaAbs = new double[]{0.15064498747946906};
         double sza = 52.9114494;
@@ -179,8 +173,12 @@ public class OptimalEstimationCawaTest {
         TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf, aot865,
                                                           priorAot, priorAl0, priorAl1, priorT2m, priorMslPress,
                                                           priorWsp, priorTcwv);
-        final TcwvResult result = algorithm.compute(sensor, landLut, oceanLut, input, true);
-
+        final TcwvResult result = algorithm.compute(sensor,
+                                                    landLut, oceanLut,
+                                                    tcwvFunctionLand, tcwvFunctionOcean,
+                                                    jacobiFunctionland, jacobiFunctionOcean,
+                                                    input, true);
+        
         assertEquals(7.16992, result.getTcwv(), 1.E-6);
     }
 
@@ -190,6 +188,11 @@ public class OptimalEstimationCawaTest {
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
         final TcwvLandLut landLut = TcwvIO.readLandLookupTable(auxdataPath.toString(), sensor);
         final TcwvOceanLut oceanLut = TcwvIO.readOceanLookupTable(auxdataPath.toString(), sensor);
+        final TcwvFunction tcwvFunctionLand = TcwvInterpolation.getForwardFunctionLand(landLut);
+        final JacobiFunction jacobiFunctionland = TcwvInterpolation.getJForwardFunctionLand(landLut);
+        final TcwvFunction tcwvFunctionOcean = TcwvInterpolation.getForwardFunctionOcean(oceanLut);
+        final JacobiFunction jacobiFunctionOcean = TcwvInterpolation.getJForwardFunctionOcean(oceanLut);
+
         double[] rhoToaWin = new double[]{0.190342278759, 0.189699328631};
         double[] rhoToaAbs = new double[]{0.129829271947};
         double sza = 61.435791;
@@ -207,8 +210,57 @@ public class OptimalEstimationCawaTest {
         TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf, aot865,
                                                           priorAot, priorAl0, priorAl1, priorT2m, priorMslPress,
                                                           priorWsp, priorTcwv);
-        final TcwvResult result = algorithm.compute(sensor, landLut, oceanLut, input, false);
+        final TcwvResult result = algorithm.compute(sensor,
+                                                    landLut, oceanLut,
+                                                    tcwvFunctionLand, tcwvFunctionOcean,
+                                                    jacobiFunctionland, jacobiFunctionOcean,
+                                                    input, false);
 
         assertEquals(28.007107, result.getTcwv(), 1.E-6);
     }
+
+    @Test
+    public void testOptimalEstimation_modis_ocean() {
+        final Sensor sensor = Sensor.MODIS_AQUA;
+        TcwvAlgorithm algorithm = new TcwvAlgorithm();
+        final TcwvLandLut landLut = TcwvIO.readLandLookupTable(auxdataPath.toString(), sensor);
+        assertNotNull(landLut);
+        final TcwvOceanLut oceanLut = TcwvIO.readOceanLookupTable(auxdataPath.toString(), sensor);
+        assertNotNull(oceanLut);
+        final TcwvFunction tcwvFunctionLand = TcwvInterpolation.getForwardFunctionLand(landLut);
+        final JacobiFunction jacobiFunctionland = TcwvInterpolation.getJForwardFunctionLand(landLut);
+        final TcwvFunction tcwvFunctionOcean = TcwvInterpolation.getForwardFunctionOcean(oceanLut);
+        final JacobiFunction jacobiFunctionOcean = TcwvInterpolation.getJForwardFunctionOcean(oceanLut);
+
+        double[] rhoToaWin = new double[]{0.190342278759, 0.189699328631};
+        double[] rhoToaAbs = new double[]{0.129829271947};
+        double sza = 61.435791;
+        double vza = 28.435095;
+        double relAzi = 135.61277770996094;
+        double amf = 3.22861762089;
+        double aot865 = 0.1;
+        double priorAot = 0.15;
+        double priorAl0 = 0.13;
+        double priorAl1 = 0.13;
+        double priorT2m = Double.NaN;            // not needed for ocean
+        double priorMslPress = Double.NaN;       // not needed for ocean
+        double priorWsp = 7.5;
+        double priorTcwv = 30.0;
+        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf, aot865,
+                                                          priorAot, priorAl0, priorAl1, priorT2m, priorMslPress,
+                                                          priorWsp, priorTcwv);
+        final TcwvResult result = algorithm.compute(sensor,
+                                                    landLut, oceanLut,
+                                                    tcwvFunctionLand, tcwvFunctionOcean,
+                                                    jacobiFunctionland, jacobiFunctionOcean,
+                                                    input, false);
+
+//        assertEquals(28.007107, result.getTcwv(), 1.E-6);
+    }
+
+    @Test
+    public void testOptimalEstimation_modis_land() {
+        // todo
+    }
+
 }

@@ -14,6 +14,8 @@ import org.esa.snap.core.gpf.annotations.Parameter;
 import org.esa.snap.core.gpf.annotations.SourceProduct;
 import org.esa.snap.core.util.ProductUtils;
 import org.esa.snap.core.util.math.MathUtils;
+import org.esa.snap.wvcci.tcwv.interpolation.JacobiFunction;
+import org.esa.snap.wvcci.tcwv.interpolation.TcwvInterpolation;
 
 import java.awt.*;
 import java.io.IOException;
@@ -38,6 +40,12 @@ public class TcwvOp extends Operator {
     @Parameter(valueSet = {"MERIS", "MODIS_AQUA", "MODIS_TERRA", "OLCI"},
             description = "The sensor (MERIS, MODIS or OLCI).")
     private Sensor sensor;
+
+    @Parameter(valueSet = {"NO_FILTER", "CLOUD_SURE", "CLOUD_SURE_AMBIGUOUS"},
+            defaultValue = "CLOUD_SURE_AMBIGUOUS",
+            description = "Strength of cloud filter.",
+            label = "Strength of cloud filter.")
+    private CloudFilterLevel cloudFilterLevel;
 
     @Parameter(defaultValue = "303.0",
             description = "Temperature constant to be used if no Prior is available.")
@@ -81,6 +89,11 @@ public class TcwvOp extends Operator {
     private TcwvLandLut landLut;
 
     private TcwvAlgorithm tcwvAlgorithm;
+
+    private TcwvFunction tcwvFunctionLand;
+    private JacobiFunction jacobiFunctionland;
+    private TcwvFunction tcwvFunctionOcean;
+    private JacobiFunction jacobiFunctionOcean;
 
     @Override
     public void initialize() throws OperatorException {
@@ -137,6 +150,12 @@ public class TcwvOp extends Operator {
         pixelClassifBand = sourceProduct.getBand(TcwvConstants.IDEPIX_CLASSIF_BAND_NAME);
 
         tcwvAlgorithm = new TcwvAlgorithm();
+
+        tcwvFunctionLand = TcwvInterpolation.getForwardFunctionLand(landLut);
+        jacobiFunctionland = TcwvInterpolation.getJForwardFunctionLand(landLut);
+        tcwvFunctionOcean = TcwvInterpolation.getForwardFunctionOcean(oceanLut);
+        jacobiFunctionOcean = TcwvInterpolation.getJForwardFunctionOcean(oceanLut);
+
     }
 
     @Override
@@ -188,11 +207,13 @@ public class TcwvOp extends Operator {
             checkForCancellation();
             for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
                 final boolean isValid = !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_INVALID_BIT);
-                final boolean isCloud = pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_BIT);
+//                final boolean isCloud = pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_BIT);
+                final boolean isCloud = isCloud(x, y, pixelClassifTile);
                 final boolean isCloudBuffer = pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_BUFFER_BIT);
                 final boolean isCloudShadow = pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_SHADOW_BIT);
                 final boolean isLand = pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_LAND_BIT);
                 if (!isValid || isCloud || isCloudBuffer || isCloudShadow) {
+//                if (!isValid || isCloud) {
                     targetTile.setSample(x, y, Float.NaN);
                 } else {
                     // Preparing input data...
@@ -230,7 +251,10 @@ public class TcwvOp extends Operator {
                                                                             amf, aot865, priorAot, priorAl0, priorAl1,
                                                                             t2m, prs, priorWs, priorTcwv);
 
-                    final TcwvResult result = tcwvAlgorithm.compute(sensor, landLut, oceanLut, input, isLand);
+                    final TcwvResult result = tcwvAlgorithm.compute(sensor, landLut, oceanLut,
+                                                                    tcwvFunctionLand, tcwvFunctionOcean,
+                                                                    jacobiFunctionland, jacobiFunctionOcean,
+                                                                    input, isLand);
 
                     if (targetBandName.equals(TcwvConstants.TCWV_BAND_NAME)) {
                         targetTile.setSample(x, y, result.getTcwv());
@@ -243,6 +267,17 @@ public class TcwvOp extends Operator {
         }
 
 
+    }
+
+    private boolean isCloud(int x, int y, Tile pixelClassifTile) {
+        if (cloudFilterLevel == CloudFilterLevel.NO_FILTER) {
+            return false;
+        } else if (cloudFilterLevel == CloudFilterLevel.CLOUD_SURE) {
+            return  pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_SURE_BIT) &&
+                    !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_AMBIGUOUS_BIT);
+        } else {
+            return pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_BIT);
+        }
     }
 
     private void validateSourceProduct(Product sourceProduct) {

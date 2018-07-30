@@ -23,6 +23,8 @@ public class TcwvConstants {
 
     public static int IDEPIX_INVALID_BIT = 0;
     public static int IDEPIX_CLOUD_BIT = 1;
+    public static int IDEPIX_CLOUD_AMBIGUOUS_BIT = 2;
+    public static int IDEPIX_CLOUD_SURE_BIT = 3;
     public static int IDEPIX_CLOUD_BUFFER_BIT = 4;
     public static int IDEPIX_CLOUD_SHADOW_BIT = 5;
     public static int IDEPIX_LAND_BIT = 10;

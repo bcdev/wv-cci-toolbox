@@ -1,7 +1,6 @@
 package org.esa.snap.wvcci.tcwv;
 
 import org.esa.snap.wvcci.tcwv.interpolation.JacobiFunction;
-import org.esa.snap.wvcci.tcwv.interpolation.TcwvInterpolation;
 import org.esa.snap.wvcci.tcwv.oe.InversionMethod;
 import org.esa.snap.wvcci.tcwv.oe.OEOutputMode;
 import org.esa.snap.wvcci.tcwv.oe.OptimalEstimation;
@@ -17,16 +16,18 @@ import org.esa.snap.wvcci.tcwv.oe.OptimalEstimationResult;
  */
 public class TcwvAlgorithm {
 
-
-    public TcwvResult compute(Sensor sensor, TcwvLandLut landLut, TcwvOceanLut oceanLut,
+    public TcwvResult compute(Sensor sensor,
+                              TcwvLandLut landLut, TcwvOceanLut oceanLut,
+                              TcwvFunction tcwvFunctionLand, TcwvFunction tcwvFunctionOcean,
+                              JacobiFunction jacobiFunctionLand, JacobiFunction jacobiFunctionOcean,
                               TcwvAlgorithmInput input, boolean isLand) {
 
-        return isLand ? computeTcwvLand(sensor, input, landLut) : computeTcwvOcean(sensor, input, oceanLut);
+        return isLand ? computeTcwvLand(sensor, input, landLut, tcwvFunctionLand, jacobiFunctionLand) :
+                computeTcwvOcean(sensor, input, oceanLut, tcwvFunctionOcean, jacobiFunctionOcean);
     }
 
-    private TcwvResult computeTcwvLand(Sensor sensor, TcwvAlgorithmInput input, TcwvLandLut landLut) {
-        final TcwvFunction tcwvFunction = TcwvInterpolation.getForwardFunctionLand(landLut);
-        final JacobiFunction jacobiFunction = TcwvInterpolation.getJForwardFunctionLand(landLut);
+    private TcwvResult computeTcwvLand(Sensor sensor, TcwvAlgorithmInput input, TcwvLandLut landLut,
+                                       TcwvFunction tcwvFunction, JacobiFunction jacobiFunction) {
 
         final double[] wvc = landLut.getWvc();
         final double[] al0 = landLut.getAl0();
@@ -72,9 +73,8 @@ public class TcwvAlgorithm {
         return new TcwvResult(resultTcwv);
     }
 
-    private TcwvResult computeTcwvOcean(Sensor sensor, TcwvAlgorithmInput input, TcwvOceanLut oceanLut) {
-        final TcwvFunction tcwvFunction = TcwvInterpolation.getForwardFunctionOcean(oceanLut);
-        final JacobiFunction jacobiFunction = TcwvInterpolation.getJForwardFunctionOcean(oceanLut);
+    private TcwvResult computeTcwvOcean(Sensor sensor, TcwvAlgorithmInput input, TcwvOceanLut oceanLut,
+                                        TcwvFunction tcwvFunction, JacobiFunction jacobiFunction) {
 
         final double[] wvc = oceanLut.getWvc();
         final double[] aot = oceanLut.getAot();

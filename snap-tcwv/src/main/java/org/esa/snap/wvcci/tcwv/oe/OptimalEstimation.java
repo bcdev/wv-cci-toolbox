@@ -83,15 +83,6 @@ public class OptimalEstimation {
     }
 
     /**
-     *  This setter should be needed only to map weird test construct in breadboard
-     *
-     * @param yy - 'measurements' vector
-     */
-//    void setYy(double[] yy) {
-//        this.yy = yy;
-//    }
-
-    /**
      * Java version of RPs optimal_estimation_py3 --> my_optimizer
      *
      * @param xa - prior state
