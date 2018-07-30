@@ -40,9 +40,6 @@ public class TcwvAlgorithm {
             mes[i] = input.getRhoToaWin()[i];
         }
         for (int i = 0; i < input.getRhoToaAbs().length; i++) {
-//            self.mes[len(self.wb) + ich] = -np.log(
-//                    data['rtoa'][ch] /
-//                            data['rtoa'][self.wb[-1]]) / np.sqrt(data['amf'])
             mes[input.getRhoToaWin().length + i] =
                     -1.0*Math.log(input.getRhoToaAbs()[i]/input.getRhoToaWin()[input.getRhoToaWin().length-1]) /
                             Math.sqrt(input.getAmf());

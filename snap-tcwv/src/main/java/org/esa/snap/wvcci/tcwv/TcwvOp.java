@@ -4,6 +4,7 @@ import com.bc.ceres.core.ProgressMonitor;
 import org.esa.snap.core.datamodel.Band;
 import org.esa.snap.core.datamodel.Product;
 import org.esa.snap.core.datamodel.ProductData;
+import org.esa.snap.core.datamodel.RasterDataNode;
 import org.esa.snap.core.gpf.Operator;
 import org.esa.snap.core.gpf.OperatorException;
 import org.esa.snap.core.gpf.OperatorSpi;
@@ -17,6 +18,8 @@ import org.esa.snap.core.util.math.MathUtils;
 import java.awt.*;
 import java.io.IOException;
 import java.nio.file.Path;
+
+import static org.esa.snap.wvcci.tcwv.Sensor.MERIS;
 
 /**
  * TCWV main operator for Water_Vapour_cci.
@@ -32,7 +35,7 @@ import java.nio.file.Path;
         description = "TCWV main operator for Water_Vapour_cci.")
 public class TcwvOp extends Operator {
 
-    @Parameter(valueSet = {"MERIS", "MODIS", "OLCI"},
+    @Parameter(valueSet = {"MERIS", "MODIS_AQUA", "MODIS_TERRA", "OLCI"},
             description = "The sensor (MERIS, MODIS or OLCI).")
     private Sensor sensor;
 
@@ -59,10 +62,10 @@ public class TcwvOp extends Operator {
     private int width;
     private int height;
 
-    private Band szaBand;
-    private Band vzaBand;
-    private Band saaBand;
-    private Band vaaBand;
+    private RasterDataNode szaBand;
+    private RasterDataNode vzaBand;
+    private RasterDataNode saaBand;
+    private RasterDataNode vaaBand;
 
     private Band pixelClassifBand;
 
@@ -126,10 +129,10 @@ public class TcwvOp extends Operator {
             priorWsBand = sourceProduct.getBand(TcwvConstants.PRIOR_WS_BAND_NAME);
         }
 
-        szaBand = sourceProduct.getBand(sensor.getTpgNames()[0]);
-        vzaBand = sourceProduct.getBand(sensor.getTpgNames()[1]);
-        saaBand = sourceProduct.getBand(sensor.getTpgNames()[2]);
-        vaaBand = sourceProduct.getBand(sensor.getTpgNames()[3]);
+        szaBand = sourceProduct.getRasterDataNode(sensor.getTpgNames()[0]);
+        vzaBand = sourceProduct.getRasterDataNode(sensor.getTpgNames()[1]);
+        saaBand = sourceProduct.getRasterDataNode(sensor.getTpgNames()[2]);
+        vaaBand = sourceProduct.getRasterDataNode(sensor.getTpgNames()[3]);
 
         pixelClassifBand = sourceProduct.getBand(TcwvConstants.IDEPIX_CLASSIF_BAND_NAME);
 
@@ -180,15 +183,15 @@ public class TcwvOp extends Operator {
         }
 
         double[] winBandData = new double[winBandTiles.length];
-        double[] absBandData = new double[winBandTiles.length];
+        double[] absBandData = new double[absBandTiles.length];
         for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; y++) {
             checkForCancellation();
             for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
                 final boolean isValid = !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_INVALID_BIT);
-                final boolean isCloud = !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_BIT);
-                final boolean isCloudBuffer = !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_BUFFER_BIT);
-                final boolean isCloudShadow = !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_SHADOW_BIT);
-                final boolean isLand = !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_LAND_BIT);
+                final boolean isCloud = pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_BIT);
+                final boolean isCloudBuffer = pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_BUFFER_BIT);
+                final boolean isCloudShadow = pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_SHADOW_BIT);
+                final boolean isLand = pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_LAND_BIT);
                 if (!isValid || isCloud || isCloudBuffer || isCloudShadow) {
                     targetTile.setSample(x, y, Float.NaN);
                 } else {
@@ -200,8 +203,12 @@ public class TcwvOp extends Operator {
                     final double vaa = vaaTile.getSampleDouble(x, y);
                     final double relAzi = 180. - Math.abs(saa - vaa);
                     final double amf = 1. / Math.cos(sza * MathUtils.DTOR) + 1. / Math.cos(vza * MathUtils.DTOR);
-                    final double prs =
+                    double prs =
                             priorMslTile != null ? priorMslTile.getSampleDouble(x, y) : mslPressure;
+                    if (sensor == MERIS) {
+                        // todo: reset this for new LUTs!
+                        prs /= -100.0;
+                    }
                     final double t2m =
                             priorT2mTile != null ? priorT2mTile.getSampleDouble(x, y) : temperature;
                     final double priorWs =
@@ -213,10 +220,10 @@ public class TcwvOp extends Operator {
                             priorTcwvTile != null ? priorTcwvTile.getSampleDouble(x, y) : TcwvConstants.TCWV_INIT_VALUE;
 
                     for (int i = 0; i < winBandData.length; i++) {
-                        winBandData[i] = winBandTiles[i].getSampleDouble(x, y);
+                        winBandData[i] = winBandTiles[i].getSampleDouble(x, y) * Math.cos(sza*MathUtils.DTOR);
                     }
                     for (int i = 0; i < absBandData.length; i++) {
-                        absBandData[i] = absBandTiles[i].getSampleDouble(x, y);
+                        absBandData[i] = absBandTiles[i].getSampleDouble(x, y)* Math.cos(sza*MathUtils.DTOR);
                     }
 
                     final TcwvAlgorithmInput input = new TcwvAlgorithmInput(winBandData, absBandData, sza, vza, relAzi,
