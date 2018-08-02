@@ -207,17 +207,15 @@ public class TcwvOp extends Operator {
             checkForCancellation();
             for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
                 final boolean isValid = !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_INVALID_BIT);
-//                final boolean isCloud = pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_BIT);
                 final boolean isCloud = isCloud(x, y, pixelClassifTile);
                 final boolean isCloudBuffer = pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_BUFFER_BIT);
                 final boolean isCloudShadow = pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_SHADOW_BIT);
                 final boolean isLand = pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_LAND_BIT);
+//                final boolean isLand = false; // test!!
                 if (!isValid || isCloud || isCloudBuffer || isCloudShadow) {
-//                if (!isValid || isCloud) {
                     targetTile.setSample(x, y, Float.NaN);
                 } else {
                     // Preparing input data...
-
                     final double sza = szaTile.getSampleDouble(x, y);
                     final double vza = vzaTile.getSampleDouble(x, y);
                     final double saa = saaTile.getSampleDouble(x, y);

@@ -186,17 +186,16 @@ public class TcwvCawaModisOceanLutTest {
             assertEquals(4, lutArray[0][0][0][0][0][0].length);
 
             // compare some values against LUT being read in Python CAWA code...
-            // todo
-//            assertEquals(0.1203, lutArray[0][0][0][0][0][0][0], 1.E-4);
-//            assertEquals(0.239316, lutArray[3][3][8][0][8][1][2], 1.E-6);
-//            assertEquals(0.010825, lutArray[2][4][6][3][2][7][1], 1.E-6);
-//            assertEquals(0.237486, lutArray[4][2][5][4][1][7][2], 1.E-6);
-//            assertEquals(0.015133, lutArray[1][5][4][5][3][6][0], 1.E-6);
-//            assertEquals(0.02134, lutArray[0][5][0][8][6][3][0], 1.E-6);
-//            assertEquals(0.187777, lutArray[2][4][1][8][8][1][2], 1.E-6);
-//            assertEquals(0.234266, lutArray[5][1][2][7][0][8][2], 1.E-6);
-//            assertEquals(0.002756, lutArray[3][0][3][6][7][2][1], 1.E-6);
-//            assertEquals(0.193763, lutArray[5][5][10][10][8][8][2], 1.E-6);   // last value
+            assertEquals(0.1203, lutArray[0][0][0][0][0][0][0], 1.E-4);
+            assertEquals(0.645117, lutArray[3][3][8][0][8][1][2], 1.E-6);
+            assertEquals(0.181013, lutArray[2][4][6][3][2][7][1], 1.E-6);
+            assertEquals(0.588674, lutArray[4][2][5][4][1][7][2], 1.E-6);
+            assertEquals(0.015003, lutArray[1][5][4][5][3][6][0], 1.E-6);
+            assertEquals(0.021188, lutArray[0][5][0][8][6][3][0], 1.E-6);
+            assertEquals(0.571708, lutArray[2][4][1][8][8][1][2], 1.E-6);
+            assertEquals(0.506375, lutArray[5][1][2][7][0][8][2], 1.E-6);
+            assertEquals(0.106222, lutArray[3][0][3][6][7][2][1], 1.E-6);
+            assertEquals(0.518144, lutArray[5][5][10][10][8][8][2], 1.E-6);   // last value
 
             final double[][][][][][][] jlutArray = TcwvInterpolationUtils.getDouble7DArrayFromNetcdfVariable(variables.get(8));
             // 6*6*11*11*9*9*18
@@ -210,17 +209,16 @@ public class TcwvCawaModisOceanLutTest {
             assertEquals(24, jlutArray[0][0][0][0][0][0].length);
 
             // compare some values against LUT being read in Python CAWA code...
-            // todo
-//            assertEquals(-1.115856E-5, jlutArray[0][0][0][0][0][0][0], 1.E-6);
-//            assertEquals(0.00012, jlutArray[3][3][8][0][8][1][2], 1.E-6);
-//            assertEquals(0.01366, jlutArray[2][4][6][3][2][7][1], 1.E-6);
-//            assertEquals(1.518494E-5, jlutArray[4][2][5][4][1][7][2], 1.E-6);
-//            assertEquals(-1.03756E-6, jlutArray[1][5][4][5][3][6][0], 1.E-6);
-//            assertEquals(-8.60967E-7, jlutArray[0][5][0][8][6][3][0], 1.E-6);
-//            assertEquals(-0.00011, jlutArray[2][4][1][8][8][1][2], 1.E-6);
-//            assertEquals(-1.461916E-5, jlutArray[5][1][2][7][0][8][2], 1.E-6);
-//            assertEquals(0.024714, jlutArray[3][0][3][6][7][2][1], 1.E-6);
-//            assertEquals(-2.977509E-5, jlutArray[5][5][10][10][8][8][2], 1.E-6);   // last value
+            assertEquals(-0.000193, jlutArray[0][0][0][0][0][0][0], 1.E-6);
+            assertEquals(0.000119, jlutArray[3][3][8][0][8][1][2], 1.E-6);
+            assertEquals(0.01349, jlutArray[2][4][6][3][2][7][1], 1.E-6);
+            assertEquals(1.506136E-5, jlutArray[4][2][5][4][1][7][2], 1.E-6);
+            assertEquals(-1.000103E-5, jlutArray[1][5][4][5][3][6][0], 1.E-6);
+            assertEquals(-1.15138E-5, jlutArray[0][5][0][8][6][3][0], 1.E-6);
+            assertEquals(-0.000108, jlutArray[2][4][1][8][8][1][2], 1.E-6);
+            assertEquals(-1.400131E-5, jlutArray[5][1][2][7][0][8][2], 1.E-6);
+            assertEquals(0.024271, jlutArray[3][0][3][6][7][2][1], 1.E-6);
+            assertEquals(-0.008688, jlutArray[5][5][10][10][8][8][17], 1.E-6);   // last value
         } catch (IOException e) {
             e.printStackTrace();
             fail();
