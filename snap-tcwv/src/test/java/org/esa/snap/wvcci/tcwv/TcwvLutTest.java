@@ -4,6 +4,7 @@ import org.esa.snap.core.util.math.LookupTable;
 import org.esa.snap.wvcci.tcwv.interpolation.JacobiFunction;
 import org.esa.snap.wvcci.tcwv.interpolation.TcwvInterpolation;
 import org.esa.snap.wvcci.tcwv.interpolation.TcwvInterpolationUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 import ucar.ma2.DataType;
 import ucar.nc2.Attribute;
@@ -141,6 +142,7 @@ public class TcwvLutTest {
     }
 
     @Test
+    @Ignore
     public void testTcwvJacobiLut() throws IOException {
         // uses a dummy LUT generated from test in lut2jacobian_lut.py
         // not a real TCWV LUT!

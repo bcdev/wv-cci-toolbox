@@ -7,6 +7,7 @@ import org.esa.snap.wvcci.tcwv.oe.OEOutputMode;
 import org.esa.snap.wvcci.tcwv.oe.OptimalEstimation;
 import org.esa.snap.wvcci.tcwv.oe.OptimalEstimationResult;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import ucar.nc2.NetcdfFile;
 
@@ -220,7 +221,9 @@ public class OptimalEstimationCawaTest {
     }
 
     @Test
+    @Ignore
     public void testOptimalEstimation_modis_ocean() {
+        // todo: get input from a 1x1 test product
         final Sensor sensor = Sensor.MODIS_AQUA;
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
         final TcwvLandLut landLut = TcwvIO.readLandLookupTable(auxdataPath.toString(), sensor);
@@ -255,7 +258,7 @@ public class OptimalEstimationCawaTest {
                                                     jacobiFunctionland, jacobiFunctionOcean,
                                                     input, false);
 
-//        assertEquals(28.007107, result.getTcwv(), 1.E-6);
+        assertEquals(28.007107, result.getTcwv(), 1.E-6);
     }
 
     @Test
