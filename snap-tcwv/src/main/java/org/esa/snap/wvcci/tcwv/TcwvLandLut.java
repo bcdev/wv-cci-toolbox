@@ -47,22 +47,6 @@ public class TcwvLandLut {
         return wvc;
     }
 
-    public double[] getAot() {
-        return aot;
-    }
-
-    public double[] getAzi() {
-        return azi;
-    }
-
-    public double[] getVie() {
-        return vie;
-    }
-
-    public double[] getSuz() {
-        return suz;
-    }
-
     public int[] getJaco() {
         return jaco;
     }
@@ -83,15 +67,35 @@ public class TcwvLandLut {
         return al1;
     }
 
-    public double[] getPrs() {
-        return prs;
-    }
-
-    public double[] getTmp() {
-        return tmp;
-    }
-
     public double[][] getAxes() {
         return new double[][]{wvc, al0, al1, aot, prs, tmp, azi, vie, suz};
     }
+
+
+    // currently unused getters
+
+//    public double[] getAot() {
+//        return aot;
+//    }
+//
+//    public double[] getAzi() {
+//        return azi;
+//    }
+//
+//    public double[] getVie() {
+//        return vie;
+//    }
+//
+//    public double[] getSuz() {
+//        return suz;
+//    }
+//
+//    public double[] getPrs() {
+//        return prs;
+//    }
+//
+//    public double[] getTmp() {
+//        return tmp;
+//    }
+
 }

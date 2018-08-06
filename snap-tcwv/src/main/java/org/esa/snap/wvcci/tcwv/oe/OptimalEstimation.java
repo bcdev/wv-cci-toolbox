@@ -13,13 +13,8 @@ import org.esa.snap.wvcci.tcwv.interpolation.NumericalJacobiFunction;
  */
 public class OptimalEstimation {
 
-    // some default settings from breadboard (same as in Cawa):
-    final double DELTA = 0.001;
-    final double EPSY = 0.000001;
-
     private ClippedDifferenceFunction clippedDiffFunc;
     private JacobiFunction jfunc;
-    private double[] yy;
     private double[] a;
     private double[] b;
     private double[] params;
@@ -35,15 +30,14 @@ public class OptimalEstimation {
     public OptimalEstimation(TcwvFunction func,
                              double[] a, double[] b, double[] yy, double[] params,
                              JacobiFunction jfunc) {
-        this.yy = yy;   // ???
         this.a = a;
         this.b = b;
         this.params = params;
         this.jfunc = jfunc;
 
-        // todo: check this!! yy must be the 'mes' in Cawa test case
         clippedDiffFunc = new ClippedDifferenceFunction(a, b, func, yy);
         if (jfunc == null) {
+            double DELTA = 0.001;
             this.jfunc = new NumericalJacobiFunction(a, b, clippedDiffFunc, yy, DELTA);
         }
     }
@@ -162,6 +156,7 @@ public class OptimalEstimation {
 
             result = operator.result(a, b, xn, yn, kk, sei, sai, xa);
             xn = result.getCnx();
+            double EPSY = 0.000001;
             if (method == InversionMethod.NEWTON) {
                 if (OptimalEstimationUtils.norm(yn) < EPSY) {
                     convergence = true;

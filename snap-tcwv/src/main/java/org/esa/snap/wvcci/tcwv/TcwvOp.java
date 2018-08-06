@@ -210,8 +210,8 @@ public class TcwvOp extends Operator {
                 final boolean isCloud = isCloud(x, y, pixelClassifTile);
                 final boolean isCloudBuffer = pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_BUFFER_BIT);
                 final boolean isCloudShadow = pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_SHADOW_BIT);
-                final boolean isLand = pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_LAND_BIT);
-//                final boolean isLand = false; // test!!
+                boolean isLand = pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_LAND_BIT);
+                isLand = isLand && sensor != Sensor.MODIS_AQUA; // test!! we have
                 if (!isValid || isCloud || isCloudBuffer || isCloudShadow) {
                     targetTile.setSample(x, y, Float.NaN);
                 } else {

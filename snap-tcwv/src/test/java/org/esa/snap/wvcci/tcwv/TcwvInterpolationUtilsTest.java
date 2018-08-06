@@ -177,4 +177,18 @@ public class TcwvInterpolationUtilsTest {
             }
         }
     }
+
+    @Test
+    public void testConcat1DArrays() {
+
+        double[] firstArr = new double[]{1.0, 3.0, 5.0};
+        double[] secondArr = new double[]{2.0, 4.0, 6.0};
+
+        double[] result = TcwvInterpolationUtils.concat1DArrays(firstArr, secondArr);
+        double[] expecteds = new double[]{1.0, 3.0, 5.0, 2.0, 4.0, 6.0};
+        assertArrayEquals(expecteds, result, 0.0);
+
+        result = TcwvInterpolationUtils.concat1DArrays(firstArr, null);
+        assertArrayEquals(firstArr, result, 0.0);
+    }
 }

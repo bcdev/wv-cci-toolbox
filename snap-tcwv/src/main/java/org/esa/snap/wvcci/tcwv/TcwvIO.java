@@ -60,9 +60,7 @@ public class TcwvIO {
         return NetcdfFile.open(auxdataPath + File.separator + lutFileName);
     }
 
-    public static TcwvOceanLut getTcwvOceanLut(NetcdfFile lutNcFile) throws IOException {
-//        final List<Attribute> globalAttributes = lutNcFile.getGlobalAttributes();
-//        final List<Dimension> dimensions = lutNcFile.getDimensions();
+    private static TcwvOceanLut getTcwvOceanLut(NetcdfFile lutNcFile) throws IOException {
         final List<Variable> variables = lutNcFile.getVariables();
 
         final Variable wvcVariable = variables.get(0);
@@ -91,7 +89,7 @@ public class TcwvIO {
 
     }
 
-    public static TcwvLandLut getTcwvLandLut(NetcdfFile lutNcFile) throws IOException {
+    private static TcwvLandLut getTcwvLandLut(NetcdfFile lutNcFile) throws IOException {
         final List<Variable> variables = lutNcFile.getVariables();
 
         final double[] wvcArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(variables.get(0));

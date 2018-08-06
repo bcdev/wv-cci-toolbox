@@ -8,9 +8,9 @@ package org.esa.snap.wvcci.tcwv;
 public class TcwvResult {
 
     private double tcwv;
-    // todo: add flags etc. if needed
+    // todo: add flags etc. if needed (to be discussed)
 
-    public TcwvResult(double tcwv) {
+    TcwvResult(double tcwv) {
         this.tcwv = tcwv;
     }
 

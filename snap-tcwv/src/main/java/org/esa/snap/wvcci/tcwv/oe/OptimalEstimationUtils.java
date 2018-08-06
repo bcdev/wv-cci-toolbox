@@ -2,7 +2,6 @@ package org.esa.snap.wvcci.tcwv.oe;
 
 import Jama.Matrix;
 import org.esa.snap.wvcci.tcwv.TcwvFunction;
-import ucar.nc2.NetcdfFile;
 
 /**
  * Utility methods for optimal estimation algorithm
@@ -50,8 +49,8 @@ public class OptimalEstimationUtils {
     public static double norm(double[] src) {
         // return (inn * inn).mean()
         double norm = 0.0;
-        for (int i = 0; i < src.length; i++) {
-            norm += src[i] * src[i];
+        for (double elem : src) {
+            norm += elem * elem;
         }
         return norm / src.length;
     }

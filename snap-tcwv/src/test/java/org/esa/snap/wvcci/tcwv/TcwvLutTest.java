@@ -267,7 +267,7 @@ public class TcwvLutTest {
             final double[][] jacobiMatrixArr = jacobiFunction.f(testVector, null);
             assertNotNull(jacobiMatrixArr);
             assertEquals(2, jacobiMatrixArr.length);
-            assertEquals(2, jacobiMatrixArr[0].length);
+            assertEquals(3, jacobiMatrixArr[0].length);
             assertEquals(40000.0, jacobiMatrixArr[0][0], 1.E-6);
             assertEquals(0.00143433, jacobiMatrixArr[1][0], 1.E-6);
             assertEquals(24.749975, jacobiMatrixArr[0][1], 1.E-6);

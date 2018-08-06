@@ -1,19 +1,11 @@
 package org.esa.snap.wvcci.tcwv;
 
-import org.esa.snap.wvcci.tcwv.interpolation.TcwvInterpolationUtils;
 import org.junit.Before;
 import org.junit.Test;
-import ucar.ma2.DataType;
-import ucar.nc2.Attribute;
-import ucar.nc2.Dimension;
-import ucar.nc2.NetcdfFile;
-import ucar.nc2.Variable;
 
-import java.io.IOException;
 import java.nio.file.Path;
-import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
 
 public class TcwvCawaModisLandLutTest {
 

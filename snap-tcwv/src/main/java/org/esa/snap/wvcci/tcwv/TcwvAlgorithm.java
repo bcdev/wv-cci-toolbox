@@ -7,15 +7,27 @@ import org.esa.snap.wvcci.tcwv.oe.OptimalEstimation;
 import org.esa.snap.wvcci.tcwv.oe.OptimalEstimationResult;
 
 /**
- * todo: add comment
- * To change this template use File | Settings | File Templates.
- * Date: 26.07.2018
- * Time: 12:53
+ * Implementation of TCWV algorithm follwing SE Python breadboard (CAWA heritage)
  *
  * @author olafd
  */
 public class TcwvAlgorithm {
 
+    /**
+     * Provides computation of final TCWV from given input
+     *
+     * @param sensor - the sensor (MERIS, MODIS, or OLCI)
+     * @param landLut - lookup table for land pixels for given sensor
+     * @param oceanLut - lookup table for ocean pixels for given sensor
+     * @param tcwvFunctionLand - TCWB function object for land pixels
+     * @param tcwvFunctionOcean - TCWB function object for ocean pixels
+     * @param jacobiFunctionLand - Jacobi function object for land pixels
+     * @param jacobiFunctionOcean - Jacobi function object for ocean pixels
+     * @param input - object with all required input variables
+     * @param isLand - land/water flag
+     *
+     * @return {@link TcwvResult}: TCWV, and possibly additional information
+     */
     public TcwvResult compute(Sensor sensor,
                               TcwvLandLut landLut, TcwvOceanLut oceanLut,
                               TcwvFunction tcwvFunctionLand, TcwvFunction tcwvFunctionOcean,
@@ -62,10 +74,8 @@ public class TcwvAlgorithm {
         final double[][] se = sensor.getSe();
         final double[][] sa = TcwvConstants.SA_LAND;
 
-        final double[] y = tcwvFunction.f(mes, par);
-
         OptimalEstimation oe = new OptimalEstimation(tcwvFunction, a, b, mes, par, jacobiFunction);
-        OptimalEstimationResult result = oe.invert(InversionMethod.OE, y, se, sa, xa, OEOutputMode.BASIC, 3);
+        OptimalEstimationResult result = oe.invert(InversionMethod.OE, a, se, sa, xa, OEOutputMode.BASIC, 3);
         final double resultTcwv = Math.pow(result.getXn()[0], 2.0);
 //        final double resultAot = result.getXn()[1];
 //        final double resultWsp = result.getXn()[2];
@@ -108,10 +118,8 @@ public class TcwvAlgorithm {
         final double[][] se = sensor.getSe();
         final double[][] sa = TcwvConstants.SA_OCEAN;
 
-        final double[] y = tcwvFunction.f(mes, par);
-
         OptimalEstimation oe = new OptimalEstimation(tcwvFunction, a, b, mes, par, jacobiFunction);
-        OptimalEstimationResult result = oe.invert(InversionMethod.OE, y, se, sa, xa, OEOutputMode.BASIC, 3);
+        OptimalEstimationResult result = oe.invert(InversionMethod.OE, a, se, sa, xa, OEOutputMode.BASIC, 3);
         final double resultTcwv = Math.pow(result.getXn()[0], 2.0);
 //        final double resultAot = result.getXn()[1];
 //        final double resultWsp = result.getXn()[2];

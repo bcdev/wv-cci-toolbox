@@ -6,15 +6,20 @@ import org.esa.snap.wvcci.tcwv.TcwvLandLut;
 import org.esa.snap.wvcci.tcwv.TcwvOceanLut;
 
 /**
- * todo: add comment
- * To change this template use File | Settings | File Templates.
- * Date: 17.07.2018
- * Time: 10:24
+ * Class providing methods related to lookup table access and interpolation
  *
  * @author olafd
  */
 public class TcwvInterpolation {
 
+    /**
+     * Provides a {@link TcwvFunction} object implementing the 'lut2func' logic from Python breadboard.
+     *
+     * @param luts - array of lookup tables, each LUT is a 1D double array here
+     * @param axes - array of axes, each axis is a 1D double array here
+     *
+     * @return TCWV function
+     */
     public static TcwvFunction lut2Function(double[][] luts, final double[][] axes) {
 
         LookupTable[] lookupTables = new LookupTable[luts.length];
@@ -22,35 +27,30 @@ public class TcwvInterpolation {
             lookupTables[i] = new LookupTable(luts[i], axes);
         }
 
-        TcwvFunction tcwvFunction = (x, params) -> {
+        return (x, params) -> {
             double[] values = new double[luts.length];
             double[] xNew;
-            xNew = concatXandParams(x, params);
+            xNew = TcwvInterpolationUtils.concat1DArrays(x, params);
             for (int i = 0; i < lookupTables.length; i++) {
                 values[i] = lookupTables[i].getValue(xNew);
             }
             return values;
         };
-
-        return tcwvFunction;
     }
 
-    private static double[] concatXandParams(double[] x, double[] params) {
-        double[] xNew;
-        if (params != null) {
-            xNew = new double[x.length + params.length];
-            System.arraycopy(x, 0, xNew, 0, x.length);
-            System.arraycopy(params, 0, xNew, x.length, params.length);
-        } else {
-            xNew = new double[x.length];
-            System.arraycopy(x, 0, xNew, 0, x.length);
-        }
-        return xNew;
-    }
-
+    /**
+     * Provides a {@link JacobiFunction} object implementing the 'jlut2func' logic from Python breadboard.
+     *
+     * @param luts - array of lookup tables, each LUT is a 1D double array here
+     * @param axes - array of axes, each axis is a 1D double array here
+     * @param ny - y dimension of Jacobi matrix
+     * @param nx - x dimension of Jacobi matrix
+     *
+     * @return Jacobi function
+     */
     public static JacobiFunction jacobiLut2Function(double[][] luts, final double[][] axes, int ny, int nx) {
 
-        // luts: 8*6*400*100: we will store 8 (6*400*100) LUTs, each one holding one Jacobi element
+        // e.g. 8*6*400*100: we will store 8 (6*400*100) LUTs, each one holding one Jacobi element
 
         if (luts.length != ny * nx) {
             // should never happen!
@@ -62,32 +62,41 @@ public class TcwvInterpolation {
             lookupTables[i] = new LookupTable(luts[i], axes);
         }
 
-        JacobiFunction lutJacobiFunction = (x, params) -> {
+        return (x, params) -> {
 
             double[] values = new double[luts.length];
-            double[] xNew = concatXandParams(x, params);
+            double[] xNew = TcwvInterpolationUtils.concat1DArrays(x, params);
             for (int i = 0; i < lookupTables.length; i++) {
                 values[i] = lookupTables[i].getValue(xNew);
             }
 
-            // resort as ny * ny array, skip rest in x dimension, as in BB (todo: ask RP what this means...)
-            double[][] jaco = new double[ny][ny];
+            // resort as ny * 3 array, ignore rest in nx dimension, as in breadboard (todo: ask RP what this means...)
+            // ny=4, nx=6 --> ny=4, nx=3     (MODIS ocean)
+            // ny=5, nx=9 --> ny=5, nx=3     (MODIS land)
+            // ny=3, nx=6 --> ny=3, nx=3      (MERIS ocean)
+            // ny=3, nx=9 --> ny=3, nx=3      (MERIS land)
+            double[][] jaco = new double[ny][3];
             int index = 0;
             for (int i = 0; i < ny; i++) {
-                for (int j = 0; j < ny; j++) {
+                for (int j = 0; j < 3; j++) {
                     jaco[i][j] = values[index++];
                 }
-                index += (nx-ny);
+                index += (nx-3);
             }
 
             return jaco;
         };
-
-        return lutJacobiFunction;
     }
 
+    /**
+     * Wrapper providing a TCWV forward function for ocean
+     *
+     * @param tcwvOceanLut - LUT for ocean, provided as a {@link TcwvOceanLut}
+     *
+     * @return TCWV function
+     */
     public static TcwvFunction getForwardFunctionOcean(TcwvOceanLut tcwvOceanLut) {
-        // 6*6*11*11*9*9*3 --> 3*6*6*11*11*9*9 :
+        // e.g. 6*6*11*11*9*9*3 --> 3*6*6*11*11*9*9 :
         // we will store 3 (6*6*11*11*9*9) LUTs, each one holding one element for one band
         final double[][][][][][][] lutArraySwapped =
                 TcwvInterpolationUtils.change7DArrayLastToFirstDimension(tcwvOceanLut.getLutArray());
@@ -98,10 +107,16 @@ public class TcwvInterpolation {
 
         final double[][] axes = tcwvOceanLut.getAxes();
         // Python: self._forward
-//        return lut2Function(lutArrays1D, axes);
         return lut2Function(lutArrays1D, axes);
     }
 
+    /**
+     * Wrapper providing a TCWV forward function for land
+     *
+     * @param tcwvLandLut - LUT for land, provided as a {@link TcwvLandLut}
+     *
+     * @return TCWV function
+     */
     public static TcwvFunction getForwardFunctionLand(TcwvLandLut tcwvLandLut) {
         // same as for ocean, but 10D
         final double[][][][][][][][][][] lutArraySwapped =
@@ -115,6 +130,13 @@ public class TcwvInterpolation {
         return lut2Function(lutArrays1D, axes);
     }
 
+    /**
+     * Wrapper providing a Jacobi forward function for ocean
+     *
+     * @param tcwvOceanLut - LUT for ocean, provided as a {@link TcwvOceanLut}
+     *
+     * @return Jacobi function
+     */
     public static JacobiFunction getJForwardFunctionOcean(TcwvOceanLut tcwvOceanLut) {
         // 6*6*11*11*9*9*18 --> 18*6*6*11*11*9*9 :
         // we will store 18 (6*6*11*11*9*9) LUTs, each one holding one Jacobi element
@@ -132,6 +154,13 @@ public class TcwvInterpolation {
                                   tcwvOceanLut.getJaco()[1]);
     }
 
+    /**
+     * Wrapper providing a Jacobi forward function for land
+     *
+     * @param tcwvLandLut - LUT for land, provided as a {@link TcwvLandLut}
+     *
+     * @return Jacobi function
+     */
     public static JacobiFunction getJForwardFunctionLand(TcwvLandLut tcwvLandLut) {
         // same as for ocean, but 10D
         final double[][][][][][][][][][] jlutArraySwapped =
@@ -146,4 +175,7 @@ public class TcwvInterpolation {
                                   tcwvLandLut.getJaco()[0],
                                   tcwvLandLut.getJaco()[1]);
     }
+
+
+
 }

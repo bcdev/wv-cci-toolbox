@@ -22,9 +22,9 @@ public class TcwvOceanLut {
     // ocean specific:
     private double[] wsp;
 
-    public TcwvOceanLut(double[] wvc, double[] aot, double[] azi, double[] vie, double[] suz, int[] jaco,
-                        double[][][][][][][] lutArray, double[][][][][][][] jlutArray,
-                        double[] wsp) {
+    TcwvOceanLut(double[] wvc, double[] aot, double[] azi, double[] vie, double[] suz, int[] jaco,
+                 double[][][][][][][] lutArray, double[][][][][][][] jlutArray,
+                 double[] wsp) {
         this.wvc = wvc;
         this.aot = aot;
         this.azi = azi;
@@ -42,18 +42,6 @@ public class TcwvOceanLut {
 
     public double[] getAot() {
         return aot;
-    }
-
-    public double[] getAzi() {
-        return azi;
-    }
-
-    public double[] getVie() {
-        return vie;
-    }
-
-    public double[] getSuz() {
-        return suz;
     }
 
     public int[] getJaco() {
@@ -75,5 +63,19 @@ public class TcwvOceanLut {
     public double[][] getAxes() {
         return new double[][]{wvc, aot, wsp, azi, vie, suz};
     }
+
+    // currently unused getters
+
+//    public double[] getAzi() {
+//        return azi;
+//    }
+//
+//    public double[] getVie() {
+//        return vie;
+//    }
+//
+//    public double[] getSuz() {
+//        return suz;
+//    }
 }
 

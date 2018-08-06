@@ -34,7 +34,7 @@ public class TcwvConstants {
     static final String MODIS_AQUA_OCEAN_LUT_NC_FILENAME = "ocean_core_modis_aqua.nc4";
     static final String MODIS_TERRA_OCEAN_LUT_NC_FILENAME = "ocean_core_modis_terra.nc4";
 //    static final String MODIS_AQUA_LAND_LUT_NC_FILENAME = "land_core_modis_aqua.nc4";
-    static final String MODIS_AQUA_LAND_LUT_NC_FILENAME = "land_core_modis_aqua_MERIS_COPY.nc4";
+    static final String MODIS_AQUA_LAND_LUT_NC_FILENAME = "land_core_meris.nc4";
     static final String MODIS_TERRA_LAND_LUT_NC_FILENAME = "land_core_modis_terra.nc4";
 
     final static String[] MERIS_REFL_BAND_NAMES = new String[]{
@@ -75,7 +75,7 @@ public class TcwvConstants {
     };
 
     final static String[] MODIS_REFL_WIN_BAND_NAMES = new String[]{
-            "EV_250_Aggr1km_RefSB_2"   // 859 nm
+            "EV_250_Aggr1km_RefSB_2",   // 859 nm
     };
 
     final static String[] MODIS_REFL_ABS_BAND_NAMES = new String[]{
@@ -92,11 +92,10 @@ public class TcwvConstants {
     };
 
     final static double[][] MODIS_SE = {
-            {0.0001, 0.0, 0.0, 0.0, 0.0},
-            {0.0, 0.0001, 0.0, 0.0, 0.0},
-            {0.0, 0.0, 0.0001, 0.0, 0.0},
-            {0.0, 0.0, 0.0, 0.001, 0.0},
-            {0.0, 0.0, 0.0, 0.0, 0.001}
+            {0.0001, 0.0, 0.0, 0.0},
+            {0.0, 0.001, 0.0, 0.0},
+            {0.0, 0.0, 0.001, 0.0},
+            {0.0, 0.0, 0.0, 0.001}
     };
 
     final static String[] OLCI_REFL_BAND_NAMES = new String[]{

@@ -22,9 +22,9 @@ public class TcwvAlgorithmInput {
     private double priorWsp;
     private double priorTcwv;
 
-    public TcwvAlgorithmInput(double[] rhoToaWin, double[] rhoToaAbs, double sza, double vza, double relAzi, double amf,
-                              double aot865, double priorAot, double priorAl0, double priorAl1, double priorT2m,
-                              double priorMslPress, double priorWsp, double priorTcwv) {
+    TcwvAlgorithmInput(double[] rhoToaWin, double[] rhoToaAbs, double sza, double vza, double relAzi, double amf,
+                       double aot865, double priorAot, double priorAl0, double priorAl1, double priorT2m,
+                       double priorMslPress, double priorWsp, double priorTcwv) {
         this.rhoToaWin = rhoToaWin;
         this.rhoToaAbs = rhoToaAbs;
         this.sza = sza;

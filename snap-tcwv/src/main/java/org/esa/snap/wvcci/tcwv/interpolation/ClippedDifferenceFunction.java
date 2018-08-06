@@ -6,7 +6,9 @@ import org.esa.snap.wvcci.tcwv.TcwvFunction;
 /**
  * Function object mapping the Python breadboard equivalent:
  * def fnc(x):
- * return func(oec.clipper(a, b, x), fparams) - y
+ *     return func(oec.clipper(a, b, x), fparams) - y
+ *
+ * where in Cawa y is the 'mes' vector, x is the iteration input, starting with xn = fg = a+b/2 (first guess)
  *
  * @author olafd
  */
