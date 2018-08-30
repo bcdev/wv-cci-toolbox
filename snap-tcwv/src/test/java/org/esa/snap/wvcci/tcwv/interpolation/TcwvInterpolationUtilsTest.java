@@ -1,4 +1,4 @@
-package org.esa.snap.wvcci.tcwv;
+package org.esa.snap.wvcci.tcwv.interpolation;
 
 import org.esa.snap.wvcci.tcwv.interpolation.TcwvInterpolationUtils;
 import org.junit.Test;

@@ -12,7 +12,7 @@ import java.nio.file.Path;
 import static org.junit.Assert.assertEquals;
 
 
-public class TcwvCawaFullAlgoModisTest {
+public class TcwvFullAlgoModisTest {
 
     private Path auxdataPath;
 

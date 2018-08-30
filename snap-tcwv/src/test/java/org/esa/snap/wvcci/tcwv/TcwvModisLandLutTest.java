@@ -7,7 +7,7 @@ import java.nio.file.Path;
 
 import static org.junit.Assert.assertNotNull;
 
-public class TcwvCawaModisLandLutTest {
+public class TcwvModisLandLutTest {
 
     private Path auxdataPath;
 

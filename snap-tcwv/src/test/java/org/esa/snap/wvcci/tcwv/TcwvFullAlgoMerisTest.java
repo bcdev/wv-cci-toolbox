@@ -11,7 +11,7 @@ import java.nio.file.Path;
 import static org.junit.Assert.assertEquals;
 
 
-public class TcwvCawaFullAlgoMerisTest {
+public class TcwvFullAlgoMerisTest {
 
     private TcwvLandLut landLut;
     private TcwvOceanLut oceanLut;

@@ -15,7 +15,7 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 
-public class TcwvCawaMerisLandLutTest {
+public class TcwvMerisLandLutTest {
 
     private Path auxdataPath;
 
