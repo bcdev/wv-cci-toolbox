@@ -7,6 +7,8 @@ import org.esa.snap.dataio.netcdf.AbstractNetCdfWriterPlugIn;
 import org.esa.snap.dataio.netcdf.ProfileWriteContext;
 import org.esa.snap.dataio.netcdf.metadata.ProfileInitPartWriter;
 import org.esa.snap.dataio.netcdf.metadata.ProfilePartWriter;
+import org.esa.snap.dataio.netcdf.metadata.profiles.beam.BeamGeocodingPart;
+import org.esa.snap.dataio.netcdf.metadata.profiles.cf.CfGeocodingPart;
 import org.esa.snap.dataio.netcdf.nc.NFileWriteable;
 import org.esa.snap.dataio.netcdf.nc.NVariable;
 import org.esa.snap.dataio.netcdf.nc.NWritableFactory;
@@ -58,7 +60,8 @@ public class SnapWvcciNc4WriterPlugIn extends AbstractNetCdfWriterPlugIn {
 
     @Override
     public ProfilePartWriter createGeoCodingPartWriter() {
-        return new SnapWvcciGeocodingPart();  // use this instead of BeamGeocodingPart
+//        return new SnapWvcciGeocodingPart();  // use this instead of BeamGeocodingPart
+        return new BeamGeocodingPart();
     }
 
     @Override

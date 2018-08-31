@@ -22,6 +22,7 @@ import java.io.IOException;
 /**
  * Modification of BeamGeocodingPart for WV_cci purposes, i.e. do not write lat/lon bands
  * into target netcdf file, as we want to keep products small and we still have the TPGs
+ * *** CURRENTLY NOT USED ***
  *
  * @author olafd
  */
@@ -93,12 +94,14 @@ public class SnapWvcciGeocodingPart extends CfGeocodingPart {
     }
 
     private void addLatLonBands(final NFileWriteable ncFile, Dimension tileSize) throws IOException {
-        final NVariable lat = ncFile.addVariable("lat", DataType.FLOAT, tileSize, "y x");
+//        final NVariable lat = ncFile.addVariable("lat", DataType.FLOAT, tileSize, "y x");
+        final NVariable lat = ncFile.addVariable("lat", DataType.DOUBLE, tileSize, "y x");
         lat.addAttribute("units", "degrees_north");
         lat.addAttribute("long_name", "latitude coordinate");
         lat.addAttribute("standard_name", "latitude");
 
-        final NVariable lon = ncFile.addVariable("lon", DataType.FLOAT, tileSize, "y x");
+//        final NVariable lon = ncFile.addVariable("lon", DataType.FLOAT, tileSize, "y x");
+        final NVariable lon = ncFile.addVariable("lon", DataType.DOUBLE, tileSize, "y x");
         lon.addAttribute("units", "degrees_east");
         lon.addAttribute("long_name", "longitude coordinate");
         lon.addAttribute("standard_name", "longitude");

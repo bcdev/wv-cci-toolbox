@@ -12,6 +12,7 @@ public class SnapWvcciNc4WriterTest {
 
     public static void main(String[] args) throws Exception {
         final String tcwvFilename = "subset_TCWV.nc";
+//        final String tcwvFilename = "L2_of_L2_of_MER_RR__1PRACR20080101_085745_000026172064_00408_30522_0000.nc";
         final String tcwvFilePath = SnapWvcciNc4WriterTest.class.getResource(tcwvFilename).getPath();
         final Product tcwvProduct = loadTcwvProduct(tcwvFilePath);
         final String tcwvCawaNc4Filename = "subset_TCWV_wvcci_nc4.nc";
