@@ -1,6 +1,5 @@
 package org.esa.snap.wvcci.tcwv.util;
 
-import org.esa.snap.core.dataio.ProductIO;
 import org.esa.snap.core.datamodel.Product;
 import org.esa.snap.core.gpf.Operator;
 import org.esa.snap.core.gpf.OperatorException;
@@ -9,11 +8,9 @@ import org.esa.snap.core.gpf.annotations.OperatorMetadata;
 import org.esa.snap.core.gpf.annotations.Parameter;
 import org.esa.snap.core.gpf.annotations.SourceProduct;
 import org.esa.snap.core.gpf.common.MergeOp;
+import org.esa.snap.core.util.ProductUtils;
 import org.esa.snap.wvcci.tcwv.Sensor;
 import org.esa.snap.wvcci.tcwv.TcwvConstants;
-
-import java.io.File;
-import java.io.IOException;
 
 /**
  * TCWV main operator for Water_Vapour_cci.
@@ -49,30 +46,16 @@ public class MergeIdepixEraInterimOp extends Operator {
     @SourceProduct(description = "IdePix product")
     private Product idepixProduct;
 
-    @SourceProduct(description = "EraInterim product", optional = true)
+    @SourceProduct(description = "EraInterim product")
     private Product eraInterimProduct;
 
 
     @Override
     public void initialize() throws OperatorException {
 
-        validateSourceProduct(idepixProduct);
-
-        if (eraInterimProduct == null) {
-            // in this case we expect the Calvalus default file/folder structure:
-            // ../idepix/../L2_of_MER_RR__1PRACR20081023_085102_000026342073_00136_34759_0000.seq
-            // ../erainterim/MER_RR__1PRACR20081023_085102_000026342073_00136_34759_0000_era-interim.nc
-            final int idepixNameStartIndex = 6; // after 'L2_of_'
-            final String eraInterimProductPath = eraInterimProductParentDir + File.separator +
-                    idepixProduct.getName().substring(idepixNameStartIndex) + "_era-interim.nc";
-            try {
-                eraInterimProduct = ProductIO.readProduct(new File(eraInterimProductPath));
-            } catch (IOException e) {
-                e.printStackTrace();
-                throw new OperatorException("Cannot read EraInterim product '" + eraInterimProduct.getName() +
-                                                    "' - exiting.");
-            }
-        }
+        validateIdepixProduct();
+        ProductUtils.copyGeoCoding(idepixProduct, eraInterimProduct);
+        eraInterimProduct.setSceneGeoCoding(idepixProduct.getSceneGeoCoding());
 
         final MergeOp mergeOp = new MergeOp();
         mergeOp.setSourceProducts(eraInterimProduct);
@@ -98,15 +81,15 @@ public class MergeIdepixEraInterimOp extends Operator {
         setTargetProduct(mergeOp.getTargetProduct());
     }
 
-    private void validateSourceProduct(Product sourceProduct) {
-        if (!sourceProduct.containsBand(TcwvConstants.IDEPIX_CLASSIF_BAND_NAME)) {
+    private void validateIdepixProduct() {
+        if (!idepixProduct.containsBand(TcwvConstants.IDEPIX_CLASSIF_BAND_NAME)) {
             throw new OperatorException("Source product is not valid, as it does not contain " +
                                                 "pixel classification flag band '" +
                                                 TcwvConstants.IDEPIX_CLASSIF_BAND_NAME + "'.");
         }
 
         for (String bandName : sensor.getReflBandNames()) {
-            if (!sourceProduct.containsBand(bandName)) {
+            if (!idepixProduct.containsBand(bandName)) {
                 throw new OperatorException("Source product is not valid, as it does not contain " +
                                                     "mandatory band '" + bandName + "'.");
             }
