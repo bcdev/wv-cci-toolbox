@@ -31,13 +31,6 @@ public class MergeIdepixEraInterimOp extends Operator {
             description = "The sensor (MERIS, MODIS or OLCI).")
     private Sensor sensor;
 
-    @Parameter(defaultValue = ".seq", valueSet = {".seq", ".nc", ".dim"},
-            description = "Idepix file extension.")
-    private String idepixFileExt;
-
-    @Parameter(description = "EraInterim product parent directory.")
-    private String eraInterimProductParentDir;
-
     @Parameter(description = "The list of EraInterim bands to copy to target product.",
             defaultValue = "t2m,msl,tcwv")
     private String[] eraInterimBandsToCopy = {"t2m","msl","tcwv"};
