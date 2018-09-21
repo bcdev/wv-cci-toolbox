@@ -13,9 +13,7 @@ import org.esa.snap.wvcci.tcwv.Sensor;
 import org.esa.snap.wvcci.tcwv.TcwvConstants;
 
 /**
- * TCWV main operator for Water_Vapour_cci.
- * Authors: R.Preusker (Python breadboard), O.Danne (Java conversion), 2018
- * <p/>
+ * Merges Idepix and EraInterim intermediate products in Water_Vapour_cci TCWV chain.
  *
  * @author Olaf Danne
  */
@@ -48,7 +46,7 @@ public class MergeIdepixEraInterimOp extends Operator {
 
         validateIdepixProduct();
         ProductUtils.copyGeoCoding(idepixProduct, eraInterimProduct);
-        eraInterimProduct.setSceneGeoCoding(idepixProduct.getSceneGeoCoding());
+        ProductUtils.copyGeoCoding(idepixProduct, eraInterimProduct);
 
         final MergeOp mergeOp = new MergeOp();
         mergeOp.setSourceProducts(eraInterimProduct);
