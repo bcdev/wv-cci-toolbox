@@ -208,11 +208,11 @@ public class TcwvOp extends Operator {
             for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
                 final boolean isValid = !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_INVALID_BIT);
                 final boolean isCloud = isCloud(x, y, pixelClassifTile);
-                final boolean isCloudBuffer = pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_BUFFER_BIT);
-                final boolean isCloudShadow = pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_SHADOW_BIT);
                 boolean isLand = pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_LAND_BIT);
-                isLand = isLand && sensor != Sensor.MODIS_AQUA; // test!! we have
-                if (!isValid || isCloud || isCloudBuffer || isCloudShadow) {
+
+                // NOTE: we compute land only for MERIS, MODIS_TERRA, or OLCI! 20180925
+                isLand = isLand && sensor != Sensor.MODIS_AQUA;
+                if (!isValid || isCloud || !isLand) {
                     targetTile.setSample(x, y, Float.NaN);
                 } else {
                     // Preparing input data...
@@ -268,13 +268,28 @@ public class TcwvOp extends Operator {
     }
 
     private boolean isCloud(int x, int y, Tile pixelClassifTile) {
-        if (cloudFilterLevel == CloudFilterLevel.NO_FILTER) {
-            return false;
-        } else if (cloudFilterLevel == CloudFilterLevel.CLOUD_SURE) {
-            return  pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_SURE_BIT) &&
-                    !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_AMBIGUOUS_BIT);
-        } else {
-            return pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_BIT);
+
+        switch (cloudFilterLevel) {
+            case NO_FILTER:
+                return false;
+            case CLOUD_SURE:
+                return  pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_SURE_BIT) &&
+                        !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_AMBIGUOUS_BIT) &&
+                        !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_BUFFER_BIT);
+            case CLOUD_SURE_BUFFER:
+                return  (pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_SURE_BIT) ||
+                         pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_BUFFER_BIT)) &&
+                        !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_AMBIGUOUS_BIT);
+            case CLOUD_SURE_AMBIGUOUS:
+                return  (pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_SURE_BIT) ||
+                         pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_AMBIGUOUS_BIT)) &&
+                        !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_BUFFER_BIT);
+            case CLOUD_SURE_AMBIGUOUS_BUFFER:
+                return  pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_SURE_BIT) ||
+                        pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_AMBIGUOUS_BIT) ||
+                        pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_BUFFER_BIT);
+            default:
+                return false;
         }
     }
 
