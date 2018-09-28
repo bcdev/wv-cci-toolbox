@@ -19,7 +19,6 @@ import org.esa.snap.wvcci.tcwv.interpolation.TcwvInterpolation;
 
 import java.awt.*;
 import java.io.IOException;
-import java.nio.file.Path;
 
 import static org.esa.snap.wvcci.tcwv.Sensor.MERIS;
 
@@ -41,7 +40,8 @@ public class TcwvOp extends Operator {
             description = "The sensor (MERIS, MODIS or OLCI).")
     private Sensor sensor;
 
-    @Parameter(valueSet = {"NO_FILTER", "CLOUD_SURE", "CLOUD_SURE_AMBIGUOUS"},
+    @Parameter(valueSet = {"NO_FILTER", "CLOUD_SURE", "CLOUD_SURE_BUFFER",
+            "CLOUD_SURE_AMBIGUOUS", "CLOUD_SURE_AMBIGUOUS_BUFFER"},
             defaultValue = "CLOUD_SURE_AMBIGUOUS",
             description = "Strength of cloud filter.",
             label = "Strength of cloud filter.")
@@ -58,6 +58,9 @@ public class TcwvOp extends Operator {
     @Parameter(defaultValue = "0.1",
             description = "Prior AOT at 865 nm.")
     private double aot865;
+
+    @Parameter(description = "If auxdata are already installed, their path can be provided here.")
+    private String auxdataPath;
 
 
     @SourceProduct(description =
@@ -101,9 +104,11 @@ public class TcwvOp extends Operator {
         validateSourceProduct(sourceProduct);
 
         try {
-            final Path auxdataPath = TcwvIO.installAuxdata();
-            landLut = TcwvIO.readLandLookupTable(auxdataPath.toString(), sensor);
-            oceanLut = TcwvIO.readOceanLookupTable(auxdataPath.toString(), sensor);
+            if (auxdataPath == null || auxdataPath.length() == 0) {
+                auxdataPath = TcwvIO.installAuxdata();
+            }
+            landLut = TcwvIO.readLandLookupTable(auxdataPath, sensor);
+            oceanLut = TcwvIO.readOceanLookupTable(auxdataPath, sensor);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -239,10 +244,10 @@ public class TcwvOp extends Operator {
                             priorTcwvTile != null ? priorTcwvTile.getSampleDouble(x, y) : TcwvConstants.TCWV_INIT_VALUE;
 
                     for (int i = 0; i < winBandData.length; i++) {
-                        winBandData[i] = winBandTiles[i].getSampleDouble(x, y) * Math.cos(sza*MathUtils.DTOR);
+                        winBandData[i] = winBandTiles[i].getSampleDouble(x, y) * Math.cos(sza * MathUtils.DTOR);
                     }
                     for (int i = 0; i < absBandData.length; i++) {
-                        absBandData[i] = absBandTiles[i].getSampleDouble(x, y)* Math.cos(sza*MathUtils.DTOR);
+                        absBandData[i] = absBandTiles[i].getSampleDouble(x, y) * Math.cos(sza * MathUtils.DTOR);
                     }
 
                     final TcwvAlgorithmInput input = new TcwvAlgorithmInput(winBandData, absBandData, sza, vza, relAzi,
@@ -273,19 +278,19 @@ public class TcwvOp extends Operator {
             case NO_FILTER:
                 return false;
             case CLOUD_SURE:
-                return  pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_SURE_BIT) &&
+                return pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_SURE_BIT) &&
                         !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_AMBIGUOUS_BIT) &&
                         !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_BUFFER_BIT);
             case CLOUD_SURE_BUFFER:
-                return  (pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_SURE_BIT) ||
-                         pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_BUFFER_BIT)) &&
+                return (pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_SURE_BIT) ||
+                        pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_BUFFER_BIT)) &&
                         !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_AMBIGUOUS_BIT);
             case CLOUD_SURE_AMBIGUOUS:
-                return  (pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_SURE_BIT) ||
-                         pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_AMBIGUOUS_BIT)) &&
+                return (pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_SURE_BIT) ||
+                        pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_AMBIGUOUS_BIT)) &&
                         !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_BUFFER_BIT);
             case CLOUD_SURE_AMBIGUOUS_BUFFER:
-                return  pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_SURE_BIT) ||
+                return pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_SURE_BIT) ||
                         pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_AMBIGUOUS_BIT) ||
                         pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_BUFFER_BIT);
             default:

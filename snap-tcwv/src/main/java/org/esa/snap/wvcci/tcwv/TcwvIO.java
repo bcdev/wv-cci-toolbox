@@ -26,12 +26,12 @@ public class TcwvIO {
      * @return - the auxdata path for O2 correction
      * @throws IOException -
      */
-    static Path installAuxdata() throws IOException {
+    static String installAuxdata() throws IOException {
         Path auxdataDirectory = SystemUtils.getAuxDataPath().resolve("wvcci");
         final Path sourceDirPath = ResourceInstaller.findModuleCodeBasePath(TcwvOp.class).resolve("auxdata/luts");
         final ResourceInstaller resourceInstaller = new ResourceInstaller(sourceDirPath, auxdataDirectory);
         resourceInstaller.install(".*", ProgressMonitor.NULL);
-        return auxdataDirectory;
+        return auxdataDirectory.toString();
     }
 
 

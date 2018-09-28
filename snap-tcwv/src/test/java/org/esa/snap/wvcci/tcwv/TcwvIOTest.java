@@ -9,7 +9,7 @@ import static org.junit.Assert.*;
 
 public class TcwvIOTest {
 
-    private Path auxdataPath;
+    private String auxdataPath;
 
     @Before
     public void setUp() throws Exception {

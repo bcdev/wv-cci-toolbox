@@ -6,8 +6,6 @@ import org.esa.snap.wvcci.tcwv.interpolation.TcwvInterpolation;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.nio.file.Path;
-
 import static org.junit.Assert.assertEquals;
 
 
@@ -22,10 +20,10 @@ public class TcwvFullAlgoMerisTest {
 
     @Before
     public void setUp() throws Exception {
-        final Path auxdataPath = TcwvIO.installAuxdata();
+        final String auxdataPath = TcwvIO.installAuxdata();
 
-        landLut = TcwvIO.readLandLookupTable(auxdataPath.toString(), Sensor.MERIS);
-        oceanLut = TcwvIO.readOceanLookupTable(auxdataPath.toString(), Sensor.MERIS);
+        landLut = TcwvIO.readLandLookupTable(auxdataPath, Sensor.MERIS);
+        oceanLut = TcwvIO.readOceanLookupTable(auxdataPath, Sensor.MERIS);
         tcwvFunctionLand = TcwvInterpolation.getForwardFunctionLand(landLut);
         jacobiFunctionland = TcwvInterpolation.getJForwardFunctionLand(landLut);
         tcwvFunctionOcean = TcwvInterpolation.getForwardFunctionOcean(oceanLut);

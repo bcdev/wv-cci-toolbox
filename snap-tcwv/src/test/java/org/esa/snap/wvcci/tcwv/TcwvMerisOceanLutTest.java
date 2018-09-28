@@ -10,14 +10,13 @@ import ucar.nc2.NetcdfFile;
 import ucar.nc2.Variable;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.Assert.*;
 
 public class TcwvMerisOceanLutTest {
 
-    private Path auxdataPath;
+    private String auxdataPath;
 
     @Before
     public void setUp() throws Exception {
@@ -32,7 +31,7 @@ public class TcwvMerisOceanLutTest {
 
     @Test
     public void testGetTcwvLutFromNc4_ocean() throws IOException {
-        final NetcdfFile ncFile = TcwvIO.getTcwvLookupTableNcFile(auxdataPath.toString(), "ocean_core_meris.nc4");
+        final NetcdfFile ncFile = TcwvIO.getTcwvLookupTableNcFile(auxdataPath, "ocean_core_meris.nc4");
         assertNotNull(ncFile);
 
         final List<Attribute> globalAttributes = ncFile.getGlobalAttributes();

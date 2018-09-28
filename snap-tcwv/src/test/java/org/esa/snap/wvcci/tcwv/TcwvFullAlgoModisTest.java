@@ -7,14 +7,12 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.nio.file.Path;
-
 import static org.junit.Assert.assertEquals;
 
 
 public class TcwvFullAlgoModisTest {
 
-    private Path auxdataPath;
+    private String auxdataPath;
 
     @Before
     public void setUp() throws Exception {
@@ -34,8 +32,8 @@ public class TcwvFullAlgoModisTest {
         final Sensor sensor = Sensor.MODIS_AQUA;
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
 
-        TcwvLandLut landLut = TcwvIO.readLandLookupTable(auxdataPath.toString(), Sensor.MODIS_AQUA);
-        TcwvOceanLut oceanLut = TcwvIO.readOceanLookupTable(auxdataPath.toString(), Sensor.MODIS_AQUA);
+        TcwvLandLut landLut = TcwvIO.readLandLookupTable(auxdataPath, Sensor.MODIS_AQUA);
+        TcwvOceanLut oceanLut = TcwvIO.readOceanLookupTable(auxdataPath, Sensor.MODIS_AQUA);
         TcwvFunction tcwvFunctionOcean = TcwvInterpolation.getForwardFunctionOcean(oceanLut);
         JacobiFunction jacobiFunctionOcean = TcwvInterpolation.getJForwardFunctionOcean(oceanLut);
 
@@ -75,8 +73,8 @@ public class TcwvFullAlgoModisTest {
         final Sensor sensor = Sensor.MODIS_AQUA;
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
 
-        TcwvLandLut landLut = TcwvIO.readLandLookupTable(auxdataPath.toString(), Sensor.MODIS_AQUA);
-        TcwvOceanLut oceanLut = TcwvIO.readOceanLookupTable(auxdataPath.toString(), Sensor.MODIS_AQUA);
+        TcwvLandLut landLut = TcwvIO.readLandLookupTable(auxdataPath, Sensor.MODIS_AQUA);
+        TcwvOceanLut oceanLut = TcwvIO.readOceanLookupTable(auxdataPath, Sensor.MODIS_AQUA);
         TcwvFunction tcwvFunctionLand = TcwvInterpolation.getForwardFunctionLand(landLut);
         JacobiFunction jacobiFunctionland = TcwvInterpolation.getJForwardFunctionLand(landLut);
 

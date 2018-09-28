@@ -3,13 +3,11 @@ package org.esa.snap.wvcci.tcwv;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.nio.file.Path;
-
 import static org.junit.Assert.assertNotNull;
 
 public class TcwvModisLandLutTest {
 
-    private Path auxdataPath;
+    private String auxdataPath;
 
     @Before
     public void setUp() throws Exception {
