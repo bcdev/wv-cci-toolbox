@@ -216,7 +216,7 @@ public class TcwvOp extends Operator {
                 boolean isLand = pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_LAND_BIT);
 
                 // NOTE: we compute land only for MERIS, MODIS_TERRA, or OLCI! 20180925
-                isLand = isLand && sensor != Sensor.MODIS_AQUA;
+//                isLand = isLand && sensor != Sensor.MODIS_AQUA;
                 if (!isValid || isCloud || !isLand) {
                     targetTile.setSample(x, y, Float.NaN);
                 } else {
@@ -227,12 +227,17 @@ public class TcwvOp extends Operator {
                     final double vaa = vaaTile.getSampleDouble(x, y);
                     final double relAzi = 180. - Math.abs(saa - vaa);
                     final double amf = 1. / Math.cos(sza * MathUtils.DTOR) + 1. / Math.cos(vza * MathUtils.DTOR);
-                    double prs =
-                            priorMslTile != null ? priorMslTile.getSampleDouble(x, y) : mslPressure;
-                    if (sensor == MERIS) {
-                        // todo: reset this for new LUTs!
-                        prs /= -100.0;
+
+                    // we have as pressure:
+                    // ERA Interim: Pa, e.g. 100500  --> divide by -100 to get negative hPa for current LUTs
+                    // no ERAInterim: hPa --> multiply by -1 to get negative hPa
+                    double prs;
+                    if (priorMslTile != null) {
+                       prs = -priorMslTile.getSampleDouble(x, y)/100.0;
+                    }  else {
+                        prs = -1.0 * mslPressure;
                     }
+
                     final double t2m =
                             priorT2mTile != null ? priorT2mTile.getSampleDouble(x, y) : temperature;
                     final double priorWs =
@@ -254,6 +259,9 @@ public class TcwvOp extends Operator {
                                                                             amf, aot865, priorAot, priorAl0, priorAl1,
                                                                             t2m, prs, priorWs, priorTcwv);
 
+//                    if (x == 452 && y == 0) {
+//                        System.out.println("x = " + x);
+//                    }
                     final TcwvResult result = tcwvAlgorithm.compute(sensor, landLut, oceanLut,
                                                                     tcwvFunctionLand, tcwvFunctionOcean,
                                                                     jacobiFunctionland, jacobiFunctionOcean,

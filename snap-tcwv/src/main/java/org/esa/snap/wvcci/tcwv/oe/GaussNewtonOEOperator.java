@@ -1,5 +1,6 @@
 package org.esa.snap.wvcci.tcwv.oe;
 
+import Jama.LUDecomposition;
 import Jama.Matrix;
 
 /**
@@ -22,7 +23,17 @@ public class GaussNewtonOEOperator implements OEOperator {
         final Matrix jacoMatrixTDotSeiMatrix = jacoMatrixT.times(seiMatrix);
         final Matrix jacoTransDotJacoMatrix = jacoMatrixTDotSeiMatrix.times(jacoMatrix);
         final Matrix errCovMatrix = saiMatrix.plus(jacoTransDotJacoMatrix);
+
+        // test
+//        final Matrix identityM = Matrix.identity(errCovMatrix.getRowDimension(), errCovMatrix.getRowDimension());
+//        final LUDecomposition luDecompIdentityM = new LUDecomposition(identityM);
+//        if (luDecompIdentityM.isNonsingular()) {
+//            System.out.println("hier");
+//        }
+        //
+
         final Matrix errCovMatrixInverse = errCovMatrix.inverse();
+
         Matrix yMatrix = new Matrix(y.length, 1);
         for (int i = 0; i < y.length; i++) {
             yMatrix.set(i, 0, y[i]);

@@ -3,45 +3,30 @@ package org.esa.snap.wvcci.tcwv;
 import org.esa.snap.core.util.math.MathUtils;
 import org.esa.snap.wvcci.tcwv.interpolation.JacobiFunction;
 import org.esa.snap.wvcci.tcwv.interpolation.TcwvInterpolation;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import java.io.IOException;
 
 
-public class TcwvFullAlgoModisTest {
+public class TcwvFullAlgoModisMain {
 
-    private String auxdataPath;
-
-    @Before
-    public void setUp() throws Exception {
-        auxdataPath = TcwvIO.installAuxdata();
+    public static void main(String[] args) throws IOException {
+        computeOcean();
     }
 
-    // Java version of tests from Python breadboard 'test_cawa.py', which in return is a standalone version
-    // of GPF operator code 'cawa_tcwv_modis_op.py' for a single test pixel,
-    // using corresponding LUTs from CAWA.
-    // Towards a Water_Vapour_cci Java operator, we have to test:
-    //     - MODIS ocean
-    //     - MODIS land
-    // needs lot of heap space, ignore for the moment!
-
-    @Test
-    @Ignore
-    public void testOptimalEstimation_modis_ocean() {
+    private static void computeOcean() throws IOException {
         final Sensor sensor = Sensor.MODIS_AQUA;
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
 
+        String auxdataPath = TcwvIO.installAuxdata();
         TcwvLandLut landLut = TcwvIO.readLandLookupTable(auxdataPath, Sensor.MODIS_AQUA);
         TcwvOceanLut oceanLut = TcwvIO.readOceanLookupTable(auxdataPath, Sensor.MODIS_AQUA);
         TcwvFunction tcwvFunctionOcean = TcwvInterpolation.getForwardFunctionOcean(oceanLut);
         JacobiFunction jacobiFunctionOcean = TcwvInterpolation.getJForwardFunctionOcean(oceanLut);
 
-        double[] rhoToaWin = new double[]{0.00320285};
-        double[] rhoToaAbs = new double[]{0.00241964629966, 0.0017246503591, 0.00196269592823};
-        double sza = 61.64859772;
-        double vza = 11.34500027;
+        double[] rhoToaWin = new double[]{0.089};
+        double[] rhoToaAbs = new double[]{0.083, 0.051, 0.063};
+        double sza = 56.0;
+        double vza = 158.0;
         double relAzi = 118.03159332;
         double amf = 1./Math.cos(sza* MathUtils.DTOR) + 1./Math.cos(vza* MathUtils.DTOR);
         double aot865 = 0.1;
@@ -61,19 +46,14 @@ public class TcwvFullAlgoModisTest {
                                                     null, jacobiFunctionOcean,
                                                     input, false);
 
-        assertEquals(47.566, result.getTcwv(), 1.E-3);
+        System.out.println("Result ocean: " + result.getTcwv());
     }
 
-    @Test
-    @Ignore
-    public void testOptimalEstimation_modis_land() {
-        // todo: ignored for the moment. We need an applicable land LUT first. The 'land_core_modis_aqua
-
-        // also remember that MODIS land uses 5 input bands, MODIS ocean only 4 !!
-
-        final Sensor sensor = Sensor.MODIS_AQUA;
+    private static void computeLand() throws IOException {
+                final Sensor sensor = Sensor.MODIS_AQUA;
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
 
+        String auxdataPath = TcwvIO.installAuxdata();
         TcwvLandLut landLut = TcwvIO.readLandLookupTable(auxdataPath, Sensor.MODIS_AQUA);
         TcwvOceanLut oceanLut = TcwvIO.readOceanLookupTable(auxdataPath, Sensor.MODIS_AQUA);
         TcwvFunction tcwvFunctionLand = TcwvInterpolation.getForwardFunctionLand(landLut);
@@ -102,7 +82,7 @@ public class TcwvFullAlgoModisTest {
                                                     jacobiFunctionland, null,
                                                     input, true);
 
-        assertEquals(47.566, result.getTcwv(), 1.E-3);
+        System.out.println("Result land: " + result.getTcwv());
     }
 
 }
