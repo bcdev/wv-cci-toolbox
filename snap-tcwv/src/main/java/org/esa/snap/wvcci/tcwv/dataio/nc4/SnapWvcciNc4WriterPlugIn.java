@@ -60,8 +60,8 @@ public class SnapWvcciNc4WriterPlugIn extends AbstractNetCdfWriterPlugIn {
 
     @Override
     public ProfilePartWriter createGeoCodingPartWriter() {
-//        return new SnapWvcciGeocodingPart();  // use this instead of BeamGeocodingPart
-        return new BeamGeocodingPart();
+        return new SnapWvcciGeocodingPart();  // use this instead of BeamGeocodingPart
+//        return new BeamGeocodingPart();
     }
 
     @Override

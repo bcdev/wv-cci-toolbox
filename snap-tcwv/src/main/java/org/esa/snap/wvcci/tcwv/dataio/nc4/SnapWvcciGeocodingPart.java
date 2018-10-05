@@ -42,12 +42,6 @@ public class SnapWvcciGeocodingPart extends CfGeocodingPart {
         // difference to BeamGeocodingPart: do not add lat/lon bands here!
         // final NFileWriteable ncFile = ctx.getNetcdfFileWriteable();
         //addLatLonBands(ncFile, ImageManager.getPreferredTileSize(product));
-
-        final NFileWriteable ncFile = ctx.getNetcdfFileWriteable();
-        if (!isLatLonPresent(ncFile)) {
-            addLatLonBands(ncFile, ImageManager.getPreferredTileSize(product));
-        }
-
         ctx.setProperty(Constants.Y_FLIPPED_PROPERTY_NAME, false);
 
         if (geoCoding instanceof TiePointGeoCoding) {
@@ -64,6 +58,7 @@ public class SnapWvcciGeocodingPart extends CfGeocodingPart {
             }
         }
     }
+
 
     @Override
     public void encode(ProfileWriteContext ctx, Product product) {
