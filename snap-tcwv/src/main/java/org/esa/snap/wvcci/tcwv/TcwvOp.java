@@ -1,10 +1,7 @@
 package org.esa.snap.wvcci.tcwv;
 
 import com.bc.ceres.core.ProgressMonitor;
-import org.esa.snap.core.datamodel.Band;
-import org.esa.snap.core.datamodel.Product;
-import org.esa.snap.core.datamodel.ProductData;
-import org.esa.snap.core.datamodel.RasterDataNode;
+import org.esa.snap.core.datamodel.*;
 import org.esa.snap.core.gpf.Operator;
 import org.esa.snap.core.gpf.OperatorException;
 import org.esa.snap.core.gpf.OperatorSpi;
@@ -19,8 +16,7 @@ import org.esa.snap.wvcci.tcwv.interpolation.TcwvInterpolation;
 
 import java.awt.*;
 import java.io.IOException;
-
-import static org.esa.snap.wvcci.tcwv.Sensor.MERIS;
+import java.util.Map;
 
 /**
  * TCWV main operator for Water_Vapour_cci.
@@ -164,10 +160,10 @@ public class TcwvOp extends Operator {
     }
 
     @Override
-    public void computeTile(Band targetBand, Tile targetTile, ProgressMonitor pm) throws OperatorException {
+    public void computeTileStack(Map<Band, Tile> targetTiles, Rectangle targetRectangle, ProgressMonitor pm) throws OperatorException {
 
-        final String targetBandName = targetBand.getName();
-        final Rectangle targetRectangle = targetTile.getRectangle();
+        final Band tcwvBand = targetProduct.getBand(TcwvConstants.TCWV_BAND_NAME);
+        final Band tcwvUnvertaintyBand = targetProduct.getBand(TcwvConstants.TCWV_UNCERTAINTY_BAND_NAME);
 
         Tile[] winBandTiles = new Tile[winBands.length];
         for (int i = 0; i < winBandTiles.length; i++) {
@@ -218,7 +214,8 @@ public class TcwvOp extends Operator {
                 // NOTE: we compute land only for MERIS, MODIS_TERRA, or OLCI! 20180925
 //                isLand = isLand && sensor != Sensor.MODIS_AQUA;
                 if (!isValid || isCloud || !isLand) {
-                    targetTile.setSample(x, y, Float.NaN);
+                    targetTiles.get(tcwvBand).setSample(x, y, Float.NaN);
+                    targetTiles.get(tcwvUnvertaintyBand).setSample(x, y, Float.NaN);
                 } else {
                     // Preparing input data...
                     final double sza = szaTile.getSampleDouble(x, y);
@@ -233,8 +230,8 @@ public class TcwvOp extends Operator {
                     // no ERAInterim: hPa --> multiply by -1 to get negative hPa
                     double prs;
                     if (priorMslTile != null) {
-                       prs = -priorMslTile.getSampleDouble(x, y)/100.0;
-                    }  else {
+                        prs = -priorMslTile.getSampleDouble(x, y) / 100.0;
+                    } else {
                         prs = -1.0 * mslPressure;
                     }
 
@@ -256,28 +253,20 @@ public class TcwvOp extends Operator {
                     }
 
                     final TcwvAlgorithmInput input = new TcwvAlgorithmInput(winBandData, absBandData, sza, vza, relAzi,
-                                                                            amf, aot865, priorAot, priorAl0, priorAl1,
-                                                                            t2m, prs, priorWs, priorTcwv);
+                            amf, aot865, priorAot, priorAl0, priorAl1,
+                            t2m, prs, priorWs, priorTcwv);
 
-//                    if (x == 452 && y == 0) {
-//                        System.out.println("x = " + x);
-//                    }
                     final TcwvResult result = tcwvAlgorithm.compute(sensor, landLut, oceanLut,
-                                                                    tcwvFunctionLand, tcwvFunctionOcean,
-                                                                    jacobiFunctionland, jacobiFunctionOcean,
-                                                                    input, isLand);
+                            tcwvFunctionLand, tcwvFunctionOcean,
+                            jacobiFunctionland, jacobiFunctionOcean,
+                            input, isLand);
 
-                    if (targetBandName.equals(TcwvConstants.TCWV_BAND_NAME)) {
-                        targetTile.setSample(x, y, result.getTcwv());
-                    } else {
-                        throw new OperatorException("Unexpected target band name: '" +
-                                                            targetBandName + "' - exiting.");
-                    }
+                    targetTiles.get(tcwvBand).setSample(x, y, result.getTcwv());
+                    // todo: uncertainty tbd. Set 3% for the moment.
+                    targetTiles.get(tcwvUnvertaintyBand).setSample(x, y, 0.03 * result.getTcwv());
                 }
             }
         }
-
-
     }
 
     private boolean isCloud(int x, int y, Tile pixelClassifTile) {
@@ -309,14 +298,14 @@ public class TcwvOp extends Operator {
     private void validateSourceProduct(Product sourceProduct) {
         if (!sourceProduct.containsBand(TcwvConstants.IDEPIX_CLASSIF_BAND_NAME)) {
             throw new OperatorException("Source product is not valid, as it does not contain " +
-                                                "pixel classification flag band '" +
-                                                TcwvConstants.IDEPIX_CLASSIF_BAND_NAME + "'.");
+                    "pixel classification flag band '" +
+                    TcwvConstants.IDEPIX_CLASSIF_BAND_NAME + "'.");
         }
 
         for (String bandName : sensor.getReflBandNames()) {
             if (!sourceProduct.containsBand(bandName)) {
                 throw new OperatorException("Source product is not valid, as it does not contain " +
-                                                    "mandatory band '" + bandName + "'.");
+                        "mandatory band '" + bandName + "'.");
             }
         }
     }
@@ -325,14 +314,28 @@ public class TcwvOp extends Operator {
         targetProduct = new Product(sourceProduct.getName(), sourceProduct.getProductType(), width, height);
 
         final Band tcwvBand = targetProduct.addBand(TcwvConstants.TCWV_BAND_NAME, ProductData.TYPE_FLOAT32);
+//        final Band tcwvBand = targetProduct.addBand(TcwvConstants.TCWV_BAND_NAME, ProductData.TYPE_UINT16);
+//        tcwvBand.setScalingFactor(0.001);
         tcwvBand.setUnit("mm");
-        tcwvBand.setDescription("Total column of water vapour");
+        tcwvBand.setDescription("Total Column of Water Vapour");
         tcwvBand.setNoDataValue(Float.NaN);
         tcwvBand.setNoDataValueUsed(true);
 
+        final Band tcwvUncertaintyBand =
+                targetProduct.addBand(TcwvConstants.TCWV_UNCERTAINTY_BAND_NAME, ProductData.TYPE_FLOAT32);
+        tcwvUncertaintyBand.setUnit("mm");
+        tcwvUncertaintyBand.setDescription("Uncertainty of Total Column of Water Vapour");
+        tcwvUncertaintyBand.setNoDataValue(Float.NaN);
+        tcwvUncertaintyBand.setNoDataValueUsed(true);
+
         ProductUtils.copyBand(TcwvConstants.IDEPIX_CLASSIF_BAND_NAME, sourceProduct, targetProduct, true);
-        ProductUtils.copyGeoCoding(sourceProduct, targetProduct);
         ProductUtils.copyTiePointGrids(sourceProduct, targetProduct);
+
+        final TiePointGrid latTpg = targetProduct.getTiePointGrid("latitude");
+        final TiePointGrid lonTpg = targetProduct.getTiePointGrid("longitude");
+        final TiePointGeoCoding tiePointGeoCoding = new TiePointGeoCoding(latTpg, lonTpg);
+        targetProduct.setSceneGeoCoding(tiePointGeoCoding);
+
         ProductUtils.copyFlagCodings(sourceProduct, targetProduct);
         ProductUtils.copyMasks(sourceProduct, targetProduct);
 
