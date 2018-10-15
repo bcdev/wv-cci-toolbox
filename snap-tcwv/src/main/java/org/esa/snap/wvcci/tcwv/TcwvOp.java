@@ -313,9 +313,9 @@ public class TcwvOp extends Operator {
     private void createTargetProduct() {
         targetProduct = new Product(sourceProduct.getName(), sourceProduct.getProductType(), width, height);
 
-        final Band tcwvBand = targetProduct.addBand(TcwvConstants.TCWV_BAND_NAME, ProductData.TYPE_FLOAT32);
-//        final Band tcwvBand = targetProduct.addBand(TcwvConstants.TCWV_BAND_NAME, ProductData.TYPE_UINT16);
-//        tcwvBand.setScalingFactor(0.001);
+//        final Band tcwvBand = targetProduct.addBand(TcwvConstants.TCWV_BAND_NAME, ProductData.TYPE_FLOAT32);
+        final Band tcwvBand = targetProduct.addBand(TcwvConstants.TCWV_BAND_NAME, ProductData.TYPE_UINT16);
+        tcwvBand.setScalingFactor(0.01);
         tcwvBand.setUnit("mm");
         tcwvBand.setDescription("Total Column of Water Vapour");
         tcwvBand.setNoDataValue(Float.NaN);
