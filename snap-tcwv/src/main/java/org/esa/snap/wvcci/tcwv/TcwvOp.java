@@ -322,7 +322,9 @@ public class TcwvOp extends Operator {
         tcwvBand.setNoDataValueUsed(true);
 
         final Band tcwvUncertaintyBand =
-                targetProduct.addBand(TcwvConstants.TCWV_UNCERTAINTY_BAND_NAME, ProductData.TYPE_FLOAT32);
+//                targetProduct.addBand(TcwvConstants.TCWV_UNCERTAINTY_BAND_NAME, ProductData.TYPE_FLOAT32);
+                targetProduct.addBand(TcwvConstants.TCWV_UNCERTAINTY_BAND_NAME, ProductData.TYPE_UINT16);
+        tcwvUncertaintyBand.setScalingFactor(0.01);
         tcwvUncertaintyBand.setUnit("mm");
         tcwvUncertaintyBand.setDescription("Uncertainty of Total Column of Water Vapour");
         tcwvUncertaintyBand.setNoDataValue(Float.NaN);
