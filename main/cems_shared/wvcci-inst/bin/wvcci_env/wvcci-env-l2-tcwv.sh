@@ -29,7 +29,7 @@ read_task_jobs() {
             #if grep -qF 'Successfully completed.' ${log}
             #if ! grep -qF 'Status: 1' ${log}
             # also make sure that terminated jobs are not interpreted as successful:
-            if [ ! grep -qF 'Status: 1' ${log} ] && [ ! grep -qF 'TERM_RUNLIMIT' ${log} ]
+            if [ grep -qF 'Status: 0' ${log} ] && [ ! grep -qF 'TERM_RUNLIMIT' ${log} ]
             then
                 if [ "${jobs}" != "" ]
                 then

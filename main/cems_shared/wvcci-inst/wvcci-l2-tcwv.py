@@ -6,10 +6,10 @@ from pmonitor import PMonitor
 
 __author__ = 'olafd'
 
-sensors = ['MERIS']
+sensors = ['MODIS_TERRA']
 years = ['2011']    #test  
-#allMonths = ['05']
-allMonths = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+allMonths = ['12']
+#allMonths = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
 
 #################################################################
 
@@ -27,9 +27,10 @@ def getNumMonthDays(year, month_index):
         else:
             return 28
     elif month_index == 4 or month_index == 6 or month_index == 9 or month_index == 11:
+        #return 1
         return 30
     else:
-        #return 1  # test!!
+        #return 2  # test!!
         return 31
 
 ######################## Idepix --> TCWV: ###########################
@@ -49,10 +50,10 @@ m = PMonitor(inputs,
 for year in years:
     for sensor in sensors:
         for month in getMonth(year):
-            tcwvL2Dir = wvcciRootDir + '/Tcwv/' + sensor + '/' + year + '/' + month 
-
             if os.path.exists(idepixRootDir + '/' + sensor + '/' + year + '/' + month):
                 for day in range(1, getNumMonthDays(year, int(month))+1):
+                    tcwvL2Dir = wvcciRootDir + '/Tcwv/' + sensor + '/' + year + '/' + month + '/' + str(day).zfill(2) 
+
                     if os.path.exists(idepixRootDir + '/' + sensor + '/' + year + '/' + month + '/' + str(day).zfill(2)):
                         idepixFiles = os.listdir(idepixRootDir + '/' + sensor + '/' + year + '/' + month + '/' + str(day).zfill(2))
                         if len(idepixFiles) > 0:

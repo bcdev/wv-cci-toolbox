@@ -18,8 +18,21 @@ fi
 
 auxdataPath=/group_workspaces/cems2/qa4ecv/vol4/software/dot_snap/auxdata/wvcci
 
-echo "time $snapRootDir/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixPath -PauxdataPath=$auxdataPath -Psensor=$sensor -PcloudFilterLevel=CLOUD_SURE_BUFFER -f NetCDF4-WVCCI -t $tcwvFile"
-time $snapRootDir/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixPath -PauxdataPath=$auxdataPath -Psensor=$sensor -PcloudFilterLevel=CLOUD_SURE_BUFFER -f NetCDF4-WVCCI -t $tcwvFile
+if [ "$sensor" == "MERIS" ]
+then
+    echo "time $snapRootDir/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixPath -PauxdataPath=$auxdataPath -Psensor=$sensor -PcloudFilterLevel=CLOUD_SURE_BUFFER -f NetCDF4-WVCCI -t $tcwvFile"
+    time $snapRootDir/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixPath -PauxdataPath=$auxdataPath -Psensor=$sensor -PcloudFilterLevel=CLOUD_SURE_BUFFER -f NetCDF4-WVCCI -t $tcwvFile
+elif [ "$sensor" == "MODIS_TERRA" ]
+then
+    echo "time $snapRootDir/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixPath -PauxdataPath=$auxdataPath -Psensor=$sensor -PcloudFilterLevel=CLOUD_SURE -f NetCDF4-WVCCI -t $tcwvFile"
+    time $snapRootDir/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixPath -PauxdataPath=$auxdataPath -Psensor=$sensor -PcloudFilterLevel=CLOUD_SURE -f NetCDF4-WVCCI -t $tcwvFile
+else
+    echo "Invalid sensor $sensor - no Idepix processing started."
+fi
+
+
+
+
 
 status=$?
 echo "Status: $status"

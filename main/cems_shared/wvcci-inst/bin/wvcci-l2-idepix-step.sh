@@ -3,20 +3,30 @@
 . ${WVCCI_INST}/bin/wvcci_env/wvcci-env-l2-idepix.sh
 
 l1bPath=$1
-l1bFile=$2
-idepixL2Dir=$3
-sensor=$4
-year=$5
-month=$6
-wvcciRootDir=$7
-snapDir=$8
+landMaskPath=$2
+l1bFile=$3
+landMaskFile=$4
+idepixL2Dir=$5
+sensor=$6
+year=$7
+month=$8
+wvcciRootDir=$9
+snapDir=${10}
 
-l1bBaseName=`basename $l1bFile .N1`
+if [ "$sensor" == "MERIS" ]
+then
+    l1bBaseName=`basename $l1bFile .N1`
+elif [ "$sensor" == "MODIS_TERRA" ]
+then
+    l1bBaseName=`basename $l1bFile .hdf`
+else
+    echo "Invalid sensor $sensor - no Idepix processing started."
+fi
 echo "l1bBaseName: $l1bBaseName"
 
 task="wvcci-l2-idepix"
 jobname="${task}-${sensor}-${year}-${month}-${l1bBaseName}"
-command="./bin/${task}-snap.sh ${l1bPath} ${l1bBaseName} ${idepixL2Dir} ${sensor} ${year} ${month} ${wvcciRootDir} ${snapDir}"
+command="./bin/${task}-snap.sh ${l1bPath} ${landMaskPath} ${l1bFile} ${idepixL2Dir} ${sensor} ${year} ${month} ${wvcciRootDir} ${snapDir}"
 
 echo "jobname: $jobname"
 echo "command: $command"
