@@ -21,12 +21,12 @@ import java.util.List;
 public class TcwvIO {
 
     /**
-     * Installs auxiliary data (i.e. lookup tables for desmiling).
+     * Installs auxiliary data, here lookup tables.
      *
-     * @return - the auxdata path for O2 correction
+     * @return - the auxdata path for lookup tables.
      * @throws IOException -
      */
-    static String installAuxdata() throws IOException {
+    static String installAuxdataLuts() throws IOException {
         Path auxdataDirectory = SystemUtils.getAuxDataPath().resolve("wvcci");
         final Path sourceDirPath = ResourceInstaller.findModuleCodeBasePath(TcwvOp.class).resolve("auxdata/luts");
         final ResourceInstaller resourceInstaller = new ResourceInstaller(sourceDirPath, auxdataDirectory);
@@ -34,6 +34,19 @@ public class TcwvIO {
         return auxdataDirectory.toString();
     }
 
+    /**
+     * Installs auxiliary data, here for L3.
+     *
+     * @return - the auxdata path for L3.
+     * @throws IOException -
+     */
+    public static String installAuxdataL3() throws IOException {
+        Path auxdataDirectory = SystemUtils.getAuxDataPath().resolve("wvcci");
+        final Path sourceDirPath = ResourceInstaller.findModuleCodeBasePath(TcwvOp.class).resolve("auxdata/l3");
+        final ResourceInstaller resourceInstaller = new ResourceInstaller(sourceDirPath, auxdataDirectory);
+        resourceInstaller.install(".*", ProgressMonitor.NULL);
+        return auxdataDirectory.toString();
+    }
 
     public static TcwvOceanLut readOceanLookupTable(String auxdataPath, Sensor sensor) {
         final NetcdfFile ncFile;

@@ -20,7 +20,7 @@ public class TcwvFullAlgoMerisTest {
 
     @Before
     public void setUp() throws Exception {
-        final String auxdataPath = TcwvIO.installAuxdata();
+        final String auxdataPath = TcwvIO.installAuxdataLuts();
 
         landLut = TcwvIO.readLandLookupTable(auxdataPath, Sensor.MERIS);
         oceanLut = TcwvIO.readOceanLookupTable(auxdataPath, Sensor.MERIS);

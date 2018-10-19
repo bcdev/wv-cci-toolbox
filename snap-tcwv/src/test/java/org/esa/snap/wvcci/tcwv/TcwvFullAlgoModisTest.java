@@ -16,7 +16,7 @@ public class TcwvFullAlgoModisTest {
 
     @Before
     public void setUp() throws Exception {
-        auxdataPath = TcwvIO.installAuxdata();
+        auxdataPath = TcwvIO.installAuxdataLuts();
     }
 
     // Java version of tests from Python breadboard 'test_cawa.py', which in return is a standalone version

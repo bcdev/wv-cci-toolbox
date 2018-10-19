@@ -18,7 +18,7 @@ public class TcwvFullAlgoModisMain {
         final Sensor sensor = Sensor.MODIS_AQUA;
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
 
-        String auxdataPath = TcwvIO.installAuxdata();
+        String auxdataPath = TcwvIO.installAuxdataLuts();
         TcwvLandLut landLut = TcwvIO.readLandLookupTable(auxdataPath, Sensor.MODIS_AQUA);
         TcwvOceanLut oceanLut = TcwvIO.readOceanLookupTable(auxdataPath, Sensor.MODIS_AQUA);
         TcwvFunction tcwvFunctionOcean = TcwvInterpolation.getForwardFunctionOcean(oceanLut);
@@ -54,7 +54,7 @@ public class TcwvFullAlgoModisMain {
         final Sensor sensor = Sensor.MODIS_TERRA;
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
 
-        String auxdataPath = TcwvIO.installAuxdata();
+        String auxdataPath = TcwvIO.installAuxdataLuts();
 //        TcwvLandLut landLut = TcwvIO.readLandLookupTable(auxdataPath, Sensor.MODIS_TERRA);
         TcwvLandLut landLut = TcwvIO.readLandLookupTable(auxdataPath, Sensor.MERIS);
 //        TcwvOceanLut oceanLut = TcwvIO.readOceanLookupTable(auxdataPath, Sensor.MODIS_AQUA);

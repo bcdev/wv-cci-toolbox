@@ -101,7 +101,7 @@ public class TcwvOp extends Operator {
 
         try {
             if (auxdataPath == null || auxdataPath.length() == 0) {
-                auxdataPath = TcwvIO.installAuxdata();
+                auxdataPath = TcwvIO.installAuxdataLuts();
             }
             landLut = TcwvIO.readLandLookupTable(auxdataPath, sensor);
             oceanLut = TcwvIO.readOceanLookupTable(auxdataPath, sensor);
@@ -211,7 +211,7 @@ public class TcwvOp extends Operator {
                 final boolean isCloud = isCloud(x, y, pixelClassifTile);
                 boolean isLand = pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_LAND_BIT);
 
-                // NOTE: we compute land only for MERIS, MODIS_TERRA, or OLCI! 20180925
+                // NOTE: we compute only land for MERIS, MODIS_TERRA, or OLCI! 20180925
 //                isLand = isLand && sensor != Sensor.MODIS_AQUA;
                 if (!isValid || isCloud || !isLand) {
                     targetTiles.get(tcwvBand).setSample(x, y, Float.NaN);

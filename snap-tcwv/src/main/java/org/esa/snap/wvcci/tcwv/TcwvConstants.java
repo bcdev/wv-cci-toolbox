@@ -9,7 +9,10 @@ public class TcwvConstants {
 
     public static final String IDEPIX_CLASSIF_BAND_NAME = "pixel_classif_flags";
     public static final String TCWV_BAND_NAME = "tcwv";
+    public static final String TCWV_MEAN_BAND_NAME = "tcwv_mean";
     public static final String TCWV_UNCERTAINTY_BAND_NAME = "tcwv_uncertainty";
+    public static final String TCWV_UNCERTAINTY_MEAN_BAND_NAME = "tcwv_uncertainty_mean";
+    public static final String TCWV_COUNTS_BAND_NAME = "tcwv_counts";
 
     public static final String PRIOR_T2M_BAND_NAME = "t2m";
     public static final String PRIOR_MSL_BAND_NAME = "msl";

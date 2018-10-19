@@ -20,7 +20,7 @@ public class TcwvMerisLandLutTest {
 
     @Before
     public void setUp() throws Exception {
-        auxdataPath = TcwvIO.installAuxdata();
+        auxdataPath = TcwvIO.installAuxdataLuts();
     }
 
     @Test
