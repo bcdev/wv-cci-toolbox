@@ -46,33 +46,55 @@ m = PMonitor(inputs,
              types=[('wvcci-l2-idepix-step.sh',128)])
 
 for year in years:
+
+    eraInterimRootDir = wvcciRootDir + '/auxiliary/era-interim-t2m-mslp-tcwv-u10-v10'
+
     for sensor in sensors:
         l1bRootDir = wvcciRootDir + '/L1b/' + sensor
         modisLandMaskRootDir = wvcciRootDir + '/LandMask/MOD03'
+
         for month in getMonth(year):
 
             if os.path.exists(l1bRootDir + '/' + year + '/' + month):
-                for day in range(1, getNumMonthDays(year, int(month))+1):
+                for iday in range(1, getNumMonthDays(year, int(month))+1):
+                    day = str(iday).zfill(2)
+
+                    # =============== l2 day =======================
+
+                    # Idepix
+
                     idepixL2Dir = wvcciRootDir + '/Idepix/' + sensor + '/' + year + '/' + month + '/' + str(day).zfill(2)
-                    print 'idepixL2Dir: ', idepixL2Dir
+                    idepixErainterimL2Dir = wvcciRootDir + '/Idepix-Erainterim/' + sensor + '/' + year + '/' + month + '/' + str(day).zfill(2)
+                    #print 'idepixL2Dir: ', idepixL2Dir
 
                     if os.path.exists(l1bRootDir + '/' + year + '/' + month + '/' + str(day).zfill(2)):
                         l1bFiles = os.listdir(l1bRootDir + '/' + year + '/' + month + '/' + str(day).zfill(2))
                         if len(l1bFiles) > 0:
                             for index in range(0, len(l1bFiles)):
                                 l1bPath = l1bRootDir + '/' + year + '/' + month + '/' + str(day).zfill(2) + '/' + l1bFiles[index]
-                                if l1bFiles[index].endswith(".N1") or l1bFiles[index].endswith(".N1.gz"):
-                                    # MERIS
-                                    m.execute('wvcci-l2-idepix-step.sh', ['dummy'], [idepixL2Dir], parameters=[l1bPath,'dummy',l1bFiles[index],'dummy',idepixL2Dir,sensor,year,month,wvcciRootDir,snapDir])
-                                elif l1bFiles[index].endswith(".hdf"):
-                                    # MODIS
+                                if l1bFiles[index].endswith(".hdf"):
+                                    # MODIS only
                                     # print 'modisLandMaskRootDir: ', modisLandMaskRootDir
                                     if os.path.exists(modisLandMaskRootDir + '/' + year + '/' + month + '/' + str(day).zfill(2)):
                                         # we have a MOD03 land mask, should be the normal case!  
                                         modisLandMaskFiles = os.listdir(modisLandMaskRootDir + '/' + year + '/' + month + '/' + str(day).zfill(2))
                                         modisLandMaskPath = modisLandMaskRootDir + '/' + year + '/' + month + '/' + str(day).zfill(2) + '/' + modisLandMaskFiles[index]
                                         if os.path.exists(modisLandMaskPath):
-                                            m.execute('wvcci-l2-idepix-step.sh', ['dummy'], [idepixL2Dir], parameters=[l1bPath,modisLandMaskPath,l1bFiles[index],modisLandMaskFiles[index],idepixL2Dir,sensor,year,month,wvcciRootDir,snapDir])
+
+                                            # Idepix:
+                                            m.execute('wvcci-l2-idepix-step.sh', 
+                                                       ['dummy'], 
+                                                       [idepixL2Dir], 
+                                                       parameters=[l1bPath,modisLandMaskPath,l1bFiles[index],modisLandMaskFiles[index],idepixL2Dir,sensor,year,month,wvcciRootDir,snapDir])
+
+                                            # Merge Idepix with ERA-INTERIM:
+                                            eraInterimDir = eraInterimRootDir + '/' + year
+                                            idepixFiles = os.listdir(idepixL2Dir)
+
+                                            m.execute('wvcci-l2-idepix-modis-erainterim-step.sh',
+                                                       [idepixL2Dir],
+                                                       [idepixErainterimL2Dir],
+                                                       parameters=[l1bPath,l1bFiles[index],idepixErainterimL2Dir,year,month,day,wvcciRootDir,snapDir])
 
 m.wait_for_completion()
 

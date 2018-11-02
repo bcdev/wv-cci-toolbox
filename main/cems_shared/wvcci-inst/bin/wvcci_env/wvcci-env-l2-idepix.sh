@@ -29,7 +29,8 @@ read_task_jobs() {
             #if grep -qF 'Successfully completed.' ${log}
             #if ! grep -qF 'Status: 1' ${log}
             # also make sure that terminated jobs are not interpreted as successful:
-            if [ ! grep -qF 'Status: 1' ${log} ] && [ ! grep -qF 'TERM_RUNLIMIT' ${log} ]
+            #if [ ! grep -qF 'Status: 1' ${log} ] && [ ! grep -qF 'TERM_RUNLIMIT' ${log} ]
+            if [ grep -qF 'Status: 0' ${log} ] && [ ! grep -qF 'TERM_RUNLIMIT' ${log} ]
             then
                 if [ "${jobs}" != "" ]
                 then
@@ -70,7 +71,8 @@ wait_for_task_jobs_completion() {
                 if [ -s ${log} ]
                 then
                     #if ! grep -qF 'Successfully completed.' ${log}
-                    if grep -qF 'Status: 1' ${log} 
+                    #if grep -qF 'Status: 1' ${log} 
+                    if [ ! grep -qF 'Status: 0' ${log} ] 
                     then
                         echo "tail -n10 ${log}"
                         tail -n10 ${log}
