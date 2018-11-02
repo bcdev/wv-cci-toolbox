@@ -71,11 +71,11 @@ public class TcwvFullAlgoModisTest {
 
         // also remember that MODIS land uses 5 input bands, MODIS ocean only 4 !!
 
-        final Sensor sensor = Sensor.MODIS_AQUA;
+        final Sensor sensor = Sensor.MODIS_TERRA;
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
 
-        TcwvLandLut landLut = TcwvIO.readLandLookupTable(auxdataPath, Sensor.MODIS_AQUA);
-        TcwvOceanLut oceanLut = TcwvIO.readOceanLookupTable(auxdataPath, Sensor.MODIS_AQUA);
+        TcwvLandLut landLut = TcwvIO.readLandLookupTable(auxdataPath, Sensor.MODIS_TERRA);
+//        TcwvOceanLut oceanLut = TcwvIO.readOceanLookupTable(auxdataPath, Sensor.MODIS_TERRA);
         TcwvFunction tcwvFunctionLand = TcwvInterpolation.getForwardFunctionLand(landLut);
         JacobiFunction jacobiFunctionland = TcwvInterpolation.getJForwardFunctionLand(landLut);
 
@@ -97,7 +97,7 @@ public class TcwvFullAlgoModisTest {
                                                           priorAot, priorAl0, priorAl1, priorT2m, priorMslPress,
                                                           priorWsp, priorTcwv);
         final TcwvResult result = algorithm.compute(sensor,
-                                                    landLut, oceanLut,
+                                                    landLut, null,
                                                     tcwvFunctionLand, null,
                                                     jacobiFunctionland, null,
                                                     input, true);

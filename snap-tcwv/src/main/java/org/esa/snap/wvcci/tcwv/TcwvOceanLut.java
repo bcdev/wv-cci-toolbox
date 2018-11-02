@@ -7,6 +7,8 @@ package org.esa.snap.wvcci.tcwv;
  */
 public class TcwvOceanLut {
 
+    private Sensor sensor;
+
     // currently see e.g. ocean_core_meris.nc4 from CAWA
     // see new json LUTs later!
 
@@ -77,5 +79,13 @@ public class TcwvOceanLut {
 //    public double[] getSuz() {
 //        return suz;
 //    }
+
+    public Sensor getSensor() {
+        return sensor;
+    }
+
+    public void setSensor(Sensor sensor) {
+        this.sensor = sensor;
+    }
 }
 

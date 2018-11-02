@@ -7,6 +7,8 @@ package org.esa.snap.wvcci.tcwv;
  */
 public class TcwvLandLut {
 
+    private Sensor sensor;
+
     // currently see e.g. land_core_meris.nc4 from CAWA
     // see new json LUTs later!
 
@@ -98,4 +100,11 @@ public class TcwvLandLut {
 //        return tmp;
 //    }
 
+    public Sensor getSensor() {
+        return sensor;
+    }
+
+    public void setSensor(Sensor sensor) {
+        this.sensor = sensor;
+    }
 }

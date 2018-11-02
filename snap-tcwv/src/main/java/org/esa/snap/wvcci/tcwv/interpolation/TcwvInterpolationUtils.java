@@ -1,5 +1,6 @@
 package org.esa.snap.wvcci.tcwv.interpolation;
 
+import org.esa.snap.wvcci.tcwv.Sensor;
 import ucar.ma2.Array;
 import ucar.ma2.DataType;
 import ucar.ma2.Section;
@@ -116,13 +117,15 @@ public class TcwvInterpolationUtils {
      *
      * @param src - 9D input array of doubles
      *
+     * @param sensor
      * @return 1D result array
      */
-    public static double[] convert9Dto1DArray(double[][][][][][][][][] src) {
+    public static double[] convert9Dto1DArray(double[][][][][][][][][] src, Sensor sensor) {
         double[] result = new double[src.length * src[0].length * src[0][0].length * src[0][0][0].length
                 * src[0][0][0][0].length * src[0][0][0][0][0].length * src[0][0][0][0][0][0].length
                 * src[0][0][0][0][0][0][0].length * src[0][0][0][0][0][0][0][0].length];
         int index = 0;
+
         for (double[][][][][][][][] srcSubArr : src) {
             for (int j = 0; j < src[0].length; j++) {
                 for (int k = 0; k < src[0][0].length; k++) {
@@ -132,6 +135,14 @@ public class TcwvInterpolationUtils {
                                 for (int o = 0; o < src[0][0][0][0][0][0].length; o++) {
                                     for (int p = 0; p < src[0][0][0][0][0][0][0].length; p++) {
                                         for (int q = 0; q < src[0][0][0][0][0][0][0][0].length; q++) {
+                                            // fix for CAWA MODIS land LUTs:
+                                            // todo: remove after LUT update
+                                            if (sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA) {
+                                                if (n == 2) {
+                                                    srcSubArr[j][k][l][m][n][o][p][q] =
+                                                            srcSubArr[j][k][l][m][1][o][p][q];
+                                                }
+                                            }
                                             result[index++] = srcSubArr[j][k][l][m][n][o][p][q];
                                         }
                                     }

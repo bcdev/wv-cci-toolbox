@@ -123,7 +123,7 @@ public class TcwvInterpolation {
                 TcwvInterpolationUtils.change10DArrayLastToFirstDimension(tcwvLandLut.getLutArray());
         final double[][] lutArrays1D = new double[lutArraySwapped.length][];
         for (int i = 0; i < lutArraySwapped.length; i++) {
-            lutArrays1D[i] = TcwvInterpolationUtils.convert9Dto1DArray(lutArraySwapped[i]);
+            lutArrays1D[i] = TcwvInterpolationUtils.convert9Dto1DArray(lutArraySwapped[i], tcwvLandLut.getSensor());
         }
 
         final double[][] axes = tcwvLandLut.getAxes();
@@ -167,7 +167,7 @@ public class TcwvInterpolation {
                 TcwvInterpolationUtils.change10DArrayLastToFirstDimension(tcwvLandLut.getJlutArray());
         final double[][] jlutArrays1D = new double[jlutArraySwapped.length][];
         for (int i = 0; i < jlutArraySwapped.length; i++) {
-            jlutArrays1D[i] = TcwvInterpolationUtils.convert9Dto1DArray(jlutArraySwapped[i]);
+            jlutArrays1D[i] = TcwvInterpolationUtils.convert9Dto1DArray(jlutArraySwapped[i], tcwvLandLut.getSensor());
         }
 
         return jacobiLut2Function(jlutArrays1D,

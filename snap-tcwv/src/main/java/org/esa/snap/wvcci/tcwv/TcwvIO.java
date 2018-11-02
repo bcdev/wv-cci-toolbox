@@ -52,7 +52,9 @@ public class TcwvIO {
         final NetcdfFile ncFile;
         try {
             ncFile = TcwvIO.getTcwvLookupTableNcFile(auxdataPath, sensor.getOceanLutName());
-            return TcwvIO.getTcwvOceanLut(ncFile);
+            final TcwvOceanLut tcwvOceanLut = TcwvIO.getTcwvOceanLut(ncFile);
+            tcwvOceanLut.setSensor(sensor);
+            return tcwvOceanLut;
         } catch (IOException e) {
             throw new OperatorException("Cannot read ocean LUT for sensor '" + sensor.getName() + "'.");
         }
@@ -62,7 +64,9 @@ public class TcwvIO {
         final NetcdfFile ncFile;
         try {
             ncFile = TcwvIO.getTcwvLookupTableNcFile(auxdataPath, sensor.getLandLutName());
-            return TcwvIO.getTcwvLandLut(ncFile);
+            final TcwvLandLut tcwvLandLut = TcwvIO.getTcwvLandLut(ncFile);
+            tcwvLandLut.setSensor(sensor);
+            return tcwvLandLut;
         } catch (IOException e) {
             throw new OperatorException("Cannot read land LUT for sensor '" + sensor.getName() + "'.");
         }
