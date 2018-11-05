@@ -47,7 +47,7 @@ public class TcwvAlgorithm {
         final double[] a = {wvc[0], al0[0], al1[0]}; // constant for all retrievals!
         final double[] b = {wvc[wvc.length - 1], al0[al0.length - 1], al1[al1.length - 1]};
 
-
+        // see cawa_tcwv_land.py --> _do_inversion:
         double[] mes = new double[input.getRhoToaWin().length + input.getRhoToaAbs().length];
         for (int i = 0; i < input.getRhoToaWin().length; i++) {
             mes[i] = input.getRhoToaWin()[i];
