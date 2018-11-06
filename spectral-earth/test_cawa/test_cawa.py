@@ -201,151 +201,151 @@ def jlut2func(dum):
     return jfunc
 
 
-def test_cawa_meris_ocean():
+# def test_cawa_meris_ocean():
+#
+#     with Dataset('ocean_core_meris.nc4', 'r') as ncds:
+#         # get the full lut
+#         lut = np.array(ncds.variables['lut'][:], order='F')
+#         # print('self.lut[0][0][0][0][0][0][0]: ', lut[0][0][0][0][0][0][0])
+#         # print('self.lut[3][3][8][0][8][1][2]: ', lut[3][3][8][0][8][1][2])
+#         # print('self.lut[3][3][8][0][8][1][2]: ', lut[3][3][8][0][8][1][2])
+#         # print('self.lut[2][4][6][3][2][7][1]: ', lut[2][4][6][3][2][7][1])
+#         # print('self.lut[4][2][5][4][1][7][2]: ', lut[4][2][5][4][1][7][2])
+#         # print('self.lut[1][5][4][5][3][6][0]: ', lut[1][5][4][5][3][6][0])
+#         # print('self.lut[0][5][0][8][6][3][0]: ', lut[0][5][0][8][6][3][0])
+#         # print('self.lut[2][4][1][8][8][1][2]: ', lut[2][4][1][8][8][1][2])
+#         # print('self.lut[5][1][2][7][0][8][2]: ', lut[5][1][2][7][0][8][2])
+#         # print('self.lut[3][0][3][6][7][2][1]: ', lut[3][0][3][6][7][2][1])
+#         # print('self.lut[5][5][10][10][8][8][2]: ', lut[5][5][10][10][8][8][2])
+#         jlut = np.array(ncds.variables['jlut'][:], order='F')
+#         # print('self.jlut[0][0][0][0][0][0][0]: ', jlut[0][0][0][0][0][0][0])
+#         # print('self.jlut[3][3][8][0][8][1][2]: ', jlut[3][3][8][0][8][1][2])
+#         # print('self.jlut[3][3][8][0][8][1][2]: ', jlut[3][3][8][0][8][1][2])
+#         # print('self.jlut[2][4][6][3][2][7][1]: ', jlut[2][4][6][3][2][7][1])
+#         # print('self.jlut[4][2][5][4][1][7][2]: ', jlut[4][2][5][4][1][7][2])
+#         # print('self.jlut[1][5][4][5][3][6][0]: ', jlut[1][5][4][5][3][6][0])
+#         # print('self.jlut[0][5][0][8][6][3][0]: ', jlut[0][5][0][8][6][3][0])
+#         # print('self.jlut[2][4][1][8][8][1][2]: ', jlut[2][4][1][8][8][1][2])
+#         # print('self.jlut[5][1][2][7][0][8][2]: ', jlut[5][1][2][7][0][8][2])
+#         # print('self.jlut[3][0][3][6][7][2][1]: ', jlut[3][0][3][6][7][2][1])
+#         # print('self.jlut[5][5][10][10][8][8][2]: ', jlut[5][5][10][10][8][8][2])
+#         axes = tuple([np.array(ncds.variables[a][:]) for a in ncds.variables['lut'].dimensions[:-1]])
+#         # print('self.axes: ', str(axes))
+#         # print('self.axes[0]: ', str(axes[0]))
+#         # print('self.axes[1]: ', str(axes[1]))
+#         # print('self.axes[2]: ', str(axes[2]))
+#         # print('self.axes[3]: ', str(axes[3]))
+#         # print('self.axes[4]: ', str(axes[4]))
+#         # print('self.axes[5]: ', str(axes[5]))
+#         jaxes = tuple([np.array(ncds.variables[a][:]) for a in ncds.variables['jlut'].dimensions[:-1]])
+#         print('self.jaxes: ', str(jaxes))
+#         # print('self.jaxes[0]: ', str(jaxes[0]))
+#         # print('self.jaxes[1]: ', str(jaxes[1]))
+#         # print('self.jaxes[2]: ', str(jaxes[2]))
+#         # print('self.jaxes[3]: ', str(jaxes[3]))
+#         # print('self.jaxes[4]: ', str(jaxes[4]))
+#         # print('self.jaxes[5]: ', str(jaxes[5]))
+#         ny_nx = np.array(ncds.variables['jaco'][:])
+#         # print('self.ny_nx]: ', str(ny_nx))
+#         wb = ncds.getncattr('win_bnd').split(',')
+#         ab = ncds.getncattr('abs_bnd').split(',')
+#         # print('self.wb]: ', str(wb))
+#         # print('self.ab]: ', str(ab))
+#
+#     # generic forward
+#     _forward = lut2func(lut, axes)
+#     # generic jacobian
+#     # import lut2jacobian_lut
+#     _jacobian = jlut2func({'lut': jlut,
+#                            'axes': jaxes,
+#                            'ny': ny_nx[0],
+#                            'nx': ny_nx[1]})
+#
+#     # global predefinition of input for speed reasons
+#     xaa = np.zeros(3)
+#     par = np.zeros(3)
+#     mes = np.zeros(len(wb) + len(ab))
+#
+#     # local predefine inp for speed
+#     inp = np.zeros(6)
+#
+#     def forward(woo, geo):
+#         """
+#         Input:
+#             woo: state (wvc aot wsp)
+#             geo: azi vie suz
+#             aot is aot at winband [0]
+#             wvc is sqrt of wvc
+#
+#         Output:
+#             normalized radiances at winbands
+#             -np.log(effective_transmission)/sqrt(amf) at absbands
+#
+#             effective_transmission= L_toa/L_0
+#             with L_0 is normalized radiance without water vapor
+#
+#         """
+#         inp[:3], inp[3:] = woo, geo
+#         print('forward input: ', str(inp))
+#         print('forward woo: ', str(woo))
+#         print('forward geo: ', str(geo))
+#         print('_forward(inp): ', str(_forward(inp)))
+#         return _forward(inp)
+#
+#     self_forward = forward
+#
+#     def jforward(woo, geo):
+#         """
+#         as forward, but returns jacobian
+#         output must be limited to the first three elements (the state and not the geometry)
+#         """
+#         inp[:3], inp[3:] = woo, geo
+#         print('Jacobian input: ', str(inp))
+#         print('Jacobian woo: ', str(woo))
+#         print('Jacobian geo: ', str(geo))
+#         print('_jacobian(inp)[:, :3]: ', str(_jacobian(inp)[:, :3]))
+#         return _jacobian(inp)[:, :3]
+#
+#     self_jforward = jforward
+#
+#     # min_state
+#     a = np.array([axes[i].min() for i in range(3)])
+#     print('a: ', str(a))
+#     # max_state
+#     b = np.array([axes[i].max() for i in range(3)])
+#     print('b: ', str(b))
+#     import optimal_estimation_cawa as oe
+#     inverter = oe.my_inverter(self_forward, a, b, jaco=self_jforward)
+#
+#     # finaly preset SE
+#     sew = [0.0001 for i in wb]
+#     sea = [0.001 for i in ab]
+#     self_SE = np.diag(sew + sea)
+#     print('sew: ', str(sew))
+#     print('sea: ', str(sea))
+#     print('sew + sea: ', str(sew + sea))
+#     print('self.SE: ', str(self_SE))
+#
+#     sa = np.zeros(shape=(3, 3))
+#     sa[0][0] = 8.
+#     sa[1][1] = 0.1
+#     sa[2][2] = 25.
+#     print('sa: ', str(sa))
+#
+#     mes = [0.19034228, 0.18969933, 0.21104884]
+#     par = [135.61277771, 28.43509483, 61.43579102]
+#     xaa = [5.47722558, 0.15, 7.5]
+#
+#     res = inverter(mes, fparams=par, jparams=par, se=self_SE, sa=sa, xa=xaa, method=2,
+#                    full='fast', maxiter=3)
+#     print('res: ', str(res))
+#
+#     print(' data[res]:', str(res))
+#     print(' data[tcwv]:', str(res.x[0] ** 2))
+#     print(' data[aot]:', str(res.x[1]))
+#     print(' data[wsp]:', str(res.x[2]))
 
-    with Dataset('ocean_core_meris.nc4', 'r') as ncds:
-        # get the full lut
-        lut = np.array(ncds.variables['lut'][:], order='F')
-        # print('self.lut[0][0][0][0][0][0][0]: ', lut[0][0][0][0][0][0][0])
-        # print('self.lut[3][3][8][0][8][1][2]: ', lut[3][3][8][0][8][1][2])
-        # print('self.lut[3][3][8][0][8][1][2]: ', lut[3][3][8][0][8][1][2])
-        # print('self.lut[2][4][6][3][2][7][1]: ', lut[2][4][6][3][2][7][1])
-        # print('self.lut[4][2][5][4][1][7][2]: ', lut[4][2][5][4][1][7][2])
-        # print('self.lut[1][5][4][5][3][6][0]: ', lut[1][5][4][5][3][6][0])
-        # print('self.lut[0][5][0][8][6][3][0]: ', lut[0][5][0][8][6][3][0])
-        # print('self.lut[2][4][1][8][8][1][2]: ', lut[2][4][1][8][8][1][2])
-        # print('self.lut[5][1][2][7][0][8][2]: ', lut[5][1][2][7][0][8][2])
-        # print('self.lut[3][0][3][6][7][2][1]: ', lut[3][0][3][6][7][2][1])
-        # print('self.lut[5][5][10][10][8][8][2]: ', lut[5][5][10][10][8][8][2])
-        jlut = np.array(ncds.variables['jlut'][:], order='F')
-        # print('self.jlut[0][0][0][0][0][0][0]: ', jlut[0][0][0][0][0][0][0])
-        # print('self.jlut[3][3][8][0][8][1][2]: ', jlut[3][3][8][0][8][1][2])
-        # print('self.jlut[3][3][8][0][8][1][2]: ', jlut[3][3][8][0][8][1][2])
-        # print('self.jlut[2][4][6][3][2][7][1]: ', jlut[2][4][6][3][2][7][1])
-        # print('self.jlut[4][2][5][4][1][7][2]: ', jlut[4][2][5][4][1][7][2])
-        # print('self.jlut[1][5][4][5][3][6][0]: ', jlut[1][5][4][5][3][6][0])
-        # print('self.jlut[0][5][0][8][6][3][0]: ', jlut[0][5][0][8][6][3][0])
-        # print('self.jlut[2][4][1][8][8][1][2]: ', jlut[2][4][1][8][8][1][2])
-        # print('self.jlut[5][1][2][7][0][8][2]: ', jlut[5][1][2][7][0][8][2])
-        # print('self.jlut[3][0][3][6][7][2][1]: ', jlut[3][0][3][6][7][2][1])
-        # print('self.jlut[5][5][10][10][8][8][2]: ', jlut[5][5][10][10][8][8][2])
-        axes = tuple([np.array(ncds.variables[a][:]) for a in ncds.variables['lut'].dimensions[:-1]])
-        # print('self.axes: ', str(axes))
-        # print('self.axes[0]: ', str(axes[0]))
-        # print('self.axes[1]: ', str(axes[1]))
-        # print('self.axes[2]: ', str(axes[2]))
-        # print('self.axes[3]: ', str(axes[3]))
-        # print('self.axes[4]: ', str(axes[4]))
-        # print('self.axes[5]: ', str(axes[5]))
-        jaxes = tuple([np.array(ncds.variables[a][:]) for a in ncds.variables['jlut'].dimensions[:-1]])
-        print('self.jaxes: ', str(jaxes))
-        # print('self.jaxes[0]: ', str(jaxes[0]))
-        # print('self.jaxes[1]: ', str(jaxes[1]))
-        # print('self.jaxes[2]: ', str(jaxes[2]))
-        # print('self.jaxes[3]: ', str(jaxes[3]))
-        # print('self.jaxes[4]: ', str(jaxes[4]))
-        # print('self.jaxes[5]: ', str(jaxes[5]))
-        ny_nx = np.array(ncds.variables['jaco'][:])
-        # print('self.ny_nx]: ', str(ny_nx))
-        wb = ncds.getncattr('win_bnd').split(',')
-        ab = ncds.getncattr('abs_bnd').split(',')
-        # print('self.wb]: ', str(wb))
-        # print('self.ab]: ', str(ab))
-
-    # generic forward
-    _forward = lut2func(lut, axes)
-    # generic jacobian
-    # import lut2jacobian_lut
-    _jacobian = jlut2func({'lut': jlut,
-                           'axes': jaxes,
-                           'ny': ny_nx[0],
-                           'nx': ny_nx[1]})
-
-    # global predefinition of input for speed reasons
-    xaa = np.zeros(3)
-    par = np.zeros(3)
-    mes = np.zeros(len(wb) + len(ab))
-
-    # local predefine inp for speed
-    inp = np.zeros(6)
-
-    def forward(woo, geo):
-        """
-        Input:
-            woo: state (wvc aot wsp)
-            geo: azi vie suz
-            aot is aot at winband [0]
-            wvc is sqrt of wvc
-
-        Output:
-            normalized radiances at winbands
-            -np.log(effective_transmission)/sqrt(amf) at absbands
-
-            effective_transmission= L_toa/L_0
-            with L_0 is normalized radiance without water vapor
-
-        """
-        inp[:3], inp[3:] = woo, geo
-        print('forward input: ', str(inp))
-        print('forward woo: ', str(woo))
-        print('forward geo: ', str(geo))
-        print('_forward(inp): ', str(_forward(inp)))
-        return _forward(inp)
-
-    self_forward = forward
-
-    def jforward(woo, geo):
-        """
-        as forward, but returns jacobian
-        output must be limited to the first three elements (the state and not the geometry)
-        """
-        inp[:3], inp[3:] = woo, geo
-        print('Jacobian input: ', str(inp))
-        print('Jacobian woo: ', str(woo))
-        print('Jacobian geo: ', str(geo))
-        print('_jacobian(inp)[:, :3]: ', str(_jacobian(inp)[:, :3]))
-        return _jacobian(inp)[:, :3]
-
-    self_jforward = jforward
-
-    # min_state
-    a = np.array([axes[i].min() for i in range(3)])
-    print('a: ', str(a))
-    # max_state
-    b = np.array([axes[i].max() for i in range(3)])
-    print('b: ', str(b))
-    import optimal_estimation_cawa as oe
-    inverter = oe.my_inverter(self_forward, a, b, jaco=self_jforward)
-
-    # finaly preset SE
-    sew = [0.0001 for i in wb]
-    sea = [0.001 for i in ab]
-    self_SE = np.diag(sew + sea)
-    print('sew: ', str(sew))
-    print('sea: ', str(sea))
-    print('sew + sea: ', str(sew + sea))
-    print('self.SE: ', str(self_SE))
-
-    sa = np.zeros(shape=(3, 3))
-    sa[0][0] = 8.
-    sa[1][1] = 0.1
-    sa[2][2] = 25.
-    print('sa: ', str(sa))
-
-    mes = [0.19034228, 0.18969933, 0.21104884]
-    par = [135.61277771, 28.43509483, 61.43579102]
-    xaa = [5.47722558, 0.15, 7.5]
-
-    res = inverter(mes, fparams=par, jparams=par, se=self_SE, sa=sa, xa=xaa, method=2,
-                   full='fast', maxiter=3)
-    print('res: ', str(res))
-
-    print(' data[res]:', str(res))
-    print(' data[tcwv]:', str(res.x[0] ** 2))
-    print(' data[aot]:', str(res.x[1]))
-    print(' data[wsp]:', str(res.x[2]))
-
-def test_cawa_meris_land():
+def test_cawa_land_meris():
 
     with Dataset('land_core_meris.nc4', 'r') as ncds:
         # get the full lut
@@ -460,156 +460,156 @@ def test_cawa_meris_land():
     print(' data[tcwv]:', str(res.x[0] ** 2))
     print(' data[aot]:', str(res.x[1]))
 
-def test_cawa_modis_ocean():
+# def test_cawa_modis_ocean():
+#
+#     with Dataset('ocean_core_modis_aqua.nc4', 'r') as ncds:
+#         # get the full lut
+#         lut = np.array(ncds.variables['lut'][:], order='F')
+#         # print('self.lut[0][0][0][0][0][0][0]: ', lut[0][0][0][0][0][0][0])
+#         # print('self.lut[3][3][8][0][8][1][2]: ', lut[3][3][8][0][8][1][2])
+#         # print('self.lut[3][3][8][0][8][1][2]: ', lut[3][3][8][0][8][1][2])
+#         # print('self.lut[2][4][6][3][2][7][1]: ', lut[2][4][6][3][2][7][1])
+#         # print('self.lut[4][2][5][4][1][7][2]: ', lut[4][2][5][4][1][7][2])
+#         # print('self.lut[1][5][4][5][3][6][0]: ', lut[1][5][4][5][3][6][0])
+#         # print('self.lut[0][5][0][8][6][3][0]: ', lut[0][5][0][8][6][3][0])
+#         # print('self.lut[2][4][1][8][8][1][2]: ', lut[2][4][1][8][8][1][2])
+#         # print('self.lut[5][1][2][7][0][8][2]: ', lut[5][1][2][7][0][8][2])
+#         # print('self.lut[3][0][3][6][7][2][1]: ', lut[3][0][3][6][7][2][1])
+#         # print('self.lut[5][5][10][10][8][8][2]: ', lut[5][5][10][10][8][8][2])
+#         jlut = np.array(ncds.variables['jlut'][:], order='F')
+#         # print('self.jlut[0][0][0][0][0][0][0]: ', jlut[0][0][0][0][0][0][0])
+#         # print('self.jlut[3][3][8][0][8][1][2]: ', jlut[3][3][8][0][8][1][2])
+#         # print('self.jlut[3][3][8][0][8][1][2]: ', jlut[3][3][8][0][8][1][2])
+#         # print('self.jlut[2][4][6][3][2][7][1]: ', jlut[2][4][6][3][2][7][1])
+#         # print('self.jlut[4][2][5][4][1][7][2]: ', jlut[4][2][5][4][1][7][2])
+#         # print('self.jlut[1][5][4][5][3][6][0]: ', jlut[1][5][4][5][3][6][0])
+#         # print('self.jlut[0][5][0][8][6][3][0]: ', jlut[0][5][0][8][6][3][0])
+#         # print('self.jlut[2][4][1][8][8][1][2]: ', jlut[2][4][1][8][8][1][2])
+#         # print('self.jlut[5][1][2][7][0][8][2]: ', jlut[5][1][2][7][0][8][2])
+#         # print('self.jlut[3][0][3][6][7][2][1]: ', jlut[3][0][3][6][7][2][1])
+#         # print('self.jlut[5][5][10][10][8][8][2]: ', jlut[5][5][10][10][8][8][2])
+#         axes = tuple([np.array(ncds.variables[a][:]) for a in ncds.variables['lut'].dimensions[:-1]])
+#         # print('self.axes: ', str(axes))
+#         # print('self.axes[0]: ', str(axes[0]))
+#         # print('self.axes[1]: ', str(axes[1]))
+#         # print('self.axes[2]: ', str(axes[2]))
+#         # print('self.axes[3]: ', str(axes[3]))
+#         # print('self.axes[4]: ', str(axes[4]))
+#         # print('self.axes[5]: ', str(axes[5]))
+#         jaxes = tuple([np.array(ncds.variables[a][:]) for a in ncds.variables['jlut'].dimensions[:-1]])
+#         print('self.jaxes: ', str(jaxes))
+#         # print('self.jaxes[0]: ', str(jaxes[0]))
+#         # print('self.jaxes[1]: ', str(jaxes[1]))
+#         # print('self.jaxes[2]: ', str(jaxes[2]))
+#         # print('self.jaxes[3]: ', str(jaxes[3]))
+#         # print('self.jaxes[4]: ', str(jaxes[4]))
+#         # print('self.jaxes[5]: ', str(jaxes[5]))
+#         ny_nx = np.array(ncds.variables['jaco'][:])
+#         # print('self.ny_nx]: ', str(ny_nx))
+#         wb = ncds.getncattr('win_bnd').split(',')
+#         ab = ncds.getncattr('abs_bnd').split(',')
+#         # print('self.wb]: ', str(wb))
+#         # print('self.ab]: ', str(ab))
+#
+#     # generic forward
+#     _forward = lut2func(lut, axes)
+#     # generic jacobian
+#     # import lut2jacobian_lut
+#     _jacobian = jlut2func({'lut': jlut,
+#                            'axes': jaxes,
+#                            'ny': ny_nx[0],
+#                            'nx': ny_nx[1]})
+#
+#     # global predefinition of input for speed reasons
+#     xaa = np.zeros(3)
+#     par = np.zeros(3)
+#     mes = np.zeros(len(wb) + len(ab))
+#
+#     # local predefine inp for speed
+#     inp = np.zeros(6)
+#
+#     def forward(woo, geo):
+#         """
+#         Input:
+#             woo: state (wvc aot wsp)
+#             geo: azi vie suz
+#             aot is aot at winband [0]
+#             wvc is sqrt of wvc
+#
+#         Output:
+#             normalized radiances at winbands
+#             -np.log(effective_transmission)/sqrt(amf) at absbands
+#
+#             effective_transmission= L_toa/L_0
+#             with L_0 is normalized radiance without water vapor
+#
+#         """
+#         inp[:3], inp[3:] = woo, geo
+#         print('forward input: ', str(inp))
+#         print('forward woo: ', str(woo))
+#         print('forward geo: ', str(geo))
+#         print('_forward(inp): ', str(_forward(inp)))
+#         return _forward(inp)
+#
+#     self_forward = forward
+#
+#     def jforward(woo, geo):
+#         """
+#         as forward, but returns jacobian
+#         output must be limited to the first three elements (the state and not the geometry)
+#         """
+#         inp[:3], inp[3:] = woo, geo
+#         print('Jacobian input: ', str(inp))
+#         print('Jacobian woo: ', str(woo))
+#         print('Jacobian geo: ', str(geo))
+#         print('_jacobian(inp)[:, :3]: ', str(_jacobian(inp)[:, :3]))
+#         return _jacobian(inp)[:, :3]
+#
+#     self_jforward = jforward
+#
+#     # min_state
+#     a = np.array([axes[i].min() for i in range(3)])
+#     print('a: ', str(a))
+#     # max_state
+#     b = np.array([axes[i].max() for i in range(3)])
+#     print('b: ', str(b))
+#     import optimal_estimation_cawa as oe
+#     inverter = oe.my_inverter(self_forward, a, b, jaco=self_jforward)
+#
+#     # finaly preset SE
+#     sew = [0.0001 for i in wb]
+#     sea = [0.001 for i in ab]
+#     self_SE = np.diag(sew + sea)
+#     print('sew: ', str(sew))
+#     print('sea: ', str(sea))
+#     print('sew + sea: ', str(sew + sea))
+#     print('self.SE: ', str(self_SE))
+#
+#     sa = np.zeros(shape=(3, 3))
+#     sa[0][0] = 8.
+#     sa[1][1] = 0.1
+#     sa[2][2] = 25.
+#     print('sa: ', str(sa))
+#
+#     mes = [0.00320285,  0.15861148,  0.35012841,  0.27699689]
+#     par = [118.03159332,   11.34500027,   61.64859772]
+#     xaa = [5.47722558, 0.15, 7.5]
+#
+#     print(' mes:', str(mes))
+#     print(' par:', str(par))
+#     print(' xaa:', str(xaa))
+#
+#     res = inverter(mes, fparams=par, jparams=par, se=self_SE, sa=sa, xa=xaa, method=2,
+#                    full='fast', maxiter=3)
+#     print('res: ', str(res))
+#
+#     print(' data[res]:', str(res))
+#     print(' data[tcwv]:', str(res.x[0] ** 2))
+#     print(' data[aot]:', str(res.x[1]))
+#     print(' data[wsp]:', str(res.x[2]))
 
-    with Dataset('ocean_core_modis_aqua.nc4', 'r') as ncds:
-        # get the full lut
-        lut = np.array(ncds.variables['lut'][:], order='F')
-        # print('self.lut[0][0][0][0][0][0][0]: ', lut[0][0][0][0][0][0][0])
-        # print('self.lut[3][3][8][0][8][1][2]: ', lut[3][3][8][0][8][1][2])
-        # print('self.lut[3][3][8][0][8][1][2]: ', lut[3][3][8][0][8][1][2])
-        # print('self.lut[2][4][6][3][2][7][1]: ', lut[2][4][6][3][2][7][1])
-        # print('self.lut[4][2][5][4][1][7][2]: ', lut[4][2][5][4][1][7][2])
-        # print('self.lut[1][5][4][5][3][6][0]: ', lut[1][5][4][5][3][6][0])
-        # print('self.lut[0][5][0][8][6][3][0]: ', lut[0][5][0][8][6][3][0])
-        # print('self.lut[2][4][1][8][8][1][2]: ', lut[2][4][1][8][8][1][2])
-        # print('self.lut[5][1][2][7][0][8][2]: ', lut[5][1][2][7][0][8][2])
-        # print('self.lut[3][0][3][6][7][2][1]: ', lut[3][0][3][6][7][2][1])
-        # print('self.lut[5][5][10][10][8][8][2]: ', lut[5][5][10][10][8][8][2])
-        jlut = np.array(ncds.variables['jlut'][:], order='F')
-        # print('self.jlut[0][0][0][0][0][0][0]: ', jlut[0][0][0][0][0][0][0])
-        # print('self.jlut[3][3][8][0][8][1][2]: ', jlut[3][3][8][0][8][1][2])
-        # print('self.jlut[3][3][8][0][8][1][2]: ', jlut[3][3][8][0][8][1][2])
-        # print('self.jlut[2][4][6][3][2][7][1]: ', jlut[2][4][6][3][2][7][1])
-        # print('self.jlut[4][2][5][4][1][7][2]: ', jlut[4][2][5][4][1][7][2])
-        # print('self.jlut[1][5][4][5][3][6][0]: ', jlut[1][5][4][5][3][6][0])
-        # print('self.jlut[0][5][0][8][6][3][0]: ', jlut[0][5][0][8][6][3][0])
-        # print('self.jlut[2][4][1][8][8][1][2]: ', jlut[2][4][1][8][8][1][2])
-        # print('self.jlut[5][1][2][7][0][8][2]: ', jlut[5][1][2][7][0][8][2])
-        # print('self.jlut[3][0][3][6][7][2][1]: ', jlut[3][0][3][6][7][2][1])
-        # print('self.jlut[5][5][10][10][8][8][2]: ', jlut[5][5][10][10][8][8][2])
-        axes = tuple([np.array(ncds.variables[a][:]) for a in ncds.variables['lut'].dimensions[:-1]])
-        # print('self.axes: ', str(axes))
-        # print('self.axes[0]: ', str(axes[0]))
-        # print('self.axes[1]: ', str(axes[1]))
-        # print('self.axes[2]: ', str(axes[2]))
-        # print('self.axes[3]: ', str(axes[3]))
-        # print('self.axes[4]: ', str(axes[4]))
-        # print('self.axes[5]: ', str(axes[5]))
-        jaxes = tuple([np.array(ncds.variables[a][:]) for a in ncds.variables['jlut'].dimensions[:-1]])
-        print('self.jaxes: ', str(jaxes))
-        # print('self.jaxes[0]: ', str(jaxes[0]))
-        # print('self.jaxes[1]: ', str(jaxes[1]))
-        # print('self.jaxes[2]: ', str(jaxes[2]))
-        # print('self.jaxes[3]: ', str(jaxes[3]))
-        # print('self.jaxes[4]: ', str(jaxes[4]))
-        # print('self.jaxes[5]: ', str(jaxes[5]))
-        ny_nx = np.array(ncds.variables['jaco'][:])
-        # print('self.ny_nx]: ', str(ny_nx))
-        wb = ncds.getncattr('win_bnd').split(',')
-        ab = ncds.getncattr('abs_bnd').split(',')
-        # print('self.wb]: ', str(wb))
-        # print('self.ab]: ', str(ab))
 
-    # generic forward
-    _forward = lut2func(lut, axes)
-    # generic jacobian
-    # import lut2jacobian_lut
-    _jacobian = jlut2func({'lut': jlut,
-                           'axes': jaxes,
-                           'ny': ny_nx[0],
-                           'nx': ny_nx[1]})
-
-    # global predefinition of input for speed reasons
-    xaa = np.zeros(3)
-    par = np.zeros(3)
-    mes = np.zeros(len(wb) + len(ab))
-
-    # local predefine inp for speed
-    inp = np.zeros(6)
-
-    def forward(woo, geo):
-        """
-        Input:
-            woo: state (wvc aot wsp)
-            geo: azi vie suz
-            aot is aot at winband [0]
-            wvc is sqrt of wvc
-
-        Output:
-            normalized radiances at winbands
-            -np.log(effective_transmission)/sqrt(amf) at absbands
-
-            effective_transmission= L_toa/L_0
-            with L_0 is normalized radiance without water vapor
-
-        """
-        inp[:3], inp[3:] = woo, geo
-        print('forward input: ', str(inp))
-        print('forward woo: ', str(woo))
-        print('forward geo: ', str(geo))
-        print('_forward(inp): ', str(_forward(inp)))
-        return _forward(inp)
-
-    self_forward = forward
-
-    def jforward(woo, geo):
-        """
-        as forward, but returns jacobian
-        output must be limited to the first three elements (the state and not the geometry)
-        """
-        inp[:3], inp[3:] = woo, geo
-        print('Jacobian input: ', str(inp))
-        print('Jacobian woo: ', str(woo))
-        print('Jacobian geo: ', str(geo))
-        print('_jacobian(inp)[:, :3]: ', str(_jacobian(inp)[:, :3]))
-        return _jacobian(inp)[:, :3]
-
-    self_jforward = jforward
-
-    # min_state
-    a = np.array([axes[i].min() for i in range(3)])
-    print('a: ', str(a))
-    # max_state
-    b = np.array([axes[i].max() for i in range(3)])
-    print('b: ', str(b))
-    import optimal_estimation_cawa as oe
-    inverter = oe.my_inverter(self_forward, a, b, jaco=self_jforward)
-
-    # finaly preset SE
-    sew = [0.0001 for i in wb]
-    sea = [0.001 for i in ab]
-    self_SE = np.diag(sew + sea)
-    print('sew: ', str(sew))
-    print('sea: ', str(sea))
-    print('sew + sea: ', str(sew + sea))
-    print('self.SE: ', str(self_SE))
-
-    sa = np.zeros(shape=(3, 3))
-    sa[0][0] = 8.
-    sa[1][1] = 0.1
-    sa[2][2] = 25.
-    print('sa: ', str(sa))
-
-    mes = [0.00320285,  0.15861148,  0.35012841,  0.27699689]
-    par = [118.03159332,   11.34500027,   61.64859772]
-    xaa = [5.47722558, 0.15, 7.5]
-
-    print(' mes:', str(mes))
-    print(' par:', str(par))
-    print(' xaa:', str(xaa))
-
-    res = inverter(mes, fparams=par, jparams=par, se=self_SE, sa=sa, xa=xaa, method=2,
-                   full='fast', maxiter=3)
-    print('res: ', str(res))
-
-    print(' data[res]:', str(res))
-    print(' data[tcwv]:', str(res.x[0] ** 2))
-    print(' data[aot]:', str(res.x[1]))
-    print(' data[wsp]:', str(res.x[2]))
-
-
-def test_cawa_modis_land():
+def test_cawa_land_modis_terra():
 
     with Dataset('land_core_modis_aqua.nc4', 'r') as ncds:
         # get the full lut
@@ -723,8 +723,8 @@ def test_cawa_modis_land():
 
 
 if __name__ == '__main__':
+    test_cawa_land_meris()
+    test_cawa_land_modis_terra()
     # test_cawa_meris_ocean()
-    # test_cawa_meris_land()
     # test_cawa_modis_ocean()
-    test_cawa_modis_land()
     pass
