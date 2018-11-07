@@ -58,6 +58,10 @@ public class TcwvOp extends Operator {
     @Parameter(description = "If auxdata are already installed, their path can be provided here.")
     private String auxdataPath;
 
+    @Parameter(defaultValue = "false",
+            description = "Process also over ocean (would be needed for MODIS-AQUA option later).")
+    private boolean processOcean;
+
 
     @SourceProduct(description =
             "Source product (IdePix merged with MERIS, MODIS or OLCI L1b product",
@@ -104,7 +108,9 @@ public class TcwvOp extends Operator {
                 auxdataPath = TcwvIO.installAuxdataLuts();
             }
             landLut = TcwvIO.readLandLookupTable(auxdataPath, sensor);
-            oceanLut = TcwvIO.readOceanLookupTable(auxdataPath, sensor);
+            if (processOcean) {
+                oceanLut = TcwvIO.readOceanLookupTable(auxdataPath, sensor);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -154,8 +160,10 @@ public class TcwvOp extends Operator {
 
         tcwvFunctionLand = TcwvInterpolation.getForwardFunctionLand(landLut);
         jacobiFunctionland = TcwvInterpolation.getJForwardFunctionLand(landLut);
-        tcwvFunctionOcean = TcwvInterpolation.getForwardFunctionOcean(oceanLut);
-        jacobiFunctionOcean = TcwvInterpolation.getJForwardFunctionOcean(oceanLut);
+        if (processOcean) {
+            tcwvFunctionOcean = TcwvInterpolation.getForwardFunctionOcean(oceanLut);
+            jacobiFunctionOcean = TcwvInterpolation.getJForwardFunctionOcean(oceanLut);
+        }
 
     }
 
@@ -256,6 +264,7 @@ public class TcwvOp extends Operator {
                             amf, aot865, priorAot, priorAl0, priorAl1,
                             t2m, prs, priorWs, priorTcwv);
 
+                    // 'ocean' parameters are null for land processing!
                     final TcwvResult result = tcwvAlgorithm.compute(sensor, landLut, oceanLut,
                             tcwvFunctionLand, tcwvFunctionOcean,
                             jacobiFunctionland, jacobiFunctionOcean,
