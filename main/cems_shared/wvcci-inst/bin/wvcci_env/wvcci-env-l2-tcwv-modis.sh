@@ -98,8 +98,8 @@ submit_job() {
     echo "jobname: ${jobname}"
     echo "command: ${command}"
 
-    # L2 IDEPIX:
-    bsubmit="bsub -q short-serial -P ga_qa4ecv -cwd ${WVCCI_INST} -oo ${WVCCI_LOG}/${jobname}.out -eo ${WVCCI_LOG}/${jobname}.err -J ${jobname} ${WVCCI_INST}/${command} ${@:3}"
+    # L2 TCWV MODIS:
+    bsubmit="bsub -q short-serial -W 120 -R rusage[mem=16000] -M 16000 -P ga_qa4ecv -cwd ${WVCCI_INST} -oo ${WVCCI_LOG}/${jobname}.out -eo ${WVCCI_LOG}/${jobname}.err -J ${jobname} ${WVCCI_INST}/${command} ${@:3}"
 
     echo "bsubmit: $bsubmit"
 
