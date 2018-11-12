@@ -24,6 +24,12 @@ month=$4
 day=$5
 wvcciRootDir=$6
 
+# initial check: does Idepix input exist at all? Maybe it was corrupt and deleted earlier. 
+if [ ! -f $idepixPath ]; then
+  echo "Idepix product '$idepixPath' does not exist - no action - will exit (0)."
+  exit 0
+fi
+
 tmpdir=$wvcciRootDir/tmp
 mkdir -p $tmpdir
 
@@ -126,7 +132,6 @@ if [ -f $idepixEraInterimMerge ]; then
     $SNAP_HOME/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixEraInterimMerge -PauxdataPath=$auxdataPath -Psensor=MODIS_TERRA -PcloudFilterLevel=CLOUD_SURE -f NetCDF4-WVCCI -t $tcwv
 fi
 ## 
-
 
 # cleanup: keep idepix-erainterim merge product, remove pure idepix and all temporal products
 sleep 30

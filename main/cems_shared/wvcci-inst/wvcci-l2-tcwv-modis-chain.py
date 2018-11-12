@@ -10,9 +10,10 @@ __author__ = 'olafd'
 
 sensor = 'MODIS_TERRA'
 
-years = ['2010']    #test  
-allMonths = ['02']
+years = ['2011']    #test  
+#allMonths = ['01']
 #allMonths = ['02','03']
+allMonths = ['08','09','10','11']
 #allMonths = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
 
 #################################################################
@@ -35,8 +36,8 @@ m = PMonitor(inputs,
              request='wvcci-l2-tcwv-modis-chain',
              logdir='log', 
              hosts=[('localhost',128)],
-             types=[('wvcci-l2-idepix-modis-step.sh',64), 
-                    ('wvcci-l2-tcwv-modis-step.sh', 128)])
+             types=[('wvcci-l2-idepix-modis-step.sh',32), 
+                    ('wvcci-l2-tcwv-modis-step.sh', 96)])
 
 for year in years:
     l1bRootDir = wvcciRootDir + '/L1b/' + sensor
@@ -46,8 +47,8 @@ for year in years:
 
         if os.path.exists(l1bRootDir + '/' + year + '/' + month):
 
-            #numMonthDays = monthrange(int(year), int(month))[1]
-            numMonthDays = 3  # test
+            numMonthDays = monthrange(int(year), int(month))[1]
+            #numMonthDays = 3  # test
             for iday in range(1, numMonthDays+1):
                 day = str(iday).zfill(2)
 

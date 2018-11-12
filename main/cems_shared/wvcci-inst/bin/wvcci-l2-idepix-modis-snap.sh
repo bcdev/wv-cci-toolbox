@@ -49,7 +49,9 @@ then
     status=$?
     echo "Status: $status"
 else
-    echo "No Idepix product created."
+    echo "Idepix product NOT successfully created."
+    echo "rm -f $idepixFile"
+    rm -f $idepixFile   # delete corrupt file
 fi
 
 echo `date`
