@@ -1,6 +1,7 @@
 #!/bin/bash
 
-. ${WVCCI_INST}/bin/wvcci_env/wvcci-env-l2-idepix.sh
+#. ${WVCCI_INST}/bin/wvcci_env/wvcci-env-l2-tcwv-modis.sh
+. ${WVCCI_INST}/bin/wvcci-env.sh    # this script shall now be used for everything!
 
 l1bPath=$1
 landMaskPath=$2
@@ -37,7 +38,6 @@ echo "calling read_task_jobs()..."
 read_task_jobs ${jobname}
 
 if [ -z ${jobs} ]; then
+    # use default parameters for time and memory limits in bsub call
     submit_job ${jobname} ${command}
 fi
-
-wait_for_task_jobs_completion ${jobname} 

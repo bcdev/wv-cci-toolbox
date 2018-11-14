@@ -1,6 +1,7 @@
 #!/bin/bash
 
-. ${WVCCI_INST}/bin/wvcci_env/wvcci-env-l2-tcwv-modis.sh
+#. ${WVCCI_INST}/bin/wvcci_env/wvcci-env-l2-tcwv-modis.sh
+. ${WVCCI_INST}/bin/wvcci-env.sh   # this script shall now be used for everything!
 
 echo "entered wvcci-l2-tcwv-modis-step..."
 l1bPath=$1
@@ -23,7 +24,7 @@ echo "calling read_task_jobs()..."
 read_task_jobs ${jobname}
 
 if [ -z ${jobs} ]; then
-    submit_job ${jobname} ${command}
+    timelim=180
+    memlim=16000
+    submit_job ${jobname} ${command} ${timelim} ${memlim}
 fi
-
-wait_for_task_jobs_completion ${jobname} 

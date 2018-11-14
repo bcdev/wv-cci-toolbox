@@ -10,8 +10,8 @@ fi
 
 WVCCI_TASKS=${WVCCI_INST}/tasks
 WVCCI_LOG=${WVCCI_INST}/log
-export PM_LOG_DIR=${WVCCI_LOG}
-export PM_PYTHON_EXEC='/group_workspaces/cems2/qa4ecv/vol4/software/miniconda3/envs/wvcci/bin/python'
+#export PM_LOG_DIR=${WVCCI_LOG}
+#export PM_PYTHON_EXEC='/group_workspaces/cems2/qa4ecv/vol4/software/miniconda3/envs/wvcci/bin/python'
 
 read_task_jobs() {
     echo "entered read_task_jobs()..."
@@ -48,13 +48,28 @@ read_task_jobs() {
 submit_job() {
     jobname=$1
     command=$2
+    timelim=$3  # job time limit in minutes, see https://help.jasmin.ac.uk/article/113-submit-jobs, default: 60
+    memlim=$4   # job memory limit in MB, see https://help.jasmin.ac.uk/article/113-submit-jobs, default: 4000
+
+    if [ ! -z "$timelim" ];
+    then
+      timelim="-W ${timelim}"
+    fi
+    if [ ! -z "$memlim" ];
+    then
+      memlim="-R rusage[mem=${memlim}] -M ${memlim}"
+    fi
+
     echo "WVCCI_INST: ${WVCCI_INST}"
     echo "WVCCI_LOG : ${WVCCI_LOG}"
     echo "jobname: ${jobname}"
     echo "command: ${command}"
+    echo "timelim: ${timelim}"
+    echo "memlim: ${memlim}"
 
     # L2 TCWV MODIS:
-    bsubmit="bsub -q short-serial -W 120 -R rusage[mem=16000] -M 16000 -P ga_qa4ecv -cwd ${WVCCI_INST} -oo ${WVCCI_LOG}/${jobname}.out -eo ${WVCCI_LOG}/${jobname}.err -J ${jobname} ${WVCCI_INST}/${command} ${@:3}"
+    #bsubmit="bsub -q short-serial -W 120 -R rusage[mem=16000] -M 16000 -P ga_qa4ecv -cwd ${WVCCI_INST} -oo ${WVCCI_LOG}/${jobname}.out -eo ${WVCCI_LOG}/${jobname}.err -J ${jobname} ${WVCCI_INST}/${command} ${@:3}"
+    bsubmit="bsub -q short-serial ${timelim} ${memlim} -P ga_qa4ecv -cwd ${WVCCI_INST} -oo ${WVCCI_LOG}/${jobname}.out -eo ${WVCCI_LOG}/${jobname}.err -J ${jobname} ${WVCCI_INST}/${command} ${@:3}"
     
     rm -f ${WVCCI_LOG}/${jobname}.out
     rm -f ${WVCCI_LOG}/${jobname}.err

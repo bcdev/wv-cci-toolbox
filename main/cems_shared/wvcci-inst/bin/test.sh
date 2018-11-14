@@ -1,12 +1,6 @@
 #!/bin/bash
 
-sensor=$1
+# WVCCI function definitions
 
-if [ "$sensor" == "MODIS" ]
-then
-    sensor=${sensor}_TERRA
-fi
+set -e
 
-echo "sensor: $sensor"
-
-echo `date`
