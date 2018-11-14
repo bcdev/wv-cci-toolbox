@@ -11,9 +11,9 @@ __author__ = 'olafd'
 sensor = 'MODIS_TERRA'
 
 years = ['2011']    #test  
-#allMonths = ['01']
+allMonths = ['07']
 #allMonths = ['02','03']
-allMonths = ['08','09','10','11']
+#allMonths = ['08','09','10','11']
 #allMonths = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
 
 #################################################################
@@ -32,12 +32,21 @@ eraInterimRootDir = wvcciRootDir + '/auxiliary/era-interim-t2m-mslp-tcwv-u10-v10
 snapDir = '/group_workspaces/cems2/qa4ecv/vol4/software/snap'
 
 inputs = ['dummy']
-m = PMonitor(inputs, 
+#m = PMonitor(inputs, 
+#             request='wvcci-l2-tcwv-modis-chain',
+#             logdir='log', 
+#             hosts=[('localhost',128)],
+#             types=[('wvcci-l2-idepix-modis-step.sh',32), 
+#                    ('wvcci-l2-tcwv-modis-step.sh', 96)])
+
+m = PMonitor(inputs,
              request='wvcci-l2-tcwv-modis-chain',
-             logdir='log', 
+             logdir='log',
              hosts=[('localhost',128)],
-             types=[('wvcci-l2-idepix-modis-step.sh',32), 
-                    ('wvcci-l2-tcwv-modis-step.sh', 96)])
+             types=[('wvcci-l2-idepix-modis-step.sh',32),
+                    ('wvcci-l2-tcwv-modis-step.sh', 96)],
+             polling="job_status_callback.sh")
+
 
 for year in years:
     l1bRootDir = wvcciRootDir + '/L1b/' + sensor
