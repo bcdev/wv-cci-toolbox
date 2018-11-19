@@ -320,7 +320,7 @@ public class TcwvOp extends Operator {
     }
 
     private void createTargetProduct() {
-        targetProduct = new Product(sourceProduct.getName(), sourceProduct.getProductType(), width, height);
+        targetProduct = new Product(getId(), getClass().getName(), width, height);
 
 //        final Band tcwvBand = targetProduct.addBand(TcwvConstants.TCWV_BAND_NAME, ProductData.TYPE_FLOAT32);
         final Band tcwvBand = targetProduct.addBand(TcwvConstants.TCWV_BAND_NAME, ProductData.TYPE_UINT16);

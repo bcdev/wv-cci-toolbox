@@ -16,6 +16,7 @@ import org.esa.snap.dataio.netcdf.util.Constants;
 import org.esa.snap.dataio.netcdf.util.DataTypeUtils;
 import org.geotools.referencing.CRS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
+import ucar.nc2.NetcdfFileWriter;
 
 import java.awt.*;
 import java.io.IOException;
@@ -83,6 +84,12 @@ public class SnapWvcciNc4WriterPlugIn extends AbstractNetCdfWriterPlugIn {
     }
 
     private class SnapWvcciMainPart implements ProfileInitPartWriter {
+
+        // still TODO here or in PostProcessor or elsewhere:
+        // - add lots of global attributes (see QA4ECV)
+        // - check for CCI compliance
+        // - remove variable attribute 'metadata'
+        // - add time dimension
 
         private final SimpleDateFormat COMPACT_ISO_FORMAT = new SimpleDateFormat("yyyyMMdd'T'HHmmss'Z'");
         private Dimension tileSize;
