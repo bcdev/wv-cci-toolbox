@@ -69,7 +69,8 @@ public class WvcciNc4ComplianceWriter {
         final NetcdfFile ncSourceFile = NetcdfFile.open(sourceFilePath);
         final String sourceFileName = new File(sourceFilePath).getName();
         final String targetFilePath = targetDir + File.separator + sourceFileName;
-        NetcdfFileWriter writer = NetcdfFileWriter.createNew(NetcdfFileWriter.Version.netcdf4, targetFilePath);
+//        NetcdfFileWriter writer = NetcdfFileWriter.createNew(NetcdfFileWriter.Version.netcdf4, targetFilePath);
+        NetcdfFileWriter writer = NetcdfFileWriter.createNew(NetcdfFileWriter.Version.netcdf4_classic, targetFilePath);
 
         // copy dimensions, add time dimension
         final List<Dimension> srcDimensions = ncSourceFile.getDimensions();
@@ -105,7 +106,7 @@ public class WvcciNc4ComplianceWriter {
 
         // add variable data
         for (Variable varSrc : variablesSrc) {
-            Variable varTarget = writer.findVariable(varSrc.getFullNameEscaped());
+            Variable varTarget = writer.findVariable(varSrc.getShortName());
             final Array arraySrc = varSrc.read();
             writer.write(varTarget, arraySrc);
         }

@@ -1,23 +1,18 @@
 package org.esa.snap.wvcci.tcwv.dataio.nc4;
 
 import org.apache.commons.cli.*;
-import ucar.ma2.Array;
-import ucar.ma2.DataType;
 import ucar.ma2.InvalidRangeException;
-import ucar.nc2.*;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Provides products in final WV-CCI NetCDF4 format, i.e.:
  *  - Adds a time dimension and sets time value to days since 1970-01-01
  *  - Sets global attributes for CF and CCI compliance
  *  - Sets variable attributes for CF and CCI compliance
+ *
+ *  TODO: THIS DOES NOT YET WORK ON CALVALUS (Netcdf/HDF problem). Using Python version (nc-compliance-py-*) instead.
  *
  * @author olafd
  */

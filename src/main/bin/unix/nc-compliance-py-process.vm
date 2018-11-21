@@ -1,0 +1,35 @@
+#!/bin/bash
+set -x
+set -e
+set -m
+
+year="$parameters.get('year')"
+month="$parameters.get('month')"
+day="$parameters.get('day')"
+
+#[[
+
+nc_gz_infile=$1
+nc_infile=`basename ${nc_gz_infile} .gz`
+gunzip -c ${nc_gz_infile} > ./${nc_infile}
+
+echo "`ls -la $(pwd)`"
+/usr/bin/python $(pwd)/process.py ./${nc_infile} ${year} ${month} ${day}
+
+status=$?
+echo "Status: $status"
+
+if [ $status = 0 ]
+then
+    echo "NetCDF compliance file created."
+    echo "Status: $status"
+    rm -f ./${nc_infile}
+fi
+
+old="L2_of_l3_"
+new="WV-CCI_L3_"
+nc_outfile=${nc_infile/$old/$new}
+
+echo CALVALUS_OUTPUT_PRODUCT ${nc_outfile}
+
+]]#
