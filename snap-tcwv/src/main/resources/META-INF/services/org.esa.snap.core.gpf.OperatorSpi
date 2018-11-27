@@ -1,3 +1,4 @@
 org.esa.snap.wvcci.tcwv.TcwvOp$Spi
 org.esa.snap.wvcci.tcwv.util.MergeIdepixEraInterimOp$Spi
 org.esa.snap.wvcci.tcwv.l3.L3DailyPostProcessOp$Spi
+org.esa.snap.wvcci.tcwv.l3.L3MergeSensorsOp$Spi
