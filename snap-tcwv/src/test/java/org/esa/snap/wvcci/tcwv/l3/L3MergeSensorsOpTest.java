@@ -37,7 +37,8 @@ public class L3MergeSensorsOpTest {
 
         mergeOp.setParameterDefaultValues();
 
-        mergeOp.setSourceProducts(merisProduct, modisProduct);
+        mergeOp.setSourceProduct("sensor1Product", merisProduct);
+        mergeOp.setSourceProduct("sensor2Product", modisProduct);
 
         final Product mergedProduct = mergeOp.getTargetProduct();
         assertNotNull(mergedProduct);

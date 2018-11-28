@@ -6,7 +6,7 @@ import org.esa.snap.core.gpf.OperatorException;
 import org.esa.snap.core.gpf.OperatorSpi;
 import org.esa.snap.core.gpf.annotations.OperatorMetadata;
 import org.esa.snap.core.gpf.annotations.Parameter;
-import org.esa.snap.core.gpf.annotations.SourceProducts;
+import org.esa.snap.core.gpf.annotations.SourceProduct;
 import org.esa.snap.core.gpf.pointop.*;
 import org.esa.snap.wvcci.tcwv.TcwvConstants;
 
@@ -28,23 +28,17 @@ public class L3MergeSensorsOp extends PixelOperator {
             description = "L3 resolution (0.5 or 0.05deg).")
     private String l3Resolution;
 
-    @Parameter(description = "If auxdata are already installed, their path can be provided here.")
-    private String auxdataPath;
+    @SourceProduct(description = "Source product 1")
+    private Product sensor1Product;
+    @SourceProduct(description = "Source product 2")
+    private Product sensor2Product;
+    @SourceProduct(description = "Source product 3", optional = true)
+    private Product sensor3Product;
 
-
-//    @SourceProduct(description = "Source product 1")
-//    private Product sourceProduct1;
-//    @SourceProduct(description = "Source product 2")
-//    private Product sourceProduct2;
-//    @SourceProduct(description = "Source product 3", optional = true)
-//    private Product sourceProduct3;
-
-    @SourceProducts(description = "Source products")
-    private Product[] sourceProducts;
-
+    private Product[] mergeInputProducts;
     private Product targetProduct;
 
-    private int numSrcProducts;
+    private int numProductsToMerge;
 
     private int width;
     private int height;
@@ -61,36 +55,39 @@ public class L3MergeSensorsOp extends PixelOperator {
     @Override
     protected void prepareInputs() throws OperatorException {
         super.prepareInputs();
-        width = sourceProducts[0].getSceneRasterWidth();
-        height = sourceProducts[0].getSceneRasterHeight();
 
-        numSrcProducts = sourceProducts.length;
+        mergeInputProducts = new Product[]{sensor1Product, sensor2Product, sensor3Product};
+
+        width = mergeInputProducts[0].getSceneRasterWidth();
+        height = mergeInputProducts[0].getSceneRasterHeight();
+
+        numProductsToMerge = sensor3Product != null ? mergeInputProducts.length : mergeInputProducts.length -1;
         validate();
 
-        SRC_TCWV = new int[numSrcProducts];
-        SRC_TCWV_UNCERTAINTY = new int[numSrcProducts];
-        SRC_TCWV_COUNTS = new int[numSrcProducts];
+        SRC_TCWV = new int[numProductsToMerge];
+        SRC_TCWV_UNCERTAINTY = new int[numProductsToMerge];
+        SRC_TCWV_COUNTS = new int[numProductsToMerge];
 
     }
 
     @Override
     protected void computePixel(int x, int y, Sample[] sourceSamples, WritableSample[] targetSamples) {
-        final double[] srcTcwv = new double[numSrcProducts];
-        final double[] srcTcwvNodata = new double[numSrcProducts];
-        final double[] srcTcwvUncertainty = new double[numSrcProducts];
-        final double[] srcTcwvCounts = new double[numSrcProducts];
-        final double[] srcTcwvCountsNodata = new double[numSrcProducts];
-        for (int i = 0; i < numSrcProducts; i++) {
+        final double[] srcTcwv = new double[numProductsToMerge];
+        final double[] srcTcwvNodata = new double[numProductsToMerge];
+        final double[] srcTcwvUncertainty = new double[numProductsToMerge];
+        final double[] srcTcwvCounts = new double[numProductsToMerge];
+        final double[] srcTcwvCountsNodata = new double[numProductsToMerge];
+        for (int i = 0; i < numProductsToMerge; i++) {
             srcTcwv[i] = sourceSamples[SRC_TCWV[i]].getDouble();
-            srcTcwvNodata[i] = sourceProducts[i].getBand(TcwvConstants.TCWV_BAND_NAME).getNoDataValue();
+            srcTcwvNodata[i] = mergeInputProducts[i].getBand(TcwvConstants.TCWV_BAND_NAME).getNoDataValue();
             srcTcwvUncertainty[i] = sourceSamples[SRC_TCWV_UNCERTAINTY[i]].getDouble();
             srcTcwvCounts[i] = sourceSamples[SRC_TCWV_COUNTS[i]].getDouble();
-            srcTcwvCountsNodata[i] = sourceProducts[i].getBand(TcwvConstants.TCWV_COUNTS_BAND_NAME).getNoDataValue();
+            srcTcwvCountsNodata[i] = mergeInputProducts[i].getBand(TcwvConstants.TCWV_COUNTS_BAND_NAME).getNoDataValue();
         }
 
-        final double[] tcwvMerge = mergeTcwv(numSrcProducts, srcTcwv, srcTcwvCounts, srcTcwvNodata, srcTcwvCountsNodata);
+        final double[] tcwvMerge = mergeTcwv(numProductsToMerge, srcTcwv, srcTcwvCounts, srcTcwvNodata, srcTcwvCountsNodata);
         final double[] tcwvUncertaintyMerge =
-                mergeTcwv(numSrcProducts, srcTcwvUncertainty, srcTcwvCounts, srcTcwvNodata, srcTcwvCountsNodata);
+                mergeTcwv(numProductsToMerge, srcTcwvUncertainty, srcTcwvCounts, srcTcwvNodata, srcTcwvCountsNodata);
 
         targetSamples[TRG_TCWV].set(tcwvMerge[0]);
         targetSamples[TRG_TCWV_UNCERTAINTY].set(tcwvUncertaintyMerge[0]);
@@ -102,22 +99,22 @@ public class L3MergeSensorsOp extends PixelOperator {
         super.configureTargetProduct(productConfigurer);
         final Product targetProduct = productConfigurer.getTargetProduct();
 
-        for (int i = 0; i < numSrcProducts; i++) {
+        for (int i = 0; i < numProductsToMerge; i++) {
             SRC_TCWV[i] = 3 * i;
             SRC_TCWV_UNCERTAINTY[i] = 3 * i + 1;
             SRC_TCWV_COUNTS[i] = 3 * i + 2;
         }
 
         targetProduct.addBand(TcwvConstants.TCWV_BAND_NAME,
-                                              sourceProducts[0].getBand(TcwvConstants.TCWV_BAND_NAME).getDataType());
+                              mergeInputProducts[0].getBand(TcwvConstants.TCWV_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.TCWV_UNCERTAINTY_BAND_NAME,
-                                                         sourceProducts[0].getBand(TcwvConstants.TCWV_UNCERTAINTY_BAND_NAME).
+                              mergeInputProducts[0].getBand(TcwvConstants.TCWV_UNCERTAINTY_BAND_NAME).
                                                                  getDataType());
         targetProduct.addBand(TcwvConstants.TCWV_COUNTS_BAND_NAME,
-                                                    sourceProducts[0].getBand(TcwvConstants.TCWV_COUNTS_BAND_NAME).getDataType());
+                              mergeInputProducts[0].getBand(TcwvConstants.TCWV_COUNTS_BAND_NAME).getDataType());
 
         for (Band b : targetProduct.getBands()) {
-            final Band sourceBand = sourceProducts[0].getBand(b.getName());
+            final Band sourceBand = mergeInputProducts[0].getBand(b.getName());
             b.setNoDataValue(sourceBand.getNoDataValue());
             b.setNoDataValueUsed(sourceBand.isNoDataValueUsed());
             b.setScalingFactor(sourceBand.getScalingFactor());
@@ -135,11 +132,11 @@ public class L3MergeSensorsOp extends PixelOperator {
 
     @Override
     protected void configureSourceSamples(SourceSampleConfigurer configurator) throws OperatorException {
-        for (int i = 0; i < numSrcProducts; i++) {
-            configurator.defineSample(SRC_TCWV[i], TcwvConstants.TCWV_BAND_NAME, sourceProducts[i]);
+        for (int i = 0; i < numProductsToMerge; i++) {
+            configurator.defineSample(SRC_TCWV[i], TcwvConstants.TCWV_BAND_NAME, mergeInputProducts[i]);
             configurator.defineSample(SRC_TCWV_UNCERTAINTY[i], TcwvConstants.TCWV_UNCERTAINTY_BAND_NAME,
-                                      sourceProducts[i]);
-            configurator.defineSample(SRC_TCWV_COUNTS[i], TcwvConstants.TCWV_COUNTS_BAND_NAME, sourceProducts[i]);
+                                      mergeInputProducts[i]);
+            configurator.defineSample(SRC_TCWV_COUNTS[i], TcwvConstants.TCWV_COUNTS_BAND_NAME, mergeInputProducts[i]);
         }
     }
 
@@ -168,20 +165,20 @@ public class L3MergeSensorsOp extends PixelOperator {
 
     private void validate() {
         // number of products
-        if (numSrcProducts != 2 && numSrcProducts != 3) {
+        if (numProductsToMerge != 2 && numProductsToMerge != 3) {
             throw new OperatorException("Number of source products must be 2 or 3");
         }
 
         // product dimensions
-        final int width2 = sourceProducts[1].getSceneRasterWidth();
-        final int height2 = sourceProducts[1].getSceneRasterHeight();
+        final int width2 = mergeInputProducts[1].getSceneRasterWidth();
+        final int height2 = mergeInputProducts[1].getSceneRasterHeight();
         if (width != width2 || height != height2) {
             throw new OperatorException("Dimension of first source product (" + width + "/" + height +
                                                 ") differs from second source product (" + width2 + "/" + height2 + ").");
         } else {
-            if (numSrcProducts == 3) {
-                final int width3 = sourceProducts[2].getSceneRasterWidth();
-                final int height3 = sourceProducts[2].getSceneRasterHeight();
+            if (numProductsToMerge == 3) {
+                final int width3 = mergeInputProducts[2].getSceneRasterWidth();
+                final int height3 = mergeInputProducts[2].getSceneRasterHeight();
                 if (width != width3 || height != height3) {
                     throw new OperatorException("Dimension of first source product (" + width + "/" + height +
                                                         ") differs from third source product (" + width3 + "/" + height3 + ").");
