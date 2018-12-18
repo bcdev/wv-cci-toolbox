@@ -8,11 +8,14 @@ package org.esa.snap.wvcci.tcwv;
 public class TcwvConstants {
 
     public static final String IDEPIX_CLASSIF_BAND_NAME = "pixel_classif_flags";
-    public static final String TCWV_BAND_NAME = "tcwv";
+    public static final String TCWV_TARGET_BAND_NAME = "tcwv";
     public static final String TCWV_MEAN_BAND_NAME = "tcwv_mean";
-    public static final String TCWV_UNCERTAINTY_BAND_NAME = "tcwv_uncertainty";
+    public static final String TCWV_SSMI_MEAN_BAND_NAME = "wvpa";
+    public static final String TCWV_UNCERTAINTY_TARGET_BAND_NAME = "tcwv_uncertainty";
     public static final String TCWV_UNCERTAINTY_MEAN_BAND_NAME = "tcwv_uncertainty_mean";
-    public static final String TCWV_COUNTS_BAND_NAME = "tcwv_counts";
+    public static final String TCWV_SSMI_UNCERTAINTY_MEAN_BAND_NAME = "stdv";
+    public static final String TCWV_COUNTS_TARGET_BAND_NAME = "tcwv_counts";
+    public static final String TCWV_SSMI_COUNTS_BAND_NAME = "numo";
 
     public static final String PRIOR_T2M_BAND_NAME = "t2m";
     public static final String PRIOR_MSL_BAND_NAME = "msl";

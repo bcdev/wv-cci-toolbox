@@ -170,8 +170,8 @@ public class TcwvOp extends Operator {
     @Override
     public void computeTileStack(Map<Band, Tile> targetTiles, Rectangle targetRectangle, ProgressMonitor pm) throws OperatorException {
 
-        final Band tcwvBand = targetProduct.getBand(TcwvConstants.TCWV_BAND_NAME);
-        final Band tcwvUnvertaintyBand = targetProduct.getBand(TcwvConstants.TCWV_UNCERTAINTY_BAND_NAME);
+        final Band tcwvBand = targetProduct.getBand(TcwvConstants.TCWV_TARGET_BAND_NAME);
+        final Band tcwvUnvertaintyBand = targetProduct.getBand(TcwvConstants.TCWV_UNCERTAINTY_TARGET_BAND_NAME);
 
         Tile[] winBandTiles = new Tile[winBands.length];
         for (int i = 0; i < winBandTiles.length; i++) {
@@ -323,7 +323,7 @@ public class TcwvOp extends Operator {
         targetProduct = new Product(getId(), getClass().getName(), width, height);
 
 //        final Band tcwvBand = targetProduct.addBand(TcwvConstants.TCWV_BAND_NAME, ProductData.TYPE_FLOAT32);
-        final Band tcwvBand = targetProduct.addBand(TcwvConstants.TCWV_BAND_NAME, ProductData.TYPE_UINT16);
+        final Band tcwvBand = targetProduct.addBand(TcwvConstants.TCWV_TARGET_BAND_NAME, ProductData.TYPE_UINT16);
         tcwvBand.setScalingFactor(0.01);
         tcwvBand.setUnit("mm");
         tcwvBand.setDescription("Total Column of Water Vapour");
@@ -332,7 +332,7 @@ public class TcwvOp extends Operator {
 
         final Band tcwvUncertaintyBand =
 //                targetProduct.addBand(TcwvConstants.TCWV_UNCERTAINTY_BAND_NAME, ProductData.TYPE_FLOAT32);
-                targetProduct.addBand(TcwvConstants.TCWV_UNCERTAINTY_BAND_NAME, ProductData.TYPE_UINT16);
+                targetProduct.addBand(TcwvConstants.TCWV_UNCERTAINTY_TARGET_BAND_NAME, ProductData.TYPE_UINT16);
         tcwvUncertaintyBand.setScalingFactor(0.01);
         tcwvUncertaintyBand.setUnit("mm");
         tcwvUncertaintyBand.setDescription("Uncertainty of Total Column of Water Vapour");

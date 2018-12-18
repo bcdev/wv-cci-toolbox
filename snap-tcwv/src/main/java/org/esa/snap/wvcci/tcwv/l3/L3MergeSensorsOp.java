@@ -79,10 +79,10 @@ public class L3MergeSensorsOp extends PixelOperator {
         final double[] srcTcwvCountsNodata = new double[numProductsToMerge];
         for (int i = 0; i < numProductsToMerge; i++) {
             srcTcwv[i] = sourceSamples[SRC_TCWV[i]].getDouble();
-            srcTcwvNodata[i] = mergeInputProducts[i].getBand(TcwvConstants.TCWV_BAND_NAME).getNoDataValue();
+            srcTcwvNodata[i] = mergeInputProducts[i].getBand(TcwvConstants.TCWV_TARGET_BAND_NAME).getNoDataValue();
             srcTcwvUncertainty[i] = sourceSamples[SRC_TCWV_UNCERTAINTY[i]].getDouble();
             srcTcwvCounts[i] = sourceSamples[SRC_TCWV_COUNTS[i]].getDouble();
-            srcTcwvCountsNodata[i] = mergeInputProducts[i].getBand(TcwvConstants.TCWV_COUNTS_BAND_NAME).getNoDataValue();
+            srcTcwvCountsNodata[i] = mergeInputProducts[i].getBand(TcwvConstants.TCWV_COUNTS_TARGET_BAND_NAME).getNoDataValue();
         }
 
         final double[] tcwvMerge = mergeTcwv(numProductsToMerge, srcTcwv, srcTcwvCounts, srcTcwvNodata, srcTcwvCountsNodata);
@@ -105,13 +105,13 @@ public class L3MergeSensorsOp extends PixelOperator {
             SRC_TCWV_COUNTS[i] = 3 * i + 2;
         }
 
-        targetProduct.addBand(TcwvConstants.TCWV_BAND_NAME,
-                              mergeInputProducts[0].getBand(TcwvConstants.TCWV_BAND_NAME).getDataType());
-        targetProduct.addBand(TcwvConstants.TCWV_UNCERTAINTY_BAND_NAME,
-                              mergeInputProducts[0].getBand(TcwvConstants.TCWV_UNCERTAINTY_BAND_NAME).
+        targetProduct.addBand(TcwvConstants.TCWV_TARGET_BAND_NAME,
+                              mergeInputProducts[0].getBand(TcwvConstants.TCWV_TARGET_BAND_NAME).getDataType());
+        targetProduct.addBand(TcwvConstants.TCWV_UNCERTAINTY_TARGET_BAND_NAME,
+                              mergeInputProducts[0].getBand(TcwvConstants.TCWV_UNCERTAINTY_TARGET_BAND_NAME).
                                                                  getDataType());
-        targetProduct.addBand(TcwvConstants.TCWV_COUNTS_BAND_NAME,
-                              mergeInputProducts[0].getBand(TcwvConstants.TCWV_COUNTS_BAND_NAME).getDataType());
+        targetProduct.addBand(TcwvConstants.TCWV_COUNTS_TARGET_BAND_NAME,
+                              mergeInputProducts[0].getBand(TcwvConstants.TCWV_COUNTS_TARGET_BAND_NAME).getDataType());
 
         for (Band b : targetProduct.getBands()) {
             final Band sourceBand = mergeInputProducts[0].getBand(b.getName());
@@ -133,18 +133,18 @@ public class L3MergeSensorsOp extends PixelOperator {
     @Override
     protected void configureSourceSamples(SourceSampleConfigurer configurator) throws OperatorException {
         for (int i = 0; i < numProductsToMerge; i++) {
-            configurator.defineSample(SRC_TCWV[i], TcwvConstants.TCWV_BAND_NAME, mergeInputProducts[i]);
-            configurator.defineSample(SRC_TCWV_UNCERTAINTY[i], TcwvConstants.TCWV_UNCERTAINTY_BAND_NAME,
+            configurator.defineSample(SRC_TCWV[i], TcwvConstants.TCWV_TARGET_BAND_NAME, mergeInputProducts[i]);
+            configurator.defineSample(SRC_TCWV_UNCERTAINTY[i], TcwvConstants.TCWV_UNCERTAINTY_TARGET_BAND_NAME,
                                       mergeInputProducts[i]);
-            configurator.defineSample(SRC_TCWV_COUNTS[i], TcwvConstants.TCWV_COUNTS_BAND_NAME, mergeInputProducts[i]);
+            configurator.defineSample(SRC_TCWV_COUNTS[i], TcwvConstants.TCWV_COUNTS_TARGET_BAND_NAME, mergeInputProducts[i]);
         }
     }
 
     @Override
     protected void configureTargetSamples(TargetSampleConfigurer configurator) throws OperatorException {
-        configurator.defineSample(TRG_TCWV, TcwvConstants.TCWV_BAND_NAME);
-        configurator.defineSample(TRG_TCWV_UNCERTAINTY, TcwvConstants.TCWV_UNCERTAINTY_BAND_NAME);
-        configurator.defineSample(TRG_TCWV_COUNTS, TcwvConstants.TCWV_COUNTS_BAND_NAME);
+        configurator.defineSample(TRG_TCWV, TcwvConstants.TCWV_TARGET_BAND_NAME);
+        configurator.defineSample(TRG_TCWV_UNCERTAINTY, TcwvConstants.TCWV_UNCERTAINTY_TARGET_BAND_NAME);
+        configurator.defineSample(TRG_TCWV_COUNTS, TcwvConstants.TCWV_COUNTS_TARGET_BAND_NAME);
     }
 
     static double[] mergeTcwv(int numProducts, double[] srcTcwv, double[] srcTcwvCounts,

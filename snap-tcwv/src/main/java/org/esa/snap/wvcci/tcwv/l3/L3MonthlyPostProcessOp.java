@@ -9,7 +9,8 @@ import org.esa.snap.core.gpf.annotations.SourceProduct;
 import org.esa.snap.wvcci.tcwv.TcwvConstants;
 
 /**
- * Operator for post-processing of MERIS/MODIS/OLCI TCWV L3 daily products.
+ * Operator for post-processing of MERIS/MODIS/OLCI TCWV L3 monthly products.
+ * Currently no differences to daily post-processing.
  *
  * Current actions are:
  * - rename tcwv_mean --> tcwv
@@ -22,11 +23,11 @@ import org.esa.snap.wvcci.tcwv.TcwvConstants;
  *
  * @author Olaf Danne
  */
-@OperatorMetadata(alias = "ESACCI.Tcwv.L3.DailyPostProcessing", version = "0.8",
+@OperatorMetadata(alias = "ESACCI.Tcwv.L3.MonthlyPostProcessing", version = "0.8",
         authors = "O.Danne",
         internal = true,
         description = "Operator for post-processing of TCWV L3 daily products.")
-public class L3DailyPostProcessOp extends L3PostProcessOp {
+public class L3MonthlyPostProcessOp extends L3PostProcessOp {
 
     @Override
     public void initialize() throws OperatorException {
@@ -46,7 +47,7 @@ public class L3DailyPostProcessOp extends L3PostProcessOp {
     public static class Spi extends OperatorSpi {
 
         public Spi() {
-            super(L3DailyPostProcessOp.class);
+            super(L3MonthlyPostProcessOp.class);
         }
     }
 }
