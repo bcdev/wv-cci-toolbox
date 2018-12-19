@@ -5,7 +5,6 @@ import org.esa.snap.core.datamodel.Product;
 import org.esa.snap.core.gpf.OperatorException;
 import org.esa.snap.core.gpf.OperatorSpi;
 import org.esa.snap.core.gpf.annotations.OperatorMetadata;
-import org.esa.snap.core.gpf.annotations.Parameter;
 import org.esa.snap.core.gpf.annotations.SourceProduct;
 import org.esa.snap.core.gpf.pointop.*;
 import org.esa.snap.wvcci.tcwv.TcwvConstants;
@@ -24,10 +23,6 @@ import org.esa.snap.wvcci.tcwv.TcwvConstants;
         description = "Operator for post-processing of TCWV L3 daily products.")
 public class L3MergeSensorsOp extends PixelOperator {
 
-    @Parameter(valueSet = {"005deg", "05deg"},
-            description = "L3 resolution (0.5 or 0.05deg).")
-    private String l3Resolution;
-
     @SourceProduct(description = "Source product 1")
     private Product sensor1Product;
     @SourceProduct(description = "Source product 2")
@@ -36,7 +31,6 @@ public class L3MergeSensorsOp extends PixelOperator {
     private Product sensor3Product;
 
     private Product[] mergeInputProducts;
-    private Product targetProduct;
 
     private int numProductsToMerge;
 

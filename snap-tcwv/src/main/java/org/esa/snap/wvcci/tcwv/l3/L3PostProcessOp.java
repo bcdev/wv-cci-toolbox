@@ -33,7 +33,7 @@ import java.util.Map;
  */
 abstract class L3PostProcessOp extends Operator {
 
-    @Parameter(valueSet = {"005deg", "05deg"},
+    @Parameter(valueSet = {"005", "05"},
             description = "L3 resolution (0.5 or 0.05deg).")
     private String l3Resolution;
 
@@ -70,7 +70,7 @@ abstract class L3PostProcessOp extends Operator {
             if (auxdataPath == null || auxdataPath.length() == 0) {
                 auxdataPath = TcwvIO.installAuxdataL3();
             }
-            final String waterMaskFileName = L3_WATERMASK_FILENAME_PREFIX + l3Resolution + ".nc";
+            final String waterMaskFileName = L3_WATERMASK_FILENAME_PREFIX + l3Resolution + "deg.nc";
             final String watermaskFilePath = auxdataPath + File.separator + waterMaskFileName;
             watermaskProduct = ProductIO.readProduct(new File(watermaskFilePath));
         } catch (IOException e) {
