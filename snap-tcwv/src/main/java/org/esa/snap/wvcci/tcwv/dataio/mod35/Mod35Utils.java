@@ -1,19 +1,16 @@
 package org.esa.snap.wvcci.tcwv.dataio.mod35;
 
-import ncsa.hdf.hdf5lib.H5;
-import ncsa.hdf.hdf5lib.HDF5Constants;
 import ncsa.hdf.hdf5lib.exceptions.HDF5Exception;
+import ncsa.hdf.hdflib.HDFException;
 import ncsa.hdf.object.Attribute;
 import ncsa.hdf.object.Datatype;
+import ncsa.hdf.object.Group;
+import ncsa.hdf.object.HObject;
+import ncsa.hdf.object.h4.H4Datatype;
+import ncsa.hdf.object.h4.H4Group;
 import ncsa.hdf.object.h4.H4SDS;
-import ncsa.hdf.object.h5.H5Datatype;
-import ncsa.hdf.object.h5.H5Group;
-import ncsa.hdf.object.h5.H5ScalarDS;
 import org.esa.snap.core.datamodel.*;
 import org.esa.snap.core.util.SystemUtils;
-import org.geotools.referencing.CRS;
-import org.geotools.referencing.crs.DefaultGeographicCRS;
-import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
@@ -34,7 +31,7 @@ public class Mod35Utils {
      * @param attribute - input attribute
      * @return the value as string
      */
-    public static String getAttributeValue(Attribute attribute) {
+    private static String getAttributeValue(Attribute attribute) {
         String result = "";
         switch (attribute.getType().getDatatypeClass()) {
             case Datatype.CLASS_INTEGER:
@@ -91,7 +88,7 @@ public class Mod35Utils {
      * @param attributeName - the attribute name
      * @return the value as string
      */
-    public static String getStringAttributeValue(List<Attribute> metadata, String attributeName) {
+    private static String getStringAttributeValue(List<Attribute> metadata, String attributeName) {
         String stringAttr = null;
         for (Attribute attribute : metadata) {
             if (attribute.getName().equals(attributeName)) {
@@ -113,7 +110,7 @@ public class Mod35Utils {
      * @param attributeName - the attribute name
      * @return the value as double
      */
-    public static double getDoubleAttributeValue(List<Attribute> metadata, String attributeName) {
+    private static double getDoubleAttributeValue(List<Attribute> metadata, String attributeName) {
         double doubleAttr = Double.NaN;
         for (Attribute attribute : metadata) {
             if (attribute.getName().equals(attributeName)) {
@@ -127,147 +124,44 @@ public class Mod35Utils {
         return doubleAttr;
     }
 
-    /**
-     * Returns product start/end times extracted from HDF attribute
-     *
-     * @param metadata- the metadata containing the attributes
-     * @return start/end times as String[]
-     */
-    public static String[] getStartEndTimeFromAttributes(List<Attribute> metadata) {
-        String startDate = "";
-        String startTime = "";
-        String endDate = "";
-        String endTime = "";
-        for (Attribute attribute : metadata) {
-            if (attribute.getName().equals("OBSERVATION_START_DATE")) {
-                startDate = getAttributeValue(attribute);
-            } else if (attribute.getName().equals("OBSERVATION_START_TIME")) {
-                startTime = getAttributeValue(attribute);
-            } else if (attribute.getName().equals("OBSERVATION_END_DATE")) {
-                endDate = getAttributeValue(attribute);
-            } else if (attribute.getName().equals("OBSERVATION_END_TIME")) {
-                endTime = getAttributeValue(attribute);
-            }
-        }
-
-        if (startDate.isEmpty() || startTime.isEmpty() || endDate.isEmpty() || endTime.isEmpty()) {
-            return null;
-        }
-        // format is 'yyyy-mm-dd hh:mm:ss'
-        String[] startStopTimes = new String[2];
-        startStopTimes[0] = startDate + " " + startTime;
-        startStopTimes[1] = endDate + " " + endTime;
-        return startStopTimes;
-    }
 
     /**
      * Reads data from a Proba-V HDF input file into a data buffer
      *
-     * @param file_id       - HDF file id
-     * @param width         - buffer width
-     * @param height        - buffer height
-     * @param offsetX       - buffer X offset
-     * @param offsetY       - buffer Y offset
-     * @param datasetName   - the HDF dataset name
-     * @param datatypeClass - the HDF datatype
-     * @param destBuffer    - the data buffer being filled
+     * @param dataNode            - Node in HDF file containing data variable
+     * @param width               - buffer width
+     * @param height              - buffer height
+     * @param offsetX             - buffer X offset
+     * @param offsetY             - buffer Y offset
+     * @param targetBandName      - the HDF dataset name
+     * @param targetDatatypeClass - the HDF datatype
+     * @param dataset
+     * @param destBuffer          - the data buffer being filled
      */
-    public static void readMod35Data(int file_id,
-                                      int width, int height, long offsetX, long offsetY,
-                                      String datasetName, int datatypeClass,
-                                      ProductData destBuffer) {
+
+    public static void readMod35Data(TreeNode dataNode,
+                                     int width, int height,
+                                     long offsetX, long offsetY,
+                                     String targetBandName,
+                                     int targetDatatypeClass,
+                                     H4SDS dataset,
+                                     ProductData destBuffer) {
         try {
-            final int dataset_id = H5.H5Dopen(file_id,                       // Location identifier
-                                              datasetName,                   // Dataset name
-                                              HDF5Constants.H5P_DEFAULT);    // Identifier of dataset access property list
-
-            final int dataspace_id = H5.H5Dget_space(dataset_id);
-
-            final long[] offset = {offsetY, offsetX};
-            final long[] count = {height, width};
-
-            H5.H5Sselect_hyperslab(                                dataspace_id,                   // Identifier of dataspace selection to modify
-                                   HDF5Constants.H5S_SELECT_SET,   // Operation to perform on current selection.
-                                   offset,                         // Offset of start of hyperslab
-                                   null,                           // Hyperslab stride.
-                                   count,                          // Number of blocks included in hyperslab.
-                                   null);                          // Size of block in hyperslab.
-
-            final int memspace_id = H5.H5Screate_simple(              count.length, // Number of dimensions of dataspace.
-                                                        count,        // An array of the size of each dimension.
-                                                        null);       // An array of the maximum size of each dimension.
-
-            final long[] offset_out = {0L, 0L};
-            H5.H5Sselect_hyperslab(                                    memspace_id,                        // Identifier of dataspace selection to modify
-                                   HDF5Constants.H5S_SELECT_SET,       // Operation to perform on current selection.
-                                   offset_out,                         // Offset of start of hyperslab
-                                   null,                               // Hyperslab stride.
-                                   count,                              // Number of blocks included in hyperslab.
-                                   null);                          // Size of block in hyperslab.
-
-            int dataType = Mod35Utils.getDatatypeForH5Dread(datatypeClass);
-
-            if (destBuffer != null) {
-                H5.H5Dread(                               dataset_id,                    // Identifier of the dataset read from.
-                           dataType,                      // Identifier of the memory datatype.
-                           memspace_id,                   //  Identifier of the memory dataspace.
-                           dataspace_id,                  // Identifier of the dataset's dataspace in the file.
-                           HDF5Constants.H5P_DEFAULT,     // Identifier of a transfer property list for this I/O operation.
-                           destBuffer.getElems());        // Buffer to store data read from the file.
-
-                H5.H5Dclose(dataset_id);
-                H5.H5Sclose(memspace_id);
-            }
-
+//            long[] offset = dataset.getStartDims();
+//            offset[0] = offsetX;
+//            offset[1] = offsetY;
+//            long[] sizes = dataset.getSelectedDims();
+//            sizes[1] = width;
+//            sizes[0] = height;
+            dataset.hasAttribute();
+            final Object read = dataset.read();
+            destBuffer.setElems(read);
         } catch (Exception e) {
-            SystemUtils.LOG.log(Level.SEVERE, "Cannot read Mod35 raster data '" + datasetName + "': " + e.getMessage());
+            SystemUtils.LOG.log(Level.SEVERE, "Cannot read Mod35 raster data '" + targetBandName + "': " + e.getMessage());
         }
     }
 
-    /**
-     * Checks by data set tree node inspection if a Proba-V product is a Level 3 NDVI product.
-     *
-     * @param productTypeNode - the data set tree node (starting at LEVEL3)
-     * @return boolean
-     */
-    public static boolean isLevel3Ndvi(TreeNode productTypeNode) {
-        boolean hasNdvi = false;
-        for (int i = 0; i < productTypeNode.getChildCount(); i++) {
-            // we have: 'GEOMETRY', 'NDVI', 'QUALITY', 'RADIOMETRY', 'TIME'
-            final TreeNode productTypeChildNode = productTypeNode.getChildAt(i);
-            final String productTypeChildNodeName = productTypeChildNode.toString();
 
-            if (productTypeChildNodeName.equals("NDVI")) {
-                hasNdvi = true;
-                break;
-            }
-        }
-
-        if (hasNdvi) {
-            for (int i = 0; i < productTypeNode.getChildCount(); i++) {
-                // check if GEOMETRY, QUALITY, RADIOMETRY, TIME are present but empty
-                final TreeNode productTypeChildNode = productTypeNode.getChildAt(i);
-                final String productTypeChildNodeName = productTypeChildNode.toString();
-                if (!productTypeChildNodeName.equals("NDVI")) {
-                    if (productTypeChildNode.getChildCount() > 0) {
-                        return false;
-                    }
-                }
-            }
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Checks by data set tree node inspection if a Proba-V product is a Level 3 TOC product.
-     *
-     * @param productTypeNode - the data set tree node (starting at LEVEL3)
-     * @return boolean
-     */
-    public static boolean isLevel3Toc(TreeNode productTypeNode) {
-        return isReflectanceType(productTypeNode, "TOC");
-    }
 
     /**
      * Checks if tree child note corresponds to viewing angle group
@@ -366,55 +260,29 @@ public class Mod35Utils {
      * @throws ParseException
      */
     public static void addStartStopTimes(Product product, DefaultMutableTreeNode timeNode) throws HDF5Exception, ParseException {
-        final H5Group timeGroup = (H5Group) timeNode.getUserObject();
-        final List timeMetadata = timeGroup.getMetadata();
-        String[] startEndTime = Mod35Utils.getStartEndTimeFromAttributes(timeMetadata);
-        if (startEndTime != null) {
-            product.setStartTime(ProductData.UTC.parse(startEndTime[0],
-                                                       Mod35Constants.PROBAV_DATE_FORMAT_PATTERN));
-            product.setEndTime(ProductData.UTC.parse(startEndTime[1],
-                                                     Mod35Constants.PROBAV_DATE_FORMAT_PATTERN));
-        }
-    }
-
-    /**
-     * Adds metadata which corresponds to a band subgroup (NDVI, QUALITY or TIME)
-     *
-     * @param product       - the product
-     * @param parentNode    - the HDF parent node
-     * @param bandGroupName - band subgroup name (should be NDVI, QUALITY or TIME)
-     * @throws HDF5Exception
-     */
-    public static void addBandSubGroupMetadata(Product product, DefaultMutableTreeNode parentNode, String bandGroupName) throws HDF5Exception {
-        // NDVI, QUALITY, TIME
-        addRootMetadataElement(product, parentNode, bandGroupName);
-
-        final MetadataElement rootMetadataElement = product.getMetadataRoot().getElement(bandGroupName);
-
-        final TreeNode childNode = parentNode.getChildAt(0);
-        final String childNodeName = childNode.toString();
-        final MetadataElement childMetadataElement = new MetadataElement(childNodeName);
-
-//        if (!bandGroupName.equals(Mod35Constants.QUALITY_BAND_GROUP_NAME)) {
-//            // skip the 'SM' metadata as it is not the original SM band
-//            final H5ScalarDS ds = Mod35Utils.getH5ScalarDS(childNode);
-//            final List childMetadata = ds.getMetadata();
-//            Mod35Utils.addMetadataAttributes(childMetadata, rootMetadataElement);
+        // todo
+        //        final H5Group timeGroup = (H5Group) timeNode.getUserObject();
+//        final List timeMetadata = timeGroup.getMetadata();
+//        String[] startEndTime = Mod35Utils.getStartEndTimeFromAttributes(timeMetadata);
+//        if (startEndTime != null) {
+//            product.setStartTime(ProductData.UTC.parse(startEndTime[0],
+//                                                       Mod35Constants.PROBAV_DATE_FORMAT_PATTERN));
+//            product.setEndTime(ProductData.UTC.parse(startEndTime[1],
+//                                                     Mod35Constants.PROBAV_DATE_FORMAT_PATTERN));
 //        }
     }
 
     /**
      * Adds a metadata element with attributes to root node
      *
-     * @param product - the product
+     * @param product     - the product
      * @param parentNode  - the HDF parent node
      * @param elementName - the metadata element name
-     *
      * @throws HDF5Exception
      */
     public static void addRootMetadataElement(Product product, DefaultMutableTreeNode parentNode, String elementName)
-            throws HDF5Exception {
-        final H5Group parentGeometryGroup = (H5Group) parentNode.getUserObject();
+            throws HDFException {
+        final H4Group parentGeometryGroup = (H4Group) parentNode.getUserObject();
         final List parentGeometryMetadata = parentGeometryGroup.getMetadata();
         Mod35Utils.addMetadataElementWithAttributes(parentGeometryMetadata, product.getMetadataRoot(), elementName);
     }
@@ -432,91 +300,20 @@ public class Mod35Utils {
     }
 
     /**
-     * Sets Proba-V spectral band properties
-     *
-     * @param treeNode - node to extract metadata from
-     * @param band     - the spectral band
-     */
-    public static void setSpectralBandProperties(DefaultMutableTreeNode treeNode, Band band) throws HDF5Exception {
-        final H5Group group = (H5Group) treeNode.getUserObject();
-        final List metadata = group.getMetadata();
-        final double solarIrradiance = Mod35Utils.getDoubleAttributeValue(metadata, "SOLAR_IRRADIANCE");
-        band.setSolarFlux((float) solarIrradiance);
-        if (band.getName().endsWith("REFL_BLUE")) {
-            band.setSpectralBandIndex(0);
-            band.setSpectralWavelength(462.0f);
-            band.setSpectralBandwidth(48.0f);
-        } else if (band.getName().endsWith("REFL_RED")) {
-            band.setSpectralBandIndex(1);
-            band.setSpectralWavelength(655.5f);
-            band.setSpectralBandwidth(81.0f);
-        } else if (band.getName().endsWith("REFL_NIR")) {
-            band.setSpectralBandIndex(2);
-            band.setSpectralWavelength(843.0f);
-            band.setSpectralBandwidth(142.0f);
-        } else if (band.getName().endsWith("REFL_SWIR")) {
-            band.setSpectralBandIndex(3);
-            band.setSpectralWavelength(1599.0f);
-            band.setSpectralBandwidth(70.0f);
-        }
-    }
-
-    /**
-     * Sets the Mod35 geo coding to a product as extracted from HDF metadata information
-     *
-     * @param product              - the product
-     * @param inputFileRootNode    - HDF root tree node
-     * @param productTypeChildNode - the product type child node (LEVEL2A or LEVEL3)
-     * @param productWidth         - product width
-     * @param productHeight        - product height
-     * @param latBounds
-     * @param lonBounds
-     * @throws HDF5Exception
-     */
-    public static void setMod35GeoCoding(Product product, TreeNode inputFileRootNode, TreeNode productTypeChildNode,
-                                         int productWidth, int productHeight,
-                                         float[] lat, float[] lon,
-                                         float[] latBounds, float[] lonBounds)
-            throws HDF5Exception {
-
-        final double easting = lonBounds[0];
-        final double northing = latBounds[0];
-        final double pixelSizeX = Math.abs(lonBounds[2] - lonBounds[0]) / (productWidth - 1);
-        final double pixelSizeY = (latBounds[0] - latBounds[1]) / (productHeight - 1);
-
-        final H5Group h5RootGroup = (H5Group) ((DefaultMutableTreeNode) inputFileRootNode).getUserObject();
-        final List rootMetadata = h5RootGroup.getMetadata();
-        final String crsString = Mod35Utils.getStringAttributeValue(rootMetadata, "MAP_PROJECTION_WKT");
-        try {
-//            final CoordinateReferenceSystem crs = CRS.parseWKT(crsString);
-//            final CoordinateReferenceSystem crs = DefaultGeographicCRS.WGS84;
-//            final CrsGeoCoding geoCoding = new CrsGeoCoding(crs, productWidth, productHeight, easting, northing,
-//                                                            pixelSizeX, pixelSizeY);
-            TiePointGrid latGrid = new TiePointGrid("lat", productWidth, productHeight, 0, 0, 0, 0, lat);
-            TiePointGrid lonGrid = new TiePointGrid("lon", productWidth, productHeight, 0, 0, 0, 0, lon);
-            final TiePointGeoCoding tiePointGeoCoding = new TiePointGeoCoding(latGrid, lonGrid);
-//            product.setSceneGeoCoding(geoCoding);
-            product.setSceneGeoCoding(tiePointGeoCoding);
-        } catch (Exception e) {
-            SystemUtils.LOG.log(Level.WARNING, "Cannot attach geocoding: " + e.getMessage());
-        }
-    }
-
-    /**
      * Provides a ProductData instance according to given HDF5 data type
      *
-     * @param datatypeClass - the HDF5 data type
+     * @param datatypeClass - the HDF4 data type
      * @param width         - buffer width
      * @param height        - buffer height
      * @return the data buffer
      */
-    public static ProductData getDataBufferForH5Dread(int datatypeClass, int width, int height) {
+    public static ProductData getDataBufferForH4DataRead(int datatypeClass, int width, int height) {
         switch (datatypeClass) {
-            case H5Datatype.CLASS_CHAR:
+            case H4Datatype.CLASS_CHAR:
                 return ProductData.createInstance(new byte[width * height]);
-            case H5Datatype.CLASS_FLOAT:
+            case H4Datatype.CLASS_FLOAT:
                 return ProductData.createInstance(new float[width * height]);
-            case H5Datatype.CLASS_INTEGER:
+            case H4Datatype.CLASS_INTEGER:
                 return ProductData.createInstance(new short[width * height]);
             default:
                 break;
@@ -525,36 +322,5 @@ public class Mod35Utils {
     }
 
     //// private methods ////
-
-    private static boolean isReflectanceType(TreeNode productTypeNode, String type) {
-        for (int i = 0; i < productTypeNode.getChildCount(); i++) {
-            // we have: 'GEOMETRY', 'NDVI', 'QUALITY', 'RADIOMETRY', 'TIME'
-            final TreeNode productTypeChildNode = productTypeNode.getChildAt(i);
-            final String productTypeChildNodeName = productTypeChildNode.toString();
-
-            if (productTypeChildNodeName.equals("RADIOMETRY")) {
-                // children are BLUE, RED, NIR, SWIR
-                final TreeNode radiometryChildNode = productTypeChildNode.getChildAt(0);
-                return radiometryChildNode.getChildAt(0).toString().equals(type);
-            }
-        }
-        return false;
-    }
-
-    private static int getDatatypeForH5Dread(int datatypeClass) {
-        switch (datatypeClass) {
-            case H5Datatype.CLASS_BITFIELD:
-                return HDF5Constants.H5T_NATIVE_UINT8;
-            case H5Datatype.CLASS_CHAR:
-                return HDF5Constants.H5T_NATIVE_UINT8;
-            case H5Datatype.CLASS_FLOAT:
-                return HDF5Constants.H5T_NATIVE_FLOAT;
-            case H5Datatype.CLASS_INTEGER:
-                return HDF5Constants.H5T_NATIVE_INT16;
-            default:
-                break;
-        }
-        return -1;
-    }
 
 }
