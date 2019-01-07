@@ -175,6 +175,7 @@ public class Modis35ProductReader extends AbstractProductReader {
 
                 case Mod35Constants.DATA_FIELDS_GROUP_NAME:
                     createCloudMaskBand(product, fieldsNode);
+                    createGeometryBands(product, fieldsNode);
                     break;
 
                 default:
@@ -260,6 +261,7 @@ public class Modis35ProductReader extends AbstractProductReader {
         final MetadataElement rootMetadataElement = product.getMetadataRoot().
                 getElement(Mod35Constants.GEOLOCATION_FIELDS_GROUP_NAME);
 
+
         final List cloudMaskDSMetadata = cloudMaskDS.getMetadata();
         final int cloudMaskDatatypeClass = cloudMaskDS.getDatatype().getDatatypeClass();
         final Band cloudMaskBand = Mod35Utils.createTargetBand(product,
@@ -280,6 +282,43 @@ public class Modis35ProductReader extends AbstractProductReader {
                                                         Mod35Constants.CLOUD_MASK_BAND_NAME);
         }
     }
+
+    private void createGeometryBands(Product product, TreeNode fieldsNode) throws Exception {
+        // 'Solar_Zenith', 'Solar_Azimuth', 'Sensor_Zenith', 'Sensor_Azimuth' (int16)
+        Mod35Utils.addRootMetadataElement(product, (DefaultMutableTreeNode) fieldsNode,
+                                          Mod35Constants.GEOLOCATION_FIELDS_GROUP_NAME);
+        final MetadataElement rootMetadataElement = product.getMetadataRoot().
+                getElement(Mod35Constants.GEOLOCATION_FIELDS_GROUP_NAME);
+
+        for (int j = 0; j < fieldsNode.getChildCount(); j++) {
+            final TreeNode geometryChildNode = fieldsNode.getChildAt(j);
+            final String geometryChildNodeName = geometryChildNode.toString();
+
+            if (geometryChildNodeName.contains("Zenith") || geometryChildNodeName.contains("Azimuth")) {
+                final H4SDS geometryDS = Mod35Utils.getH4ScalarDS(geometryChildNode);
+                final List geometryDSMetadata = geometryDS.getMetadata();
+                final int geometryDatatypeClass = geometryDS.getDatatype().getDatatypeClass();
+                final Band geometryBand = Mod35Utils.createTargetBand(product,
+                                                                      geometryDSMetadata,
+                                                                      geometryChildNodeName,
+                                                                      ProductData.TYPE_INT16);
+                Mod35Utils.setBandUnitAndDescription(geometryDSMetadata, geometryBand);
+                geometryBand.setNoDataValue(Mod35Constants.GEOMETRY_NO_DATA_VALUE);
+                geometryBand.setNoDataValueUsed(true);
+
+                datasetVars.put(geometryBand,
+                                new Hdf4DatasetVar(geometryChildNodeName,
+                                                   geometryDatatypeClass,
+                                                   geometryDS));
+                if (geometryDSMetadata != null) {
+                    Mod35Utils.addMetadataElementWithAttributes(geometryDSMetadata,
+                                                                rootMetadataElement,
+                                                                geometryChildNodeName);
+                }
+            }
+        }
+    }
+
 
 
     private static class Hdf4DatasetVar {
