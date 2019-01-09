@@ -16,9 +16,10 @@
 
 package org.esa.snap.wvcci.tcwv.dataio.mod35;
 
-import com.bc.ceres.core.Assert;
 import com.bc.ceres.core.ProgressMonitor;
+import ncsa.hdf.object.Attribute;
 import ncsa.hdf.object.FileFormat;
+import ncsa.hdf.object.h4.H4Datatype;
 import ncsa.hdf.object.h4.H4Group;
 import ncsa.hdf.object.h4.H4SDS;
 import org.esa.snap.core.dataio.AbstractProductReader;
@@ -29,8 +30,6 @@ import org.esa.snap.core.util.SystemUtils;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -47,9 +46,11 @@ public class Modis35ProductReader extends AbstractProductReader {
     private int tpWidth;
     private int tpHeight;
 
+    private int byteSegmentSize;
+    private int qaDim;
+
     private FileFormat h4File;
 
-    private HashMap<Band, Hdf4DatasetVar> datasetVars;
     private TreeNode h4RootNode;
     private TreeNode mod35Node;
     private H4SDS cloudMaskDS;
@@ -61,34 +62,38 @@ public class Modis35ProductReader extends AbstractProductReader {
 
 
     @Override
-    protected Product readProductNodesImpl() throws IOException {
+    protected Product readProductNodesImpl() {
         final Object inputObject = getInput();
+        Product targetProduct = null;
         File mod35File = Modis35ProductReaderPlugIn.getFileInput(inputObject);
 
-        Product targetProduct = null;
+        if (mod35File != null) {
+            FileFormat h4FileFormat = FileFormat.getFileFormat(FileFormat.FILE_TYPE_HDF4);
+            if (h4FileFormat == null) {
+                System.err.println("Cannot find HDF4 FileFormat.");
+                return null;
+            }
 
-        FileFormat h4FileFormat = FileFormat.getFileFormat(FileFormat.FILE_TYPE_HDF4);
-        if (h4FileFormat == null) {
-            System.err.println("Cannot find HDF4 FileFormat.");
-            return null;
-        }
+            try {
+                h4File = h4FileFormat.open(mod35File.getAbsolutePath(), FileFormat.READ);
+                h4File.open();
+                h4RootNode = h4File.getRootNode();         // 'MOD35_L2...'
+                mod35Node = h4RootNode.getChildAt(0);      // 'mod35'
 
-        try {
-            h4File = h4FileFormat.open(mod35File.getAbsolutePath(), FileFormat.READ);
-            h4File.open();
-            h4RootNode = h4File.getRootNode();         // 'MOD35_L2...'
-            mod35Node = h4RootNode.getChildAt(0);      // 'mod35'
-            setProductHeight5km(mod35Node.getChildAt(0));
-            setProductHeight1km(mod35Node.getChildAt(1));
-            targetProduct = createTargetProduct(mod35File);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (h4File != null) {
-                try {
-                    h4File.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
+                final H4Group rootGroup = (H4Group) ((DefaultMutableTreeNode) h4RootNode).getUserObject();
+                final List rootMetadata = rootGroup.getMetadata();
+                final String[] structMetadata0String = (String[]) ((Attribute) rootMetadata.get(1)).getValue();
+                setProductDimensions(structMetadata0String[0]);
+                targetProduct = createTargetProduct(mod35File);
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                if (h4File != null) {
+                    try {
+                        h4File.close();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
@@ -96,6 +101,19 @@ public class Modis35ProductReader extends AbstractProductReader {
         return targetProduct;
     }
 
+    private void setProductDimensions(String structMetadata0String) {
+        productWidth = Mod35Utils.getDimensionSizeFromMetadata(structMetadata0String,
+                                                               Mod35Constants.CELL_ACROSS_SWATH_1KM_DIM_NAME);
+        productHeight = Mod35Utils.getDimensionSizeFromMetadata(structMetadata0String,
+                                                                Mod35Constants.CELL_ALONG_SWATH_1KM_DIM_NAME);
+        tpWidth = Mod35Utils.getDimensionSizeFromMetadata(structMetadata0String,
+                                                          Mod35Constants.CELL_ACROSS_SWATH_5KM_DIM_NAME);
+        tpHeight = Mod35Utils.getDimensionSizeFromMetadata(structMetadata0String,
+                                                           Mod35Constants.CELL_ALONG_SWATH_5KM_DIM_NAME);
+        byteSegmentSize = Mod35Utils.getDimensionSizeFromMetadata(structMetadata0String,
+                                                                  Mod35Constants.BYTE_SEGMENT_DIM_NAME);
+        qaDim = Mod35Utils.getDimensionSizeFromMetadata(structMetadata0String, Mod35Constants.QA_DIM_NAME);
+    }
 
     @Override
     protected void readBandRasterDataImpl(int sourceOffsetX,
@@ -111,54 +129,22 @@ public class Modis35ProductReader extends AbstractProductReader {
                                           int targetHeight,
                                           ProductData targetBuffer,
                                           ProgressMonitor pm) {
-
-        Assert.state(sourceOffsetX == targetOffsetX, "sourceOffsetX != targetOffsetX");
-        Assert.state(sourceOffsetY == targetOffsetY, "sourceOffsetY != targetOffsetY");
-        Assert.state(sourceStepX == 1, "sourceStepX != 1");
-        Assert.state(sourceStepY == 1, "sourceStepY != 1");
-        Assert.state(sourceWidth == targetWidth, "sourceWidth != targetWidth");
-        Assert.state(sourceHeight == targetHeight, "sourceHeight != targetHeight");
-
-        final Hdf4DatasetVar datasetVar = datasetVars.get(targetBand);
-        synchronized (datasetVar) {
-            if (!datasetVar.getName().equals("Latitude") || datasetVar.getName().equals("Longitude")) {
-                final TreeNode geolocationFieldsNode = mod35Node.getChildAt(0);
-                Mod35Utils.readMod35Data(geolocationFieldsNode,
-                                         targetWidth, targetHeight,
-                                         targetOffsetX, targetOffsetY,
-                                         datasetVar.getName(),
-                                         datasetVar.getType(),
-                                         datasetVar.getDataset(),
-                                         targetBuffer);
-            } else {
-                // todo
-//                final TreeNode dataFieldsNode = mod35Node.getChildAt(1);
-//                ProductData tmpBuffer =
-//                        Mod35Utils.getDataBufferForH5Dread(datasetVar.getType(), targetWidth, targetHeight);
-//                Mod35Utils.readMod35Data(dataFieldsNode,
-//                                         targetWidth, targetHeight,
-//                                         targetOffsetX, targetOffsetY,
-//                                         datasetVar.getName(),
-//                                         datasetVar.getType(),
-//                                         tmpBuffer);
-//                Mod35Flags.setSmFlagBuffer(targetBuffer, tmpBuffer);
-            }
-        }
+        throw new IllegalStateException(String.format("No source to read from for band '%s'.", targetBand.getName()));
     }
+
 
 //////////// private methods //////////////////
 
     private Product createTargetProduct(File inputFile) throws Exception {
-        Product product = null;
-
         mod35Node = h4RootNode.getChildAt(0);
-        datasetVars = new HashMap<>(32);
 
-        product = new Product(inputFile.getName(), Mod35Constants.MOD35_l2_PRODUCT_TYPE, productWidth, productHeight);
+        Product product = new Product(inputFile.getName(), Mod35Constants.MOD35_l2_PRODUCT_TYPE, productWidth, productHeight);
 
         final H4Group rootGroup = (H4Group) ((DefaultMutableTreeNode) h4RootNode).getUserObject();
         final List rootMetadata = rootGroup.getMetadata();
+
         Mod35Utils.addMetadataElementWithAttributes(rootMetadata, product.getMetadataRoot(), Mod35Constants.MPH_NAME);
+
         product.setDescription(Mod35Constants.MOD35_l2_PRODUCT_DESCR);
         Mod35Utils.addStartStopTimes(product, (DefaultMutableTreeNode) h4RootNode);
         product.setFileLocation(inputFile);
@@ -170,12 +156,16 @@ public class Modis35ProductReader extends AbstractProductReader {
 
             switch (fieldsNodeName) {
                 case Mod35Constants.GEOLOCATION_FIELDS_GROUP_NAME:
+                    Mod35Utils.addRootMetadataElement(product, (DefaultMutableTreeNode) fieldsNode,
+                                                      Mod35Constants.GEOLOCATION_FIELDS_GROUP_NAME);
                     createGeolocationTpgs(product, fieldsNode);
                     break;
 
                 case Mod35Constants.DATA_FIELDS_GROUP_NAME:
-                    createCloudMaskBand(product, fieldsNode);
-                    createGeometryBands(product, fieldsNode);
+                    Mod35Utils.addRootMetadataElement(product, (DefaultMutableTreeNode) fieldsNode,
+                                                      Mod35Constants.DATA_FIELDS_GROUP_NAME);
+                    createCloudMaskBands(product, fieldsNode);
+                    createGeometryTpgs(product, fieldsNode);
                     break;
 
                 default:
@@ -183,36 +173,13 @@ public class Modis35ProductReader extends AbstractProductReader {
             }
         }
 
+        Mod35BitMaskUtils.attachPixelClassificationFlagBand(product);
+
         return product;
-    }
-
-    private void setProductHeight1km(TreeNode fieldsNode) {
-        // get it from 'Cloud_Mask' dataset (should be 1354x2030)
-        for (int j = 0; j < fieldsNode.getChildCount(); j++) {
-            final TreeNode dataChildNode = fieldsNode.getChildAt(j);
-            final String dataChildNodeName = dataChildNode.toString();
-            if (dataChildNodeName.equals(Mod35Constants.CLOUD_MASK_BAND_NAME)) {
-                cloudMaskDS = Mod35Utils.getH4ScalarDS(dataChildNode);
-                final long[] dsDims = cloudMaskDS.getDims();
-                productHeight = (int) dsDims[1];
-                productWidth = (int) dsDims[2];
-            }
-        }
-    }
-
-    private void setProductHeight5km(TreeNode fieldsNode) {
-        // get it from 'Latitude' dataset (should be 270x406)
-        final TreeNode geolocationChildNode = fieldsNode.getChildAt(0);
-        final H4SDS geolocationDS = Mod35Utils.getH4ScalarDS(geolocationChildNode);
-        final long[] dsDims = geolocationDS.getDims();
-        tpHeight = (int) dsDims[0];
-        tpWidth = (int) dsDims[1];
     }
 
     private void createGeolocationTpgs(Product product, TreeNode fieldsNode) throws Exception {
         // 'Latitude', 'Longitude' (both float32)
-        Mod35Utils.addRootMetadataElement(product, (DefaultMutableTreeNode) fieldsNode,
-                                          Mod35Constants.GEOLOCATION_FIELDS_GROUP_NAME);
         final MetadataElement rootMetadataElement = product.getMetadataRoot().
                 getElement(Mod35Constants.GEOLOCATION_FIELDS_GROUP_NAME);
 
@@ -241,9 +208,9 @@ public class Modis35ProductReader extends AbstractProductReader {
         try {
             TiePointGrid latGrid;
             if (lats != null && lons != null) {
-                latGrid = new TiePointGrid("lat", tpWidth, tpHeight, 0, 0, 5.0, 5.0, lats);
+                latGrid = new TiePointGrid("Latitude", tpWidth, tpHeight, 0, 0, 5.0, 5.0, lats);
                 product.addTiePointGrid(latGrid);
-                TiePointGrid lonGrid = new TiePointGrid("lon", tpWidth, tpHeight, 0, 0, 5.0, 5.0, lons);
+                TiePointGrid lonGrid = new TiePointGrid("Longitude", tpWidth, tpHeight, 0, 0, 5.0, 5.0, lons);
                 product.addTiePointGrid(lonGrid);
                 final TiePointGeoCoding tiePointGeoCoding = new TiePointGeoCoding(latGrid, lonGrid);
                 product.setSceneGeoCoding(tiePointGeoCoding);
@@ -254,96 +221,92 @@ public class Modis35ProductReader extends AbstractProductReader {
 
     }
 
-    private void createCloudMaskBand(Product product, TreeNode fieldsNode) throws Exception {
-        // 'Cloud_Mask' (int8)
-        Mod35Utils.addRootMetadataElement(product, (DefaultMutableTreeNode) fieldsNode,
-                                          Mod35Constants.GEOLOCATION_FIELDS_GROUP_NAME);
-        final MetadataElement rootMetadataElement = product.getMetadataRoot().
-                getElement(Mod35Constants.GEOLOCATION_FIELDS_GROUP_NAME);
-
-
-        final List cloudMaskDSMetadata = cloudMaskDS.getMetadata();
-        final int cloudMaskDatatypeClass = cloudMaskDS.getDatatype().getDatatypeClass();
-        final Band cloudMaskBand = Mod35Utils.createTargetBand(product,
-                                                               cloudMaskDSMetadata,
-                                                               Mod35Constants.CLOUD_MASK_BAND_NAME,
-                                                               ProductData.TYPE_INT16);
-        Mod35Utils.setBandUnitAndDescription(cloudMaskDSMetadata, cloudMaskBand);
-        cloudMaskBand.setNoDataValue(Mod35Constants.GEOMETRY_NO_DATA_VALUE);
-        cloudMaskBand.setNoDataValueUsed(true);
-
-        datasetVars.put(cloudMaskBand,
-                        new Hdf4DatasetVar(Mod35Constants.CLOUD_MASK_BAND_NAME,
-                                           cloudMaskDatatypeClass,
-                                           cloudMaskDS));
-        if (cloudMaskDSMetadata != null) {
-            Mod35Utils.addMetadataElementWithAttributes(cloudMaskDSMetadata,
-                                                        rootMetadataElement,
-                                                        Mod35Constants.CLOUD_MASK_BAND_NAME);
-        }
-    }
-
-    private void createGeometryBands(Product product, TreeNode fieldsNode) throws Exception {
+    private void createGeometryTpgs(Product product, TreeNode fieldsNode) throws Exception {
         // 'Solar_Zenith', 'Solar_Azimuth', 'Sensor_Zenith', 'Sensor_Azimuth' (int16)
-        Mod35Utils.addRootMetadataElement(product, (DefaultMutableTreeNode) fieldsNode,
-                                          Mod35Constants.GEOLOCATION_FIELDS_GROUP_NAME);
         final MetadataElement rootMetadataElement = product.getMetadataRoot().
-                getElement(Mod35Constants.GEOLOCATION_FIELDS_GROUP_NAME);
+                getElement(Mod35Constants.DATA_FIELDS_GROUP_NAME);
 
         for (int j = 0; j < fieldsNode.getChildCount(); j++) {
             final TreeNode geometryChildNode = fieldsNode.getChildAt(j);
             final String geometryChildNodeName = geometryChildNode.toString();
 
+            H4SDS geometryDS = null;
+            float[] geometryData = null;
             if (geometryChildNodeName.contains("Zenith") || geometryChildNodeName.contains("Azimuth")) {
-                final H4SDS geometryDS = Mod35Utils.getH4ScalarDS(geometryChildNode);
-                final List geometryDSMetadata = geometryDS.getMetadata();
-                final int geometryDatatypeClass = geometryDS.getDatatype().getDatatypeClass();
-                final Band geometryBand = Mod35Utils.createTargetBand(product,
-                                                                      geometryDSMetadata,
-                                                                      geometryChildNodeName,
-                                                                      ProductData.TYPE_INT16);
-                Mod35Utils.setBandUnitAndDescription(geometryDSMetadata, geometryBand);
-                geometryBand.setNoDataValue(Mod35Constants.GEOMETRY_NO_DATA_VALUE);
-                geometryBand.setNoDataValueUsed(true);
-
-                datasetVars.put(geometryBand,
-                                new Hdf4DatasetVar(geometryChildNodeName,
-                                                   geometryDatatypeClass,
-                                                   geometryDS));
-                if (geometryDSMetadata != null) {
-                    Mod35Utils.addMetadataElementWithAttributes(geometryDSMetadata,
-                                                                rootMetadataElement,
-                                                                geometryChildNodeName);
+                geometryData = new float[tpWidth * tpHeight];
+                geometryDS = Mod35Utils.getH4ScalarDS(geometryChildNode);
+                final short[] geometryDSData = (short[]) geometryDS.getData();
+                for (int i = 0; i < geometryDSData.length; i++) {
+                    geometryData[i] = (float) geometryDSData[i];
                 }
+            } else if (geometryChildNodeName.equals("Scan_Start_Time")) {
+                geometryData = new float[tpWidth * tpHeight];
+                geometryDS = Mod35Utils.getH4ScalarDS(geometryChildNode);
+                final double[] geometryDSData = (double[]) geometryDS.getData();
+                for (int i = 0; i < geometryDSData.length; i++) {
+                    geometryData[i] = (float) geometryDSData[i];
+                }
+            }
+            if (geometryData != null) {
+                final TiePointGrid geometryTpg = new TiePointGrid(geometryChildNodeName,
+                                                                  tpWidth, tpHeight,
+                                                                  0, 0, 5.0, 5.0,
+                                                                  geometryData);
+
+                final List geometryDSMetadata = geometryDS.getMetadata();
+                Mod35Utils.addMetadataElementWithAttributes(geometryDSMetadata,
+                                                            rootMetadataElement,
+                                                            geometryChildNodeName);
+                final double scaleFactorAttr = Mod35Utils.getDoubleAttributeValue(geometryDSMetadata, "scale_factor");
+                final double scaleFactor = Double.isNaN(scaleFactorAttr) ? 1.0f : scaleFactorAttr;
+                final double scaleOffsetAttr = Mod35Utils.getDoubleAttributeValue(geometryDSMetadata, "add_offset");
+                final double scaleOffset = Double.isNaN(scaleOffsetAttr) ? 0.0f : scaleOffsetAttr;
+                geometryTpg.setScalingFactor(scaleFactor);
+                geometryTpg.setScalingOffset(scaleOffset);
+                product.addTiePointGrid(geometryTpg);
             }
         }
     }
 
+    private void createCloudMaskBands(Product product, TreeNode fieldsNode) throws Exception {
+        // 'Cloud_Mask' (int8)
+        final MetadataElement rootMetadataElement = product.getMetadataRoot().
+                getElement(Mod35Constants.DATA_FIELDS_GROUP_NAME);
 
-
-    private static class Hdf4DatasetVar {
-
-        final String name;
-        final int type;
-        final H4SDS dataset;
-
-        Hdf4DatasetVar(String name, int type, H4SDS dataset) {
-            this.name = name;
-            this.type = type;
-            this.dataset = dataset;
+        for (int j = 0; j < fieldsNode.getChildCount(); j++) {
+            final TreeNode dataChildNode = fieldsNode.getChildAt(j);
+            final String dataChildNodeName = dataChildNode.toString();
+            if (dataChildNodeName.equals(Mod35Constants.CLOUD_MASK_BAND_NAME)) {
+                cloudMaskDS = Mod35Utils.getH4ScalarDSForCloudMask(dataChildNode,
+                                                                   byteSegmentSize, productHeight, productWidth);
+            }
         }
+        final List<Attribute> cloudMaskDSMetadata = cloudMaskDS.getMetadata();
 
-        public String getName() {
-            return name;
-        }
-
-        int getType() {
-            return type;
-        }
-
-        H4SDS getDataset() {
-            return dataset;
+        final byte[] cloudMaskData3DArr = (byte[]) cloudMaskDS.getData();
+        byte[] tmpArr = new byte[productWidth * productHeight];
+        // bytes 1-5
+        for (int i = 0; i < byteSegmentSize; i++) {
+            ProductData productData = Mod35Utils.getDataBufferForH4DataRead(H4Datatype.CLASS_CHAR,
+                                                                            productWidth, productHeight);
+            final Band cloudMaskByteBand = Mod35Utils.createTargetBand(product,
+                                                                       cloudMaskDSMetadata,
+                                                                       Mod35Constants.CLOUD_MASK_BYTE_TARGET_BAND_NAME + i,
+                                                                       productData.getType());
+            Mod35Utils.setBandUnitAndDescription(cloudMaskDSMetadata, cloudMaskByteBand);
+            cloudMaskByteBand.setNoDataValue(Mod35Constants.CLOUD_MASK_NO_DATA_VALUE);
+            cloudMaskByteBand.setNoDataValueUsed(true);
+            final int offset = i * productWidth * productHeight;
+            System.arraycopy(cloudMaskData3DArr, offset, tmpArr, 0, tmpArr.length);
+            productData.setElems(tmpArr);
+            cloudMaskByteBand.setRasterData(productData);
+            if (cloudMaskDSMetadata != null) {
+                Mod35Utils.addMetadataElementWithAttributes(cloudMaskDSMetadata,
+                                                            rootMetadataElement,
+                                                            Mod35Constants.CLOUD_MASK_BYTE_TARGET_BAND_NAME + i);
+            }
         }
     }
+
 }
 

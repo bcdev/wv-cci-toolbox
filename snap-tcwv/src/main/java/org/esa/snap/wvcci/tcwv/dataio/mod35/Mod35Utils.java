@@ -110,7 +110,7 @@ public class Mod35Utils {
      * @param attributeName - the attribute name
      * @return the value as double
      */
-    private static double getDoubleAttributeValue(List<Attribute> metadata, String attributeName) {
+    public static double getDoubleAttributeValue(List<Attribute> metadata, String attributeName) {
         double doubleAttr = Double.NaN;
         for (Attribute attribute : metadata) {
             if (attribute.getName().equals(attributeName)) {
@@ -123,45 +123,6 @@ public class Mod35Utils {
         }
         return doubleAttr;
     }
-
-
-    /**
-     * Reads data from a Proba-V HDF input file into a data buffer
-     *
-     * @param dataNode            - Node in HDF file containing data variable
-     * @param width               - buffer width
-     * @param height              - buffer height
-     * @param offsetX             - buffer X offset
-     * @param offsetY             - buffer Y offset
-     * @param targetBandName      - the HDF dataset name
-     * @param targetDatatypeClass - the HDF datatype
-     * @param dataset
-     * @param destBuffer          - the data buffer being filled
-     */
-
-    public static void readMod35Data(TreeNode dataNode,
-                                     int width, int height,
-                                     long offsetX, long offsetY,
-                                     String targetBandName,
-                                     int targetDatatypeClass,
-                                     H4SDS dataset,
-                                     ProductData destBuffer) {
-        try {
-//            long[] offset = dataset.getStartDims();
-//            offset[0] = offsetX;
-//            offset[1] = offsetY;
-//            long[] sizes = dataset.getSelectedDims();
-//            sizes[1] = width;
-//            sizes[0] = height;
-            dataset.hasAttribute();
-            final Object read = dataset.read();
-            destBuffer.setElems(read);
-        } catch (Exception e) {
-            SystemUtils.LOG.log(Level.SEVERE, "Cannot read Mod35 raster data '" + targetBandName + "': " + e.getMessage());
-        }
-    }
-
-
 
     /**
      * Checks if tree child note corresponds to viewing angle group
@@ -218,6 +179,20 @@ public class Mod35Utils {
         return scalarDS;
     }
 
+    public static H4SDS getH4ScalarDSForCloudMask(TreeNode level3BandsChildNode,
+                                                  int byteSegmentSize,
+                                                  int productHeight, int productWidth) throws HDFException {
+        H4SDS scalarDS = (H4SDS) ((DefaultMutableTreeNode) level3BandsChildNode).getUserObject();
+        scalarDS.open();
+        scalarDS.init();
+        long[] selectedDims = scalarDS.getSelectedDims();
+        selectedDims[0] = byteSegmentSize;
+        selectedDims[1] = productHeight;
+        selectedDims[2] = productWidth;
+        scalarDS.read();
+        return scalarDS;
+    }
+
 
     /**
      * Extracts a HDF metadata element and adds accordingly to given product
@@ -232,7 +207,7 @@ public class Mod35Utils {
         final MetadataElement metadataElement = new MetadataElement(metadataElementName);
         for (Attribute attribute : metadataAttributes) {
             metadataElement.addAttribute(new MetadataAttribute(attribute.getName(),
-                                                               ProductData.createInstance(Mod35Utils.getAttributeValue(attribute)), true));
+                    ProductData.createInstance(Mod35Utils.getAttributeValue(attribute)), true));
         }
         parentElement.addElement(metadataElement);
     }
@@ -247,7 +222,7 @@ public class Mod35Utils {
                                              final MetadataElement parentElement) {
         for (Attribute attribute : metadataAttributes) {
             parentElement.addAttribute(new MetadataAttribute(attribute.getName(),
-                                                             ProductData.createInstance(Mod35Utils.getAttributeValue(attribute)), true));
+                    ProductData.createInstance(Mod35Utils.getAttributeValue(attribute)), true));
         }
     }
 
@@ -319,6 +294,17 @@ public class Mod35Utils {
                 break;
         }
         return null;
+    }
+
+    public static int getDimensionSizeFromMetadata(String structMetadata0String, String dimensionName) {
+        String[] lines = structMetadata0String.split("\\r?\\n");
+
+        for (int i = 0; i < lines.length - 1; i++) {
+            if (lines[i].trim().equals("DimensionName=\"" + dimensionName + "\"")) { // e.g. "Cell_Across_Swath_1km"
+                return Integer.parseInt(lines[i+1].trim().substring(5));             // e.g. 'Size=1354'
+            }
+        }
+        return -1;
     }
 
     //// private methods ////
