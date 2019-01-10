@@ -1,5 +1,7 @@
 package org.esa.snap.wvcci.tcwv.dataio.mod35;
 
+import org.esa.snap.core.datamodel.Product;
+import org.esa.snap.core.datamodel.ProductData;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -135,4 +137,20 @@ public class Modis35UtilsTest {
         assertEquals(10, Mod35Utils.getDimensionSizeFromMetadata(structMetadata0String, "QA_Dimension"));
     }
 
+    @Test
+    public void testSetStartStopTimes() {
+        final int year = 2011;
+        final int doy = 196;
+        final int hour = 10;
+        final int min = 55;
+        final int sec = 0;
+        Product p = new Product("test", "test", 1, 1);
+
+        final ProductData.UTC utc = Mod35Utils.getProductDate(year, doy, hour, min, sec);
+        assertEquals("15-JUL-2011 10:55:00.000000", utc.format());
+        p.setStartTime(utc);
+        p.setEndTime(utc);
+        System.out.println("p.getStartTime() = " + p.getStartTime());
+        System.out.println("p.getEndTime() = " + p.getEndTime());
+    }
 }

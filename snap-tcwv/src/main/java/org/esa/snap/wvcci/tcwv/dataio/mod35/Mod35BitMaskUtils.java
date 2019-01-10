@@ -207,6 +207,7 @@ public class Mod35BitMaskUtils {
         mod35Product.getFlagCodingGroup().add(mod35FC);
         final Band pixelClassifBand = mod35Product.addBand(PIXEL_CLASSIF_FLAG_BAND_NAME, ProductData.TYPE_INT16);
         pixelClassifBand.setDescription("MOD35 pixel classification");
+        pixelClassifBand.setUnit("dl");
         pixelClassifBand.setSampleCoding(mod35FC);
 
         Mod35BitMaskOp bitMaskOp = new Mod35BitMaskOp();
@@ -240,6 +241,7 @@ public class Mod35BitMaskUtils {
         mod35Product.getFlagCodingGroup().add(mod35FC);
         final Band qaBand = mod35Product.addBand(QA_FLAG_BAND_NAME, ProductData.TYPE_INT16);
         qaBand.setDescription("MOD35 quality assurance");
+        qaBand.setUnit("dl");
         qaBand.setSampleCoding(mod35FC);
 
         Mod35BitMaskOp bitMaskOp = new Mod35BitMaskOp();

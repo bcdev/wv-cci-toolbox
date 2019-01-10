@@ -4,8 +4,6 @@ import ncsa.hdf.hdf5lib.exceptions.HDF5Exception;
 import ncsa.hdf.hdflib.HDFException;
 import ncsa.hdf.object.Attribute;
 import ncsa.hdf.object.Datatype;
-import ncsa.hdf.object.Group;
-import ncsa.hdf.object.HObject;
 import ncsa.hdf.object.h4.H4Datatype;
 import ncsa.hdf.object.h4.H4Group;
 import ncsa.hdf.object.h4.H4SDS;
@@ -15,7 +13,10 @@ import org.esa.snap.core.util.SystemUtils;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 import java.util.logging.Level;
 
 /**
@@ -69,6 +70,7 @@ public class Mod35Utils {
                 }
                 break;
             case Datatype.CLASS_STRING:
+            case Datatype.CLASS_CHAR:
                 String[] svals = (String[]) attribute.getValue();
                 for (String sval : svals) {
                     result = result.concat(sval + " ");
@@ -82,28 +84,6 @@ public class Mod35Utils {
     }
 
     /**
-     * Returns the value of an HDF string attribute with given name
-     *
-     * @param metadata      - the metadata containing the attributes
-     * @param attributeName - the attribute name
-     * @return the value as string
-     */
-    private static String getStringAttributeValue(List<Attribute> metadata, String attributeName) {
-        String stringAttr = null;
-        for (Attribute attribute : metadata) {
-            if (attribute.getName().equals(attributeName)) {
-                try {
-                    stringAttr = getAttributeValue(attribute);
-                } catch (NumberFormatException e) {
-                    SystemUtils.LOG.log(Level.WARNING, "Cannot parse string attribute: " +
-                            e.getMessage());
-                }
-            }
-        }
-        return stringAttr;
-    }
-
-    /**
      * Returns the value of an HDF double attribute with given name
      *
      * @param metadata      - the metadata containing the attributes
@@ -112,7 +92,8 @@ public class Mod35Utils {
      */
     public static double getDoubleAttributeValue(List<Attribute> metadata, String attributeName) {
         double doubleAttr = Double.NaN;
-        for (Attribute attribute : metadata) {
+        for (int i = 0; i < metadata.size(); i++) {
+            Attribute attribute = metadata.get(i);
             if (attribute.getName().equals(attributeName)) {
                 try {
                     doubleAttr = Double.parseDouble(getAttributeValue(attribute));
@@ -122,26 +103,6 @@ public class Mod35Utils {
             }
         }
         return doubleAttr;
-    }
-
-    /**
-     * Checks if tree child note corresponds to viewing angle group
-     *
-     * @param geometryChildNodeName - the tree child note
-     * @return boolean
-     */
-    public static boolean isMod35ViewAngleGroupNode(String geometryChildNodeName) {
-        return geometryChildNodeName.equals("SWIR") || geometryChildNodeName.equals("VNIR");
-    }
-
-    /**
-     * Checks if tree child note corresponds to sun angle group
-     *
-     * @param geometryChildNodeName - the tree child note
-     * @return boolean
-     */
-    public static boolean isMod35SunAngleDataNode(String geometryChildNodeName) {
-        return geometryChildNodeName.equals("SAA") || geometryChildNodeName.equals("SZA");
     }
 
     /**
@@ -162,7 +123,6 @@ public class Mod35Utils {
         final Band band = product.addBand(bandName, dataType);
         band.setScalingFactor(1.0 / scaleFactor);
         band.setScalingOffset(-1.0 * scaleOffset / scaleFactor);
-
         return band;
     }
 
@@ -227,20 +187,6 @@ public class Mod35Utils {
     }
 
     /**
-     * Adds HDF metadata attributes to a given metadata element
-     *
-     * @param metadataAttributes - the HDF metadata attributes
-     * @param parentElement      - the parent metadata element
-     */
-    public static void addMetadataAttributes(List<Attribute> metadataAttributes,
-                                             final MetadataElement parentElement) {
-        for (Attribute attribute : metadataAttributes) {
-            parentElement.addAttribute(new MetadataAttribute(attribute.getName(),
-                    ProductData.createInstance(Mod35Utils.getAttributeValue(attribute)), true));
-        }
-    }
-
-    /**
      * Extracs start/stop times from HDF metadata and adds to given product
      *
      * @param product  - the product
@@ -277,15 +223,15 @@ public class Mod35Utils {
     }
 
     /**
-     * Extracts unit and description from HDF metadata and adds to given band
+     * Extracts unit and description from HDF metadata and adds to given node
      *
      * @param metadata - HDF metadata
-     * @param band     - the band
+     * @param node     - the node
      * @throws HDF5Exception
      */
-    public static void setBandUnitAndDescription(List<Attribute> metadata, Band band) throws HDF5Exception {
-        band.setDescription(Mod35Utils.getStringAttributeValue(metadata, "long_name"));
-        band.setUnit(Mod35Utils.getStringAttributeValue(metadata, "units"));
+    public static void setUnitAndDescription(List<Attribute> metadata, RasterDataNode node) throws HDF5Exception {
+        node.setDescription(Mod35Utils.getStringAttributeValue(metadata, "long_name"));
+        node.setUnit(Mod35Utils.getStringAttributeValue(metadata, "units"));
     }
 
     /**
@@ -321,6 +267,45 @@ public class Mod35Utils {
         return -1;
     }
 
-    //// private methods ////
+    public  static ProductData.UTC getProductDate(int year, int doy, int hour, int min, int sec) {
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.DAY_OF_YEAR, doy);
+        cal.set(Calendar.YEAR, year);
+        cal.set(Calendar.HOUR_OF_DAY, hour);
+        cal.set(Calendar.MINUTE, min);
+        cal.set(Calendar.SECOND, sec);
 
+        final String pattern = "dd-MM-yyyy HH:mm:ss";
+        SimpleDateFormat sdf = new SimpleDateFormat(pattern, Locale.ENGLISH);
+        String stopFormatted = sdf.format(cal.getTime());
+        try {
+            return ProductData.UTC.parse(stopFormatted, pattern);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * Returns the value of an HDF string attribute with given name
+     *
+     * @param metadata      - the metadata containing the attributes
+     * @param attributeName - the attribute name
+     * @return the value as string
+     */
+    private static String getStringAttributeValue(List<Attribute> metadata, String attributeName) {
+        for (int i = 0; i < metadata.size(); i++) {
+            Attribute attribute = metadata.get(i);
+            if (attribute.getName().equals(attributeName)) {
+                try {
+                    return getAttributeValue(attribute);
+                } catch (NumberFormatException e) {
+                    SystemUtils.LOG.log(Level.WARNING, "Cannot parse string attribute: " +
+                            e.getMessage());
+                }
+            }
+        }
+
+        return "N/A";
+    }
 }

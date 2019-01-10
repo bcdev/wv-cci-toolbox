@@ -175,10 +175,23 @@ public class Modis35ProductReader extends AbstractProductReader {
             }
         }
 
+        setStartStopTimes(targetProduct, inputFile.getName());
+
         Mod35BitMaskUtils.attachPixelClassificationFlagBand(targetProduct);
         Mod35BitMaskUtils.attachQualityAssuranceFlagBand(targetProduct);
 
         return targetProduct;
+    }
+
+    private void setStartStopTimes(Product p, String name) {
+        // e.g. name = 'MOD35_L2.A2011196.1055.061.2017325012717.hdf'
+        final int year = Integer.parseInt(name.substring(10, 14));
+        final int doy = Integer.parseInt(name.substring(14, 17));
+        final int hour = Integer.parseInt(name.substring(18, 20));
+        final int min = Integer.parseInt(name.substring(20, 22));
+        final int sec = 0;
+        p.setStartTime(Mod35Utils.getProductDate(year, doy, hour, min, sec));
+        p.setEndTime(Mod35Utils.getProductDate(year, doy, hour, min, sec));
     }
 
     private void createGeolocationTpgs(Product product, TreeNode fieldsNode) throws Exception {
@@ -188,6 +201,8 @@ public class Modis35ProductReader extends AbstractProductReader {
 
         float[] lats = null;
         float[] lons = null;
+        TiePointGrid latGrid = null;
+        TiePointGrid lonGrid = null;
         for (int j = 0; j < fieldsNode.getChildCount(); j++) {
             final TreeNode geolocationChildNode = fieldsNode.getChildAt(j);
             final String geolocationChildNodeName = geolocationChildNode.toString();
@@ -200,21 +215,27 @@ public class Modis35ProductReader extends AbstractProductReader {
                                                             geolocationChildNodeName);
             }
 
+            // add TPGs:
             if (geolocationChildNodeName.equals("Latitude")) {
                 lats = (float[]) geolocationDS.getData();
+                if (lats != null) {
+                    latGrid = new TiePointGrid("Latitude", tpWidth, tpHeight, 0, 0, 5.0, 5.0, lats);
+                    Mod35Utils.setUnitAndDescription(geolocationMetadata, latGrid);
+                    product.addTiePointGrid(latGrid);
+                }
             } else if (geolocationChildNodeName.equals("Longitude")) {
                 lons = (float[]) geolocationDS.getData();
+                if (lons != null) {
+                    lonGrid = new TiePointGrid("Longitude", tpWidth, tpHeight, 0, 0, 5.0, 5.0, lons);
+                    Mod35Utils.setUnitAndDescription(geolocationMetadata, lonGrid);
+                    product.addTiePointGrid(lonGrid);
+                }
             }
         }
 
-        // add TPGs and geocoding:
+        // add geocoding:
         try {
-            TiePointGrid latGrid;
             if (lats != null && lons != null) {
-                latGrid = new TiePointGrid("Latitude", tpWidth, tpHeight, 0, 0, 5.0, 5.0, lats);
-                product.addTiePointGrid(latGrid);
-                TiePointGrid lonGrid = new TiePointGrid("Longitude", tpWidth, tpHeight, 0, 0, 5.0, 5.0, lons);
-                product.addTiePointGrid(lonGrid);
                 final TiePointGeoCoding tiePointGeoCoding = new TiePointGeoCoding(latGrid, lonGrid);
                 product.setSceneGeoCoding(tiePointGeoCoding);
             }
@@ -249,6 +270,8 @@ public class Modis35ProductReader extends AbstractProductReader {
                 for (int i = 0; i < geometryDSData.length; i++) {
                     geometryData[i] = (float) geometryDSData[i];
                 }
+                final long startTimeMillis = (long) (geometryData[0] * 1000.0f);
+                final long stopTimeMillis = (long) (geometryData[geometryData.length-1] * 1000.0f);
             }
             if (geometryData != null) {
                 final TiePointGrid geometryTpg = new TiePointGrid(geometryChildNodeName,
@@ -266,6 +289,7 @@ public class Modis35ProductReader extends AbstractProductReader {
                 final double scaleOffset = Double.isNaN(scaleOffsetAttr) ? 0.0f : scaleOffsetAttr;
                 geometryTpg.setScalingFactor(scaleFactor);
                 geometryTpg.setScalingOffset(scaleOffset);
+                Mod35Utils.setUnitAndDescription(geometryDSMetadata, geometryTpg);
                 product.addTiePointGrid(geometryTpg);
             }
         }
@@ -289,8 +313,8 @@ public class Modis35ProductReader extends AbstractProductReader {
 
         final byte[] cloudMaskData3DArr = (byte[]) cloudMaskDS.getData();
         byte[] tmpArr = new byte[productWidth * productHeight];
-        // bytes 1-5
-        for (int i = 0; i < byteSegmentSize; i++) {
+        // for pixel classification we need segment 1 only:
+        for (int i = 0; i < 1; i++) {
             ProductData productData = Mod35Utils.getDataBufferForH4DataRead(H4Datatype.CLASS_CHAR,
                                                                             productWidth, productHeight);
             final String cloudMaskByteBandName = Mod35Constants.CLOUD_MASK_BYTE_TARGET_BAND_NAME + (i + 1);
@@ -298,7 +322,7 @@ public class Modis35ProductReader extends AbstractProductReader {
                                                                        cloudMaskDSMetadata,
                                                                        cloudMaskByteBandName,
                                                                        productData.getType());
-            Mod35Utils.setBandUnitAndDescription(cloudMaskDSMetadata, cloudMaskByteBand);
+            Mod35Utils.setUnitAndDescription(cloudMaskDSMetadata, cloudMaskByteBand);
             cloudMaskByteBand.setNoDataValue(Mod35Constants.CHAR_NO_DATA_VALUE);
             cloudMaskByteBand.setNoDataValueUsed(true);
             final int offset = i * productWidth * productHeight;
@@ -333,8 +357,8 @@ public class Modis35ProductReader extends AbstractProductReader {
 
         final byte[] qualityAssuranceData3DArr = (byte[]) qualityAssuranceDS.getData();
         byte[] tmpArr = new byte[productWidth * productHeight];
-        // dims 1-10
-        for (int i = 0; i < qualityAssuranceDim; i++) {
+        // for confidence levels we need dimension 1 only:
+        for (int i = 0; i < 1; i++) {
             ProductData productData = Mod35Utils.getDataBufferForH4DataRead(H4Datatype.CLASS_CHAR,
                                                                             productWidth, productHeight);
             final String qualityAssuranceQaDimBandName = Mod35Constants.QUALITY_ASSURANCE_QA_DIMENSION_BAND_NAME + (i + 1);
@@ -342,7 +366,7 @@ public class Modis35ProductReader extends AbstractProductReader {
                                                                                qualityAssuranceDSMetadata,
                                                                                qualityAssuranceQaDimBandName,
                                                                                productData.getType());
-            Mod35Utils.setBandUnitAndDescription(qualityAssuranceDSMetadata, qualityAssuranceQaDimBand);
+            Mod35Utils.setUnitAndDescription(qualityAssuranceDSMetadata, qualityAssuranceQaDimBand);
             qualityAssuranceQaDimBand.setNoDataValue(Mod35Constants.CHAR_NO_DATA_VALUE);
             qualityAssuranceQaDimBand.setNoDataValueUsed(true);
 
