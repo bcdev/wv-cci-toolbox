@@ -15,6 +15,9 @@ public class Mod35Constants {
     public static final String CLOUD_MASK_BYTE_TARGET_BAND_NAME = "Cloud_Mask_Byte_Segment";
     public static final String CLOUD_FLAG_BAND_NAME = "CLOUD_FLAGS";
 
+    public static final String QUALITY_ASSURANCE_BAND_NAME = "Quality_Assurance";
+    public static final String QUALITY_ASSURANCE_QA_DIMENSION_BAND_NAME = "Quality_Assurance_QA_Dimension";
+
     public static final String CELL_ACROSS_SWATH_1KM_DIM_NAME = "Cell_Across_Swath_1km";
     public static final String CELL_ACROSS_SWATH_5KM_DIM_NAME = "Cell_Across_Swath_5km";
     public static final String CELL_ALONG_SWATH_1KM_DIM_NAME = "Cell_Along_Swath_1km";
@@ -95,7 +98,7 @@ public class Mod35Constants {
 
     public static final float GEOMETRY_NO_DATA_VALUE = Float.NaN;
     public static final float NDVI_NO_DATA_VALUE = Float.NaN;
-    public static final int CLOUD_MASK_NO_DATA_VALUE = -1;
+    public static final int CHAR_NO_DATA_VALUE = -1;
     public static final int TIME_NO_DATA_VALUE_UINT16 = 0;
     public static final int TIME_NO_DATA_VALUE_UINT8 = 255;
 

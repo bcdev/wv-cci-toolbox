@@ -193,6 +193,20 @@ public class Mod35Utils {
         return scalarDS;
     }
 
+    public static H4SDS getH4ScalarDSForQualityAssurance(TreeNode level3BandsChildNode,
+                                                  int qualityAssuranceDim,
+                                                  int productHeight, int productWidth) throws HDFException {
+        H4SDS scalarDS = (H4SDS) ((DefaultMutableTreeNode) level3BandsChildNode).getUserObject();
+        scalarDS.open();
+        scalarDS.init();
+        long[] selectedDims = scalarDS.getSelectedDims();
+        selectedDims[0] = productHeight;
+        selectedDims[1] = productWidth;
+        selectedDims[2] = qualityAssuranceDim;
+        scalarDS.read();
+        return scalarDS;
+    }
+
 
     /**
      * Extracts a HDF metadata element and adds accordingly to given product

@@ -47,13 +47,12 @@ public class Modis35ProductReader extends AbstractProductReader {
     private int tpHeight;
 
     private int byteSegmentSize;
-    private int qaDim;
+    private int qualityAssuranceDim;
 
     private FileFormat h4File;
 
     private TreeNode h4RootNode;
     private TreeNode mod35Node;
-    private H4SDS cloudMaskDS;
 
 
     Modis35ProductReader(ProductReaderPlugIn readerPlugIn) {
@@ -112,7 +111,7 @@ public class Modis35ProductReader extends AbstractProductReader {
                                                            Mod35Constants.CELL_ALONG_SWATH_5KM_DIM_NAME);
         byteSegmentSize = Mod35Utils.getDimensionSizeFromMetadata(structMetadata0String,
                                                                   Mod35Constants.BYTE_SEGMENT_DIM_NAME);
-        qaDim = Mod35Utils.getDimensionSizeFromMetadata(structMetadata0String, Mod35Constants.QA_DIM_NAME);
+        qualityAssuranceDim = Mod35Utils.getDimensionSizeFromMetadata(structMetadata0String, Mod35Constants.QA_DIM_NAME);
     }
 
     @Override
@@ -138,16 +137,18 @@ public class Modis35ProductReader extends AbstractProductReader {
     private Product createTargetProduct(File inputFile) throws Exception {
         mod35Node = h4RootNode.getChildAt(0);
 
-        Product product = new Product(inputFile.getName(), Mod35Constants.MOD35_l2_PRODUCT_TYPE, productWidth, productHeight);
+        Product targetProduct = new Product(inputFile.getName(),
+                                            Mod35Constants.MOD35_l2_PRODUCT_TYPE,
+                                            productWidth, productHeight);
 
         final H4Group rootGroup = (H4Group) ((DefaultMutableTreeNode) h4RootNode).getUserObject();
         final List rootMetadata = rootGroup.getMetadata();
 
-        Mod35Utils.addMetadataElementWithAttributes(rootMetadata, product.getMetadataRoot(), Mod35Constants.MPH_NAME);
+        Mod35Utils.addMetadataElementWithAttributes(rootMetadata, targetProduct.getMetadataRoot(), Mod35Constants.MPH_NAME);
 
-        product.setDescription(Mod35Constants.MOD35_l2_PRODUCT_DESCR);
-        Mod35Utils.addStartStopTimes(product, (DefaultMutableTreeNode) h4RootNode);
-        product.setFileLocation(inputFile);
+        targetProduct.setDescription(Mod35Constants.MOD35_l2_PRODUCT_DESCR);
+        Mod35Utils.addStartStopTimes(targetProduct, (DefaultMutableTreeNode) h4RootNode);
+        targetProduct.setFileLocation(inputFile);
 
         for (int i = 0; i < mod35Node.getChildCount(); i++) {
             // we have: 'Geolocation Fields', 'Data Fields'
@@ -156,16 +157,17 @@ public class Modis35ProductReader extends AbstractProductReader {
 
             switch (fieldsNodeName) {
                 case Mod35Constants.GEOLOCATION_FIELDS_GROUP_NAME:
-                    Mod35Utils.addRootMetadataElement(product, (DefaultMutableTreeNode) fieldsNode,
+                    Mod35Utils.addRootMetadataElement(targetProduct, (DefaultMutableTreeNode) fieldsNode,
                                                       Mod35Constants.GEOLOCATION_FIELDS_GROUP_NAME);
-                    createGeolocationTpgs(product, fieldsNode);
+                    createGeolocationTpgs(targetProduct, fieldsNode);
                     break;
 
                 case Mod35Constants.DATA_FIELDS_GROUP_NAME:
-                    Mod35Utils.addRootMetadataElement(product, (DefaultMutableTreeNode) fieldsNode,
+                    Mod35Utils.addRootMetadataElement(targetProduct, (DefaultMutableTreeNode) fieldsNode,
                                                       Mod35Constants.DATA_FIELDS_GROUP_NAME);
-                    createCloudMaskBands(product, fieldsNode);
-                    createGeometryTpgs(product, fieldsNode);
+                    createCloudMaskBands(targetProduct, fieldsNode);
+                    createQualityAssuranceBands(targetProduct, fieldsNode);
+                    createGeometryTpgs(targetProduct, fieldsNode);
                     break;
 
                 default:
@@ -173,9 +175,10 @@ public class Modis35ProductReader extends AbstractProductReader {
             }
         }
 
-        Mod35BitMaskUtils.attachPixelClassificationFlagBand(product);
+        Mod35BitMaskUtils.attachPixelClassificationFlagBand(targetProduct);
+        Mod35BitMaskUtils.attachQualityAssuranceFlagBand(targetProduct);
 
-        return product;
+        return targetProduct;
     }
 
     private void createGeolocationTpgs(Product product, TreeNode fieldsNode) throws Exception {
@@ -269,10 +272,11 @@ public class Modis35ProductReader extends AbstractProductReader {
     }
 
     private void createCloudMaskBands(Product product, TreeNode fieldsNode) throws Exception {
-        // 'Cloud_Mask' (int8)
+        // 'Cloud_Mask' (int8, 6 * productHeight * productWidth)
         final MetadataElement rootMetadataElement = product.getMetadataRoot().
                 getElement(Mod35Constants.DATA_FIELDS_GROUP_NAME);
 
+        H4SDS cloudMaskDS = null;
         for (int j = 0; j < fieldsNode.getChildCount(); j++) {
             final TreeNode dataChildNode = fieldsNode.getChildAt(j);
             final String dataChildNodeName = dataChildNode.toString();
@@ -289,12 +293,13 @@ public class Modis35ProductReader extends AbstractProductReader {
         for (int i = 0; i < byteSegmentSize; i++) {
             ProductData productData = Mod35Utils.getDataBufferForH4DataRead(H4Datatype.CLASS_CHAR,
                                                                             productWidth, productHeight);
+            final String cloudMaskByteBandName = Mod35Constants.CLOUD_MASK_BYTE_TARGET_BAND_NAME + (i + 1);
             final Band cloudMaskByteBand = Mod35Utils.createTargetBand(product,
                                                                        cloudMaskDSMetadata,
-                                                                       Mod35Constants.CLOUD_MASK_BYTE_TARGET_BAND_NAME + i,
+                                                                       cloudMaskByteBandName,
                                                                        productData.getType());
             Mod35Utils.setBandUnitAndDescription(cloudMaskDSMetadata, cloudMaskByteBand);
-            cloudMaskByteBand.setNoDataValue(Mod35Constants.CLOUD_MASK_NO_DATA_VALUE);
+            cloudMaskByteBand.setNoDataValue(Mod35Constants.CHAR_NO_DATA_VALUE);
             cloudMaskByteBand.setNoDataValueUsed(true);
             final int offset = i * productWidth * productHeight;
             System.arraycopy(cloudMaskData3DArr, offset, tmpArr, 0, tmpArr.length);
@@ -303,10 +308,64 @@ public class Modis35ProductReader extends AbstractProductReader {
             if (cloudMaskDSMetadata != null) {
                 Mod35Utils.addMetadataElementWithAttributes(cloudMaskDSMetadata,
                                                             rootMetadataElement,
-                                                            Mod35Constants.CLOUD_MASK_BYTE_TARGET_BAND_NAME + i);
+                                                            cloudMaskByteBandName);
             }
         }
     }
+
+    private void createQualityAssuranceBands(Product product, TreeNode fieldsNode) throws Exception {
+        // 'Quality_Assurance' (int8, productHeight * productWidth * 10)
+        final MetadataElement rootMetadataElement = product.getMetadataRoot().
+                getElement(Mod35Constants.DATA_FIELDS_GROUP_NAME);
+
+        H4SDS qualityAssuranceDS = null;
+        for (int j = 0; j < fieldsNode.getChildCount(); j++) {
+            final TreeNode dataChildNode = fieldsNode.getChildAt(j);
+            final String dataChildNodeName = dataChildNode.toString();
+            if (dataChildNodeName.equals(Mod35Constants.QUALITY_ASSURANCE_BAND_NAME)) {
+                qualityAssuranceDS = Mod35Utils.getH4ScalarDSForQualityAssurance(dataChildNode,
+                                                                                 qualityAssuranceDim,
+                                                                                 productHeight,
+                                                                                 productWidth);
+            }
+        }
+        final List<Attribute> qualityAssuranceDSMetadata = qualityAssuranceDS.getMetadata();
+
+        final byte[] qualityAssuranceData3DArr = (byte[]) qualityAssuranceDS.getData();
+        byte[] tmpArr = new byte[productWidth * productHeight];
+        // dims 1-10
+        for (int i = 0; i < qualityAssuranceDim; i++) {
+            ProductData productData = Mod35Utils.getDataBufferForH4DataRead(H4Datatype.CLASS_CHAR,
+                                                                            productWidth, productHeight);
+            final String qualityAssuranceQaDimBandName = Mod35Constants.QUALITY_ASSURANCE_QA_DIMENSION_BAND_NAME + (i + 1);
+            final Band qualityAssuranceQaDimBand = Mod35Utils.createTargetBand(product,
+                                                                               qualityAssuranceDSMetadata,
+                                                                               qualityAssuranceQaDimBandName,
+                                                                               productData.getType());
+            Mod35Utils.setBandUnitAndDescription(qualityAssuranceDSMetadata, qualityAssuranceQaDimBand);
+            qualityAssuranceQaDimBand.setNoDataValue(Mod35Constants.CHAR_NO_DATA_VALUE);
+            qualityAssuranceQaDimBand.setNoDataValueUsed(true);
+
+            int tmpArrIndex = 0;
+            int qa3DArrIndex = i;
+            for (int j = 0; j < productHeight; j++) {
+                for (int k = 0; k < productWidth; k++) {
+                    tmpArr[tmpArrIndex] = qualityAssuranceData3DArr[qa3DArrIndex];
+                    tmpArrIndex++;
+                    qa3DArrIndex += qualityAssuranceDim;
+                }
+            }
+
+            productData.setElems(tmpArr);
+            qualityAssuranceQaDimBand.setRasterData(productData);
+            if (qualityAssuranceDSMetadata != null) {
+                Mod35Utils.addMetadataElementWithAttributes(qualityAssuranceDSMetadata,
+                                                            rootMetadataElement,
+                                                            qualityAssuranceQaDimBandName);
+            }
+        }
+    }
+
 
 }
 
