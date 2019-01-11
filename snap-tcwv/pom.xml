@@ -11,8 +11,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <!--<snap.version>6.0.0</snap.version>-->
-        <snap.version>7.0.0-SNAPSHOT</snap.version>
+        <snap.version>6.0.0</snap.version>
+        <!--<snap.version>7.0.0-SNAPSHOT</snap.version>-->
     </properties>
 
     <dependencies>

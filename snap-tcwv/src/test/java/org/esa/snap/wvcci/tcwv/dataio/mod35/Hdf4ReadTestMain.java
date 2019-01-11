@@ -109,7 +109,7 @@ public class Hdf4ReadTestMain {
      * create the file and add groups ans dataset into the file, which is the
      * same as javaExample.H4DatasetCreate
      *
-     * @throws Exception
+     * @throws Exception -
      */
     private static void createFile() throws Exception {
         // retrieve an instance of H4File

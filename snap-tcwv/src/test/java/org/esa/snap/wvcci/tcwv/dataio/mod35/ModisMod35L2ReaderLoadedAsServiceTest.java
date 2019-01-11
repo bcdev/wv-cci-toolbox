@@ -23,7 +23,7 @@ import java.util.Iterator;
 
 import static org.junit.Assert.assertEquals;
 
-public class Modis35ReaderLoadedAsServiceTest {
+public class ModisMod35L2ReaderLoadedAsServiceTest {
 
     @Test
     public void testReaderIsLoaded() {

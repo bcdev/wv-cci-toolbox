@@ -9,13 +9,13 @@ import java.io.File;
 import java.util.Locale;
 
 /**
- * PlugIn class which provides a MODIS MOD35 cloud mask HDF product reader to the framework.
+ * PlugIn class which provides a MODIS MOD35 L2 cloud mask HDF product reader to the framework.
  *
  * @author Olaf Danne
  */
-public class Modis35ProductReaderPlugIn implements ProductReaderPlugIn {
+public class ModisMod35L2ProductReaderPlugIn implements ProductReaderPlugIn {
 
-    public static final String FORMAT_NAME_MODIS35 = "MOD35-L2";
+    private static final String FORMAT_NAME_MODIS35 = "MOD35-L2";
 
     private static final Class[] SUPPORTED_INPUT_TYPES = new Class[]{String.class, File.class};
     private static final String DESCRIPTION = "MODIS35 Format";
@@ -39,7 +39,7 @@ public class Modis35ProductReaderPlugIn implements ProductReaderPlugIn {
 
     @Override
     public ProductReader createReaderInstance() {
-        return new Modis35ProductReader(this);
+        return new ModisMod35L2ProductReader(this);
     }
 
     @Override

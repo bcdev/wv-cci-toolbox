@@ -4,9 +4,10 @@ import org.esa.snap.core.datamodel.Product;
 import org.esa.snap.core.datamodel.ProductData;
 import org.junit.Test;
 
+import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;
 
-public class Modis35UtilsTest {
+public class ModisMod35L2UtilsTest {
 
     @Test
     public void testGetProductDimensions() {
@@ -129,12 +130,12 @@ public class Modis35UtilsTest {
                 "END_GROUP=PointStructure\n" +
                 "END";
 
-        assertEquals(1354, Mod35Utils.getDimensionSizeFromMetadata(structMetadata0String, "Cell_Across_Swath_1km"));
-        assertEquals(270, Mod35Utils.getDimensionSizeFromMetadata(structMetadata0String, "Cell_Across_Swath_5km"));
-        assertEquals(2030, Mod35Utils.getDimensionSizeFromMetadata(structMetadata0String, "Cell_Along_Swath_1km"));
-        assertEquals(406, Mod35Utils.getDimensionSizeFromMetadata(structMetadata0String, "Cell_Along_Swath_5km"));
-        assertEquals(6, Mod35Utils.getDimensionSizeFromMetadata(structMetadata0String, "Byte_Segment"));
-        assertEquals(10, Mod35Utils.getDimensionSizeFromMetadata(structMetadata0String, "QA_Dimension"));
+        assertEquals(1354, ModisMod35L2Utils.getDimensionSizeFromMetadata(structMetadata0String, "Cell_Across_Swath_1km"));
+        assertEquals(270, ModisMod35L2Utils.getDimensionSizeFromMetadata(structMetadata0String, "Cell_Across_Swath_5km"));
+        assertEquals(2030, ModisMod35L2Utils.getDimensionSizeFromMetadata(structMetadata0String, "Cell_Along_Swath_1km"));
+        assertEquals(406, ModisMod35L2Utils.getDimensionSizeFromMetadata(structMetadata0String, "Cell_Along_Swath_5km"));
+        assertEquals(6, ModisMod35L2Utils.getDimensionSizeFromMetadata(structMetadata0String, "Byte_Segment"));
+        assertEquals(10, ModisMod35L2Utils.getDimensionSizeFromMetadata(structMetadata0String, "QA_Dimension"));
     }
 
     @Test
@@ -146,7 +147,8 @@ public class Modis35UtilsTest {
         final int sec = 0;
         Product p = new Product("test", "test", 1, 1);
 
-        final ProductData.UTC utc = Mod35Utils.getProductDate(year, doy, hour, min, sec);
+        final ProductData.UTC utc = ModisMod35L2Utils.getProductDate(year, doy, hour, min, sec);
+        assertNotNull(utc);
         assertEquals("15-JUL-2011 10:55:00.000000", utc.format());
         p.setStartTime(utc);
         p.setEndTime(utc);
