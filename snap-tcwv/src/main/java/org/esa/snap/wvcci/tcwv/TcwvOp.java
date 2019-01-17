@@ -11,6 +11,7 @@ import org.esa.snap.core.gpf.annotations.Parameter;
 import org.esa.snap.core.gpf.annotations.SourceProduct;
 import org.esa.snap.core.util.ProductUtils;
 import org.esa.snap.core.util.math.MathUtils;
+import org.esa.snap.wvcci.tcwv.dataio.mod35.ModisMod35L2Constants;
 import org.esa.snap.wvcci.tcwv.interpolation.JacobiFunction;
 import org.esa.snap.wvcci.tcwv.interpolation.TcwvInterpolation;
 
@@ -64,9 +65,15 @@ public class TcwvOp extends Operator {
 
 
     @SourceProduct(description =
-            "Source product (IdePix merged with MERIS, MODIS or OLCI L1b product",
+            "Source product (IdePix product merged with MERIS, MODIS or OLCI L1b product)",
             label = "Source product")
     private Product sourceProduct;
+
+    @SourceProduct(description =
+            "MOD35 L2 cloud product (optional, used for MODIS processing only)",
+            optional = true,
+            label = "MOD35 L2 product")
+    private Product mod35Product;
 
     private Product targetProduct;
 
@@ -98,10 +105,20 @@ public class TcwvOp extends Operator {
     private TcwvFunction tcwvFunctionOcean;
     private JacobiFunction jacobiFunctionOcean;
 
+    private boolean mod35Used;
+
     @Override
     public void initialize() throws OperatorException {
 
-        validateSourceProduct(sourceProduct);
+        validateSourceProduct(sensor, sourceProduct);
+        if (mod35Product != null && (sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA)) {
+            validateMod35Product(mod35Product);
+            pixelClassifBand = mod35Product.getBand(TcwvConstants.PIXEL_CLASSIF_BAND_NAME);
+            mod35Used = true;
+        } else {
+            pixelClassifBand = sourceProduct.getBand(TcwvConstants.PIXEL_CLASSIF_BAND_NAME);
+            mod35Used = false;
+        }
 
         try {
             if (auxdataPath == null || auxdataPath.length() == 0) {
@@ -153,8 +170,6 @@ public class TcwvOp extends Operator {
         vzaBand = sourceProduct.getRasterDataNode(sensor.getTpgNames()[1]);
         saaBand = sourceProduct.getRasterDataNode(sensor.getTpgNames()[2]);
         vaaBand = sourceProduct.getRasterDataNode(sensor.getTpgNames()[3]);
-
-        pixelClassifBand = sourceProduct.getBand(TcwvConstants.IDEPIX_CLASSIF_BAND_NAME);
 
         tcwvAlgorithm = new TcwvAlgorithm();
 
@@ -215,9 +230,12 @@ public class TcwvOp extends Operator {
         for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; y++) {
             checkForCancellation();
             for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
-                final boolean isValid = !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_INVALID_BIT);
-                final boolean isCloud = isCloud(x, y, pixelClassifTile);
-                boolean isLand = pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_LAND_BIT);
+                final boolean isValid = mod35Used ||
+                        !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_INVALID_BIT);
+                final boolean isCloud = mod35Used ? isMod35Cloud(x, y, pixelClassifTile) :
+                        isIdepixCloud(x, y, pixelClassifTile);
+                final boolean isLand = mod35Used ? isMod35Land(x, y, pixelClassifTile) :
+                        isIdepixLand(x, y, pixelClassifTile);
 
                 // NOTE: we compute only land for MERIS, MODIS_TERRA, or OLCI! 20180925
 //                isLand = isLand && sensor != Sensor.MODIS_AQUA;
@@ -261,14 +279,14 @@ public class TcwvOp extends Operator {
                     }
 
                     final TcwvAlgorithmInput input = new TcwvAlgorithmInput(winBandData, absBandData, sza, vza, relAzi,
-                            amf, aot865, priorAot, priorAl0, priorAl1,
-                            t2m, prs, priorWs, priorTcwv);
+                                                                            amf, aot865, priorAot, priorAl0, priorAl1,
+                                                                            t2m, prs, priorWs, priorTcwv);
 
                     // 'ocean' parameters are null for land processing!
                     final TcwvResult result = tcwvAlgorithm.compute(sensor, landLut, oceanLut,
-                            tcwvFunctionLand, tcwvFunctionOcean,
-                            jacobiFunctionland, jacobiFunctionOcean,
-                            input, isLand);
+                                                                    tcwvFunctionLand, tcwvFunctionOcean,
+                                                                    jacobiFunctionland, jacobiFunctionOcean,
+                                                                    input, isLand);
 
                     targetTiles.get(tcwvBand).setSample(x, y, result.getTcwv());
                     // todo: uncertainty tbd. Set 3% for the moment.
@@ -278,7 +296,7 @@ public class TcwvOp extends Operator {
         }
     }
 
-    private boolean isCloud(int x, int y, Tile pixelClassifTile) {
+    private boolean isIdepixCloud(int x, int y, Tile pixelClassifTile) {
 
         switch (cloudFilterLevel) {
             case NO_FILTER:
@@ -304,20 +322,47 @@ public class TcwvOp extends Operator {
         }
     }
 
-    private void validateSourceProduct(Product sourceProduct) {
-        if (!sourceProduct.containsBand(TcwvConstants.IDEPIX_CLASSIF_BAND_NAME)) {
+    private boolean isIdepixLand(int x, int y, Tile pixelClassifTile) {
+        return pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_LAND_BIT);
+    }
+
+    private boolean isMod35Cloud(int x, int y, Tile pixelClassifTile) {
+        return pixelClassifTile.getSampleBit(x, y, ModisMod35L2Constants.CLOUD_DETERMINED_BIT_INDEX) &&
+                (pixelClassifTile.getSampleBit(x, y, ModisMod35L2Constants.CLOUD_CERTAIN_BIT_INDEX) ||
+                        pixelClassifTile.getSampleBit(x, y, ModisMod35L2Constants.CLOUD_UNCERTAIN_BIT_INDEX));
+
+    }
+
+    private boolean isMod35Land(int x, int y, Tile pixelClassifTile) {
+        return pixelClassifTile.getSampleBit(x, y, ModisMod35L2Constants.SNOW_ICE_BIT_INDEX) ||
+                pixelClassifTile.getSampleBit(x, y, ModisMod35L2Constants.DESERT_BIT_INDEX) ||
+                pixelClassifTile.getSampleBit(x, y, ModisMod35L2Constants.LAND_BIT_INDEX);
+    }
+
+    private static void validateSourceProduct(Sensor sensor, Product sourceProduct) {
+        if (!sourceProduct.containsBand(TcwvConstants.PIXEL_CLASSIF_BAND_NAME)) {
             throw new OperatorException("Source product is not valid, as it does not contain " +
-                    "pixel classification flag band '" +
-                    TcwvConstants.IDEPIX_CLASSIF_BAND_NAME + "'.");
+                                                "pixel classification flag band '" +
+                                                TcwvConstants.PIXEL_CLASSIF_BAND_NAME + "'.");
         }
 
         for (String bandName : sensor.getReflBandNames()) {
             if (!sourceProduct.containsBand(bandName)) {
                 throw new OperatorException("Source product is not valid, as it does not contain " +
-                        "mandatory band '" + bandName + "'.");
+                                                    "mandatory band '" + bandName + "'.");
             }
         }
     }
+
+    private static void validateMod35Product(Product mod35Product) {
+        for (String bandName : TcwvConstants.MOD35_BAND_NAMES) {
+            if (!mod35Product.containsBand(bandName)) {
+                throw new OperatorException("MOD35 product is not valid, as it does not contain " +
+                                                    "mandatory band '" + bandName + "'.");
+            }
+        }
+    }
+
 
     private void createTargetProduct() {
         targetProduct = new Product(getId(), getClass().getName(), width, height);
@@ -339,7 +384,7 @@ public class TcwvOp extends Operator {
         tcwvUncertaintyBand.setNoDataValue(Float.NaN);
         tcwvUncertaintyBand.setNoDataValueUsed(true);
 
-        ProductUtils.copyBand(TcwvConstants.IDEPIX_CLASSIF_BAND_NAME, sourceProduct, targetProduct, true);
+        ProductUtils.copyBand(TcwvConstants.PIXEL_CLASSIF_BAND_NAME, sourceProduct, targetProduct, true);
         ProductUtils.copyTiePointGrids(sourceProduct, targetProduct);
 
         final TiePointGrid latTpg = targetProduct.getTiePointGrid("latitude");
@@ -347,8 +392,13 @@ public class TcwvOp extends Operator {
         final TiePointGeoCoding tiePointGeoCoding = new TiePointGeoCoding(latTpg, lonTpg);
         targetProduct.setSceneGeoCoding(tiePointGeoCoding);
 
-        ProductUtils.copyFlagCodings(sourceProduct, targetProduct);
-        ProductUtils.copyMasks(sourceProduct, targetProduct);
+        if (mod35Used) {
+            ProductUtils.copyFlagCodings(mod35Product, targetProduct);
+            ProductUtils.copyMasks(mod35Product, targetProduct);
+        } else {
+            ProductUtils.copyFlagCodings(sourceProduct, targetProduct);
+            ProductUtils.copyMasks(sourceProduct, targetProduct);
+        }
 
         setTargetProduct(targetProduct);
     }

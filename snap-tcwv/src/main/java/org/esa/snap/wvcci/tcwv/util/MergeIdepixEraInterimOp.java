@@ -73,10 +73,10 @@ public class MergeIdepixEraInterimOp extends Operator {
     }
 
     private void validateIdepixProduct() {
-        if (!idepixProduct.containsBand(TcwvConstants.IDEPIX_CLASSIF_BAND_NAME)) {
+        if (!idepixProduct.containsBand(TcwvConstants.PIXEL_CLASSIF_BAND_NAME)) {
             throw new OperatorException("Source product is not valid, as it does not contain " +
                                                 "pixel classification flag band '" +
-                                                TcwvConstants.IDEPIX_CLASSIF_BAND_NAME + "'.");
+                                                TcwvConstants.PIXEL_CLASSIF_BAND_NAME + "'.");
         }
 
         for (String bandName : sensor.getReflBandNames()) {

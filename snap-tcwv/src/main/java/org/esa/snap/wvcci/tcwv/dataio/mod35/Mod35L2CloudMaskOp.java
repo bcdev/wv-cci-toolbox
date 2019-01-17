@@ -78,18 +78,18 @@ public class Mod35L2CloudMaskOp extends PixelOperator {
     }
 
     private void computePixelCloudMask(int srcValue, WritableSample[] targetSamples) {
-        targetSamples[TRG_FLAG].set(Mod35L2CloudMaskUtils.CLOUD_DETERMINED_BIT_INDEX, isCloudDetermined(srcValue));
-        targetSamples[TRG_FLAG].set(Mod35L2CloudMaskUtils.CLOUD_CERTAIN_BIT_INDEX, isCertainlyCloud(srcValue));
-        targetSamples[TRG_FLAG].set(Mod35L2CloudMaskUtils.CLOUD_UNCERTAIN_BIT_INDEX, isProbablyCloud(srcValue));
-        targetSamples[TRG_FLAG].set(Mod35L2CloudMaskUtils.CLOUD_PROBABLY_CLEAR_BIT_INDEX, isProbablyClear(srcValue));
-        targetSamples[TRG_FLAG].set(Mod35L2CloudMaskUtils.CLOUD_CONFIDENT_CLEAR_BIT_INDEX, isCertainlyClear(srcValue));
-        targetSamples[TRG_FLAG].set(Mod35L2CloudMaskUtils.DAYTIME_BIT_INDEX, isDaytime(srcValue));
-        targetSamples[TRG_FLAG].set(Mod35L2CloudMaskUtils.GLINT_BIT_INDEX, isGlint(srcValue));
-        targetSamples[TRG_FLAG].set(Mod35L2CloudMaskUtils.SNOW_ICE_BIT_INDEX, isSnowIce(srcValue));
-        targetSamples[TRG_FLAG].set(Mod35L2CloudMaskUtils.WATER_BIT_INDEX, isWater(srcValue));
-        targetSamples[TRG_FLAG].set(Mod35L2CloudMaskUtils.COASTAL_BIT_INDEX, isCoastal(srcValue));
-        targetSamples[TRG_FLAG].set(Mod35L2CloudMaskUtils.DESERT_BIT_INDEX, isDesert(srcValue));
-        targetSamples[TRG_FLAG].set(Mod35L2CloudMaskUtils.LAND_BIT_INDEX, isLand(srcValue));
+        targetSamples[TRG_FLAG].set(ModisMod35L2Constants.CLOUD_DETERMINED_BIT_INDEX, isCloudDetermined(srcValue));
+        targetSamples[TRG_FLAG].set(ModisMod35L2Constants.CLOUD_CERTAIN_BIT_INDEX, isCertainlyCloud(srcValue));
+        targetSamples[TRG_FLAG].set(ModisMod35L2Constants.CLOUD_UNCERTAIN_BIT_INDEX, isProbablyCloud(srcValue));
+        targetSamples[TRG_FLAG].set(ModisMod35L2Constants.CLOUD_PROBABLY_CLEAR_BIT_INDEX, isProbablyClear(srcValue));
+        targetSamples[TRG_FLAG].set(ModisMod35L2Constants.CLOUD_CONFIDENT_CLEAR_BIT_INDEX, isCertainlyClear(srcValue));
+        targetSamples[TRG_FLAG].set(ModisMod35L2Constants.DAYTIME_BIT_INDEX, isDaytime(srcValue));
+        targetSamples[TRG_FLAG].set(ModisMod35L2Constants.GLINT_BIT_INDEX, isGlint(srcValue));
+        targetSamples[TRG_FLAG].set(ModisMod35L2Constants.SNOW_ICE_BIT_INDEX, isSnowIce(srcValue));
+        targetSamples[TRG_FLAG].set(ModisMod35L2Constants.WATER_BIT_INDEX, isWater(srcValue));
+        targetSamples[TRG_FLAG].set(ModisMod35L2Constants.COASTAL_BIT_INDEX, isCoastal(srcValue));
+        targetSamples[TRG_FLAG].set(ModisMod35L2Constants.DESERT_BIT_INDEX, isDesert(srcValue));
+        targetSamples[TRG_FLAG].set(ModisMod35L2Constants.LAND_BIT_INDEX, isLand(srcValue));
 
     }
 
@@ -142,9 +142,9 @@ public class Mod35L2CloudMaskOp extends PixelOperator {
     }
 
     private void computePixelQualityAssurance(int srcValue, WritableSample[] targetSamples) {
-        targetSamples[TRG_FLAG].set(Mod35L2CloudMaskUtils.CLOUD_MASK_USEFUL_BIT_INDEX, isCloudMaskUseful(srcValue));
-        for (int i = 0; i < Mod35L2CloudMaskUtils.NUM_CLOUD_MASK_CONFIDENCE_LEVELS; i++) {
-            targetSamples[TRG_FLAG].set(Mod35L2CloudMaskUtils.CLOUD_MASK_CONFIDENCE_LEVEL_BIT_INDICES[i],
+        targetSamples[TRG_FLAG].set(ModisMod35L2Constants.CLOUD_MASK_USEFUL_BIT_INDEX, isCloudMaskUseful(srcValue));
+        for (int i = 0; i < ModisMod35L2Constants.NUM_CLOUD_MASK_CONFIDENCE_LEVELS; i++) {
+            targetSamples[TRG_FLAG].set(ModisMod35L2Constants.CLOUD_MASK_CONFIDENCE_LEVEL_BIT_INDICES[i],
                     isQAConfidenceLevel(srcValue, i + 1));
         }
     }

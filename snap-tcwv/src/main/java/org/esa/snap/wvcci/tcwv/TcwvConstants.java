@@ -1,5 +1,7 @@
 package org.esa.snap.wvcci.tcwv;
 
+import org.esa.snap.wvcci.tcwv.dataio.mod35.ModisMod35L2Constants;
+
 /**
  * Constants for TCWV retrieval.
  *
@@ -7,7 +9,7 @@ package org.esa.snap.wvcci.tcwv;
  */
 public class TcwvConstants {
 
-    public static final String IDEPIX_CLASSIF_BAND_NAME = "pixel_classif_flags";
+    public static final String PIXEL_CLASSIF_BAND_NAME = "pixel_classif_flags";
     public static final String TCWV_TARGET_BAND_NAME = "tcwv";
     public static final String TCWV_MEAN_BAND_NAME = "tcwv_mean";
     public static final String TCWV_SSMI_MEAN_BAND_NAME = "wvpa";
@@ -29,12 +31,15 @@ public class TcwvConstants {
     public static final double WS_INIT_VALUE = 7.5;       // Windspeed initial value for algorithm if we have no prior
 
     public static int IDEPIX_INVALID_BIT = 0;
-    public static int IDEPIX_CLOUD_BIT = 1;
     public static int IDEPIX_CLOUD_AMBIGUOUS_BIT = 2;
     public static int IDEPIX_CLOUD_SURE_BIT = 3;
     public static int IDEPIX_CLOUD_BUFFER_BIT = 4;
-    public static int IDEPIX_CLOUD_SHADOW_BIT = 5;
     public static int IDEPIX_LAND_BIT = 10;
+
+    public static final String[] MOD35_BAND_NAMES = {
+            ModisMod35L2Constants.CLOUD_MASK_BYTE_TARGET_BAND_NAME +  "1",
+            ModisMod35L2Constants.QUALITY_ASSURANCE_QA_DIMENSION_BAND_NAME +  "1"
+    };
 
     static final String MERIS_LAND_LUT_NC_FILENAME = "land_core_meris.nc4";
     static final String MERIS_OCEAN_LUT_NC_FILENAME = "ocean_core_meris.nc4";
