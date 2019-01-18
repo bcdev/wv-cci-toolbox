@@ -26,7 +26,7 @@ import java.util.Map;
  *
  * @author Olaf Danne
  */
-@OperatorMetadata(alias = "ESACCI.Tcwv", version = "0.8",
+@OperatorMetadata(alias = "ESACCI.Tcwv", version = "0.81",
         authors = "R.Preusker, O.Danne",
         category = "Optical/Preprocessing",
         copyright = "Copyright (C) 2018 by Spectral Earth, Brockmann Consult",
@@ -302,9 +302,15 @@ public class TcwvOp extends Operator {
             case NO_FILTER:
                 return false;
             case CLOUD_SURE:
-                return pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_SURE_BIT) &&
-                        !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_AMBIGUOUS_BIT) &&
-                        !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_BUFFER_BIT);
+                if (sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA) {
+                    // for Idepix MODIS, CLOUD_SURE and CLOUD_AMBIGUOUS are actually the same
+                    return pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_SURE_BIT) &&
+                            !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_BUFFER_BIT);
+                } else {
+                    return pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_SURE_BIT) &&
+                            !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_AMBIGUOUS_BIT) &&
+                            !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_BUFFER_BIT);
+                }
             case CLOUD_SURE_BUFFER:
                 return (pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_SURE_BIT) ||
                         pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_CLOUD_BUFFER_BIT)) &&

@@ -4,15 +4,15 @@
 
     <groupId>org.esa.cci.wv</groupId>
     <artifactId>snap-tcwv</artifactId>
-    <version>0.8-SNAPSHOT</version>
+    <version>0.81-SNAPSHOT</version>
     <packaging>nbm</packaging>
 
     <name>WaterVapour-CCI for SNAP</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <snap.version>6.0.0</snap.version>
-        <!--<snap.version>7.0.0-SNAPSHOT</snap.version>-->
+        <!--<snap.version>6.0.0</snap.version>-->
+        <snap.version>7.0.0-SNAPSHOT</snap.version>
     </properties>
 
     <dependencies>
