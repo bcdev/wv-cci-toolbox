@@ -51,7 +51,7 @@ for year in years:
 
     for sensor in sensors:
         l1bRootDir = wvcciRootDir + '/L1b/' + sensor
-        modisLandMaskRootDir = wvcciRootDir + '/LandMask/MOD03'
+        modisLandMaskRootDir = wvcciRootDir + '/ModisLandMask/MOD03'
 
         for month in getMonth(year):
 

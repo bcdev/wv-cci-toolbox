@@ -46,7 +46,6 @@ echo "Status: $status"
 if [ $status = 0 ] && [ -e "$idepixFile" ]
 then
     echo "Idepix product created."
-    status=$?
     echo "Status: $status"
 else
     echo "Idepix product NOT successfully created."

@@ -17,12 +17,12 @@ set -e
 ###############################
 
 idepixPath=$1
-#modisname=$2            # MOD021KM.A2008016.1540.006.2012066182519.hdf
-modisname=$2            # MOD021KM.A2008016.1540.006.2012066182519_idepix.nc
-year=$3
-month=$4
-day=$5
-wvcciRootDir=$6
+idepixName=$2            # MOD021KM.A2008016.1540.006.2012066182519_idepix.nc
+cloudMaskPath=$3         # cloud product e.g. MOD35_L2.A2008016.1540.006.2012066182519.hdf
+year=$4
+month=$5
+day=$6
+wvcciRootDir=$7
 
 # initial check: does Idepix input exist at all? Maybe it was corrupt and deleted earlier. 
 if [ ! -f $idepixPath ]; then
@@ -33,10 +33,10 @@ fi
 tmpdir=$wvcciRootDir/tmp
 mkdir -p $tmpdir
 
-#modisstem=${modisname%.hdf}
-modisstem=${modisname%_idepix.nc}
-hour=${modisname:18:2}
-minute=${modisname:20:2}
+#modisstem=${idepixName%.hdf}
+modisstem=${idepixName%_idepix.nc}
+hour=${idepixName:18:2}
+minute=${idepixName:20:2}
 date_in_seconds=$(($(date +%s -u -d "$year-01-01 $hour:$minute:00") + ( 1$doy - 1000 ) * 86400 - 86400))
 month=$(date --date "@$date_in_seconds" +%m)
 day=$(date --date "@$date_in_seconds" +%d)
@@ -76,7 +76,7 @@ date_after=`date +%Y-%m-%d -u -d @$day_after_in_seconds`
 
 # extract geo information in SCRIP format for CDOs:
 
-echo "$(date +%Y-%m-%dT%H:%M:%S -u) extracting geo information of $modisname ..."
+echo "$(date +%Y-%m-%dT%H:%M:%S -u) extracting geo information of $idepixName ..."
 
 scripfile=$tmpdir/${modisstem}-scrip.nc
 if [ ! -e $scripfile ]; then
@@ -129,7 +129,18 @@ $SNAP_HOME/bin/gpt ESACCI.MergeIdepixEraInterim -SidepixProduct=$idepixPath -Ser
 if [ -f $idepixEraInterimMerge ]; then
     auxdataPath=/group_workspaces/cems2/qa4ecv/vol4/software/dot_snap/auxdata/wvcci
     tcwv=$tcwvDir/${modisstem}_tcwv.nc
-    $SNAP_HOME/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixEraInterimMerge -PauxdataPath=$auxdataPath -Psensor=MODIS_TERRA -PcloudFilterLevel=CLOUD_SURE -f NetCDF4-WVCCI -t $tcwv
+    #$SNAP_HOME/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixEraInterimMerge -PauxdataPath=$auxdataPath -Psensor=MODIS_TERRA -PcloudFilterLevel=CLOUD_SURE -f NetCDF4-WVCCI -t $tcwv
+    #$SNAP_HOME/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixEraInterimMerge -PauxdataPath=$auxdataPath -Psensor=MODIS_TERRA -PcloudFilterLevel=CLOUD_SURE_AMBIGUOUS -f NetCDF4-WVCCI -t $tcwv
+
+    # TODO: if existing, add MOD35_L2 product as optional source product, like: 
+     if [ -f $cloudMaskPath ]; then
+       echo "$SNAP_HOME/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixEraInterimMerge -Smod35Product=$cloudMaskPath -PauxdataPath=$auxdataPath -Psensor=MODIS_TERRA -PprocessOcean=true -f NetCDF4-WVCCI -t $tcwv"
+       $SNAP_HOME/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixEraInterimMerge -Smod35Product=$cloudMaskPath -PauxdataPath=$auxdataPath -Psensor=MODIS_TERRA -PprocessOcean=true -f NetCDF4-WVCCI -t $tcwv
+     else
+       echo "$SNAP_HOME/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixEraInterimMerge -PauxdataPath=$auxdataPath -Psensor=MODIS_TERRA -PprocessOcean=true -f NetCDF4-WVCCI -t $tcwv"
+       $SNAP_HOME/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixEraInterimMerge -PauxdataPath=$auxdataPath -Psensor=MODIS_TERRA -PprocessOcean=true -f NetCDF4-WVCCI -t $tcwv
+     fi
+
 fi
 ## 
 

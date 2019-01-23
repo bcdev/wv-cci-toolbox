@@ -14,22 +14,16 @@ month=$8
 wvcciRootDir=$9
 snapDir=${10}
 
-if [ "$sensor" == "MERIS" ]
-then
-    l1bBaseName=`basename $l1bFile .N1`
-elif [ "$sensor" == "MODIS_TERRA" ]
-then
-    l1bBaseName=`basename $l1bFile .hdf`
-else
-    echo "Invalid sensor $sensor - no Idepix processing started."
-fi
+l1bBaseName=`basename $l1bFile .hdf`
 echo "l1bBaseName: $l1bBaseName"
 
 task="wvcci-l2-idepix-modis"
 jobname="${task}-${sensor}-${year}-${month}-${l1bBaseName}"
-command="./bin/${task}-snap.sh ${l1bPath} ${landMaskPath} ${l1bFile} ${idepixL2Dir} ${sensor} ${year} ${month} ${wvcciRootDir} ${snapDir}"
+command0="./bin/${task}-snap.sh"
+command="${command0} ${l1bPath} ${landMaskPath} ${l1bFile} ${idepixL2Dir} ${sensor} ${year} ${month} ${wvcciRootDir} ${snapDir}"
 
 echo "jobname: $jobname"
+echo "command0: $command0"
 echo "command: $command"
 
 echo "`date -u +%Y%m%d-%H%M%S` submitting job '${jobname}' for task ${task}"
@@ -39,5 +33,6 @@ read_task_jobs ${jobname}
 
 if [ -z ${jobs} ]; then
     # use default parameters for time and memory limits in bsub call
-    submit_job ${jobname} ${command}
+    echo "submit_job ${jobname} ${command} 60 4000"
+    submit_job ${jobname} "${command}" 60 4000
 fi
