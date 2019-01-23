@@ -59,7 +59,7 @@ public class TcwvOp extends Operator {
     @Parameter(description = "If auxdata are already installed, their path can be provided here.")
     private String auxdataPath;
 
-    @Parameter(defaultValue = "false",
+    @Parameter(defaultValue = "true",
             description = "Process also over ocean (would be needed for MODIS-AQUA option later).")
     private boolean processOcean;
 
@@ -225,8 +225,11 @@ public class TcwvOp extends Operator {
             priorWsTile = getSourceTile(priorWsBand, targetRectangle);
         }
 
-        double[] winBandData = new double[winBandTiles.length];
         double[] absBandData = new double[absBandTiles.length];
+        // For old CAWA LUTs we still have to consider that MODIS land uses 5 input bands, MODIS ocean only 4:
+        double[] winBandData = new double[winBandTiles.length];
+        double[] winBandDataModisOcean = new double[winBandTiles.length - 1];
+
         for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; y++) {
             checkForCancellation();
             for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
@@ -234,12 +237,9 @@ public class TcwvOp extends Operator {
                         !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_INVALID_BIT);
                 final boolean isCloud = mod35Used ? isMod35Cloud(x, y, pixelClassifTile) :
                         isIdepixCloud(x, y, pixelClassifTile);
-                final boolean isLand = mod35Used ? isMod35Land(x, y, pixelClassifTile) :
-                        isIdepixLand(x, y, pixelClassifTile);
+                boolean isLand = mod35Used ? isMod35Land(x, y, pixelClassifTile) : isIdepixLand(x, y, pixelClassifTile);
 
-                // NOTE: we compute only land for MERIS, MODIS_TERRA, or OLCI! 20180925
-//                isLand = isLand && sensor != Sensor.MODIS_AQUA;
-                if (!isValid || isCloud || !isLand) {
+                if (!isValid || isCloud || (!processOcean && !isLand)) {
                     targetTiles.get(tcwvBand).setSample(x, y, Float.NaN);
                     targetTiles.get(tcwvUnvertaintyBand).setSample(x, y, Float.NaN);
                 } else {
@@ -271,16 +271,34 @@ public class TcwvOp extends Operator {
                     final double priorTcwv =
                             priorTcwvTile != null ? priorTcwvTile.getSampleDouble(x, y) : TcwvConstants.TCWV_INIT_VALUE;
 
-                    for (int i = 0; i < winBandData.length; i++) {
-                        winBandData[i] = winBandTiles[i].getSampleDouble(x, y) * Math.cos(sza * MathUtils.DTOR);
-                    }
+                    TcwvAlgorithmInput input;
+
                     for (int i = 0; i < absBandData.length; i++) {
+                        // multiply with cos(sza), see CAWA: cawa_tcwv_<sensor>_op.py!
                         absBandData[i] = absBandTiles[i].getSampleDouble(x, y) * Math.cos(sza * MathUtils.DTOR);
                     }
 
-                    final TcwvAlgorithmInput input = new TcwvAlgorithmInput(winBandData, absBandData, sza, vza, relAzi,
-                                                                            amf, aot865, priorAot, priorAl0, priorAl1,
-                                                                            t2m, prs, priorWs, priorTcwv);
+                    final boolean isModisOceanPixel =
+                            (sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA) && !isLand;
+                    if (isModisOceanPixel) {
+                        // we have to skip winBandTiles[1]
+                        winBandDataModisOcean[0] = winBandTiles[0].getSampleDouble(x, y) * Math.cos(sza * MathUtils.DTOR);
+                        for (int i = 2; i < winBandDataModisOcean.length; i++) {
+                            winBandDataModisOcean[i - 1] =
+                                    winBandTiles[i].getSampleDouble(x, y) * Math.cos(sza * MathUtils.DTOR);
+                        }
+                        input = new TcwvAlgorithmInput(winBandDataModisOcean, absBandData, sza, vza, relAzi,
+                                                       amf, aot865, priorAot, priorAl0, priorAl1,
+                                                       t2m, prs, priorWs, priorTcwv);
+                    } else {
+                        for (int i = 0; i < winBandData.length; i++) {
+                            // multiply with cos(sza), see CAWA: cawa_tcwv_<sensor>_op.py!
+                            winBandData[i] = winBandTiles[i].getSampleDouble(x, y) * Math.cos(sza * MathUtils.DTOR);
+                        }
+                        input = new TcwvAlgorithmInput(winBandData, absBandData, sza, vza, relAzi,
+                                                       amf, aot865, priorAot, priorAl0, priorAl1,
+                                                       t2m, prs, priorWs, priorTcwv);
+                    }
 
                     // 'ocean' parameters are null for land processing!
                     final TcwvResult result = tcwvAlgorithm.compute(sensor, landLut, oceanLut,
@@ -399,8 +417,12 @@ public class TcwvOp extends Operator {
         targetProduct.setSceneGeoCoding(tiePointGeoCoding);
 
         if (mod35Used) {
+            mod35Product.getFlagCodingGroup().get(TcwvConstants.PIXEL_CLASSIF_BAND_NAME).
+                    setName("MOD35_L2_" + TcwvConstants.PIXEL_CLASSIF_BAND_NAME);
             ProductUtils.copyFlagCodings(mod35Product, targetProduct);
             ProductUtils.copyMasks(mod35Product, targetProduct);
+            targetProduct.getFlagCodingGroup().get(TcwvConstants.PIXEL_CLASSIF_BAND_NAME).
+                    setName("IDEPIX_" + TcwvConstants.PIXEL_CLASSIF_BAND_NAME);
         } else {
             ProductUtils.copyFlagCodings(sourceProduct, targetProduct);
             ProductUtils.copyMasks(sourceProduct, targetProduct);

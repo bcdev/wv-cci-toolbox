@@ -8,16 +8,46 @@ import static org.esa.snap.wvcci.tcwv.TcwvConstants.*;
  * @author olafd
  */
 public enum Sensor {
-    MERIS("MERIS", MERIS_REFL_BAND_NAMES, MERIS_REFL_WIN_BAND_NAMES, MERIS_REFL_ABS_BAND_NAMES, MERIS_TPG_NAMES,
-          MERIS_OCEAN_LUT_NC_FILENAME, MERIS_LAND_LUT_NC_FILENAME, MERIS_SE),
-    MODIS_AQUA("MODIS_AQUA", MODIS_OCEAN_REFL_BAND_NAMES, MODIS_OCEAN_REFL_WIN_BAND_NAMES, MODIS_REFL_ABS_BAND_NAMES, MODIS_TPG_NAMES,
-               MODIS_AQUA_OCEAN_LUT_NC_FILENAME, MODIS_AQUA_LAND_LUT_NC_FILENAME, MODIS_OCEAN_SE),
-    MODIS_TERRA("MODIS_TERRA", MODIS_LAND_REFL_BAND_NAMES, MODIS_LAND_REFL_WIN_BAND_NAMES, MODIS_REFL_ABS_BAND_NAMES, MODIS_TPG_NAMES,
-                MODIS_TERRA_OCEAN_LUT_NC_FILENAME, MODIS_TERRA_LAND_LUT_NC_FILENAME, MODIS_LAND_SE),
-//    MODIS_TERRA("MODIS_TERRA", MODIS_LAND_REFL_BAND_NAMES, MODIS_LAND_REFL_WIN_BAND_NAMES, MODIS_REFL_ABS_BAND_NAMES, MODIS_TPG_NAMES,
-//                MODIS_TERRA_OCEAN_LUT_NC_FILENAME, MERIS_LAND_LUT_NC_FILENAME, MERIS_SE),
-    OLCI("OLCI", OLCI_REFL_BAND_NAMES, OLCI_REFL_WIN_BAND_NAMES, OLCI_REFL_ABS_BAND_NAMES, OLCI_TPG_NAMES,
-         null, null, OLCI_SE);   // todo
+    MERIS("MERIS",
+          MERIS_REFL_BAND_NAMES,
+          MERIS_REFL_WIN_BAND_NAMES,
+          MERIS_REFL_ABS_BAND_NAMES,
+          MERIS_TPG_NAMES,
+          MERIS_OCEAN_LUT_NC_FILENAME,
+          MERIS_LAND_LUT_NC_FILENAME,
+          MERIS_LAND_SE,
+          MERIS_OCEAN_SE),
+    MODIS_TERRA("MODIS_TERRA",
+//                MODIS_LAND_REFL_BAND_NAMES,
+//                MODIS_LAND_REFL_WIN_BAND_NAMES,
+                MODIS_REFL_BAND_NAMES,
+                MODIS_REFL_WIN_BAND_NAMES,
+                MODIS_REFL_ABS_BAND_NAMES,
+                MODIS_TPG_NAMES,
+                MODIS_TERRA_OCEAN_LUT_NC_FILENAME,
+                MODIS_TERRA_LAND_LUT_NC_FILENAME,
+                MODIS_LAND_SE,
+                MODIS_OCEAN_SE),
+    MODIS_AQUA("MODIS_AQUA",
+//               MODIS_OCEAN_REFL_BAND_NAMES,
+//               MODIS_OCEAN_REFL_WIN_BAND_NAMES,
+               MODIS_REFL_BAND_NAMES,
+               MODIS_REFL_WIN_BAND_NAMES,
+               MODIS_REFL_ABS_BAND_NAMES,
+               MODIS_TPG_NAMES,
+               MODIS_AQUA_OCEAN_LUT_NC_FILENAME,
+               MODIS_AQUA_LAND_LUT_NC_FILENAME,
+               MODIS_LAND_SE,
+               MODIS_OCEAN_SE),
+    OLCI("OLCI",
+         OLCI_REFL_BAND_NAMES,
+         OLCI_REFL_WIN_BAND_NAMES,
+         OLCI_REFL_ABS_BAND_NAMES,
+         OLCI_TPG_NAMES,
+         null,
+         null,
+         OLCI_LAND_SE,
+         OLCI_OCEAN_SE);   // todo
 
     private String name;
     private String[] reflBandNames;
@@ -26,10 +56,11 @@ public enum Sensor {
     private String[] tpgNames;
     private String oceanLutName;
     private String landLutName;
-    private double[][] se;
+    private double[][] landSe;
+    private double[][] oceanSe;
 
     Sensor(String name, String[] reflBandNames, String[] winBandNames, String[] absBandNames, String[] tpgNames,
-           String oceanLutName, String landLutName, double[][] se) {
+           String oceanLutName, String landLutName, double[][] landSe, double[][] oceanSe) {
         this.name = name;
         this.reflBandNames = reflBandNames;
         this.winBandNames = winBandNames;
@@ -37,7 +68,8 @@ public enum Sensor {
         this.tpgNames = tpgNames;
         this.oceanLutName = oceanLutName;
         this.landLutName = landLutName;
-        this.se = se;
+        this.landSe = landSe;
+        this.oceanSe= oceanSe;
     }
 
     public String getName() {
@@ -68,7 +100,11 @@ public enum Sensor {
         return landLutName;
     }
 
-    public double[][] getSe() {
-        return se;
+    public double[][] getLandSe() {
+        return landSe;
+    }
+
+    public double[][] getOceanSe() {
+        return oceanSe;
     }
 }

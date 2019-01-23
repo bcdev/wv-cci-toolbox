@@ -71,7 +71,7 @@ public class TcwvAlgorithm {
         xa[1] = input.getPriorAl0();
         xa[2] = input.getPriorAl1();
 
-        final double[][] se = sensor.getSe();
+        final double[][] se = sensor.getLandSe();
         final double[][] sa = TcwvConstants.SA_LAND;
 
         OptimalEstimation oe = new OptimalEstimation(tcwvFunction, a, b, mes, par, jacobiFunction);
@@ -115,7 +115,7 @@ public class TcwvAlgorithm {
         xa[1] = input.getPriorAot();
         xa[2] = input.getPriorWsp();
 
-        final double[][] se = sensor.getSe();
+        final double[][] se = sensor.getOceanSe();
         final double[][] sa = TcwvConstants.SA_OCEAN;
 
         OptimalEstimation oe = new OptimalEstimation(tcwvFunction, a, b, mes, par, jacobiFunction);
