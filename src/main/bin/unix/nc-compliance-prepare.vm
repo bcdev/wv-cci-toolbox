@@ -1,0 +1,17 @@
+#!/bin/bash
+set -e
+
+nc_outdir="$parameters.get('nc_outdir')"
+
+#[[
+
+nc_gz_infile=$1
+nc_infile=`basename ${nc_gz_infile} .gz`
+
+if /opt/hadoop/bin/hadoop fs -ls ${nc_outdir}/${nc_infile} ; then
+  # output exist
+  echo CALVALUS_SKIP_PROCESSING yes
+fi
+
+]]#
+

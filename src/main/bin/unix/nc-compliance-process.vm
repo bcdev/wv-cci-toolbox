@@ -1,0 +1,29 @@
+#!/bin/bash
+set -x
+set -e
+set -m
+
+nc_gz_infile=$1
+nc_infile=`basename ${nc_gz_infile} .gz`
+gunzip -c ${nc_gz_infile} > ./${nc_infile}
+
+nc_outdir="$parameters.get('nc_outdir')"
+year="$parameters.get('year')"
+month="$parameters.get('month')"
+day="$parameters.get('day')"
+
+jars=snap-all.jar:snap-tcwv-0.8-SNAPSHOT.jar
+jar2=commons-cli.jar
+class=org.esa.snap.wvcci.tcwv.dataio.nc4.WvcciNc4ComplianceWriterMain
+/usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ./${nc_infile} ${year} ${month} ${day} -o ${nc_outdir}
+
+status=$?
+echo "Status: $status"
+
+if [ $status = 0 ] && [ -e "${nc_outdir}/${nc_infile}" ]
+then
+    echo "NetCDF compliance file created."
+    echo "Status: $status"
+    rm -f ./${nc_infile}
+fi
+

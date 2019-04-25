@@ -3,17 +3,22 @@ set -x
 set -e
 set -m
 
+sensor="$parameters.get('sensor')"
+res="$parameters.get('res')"
 year="$parameters.get('year')"
 month="$parameters.get('month')"
 day="$parameters.get('day')"
 
 #[[
 
-nc_gz_infile=$1
-nc_infile=`basename ${nc_gz_infile} .gz`
-gunzip -c ${nc_gz_infile} > ./${nc_infile}
+#nc_gz_infile=$1
+#nc_infile=`basename ${nc_gz_infile} .gz`
+#gunzip -c ${nc_gz_infile} > ./${nc_infile}
+nc_infile=`basename $1`
+echo "nc_infile: ${nc_infile}"
 
 echo "`ls -la $(pwd)`"
+
 /usr/bin/python $(pwd)/process.py ./${nc_infile} ${year} ${month} ${day}
 
 status=$?
@@ -26,10 +31,16 @@ then
     rm -f ./${nc_infile}
 fi
 
-old="L2_of_l3_"
-new="WV-CCI_L3_"
-nc_outfile=${nc_infile/$old/$new}
+# dailyly nc_infile: e.g. L2_of_l3_tcwv_meris_005deg_2011-07-03.nc
+# monthly nc_infile: e.g. L2_of_l3_tcwv_meris_005deg_2011-07.nc
+if [ "$day" == "0" ]
+then
+  nc_outfile="WV_CCI_L3_tcwv_${sensor}_${res}deg_${year}-${month}.nc"
+else
+  nc_outfile="WV_CCI_L3_tcwv_${sensor}_${res}deg_${year}-${month}-${day}.nc"
+fi
 
 echo CALVALUS_OUTPUT_PRODUCT ${nc_outfile}
 
 ]]#
+
