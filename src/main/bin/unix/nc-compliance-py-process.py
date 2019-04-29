@@ -8,6 +8,7 @@ import os
 import sys
 import time
 import datetime
+import numpy as np
 import netCDF4
 
 from netCDF4 import Dataset
@@ -97,9 +98,14 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
     dst.setncattr('geospatial_lon_resolution', 'TODO')
     dst.setncattr('key_variables', 'TODO')
 
+    # set dimensions from src:
+    for name, dimension in src.dimensions.iteritems():
+        dst.createDimension(name, len(dimension) if not dimension.isunlimited() else None)
+
     # check if source product contains 'time: dimension:
     has_timedim = False    
     for name, dimension in src.dimensions.iteritems():
+        print ('dimension: ', name)
         if name == 'time':
             has_timedim = True
 
@@ -114,29 +120,41 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
         time.setncattr('units', 'days since 1970-01-01')
         time[:] = int(timeval)
 
-    # set new time dimension:
-    # time = 1
-    # dst.createDimension('time', None)
+    # if not present,set lat/lon variables:
+    has_latlon = False
+    for name, variable in src.variables.iteritems():
+        if name == 'lat' or name == 'lon':
+            has_latlon = True
 
-    # set dimensions from src:
-    for name, dimension in src.dimensions.iteritems():
-        if name != 'bnds':
-            dst.createDimension(name, len(dimension) if not dimension.isunlimited() else None)
+    if not has_latlon:
+        incr = 0.05 if res == '005' else 0.5
+        lat_arr = np.arange(-90.0, 90.0, incr) + incr/2.0
+        lon_arr = np.arange(-180.0, 180.0, incr) + incr/2.0
+        # set new lat/lon variables:
+        lat = dst.createVariable('lat', 'f4', ('lat'), zlib=True)
+        lon = dst.createVariable('lon', 'f4', ('lon'), zlib=True)
+        lat.setncattr('long_name', 'Latitude')
+        lat.setncattr('standard_name', 'latitude')
+        lat.setncattr('units', 'degrees north')
+        lon.setncattr('long_name', 'Longitude')
+        lon.setncattr('standard_name', 'longitude')
+        lon.setncattr('units', 'degrees east')
 
-    # set global attributes from src
-    for attr in src.ncattrs():
-        dst.setncattr(attr, getattr(src, attr))
+        lat[:] = lat_arr
+        lon[:] = lon_arr
 
     # set variable attributes from src
     for name, variable in src.variables.iteritems():
-        #if name.find("metadata") == -1 and name.find("_sigma") == -1:
         if name.find("_sigma") == -1 and (name.find("tcwv") != -1 or name == 'wvpa' or name == 'numo' or name == 'stdv' or name == 'crs' or name == 'time'):
             print ('variable.dimensions: ', variable.dimensions)
             dstvar = dst.createVariable(name, variable.datatype, variable.dimensions, zlib=True)
             for attr in variable.ncattrs():
                 dstvar.setncattr(attr, getattr(variable, attr))
 
-    print ('variable keys: ', dst.variables.keys())
+            if name.find("counts") != -1:
+                dstvar.setncattr('units', ' ')
+
+    #print ('variable keys: ', dst.variables.keys())
 
     # set variable data from src
     for variable in dst.variables:
@@ -157,18 +175,6 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
             elif variable.find("tcwv") != -1:
                 dst.variables[variable][:,:] = src.variables[variable][:,:]            
 
-        #if variable != 'time':
-        #    if has_timedim:
-        #        if variable != 'crs':
-        #            dst.variables[variable][:,:,:] = src.variables[variable][:,:,:]
-        #        else:
-        #            dst.variables[variable][:,:] = src.variables[variable][:,:]
-        #    else:
-        #        if variable != 'crs':
-        #            dst.variables[variable][:,:] = src.variables[variable][:,:]
-        #        else:
-        #            dst.variables[variable][:] = src.variables[variable][:]
-
     for variable in dst.variables:        
         if variable.find("_mean") != -1:
             dst.renameVariable(variable, variable.replace("_mean", ""))
@@ -179,10 +185,4 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
         elif variable.find("stdv") != -1:
             dst.renameVariable(variable, variable.replace("stdv", "tcwv_uncertainty")) 
 
-    # set time data
-    #time = dst.createVariable('time', 'i4', ('time'), zlib=True)
-    #time.setncattr('long_name', 'Product dataset time given as days since 1970-01-01')
-    #time.setncattr('standard_name', 'time')
-    #time.setncattr('units', 'days since 1970-01-01')
-    #time[:] = int(timeval)
 
