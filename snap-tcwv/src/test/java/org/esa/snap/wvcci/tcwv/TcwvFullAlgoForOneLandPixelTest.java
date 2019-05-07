@@ -27,7 +27,7 @@ public class TcwvFullAlgoForOneLandPixelTest {
     //     - MODIS TERRA land
 
     @Test
-    @Ignore
+//    @Ignore
     public void testOptimalEstimation_land_meris() {
         // make sure you have the right LUT, otherwise ignore this test!
         final Sensor sensor = Sensor.MERIS;
@@ -75,7 +75,7 @@ public class TcwvFullAlgoForOneLandPixelTest {
     }
 
     @Test
-    @Ignore
+//    @Ignore
     public void testOptimalEstimation_land_modis_terra() {
         // make sure you have the right LUT, otherwise ignore this test!
         // remember that MODIS land uses 5 input bands, MODIS ocean only 4 !!

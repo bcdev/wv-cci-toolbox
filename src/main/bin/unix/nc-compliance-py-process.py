@@ -8,10 +8,17 @@ import os
 import sys
 import time
 import datetime
+import uuid
 import numpy as np
 import netCDF4
 
 from netCDF4 import Dataset
+
+###########################################################
+def getNumDaysInMonth(year, month):
+    return calendar.monthrange(int(year), int(month))[1]
+###########################################################
+
 
 if len(sys.argv) != 7:
     print ('Usage:  python nc-compliance-py-process.py <nc_infile> <sensor> <year> <month> <day> <resolution>')
@@ -57,25 +64,28 @@ print ('outpath: ', outpath)
 with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
 
     # set global attributes following CF and CCI standards:
-    dst.setncattr('title', 'TODO')
-    dst.setncattr('institution', 'TODO')
-    dst.setncattr('source', 'TODO')
-    dst.setncattr('history', 'TODO')
-    dst.setncattr('references', 'TODO')
-    dst.setncattr('tracking_id', 'TODO')
+    dst.setncattr('title', 'Water Vapour CCI Total Column of Water Vapour Product')
+    dst.setncattr('institution', 'Brockmann Consult GmbH; EUMETSAT/CMSAF')
+    dst.setncattr('source', 'MERIS RR L1B 3rd Reprocessing; MODIS MOD021KM L1B; HOAPS-S version 4.0')
+    dst.setncattr('history', 'python nc-compliance-py-process.py ' + nc_infile)
+    dst.setncattr('references', 'tbd')
+    dst.setncattr('tracking_id', str(uuid.uuid1()))
     dst.setncattr('Conventions', 'CF-1.7')
     dst.setncattr('product_version', 'Dataset1')
-    dst.setncattr('summary', 'TODO')
-    dst.setncattr('keywords', 'TODO')
-    dst.setncattr('id', 'TODO')
-    dst.setncattr('naming-authority', 'TODO')
-    dst.setncattr('keywords-vocabulary', 'TODO')
-    dst.setncattr('cdm_data_type', 'TODO')
-    dst.setncattr('comment', 'TODO')
-    dst.setncattr('date_created', 'TODO')
-    dst.setncattr('creator_name', 'TODO')
-    dst.setncattr('creator_url', 'TODO')
-    dst.setncattr('creator_email', 'TODO')
+    dst.setncattr('summary', 'Water Vapour CCI TCWV Dataset1 (2010-2012)')
+    dst.setncattr('keywords', 'EARTH SCIENCE > ATMOSPHERE > ATMOSPHERIC WATER VAPOR > WATER VAPOR,EARTH SCIENCE > ATMOSPHERE > ATMOSPHERIC WATER VAPOR > PRECIPITABLE WATER')
+    dst.setncattr('id', nc_infile)
+    dst.setncattr('naming-authority', 'brockmann-consult.de')
+    dst.setncattr('keywords-vocabulary', 'GCMD Science Keywords, Version 8.1')
+    dst.setncattr('cdm_data_type', 'grid')
+    dst.setncattr('comment', 'These data were produced in the frame of the Water Vapour ECV (Water_Vapour_cci) of the ESA Climate Change Initiative Extension (CCI+) Phase 1')
+    
+    from datetime import datetime, timedelta
+    date_created = str(datetime.utcnow())[:19] + ' UTC'
+    dst.setncattr('date_created', date_created)
+    dst.setncattr('creator_name', 'Brockmann Consult GmbH; EUMETSAT/CMSAF')
+    dst.setncattr('creator_url', 'www.brockmann-consult.de; http://www.cmsaf.eu')
+    dst.setncattr('creator_email', 'info@brockmann-consult.de; contact.cmsaf@dwd.de')
     dst.setncattr('project', 'WV_cci')
     dst.setncattr('geospatial_lat_min', '-90.0')
     dst.setncattr('geospatial_lat_max', '90.0')
@@ -83,20 +93,28 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
     dst.setncattr('geospatial_lon_max', '180.0')
     dst.setncattr('geospatial_vertical_min', '0.0')
     dst.setncattr('geospatial_vertical_max', '0.0')
-    dst.setncattr('time_coverage_start', '20120131T000000Z')
-    dst.setncattr('time_coverage_end', '20120131T235959Z')
+    if int(day) == 0:
+        starttime = datestring + '-01 00:00:00 UTC'
+        endtime = datestring + '-' + str(getNumDaysInMonth(year, month)) +  ' 23:59:59 UTC'
+    else:
+        starttime = datestring + ' 00:00:00 UTC'
+        endtime = datestring + ' 23:59:59 UTC'
+    dst.setncattr('time_coverage_start', starttime)
+    dst.setncattr('time_coverage_end', endtime)
     dst.setncattr('time_coverage_duration', 'P1D')
     dst.setncattr('time_coverage_resolution', 'P1D')
     dst.setncattr('standard_name_vocabulary', 'NetCDF Climate and Forecast (CF) Metadata Convention version 18')
     dst.setncattr('license', 'ESA CCI Data Policy: free and open access')
-    dst.setncattr('platform', 'TODO')
-    dst.setncattr('sensor', 'TODO')
-    dst.setncattr('spatial_resolution', 'TODO')
+    dst.setncattr('platform', 'Envisat, Terra, DMSP 5D-3/F16, DMSP 5D-3/F17, DMSP 5D-3/F18')
+    dst.setncattr('sensor', 'MERIS, MODIS, SSMIS')
+    spatial_resolution = '5.6km at Equator' if res == '005' else '56km at Equator'
+    dst.setncattr('spatial_resolution', spatial_resolution)
     dst.setncattr('geospatial_lat_units', 'degrees_north')
     dst.setncattr('geospatial_lon_units', 'degrees_east')
-    dst.setncattr('geospatial_lat_resolution', 'TODO')
-    dst.setncattr('geospatial_lon_resolution', 'TODO')
-    dst.setncattr('key_variables', 'TODO')
+    geospatial_resolution = '0.05' if res == '005' else '0.5'
+    dst.setncattr('geospatial_lat_resolution', geospatial_resolution)
+    dst.setncattr('geospatial_lon_resolution', geospatial_resolution)
+    dst.setncattr('key_variables', 'tcwv')
 
     # set dimensions from src:
     for name, dimension in src.dimensions.iteritems():

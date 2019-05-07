@@ -24,7 +24,7 @@ public class TcwvFullAlgoForOneOceanPixelTest {
     // using corresponding LUTs from CAWA.
 
     @Test
-    @Ignore
+//    @Ignore
     public void testOptimalEstimation_ocean_meris() {
         // make sure you have the right LUT, otherwise ignore this test!
         final Sensor sensor = Sensor.MERIS;
