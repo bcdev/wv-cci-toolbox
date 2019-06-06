@@ -31,7 +31,8 @@ public class TcwvModisOceanLutTest {
 
     @Test
     public void testGetTcwvLutFromNc4_ocean_aqua() throws IOException {
-        final NetcdfFile ncFile = TcwvIO.getTcwvLookupTableNcFile(auxdataPath, "ocean_core_modis_aqua.nc4");
+//        final NetcdfFile ncFile = TcwvIO.getTcwvLookupTableNcFile(auxdataPath, "ocean_core_modis_aqua.nc4");
+        final NetcdfFile ncFile = TcwvIO.getTcwvLookupTableNcFile(auxdataPath, Sensor.MODIS_AQUA.getOceanLutName());
         assertNotNull(ncFile);
 
         final List<Attribute> globalAttributes = ncFile.getGlobalAttributes();

@@ -31,7 +31,8 @@ public class TcwvMerisOceanLutTest {
 
     @Test
     public void testGetTcwvLutFromNc4_ocean() throws IOException {
-        final NetcdfFile ncFile = TcwvIO.getTcwvLookupTableNcFile(auxdataPath, "ocean_core_meris.nc4");
+//        final NetcdfFile ncFile = TcwvIO.getTcwvLookupTableNcFile(auxdataPath, "ocean_core_meris.nc4");
+        final NetcdfFile ncFile = TcwvIO.getTcwvLookupTableNcFile(auxdataPath, Sensor.MERIS.getOceanLutName());
         assertNotNull(ncFile);
 
         final List<Attribute> globalAttributes = ncFile.getGlobalAttributes();
@@ -43,16 +44,17 @@ public class TcwvMerisOceanLutTest {
     }
 
     private void testTcwvLutMetadata_ocean(List<Attribute> globalAttributes, List<Dimension> dimensions, List<Variable> variables) {
+        // sequence slightly changed with LUT update in April 2019
         assertNotNull(globalAttributes);
         assertEquals(15, globalAttributes.size());
-        assertEquals("instrument", globalAttributes.get(1).getFullName());
-        assertEquals("meris", globalAttributes.get(1).getValue(0));
-        assertEquals("win_bnd", globalAttributes.get(2).getFullName());
-        assertEquals("13,14", globalAttributes.get(2).getValue(0));
-        assertEquals("abs_bnd", globalAttributes.get(4).getFullName());
-        assertEquals("15", globalAttributes.get(4).getValue(0));
-        assertEquals("axes", globalAttributes.get(5).getFullName());
-        assertEquals("wvc,aot,wsp,azi,vie,suz", globalAttributes.get(5).getValue(0));
+        assertEquals("instrument", globalAttributes.get(0).getFullName());
+        assertEquals("meris", globalAttributes.get(0).getValue(0));
+        assertEquals("win_bnd", globalAttributes.get(1).getFullName());
+        assertEquals("13,14", globalAttributes.get(1).getValue(0));
+        assertEquals("abs_bnd", globalAttributes.get(3).getFullName());
+        assertEquals("15", globalAttributes.get(3).getValue(0));
+        assertEquals("axes", globalAttributes.get(4).getFullName());
+        assertEquals("wvc,aot,wsp,azi,vie,suz", globalAttributes.get(4).getValue(0));
         assertEquals("cha_15_nominal", globalAttributes.get(12).getFullName());
         assertEquals(900.0, globalAttributes.get(12).getValue(0));
         assertEquals("cha_15_bwvl", globalAttributes.get(13).getFullName());

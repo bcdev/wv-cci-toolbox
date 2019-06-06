@@ -41,8 +41,10 @@ public class TcwvConstants {
             ModisMod35L2Constants.QUALITY_ASSURANCE_QA_DIMENSION_BAND_NAME +  "1"
     };
 
-    static final String MERIS_LAND_LUT_NC_FILENAME = "land_core_meris.nc4";
-    static final String MERIS_OCEAN_LUT_NC_FILENAME = "ocean_core_meris.nc4";
+//    static final String MERIS_LAND_LUT_NC_FILENAME = "land_core_meris.nc4";
+    static final String MERIS_LAND_LUT_NC_FILENAME = "land_core_meris_calib_arm.nc4";
+//    static final String MERIS_OCEAN_LUT_NC_FILENAME = "ocean_core_meris.nc4";
+    static final String MERIS_OCEAN_LUT_NC_FILENAME = "ocean_core_meris_calib.nc4";
     static final String MODIS_AQUA_OCEAN_LUT_NC_FILENAME = "ocean_core_modis_aqua.nc4";
     static final String MODIS_TERRA_OCEAN_LUT_NC_FILENAME = "ocean_core_modis_terra.nc4";
     static final String MODIS_AQUA_LAND_LUT_NC_FILENAME = "land_core_modis_aqua.nc4";

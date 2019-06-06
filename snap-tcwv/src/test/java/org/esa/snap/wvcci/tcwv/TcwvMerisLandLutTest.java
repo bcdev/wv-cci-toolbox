@@ -31,7 +31,7 @@ public class TcwvMerisLandLutTest {
 
     @Test
     public void testGetTcwvLutFromNc4_land() throws IOException {
-        final NetcdfFile ncFile = TcwvIO.getTcwvLookupTableNcFile(auxdataPath, "land_core_meris.nc4");
+        final NetcdfFile ncFile = TcwvIO.getTcwvLookupTableNcFile(auxdataPath, Sensor.MERIS.getLandLutName());
         assertNotNull(ncFile);
 
         final List<Attribute> globalAttributes = ncFile.getGlobalAttributes();
@@ -43,22 +43,23 @@ public class TcwvMerisLandLutTest {
     }
 
     private void testTcwvLutMetadata_land(List<Attribute> globalAttributes, List<Dimension> dimensions, List<Variable> variables) {
+        // sequence slightly changed with LUT update in April 2019
         assertNotNull(globalAttributes);
         assertEquals(15, globalAttributes.size());
-        assertEquals("instrument", globalAttributes.get(1).getFullName());
-        assertEquals("meris", globalAttributes.get(1).getValue(0));
-        assertEquals("win_bnd", globalAttributes.get(2).getFullName());
-        assertEquals("13,14", globalAttributes.get(2).getValue(0));
-        assertEquals("abs_bnd", globalAttributes.get(4).getFullName());
-        assertEquals("15", globalAttributes.get(4).getValue(0));
-        assertEquals("axes", globalAttributes.get(5).getFullName());
-        assertEquals("wvc,al0,al1,aot,prs,tmp,azi,vie,suz", globalAttributes.get(5).getValue(0));
-        assertEquals("cha_14_bwvl", globalAttributes.get(12).getFullName());
-        assertEquals(5.901877, (Double) globalAttributes.get(12).getValue(0), 1.E-6);
-        assertEquals("cha_14_cwvl", globalAttributes.get(13).getFullName());
-        assertEquals(884.676627, (Double) globalAttributes.get(13).getValue(0), 1.E-6);
-        assertEquals("cha_14_nominal", globalAttributes.get(14).getFullName());
-        assertEquals(885.0, globalAttributes.get(14).getValue(0));
+        assertEquals("instrument", globalAttributes.get(0).getFullName());
+        assertEquals("meris", globalAttributes.get(0).getValue(0));
+        assertEquals("win_bnd", globalAttributes.get(1).getFullName());
+        assertEquals("13,14", globalAttributes.get(1).getValue(0));
+        assertEquals("abs_bnd", globalAttributes.get(3).getFullName());
+        assertEquals("15", globalAttributes.get(3).getValue(0));
+        assertEquals("axes", globalAttributes.get(4).getFullName());
+        assertEquals("wvc,al0,al1,aot,prs,tmp,azi,vie,suz", globalAttributes.get(4).getValue(0));
+        assertEquals("cha_14_bwvl", globalAttributes.get(13).getFullName());
+        assertEquals(5.901877, (Double) globalAttributes.get(13).getValue(0), 1.E-6);
+        assertEquals("cha_14_cwvl", globalAttributes.get(14).getFullName());
+        assertEquals(884.676627, (Double) globalAttributes.get(14).getValue(0), 1.E-6);
+        assertEquals("cha_14_nominal", globalAttributes.get(12).getFullName());
+        assertEquals(885.0, globalAttributes.get(12).getValue(0));
 
         assertNotNull(dimensions);
         assertEquals(13, dimensions.size());
