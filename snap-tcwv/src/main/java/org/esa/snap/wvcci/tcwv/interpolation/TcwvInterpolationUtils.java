@@ -137,12 +137,12 @@ public class TcwvInterpolationUtils {
                                         for (int q = 0; q < src[0][0][0][0][0][0][0][0].length; q++) {
                                             // fix for CAWA MODIS land LUTs:
                                             // todo: remove after LUT update
-                                            if (sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA) {
-                                                if (n == 2) {
-                                                    srcSubArr[j][k][l][m][n][o][p][q] =
-                                                            srcSubArr[j][k][l][m][1][o][p][q];
-                                                }
-                                            }
+//                                            if (sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA) {
+//                                                if (n == 2) {
+//                                                    srcSubArr[j][k][l][m][n][o][p][q] =
+//                                                            srcSubArr[j][k][l][m][1][o][p][q];
+//                                                }
+//                                            }
                                             result[index++] = srcSubArr[j][k][l][m][n][o][p][q];
                                         }
                                     }

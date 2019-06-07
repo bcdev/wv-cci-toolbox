@@ -72,7 +72,6 @@ public class TcwvFullAlgoForOneOceanPixelTest {
     }
 
     @Test
-
     public void testOptimalEstimation_ocean_modis_terra() {
         // make sure you have the right LUT, otherwise ignore this test!
         // remember that MODIS land uses 5 input bands, MODIS ocean only 4 !!

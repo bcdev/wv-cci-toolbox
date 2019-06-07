@@ -77,10 +77,11 @@ public class TcwvAlgorithm {
         OptimalEstimation oe = new OptimalEstimation(tcwvFunction, a, b, mes, par, jacobiFunction);
         OptimalEstimationResult result = oe.invert(InversionMethod.OE, a, se, sa, xa, OEOutputMode.BASIC, 3);
         final double resultTcwv = Math.pow(result.getXn()[0], 2.0);
-//        final double resultAot = result.getXn()[1];
-//        final double resultWsp = result.getXn()[2];
+        final double resultAot1 = result.getXn()[1];
+        final double resultAot2 = result.getXn()[2];
 
-        return new TcwvResult(resultTcwv);
+//        return new TcwvResult(resultTcwv);
+        return new TcwvResult(resultTcwv, resultAot1, resultAot2);
     }
 
     private TcwvResult computeTcwvOcean(Sensor sensor, TcwvAlgorithmInput input, TcwvOceanLut oceanLut,
@@ -121,9 +122,10 @@ public class TcwvAlgorithm {
         OptimalEstimation oe = new OptimalEstimation(tcwvFunction, a, b, mes, par, jacobiFunction);
         OptimalEstimationResult result = oe.invert(InversionMethod.OE, a, se, sa, xa, OEOutputMode.BASIC, 3);
         final double resultTcwv = Math.pow(result.getXn()[0], 2.0);
-//        final double resultAot = result.getXn()[1];
-//        final double resultWsp = result.getXn()[2];
+        final double resultAot = result.getXn()[1];
+        final double resultWsp = result.getXn()[2];
 
-        return new TcwvResult(resultTcwv);
+//        return new TcwvResult(resultTcwv);
+        return new TcwvResult(resultTcwv, resultAot, resultWsp);
     }
 }

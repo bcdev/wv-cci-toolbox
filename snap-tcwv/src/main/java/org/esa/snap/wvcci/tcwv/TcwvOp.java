@@ -63,6 +63,10 @@ public class TcwvOp extends Operator {
             description = "Process also over ocean (would be needed for MODIS-AQUA option later).")
     private boolean processOcean;
 
+    @Parameter(defaultValue = "false",
+            description = "Write full state vector, not just TCWV (debug).")
+    private boolean writeFullStateVector;
+
 
     @SourceProduct(description =
             "Source product (IdePix product merged with MERIS, MODIS or OLCI L1b product)",
@@ -187,6 +191,8 @@ public class TcwvOp extends Operator {
 
         final Band tcwvBand = targetProduct.getBand(TcwvConstants.TCWV_TARGET_BAND_NAME);
         final Band tcwvUnvertaintyBand = targetProduct.getBand(TcwvConstants.TCWV_UNCERTAINTY_TARGET_BAND_NAME);
+        final Band stateVector1Band = targetProduct.getBand(TcwvConstants.TCWV_STATE_VECTOR1_BAND_NAME);
+        final Band stateVector2Band = targetProduct.getBand(TcwvConstants.TCWV_STATE_VECTOR2_BAND_NAME);
 
         Tile[] winBandTiles = new Tile[winBands.length];
         for (int i = 0; i < winBandTiles.length; i++) {
@@ -242,6 +248,10 @@ public class TcwvOp extends Operator {
                 if (!isValid || isCloud || (!processOcean && !isLand)) {
                     targetTiles.get(tcwvBand).setSample(x, y, Float.NaN);
                     targetTiles.get(tcwvUnvertaintyBand).setSample(x, y, Float.NaN);
+                    if (writeFullStateVector) {
+                        targetTiles.get(stateVector1Band).setSample(x, y, Float.NaN);
+                        targetTiles.get(stateVector2Band).setSample(x, y, Float.NaN);
+                    }
                 } else {
                     // Preparing input data...
                     final double sza = szaTile.getSampleDouble(x, y);
@@ -255,11 +265,20 @@ public class TcwvOp extends Operator {
                     // ERA Interim: Pa, e.g. 100500  --> divide by -100 to get negative hPa for current LUTs
                     // no ERAInterim: hPa --> multiply by -1 to get negative hPa
                     double prs;
+//                    if (priorMslTile != null) {
+//                        prs = -priorMslTile.getSampleDouble(x, y) / 100.0;
+//                    } else {
+//                        prs = -1.0 * mslPressure;
+//                    }
+
+                    // the new LUTs (20190607) all have log(prs) in descending order, so we need to convert like this:
                     if (priorMslTile != null) {
-                        prs = -priorMslTile.getSampleDouble(x, y) / 100.0;
+                        prs = priorMslTile.getSampleDouble(x, y) / 100.0;
                     } else {
-                        prs = -1.0 * mslPressure;
+                        prs = mslPressure;
                     }
+                    prs = -Math.log(prs);
+
 
                     final double t2m =
                             priorT2mTile != null ? priorT2mTile.getSampleDouble(x, y) : temperature;
@@ -307,6 +326,10 @@ public class TcwvOp extends Operator {
                                                                     input, isLand);
 
                     targetTiles.get(tcwvBand).setSample(x, y, result.getTcwv());
+                    if (writeFullStateVector) {
+                        targetTiles.get(stateVector1Band).setSample(x, y, result.getStateVector1());
+                        targetTiles.get(stateVector2Band).setSample(x, y, result.getStateVector2());
+                    }
                     // todo: uncertainty tbd. Set 3% for the moment.
                     targetTiles.get(tcwvUnvertaintyBand).setSample(x, y, 0.03 * result.getTcwv());
                 }
@@ -407,6 +430,17 @@ public class TcwvOp extends Operator {
         tcwvUncertaintyBand.setDescription("Uncertainty of Total Column of Water Vapour");
         tcwvUncertaintyBand.setNoDataValue(Float.NaN);
         tcwvUncertaintyBand.setNoDataValueUsed(true);
+
+        if (writeFullStateVector) {
+            final Band stateVector1Band = targetProduct.addBand("stateVector_1", ProductData.TYPE_FLOAT32);
+            stateVector1Band.setDescription("stateVector_1 (aot1 over land, aot over ocean)");
+            stateVector1Band.setNoDataValue(Float.NaN);
+            stateVector1Band.setNoDataValueUsed(true);
+            final Band stateVector2Band = targetProduct.addBand("stateVector_2", ProductData.TYPE_FLOAT32);
+            stateVector2Band.setDescription("stateVector_1 (aot2 over land, wsp over ocean)");
+            stateVector2Band.setNoDataValue(Float.NaN);
+            stateVector2Band.setNoDataValueUsed(true);
+        }
 
         ProductUtils.copyBand(TcwvConstants.PIXEL_CLASSIF_BAND_NAME, sourceProduct, targetProduct, true);
         ProductUtils.copyTiePointGrids(sourceProduct, targetProduct);

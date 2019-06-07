@@ -11,6 +11,8 @@ public class TcwvConstants {
 
     public static final String PIXEL_CLASSIF_BAND_NAME = "pixel_classif_flags";
     public static final String TCWV_TARGET_BAND_NAME = "tcwv";
+    public static final String TCWV_STATE_VECTOR1_BAND_NAME = "stateVector_1";
+    public static final String TCWV_STATE_VECTOR2_BAND_NAME = "stateVector_2";
     public static final String TCWV_MEAN_BAND_NAME = "tcwv_mean";
     public static final String TCWV_SSMI_MEAN_BAND_NAME = "wvpa";
     public static final String TCWV_UNCERTAINTY_TARGET_BAND_NAME = "tcwv_uncertainty";
@@ -47,8 +49,10 @@ public class TcwvConstants {
     static final String MERIS_OCEAN_LUT_NC_FILENAME = "ocean_core_meris_calib.nc4";
     static final String MODIS_AQUA_OCEAN_LUT_NC_FILENAME = "ocean_core_modis_aqua.nc4";
     static final String MODIS_TERRA_OCEAN_LUT_NC_FILENAME = "ocean_core_modis_terra.nc4";
-    static final String MODIS_AQUA_LAND_LUT_NC_FILENAME = "land_core_modis_aqua.nc4";
-    static final String MODIS_TERRA_LAND_LUT_NC_FILENAME = "land_core_modis_terra.nc4";
+//    static final String MODIS_AQUA_LAND_LUT_NC_FILENAME = "land_core_modis_aqua.nc4";
+    static final String MODIS_AQUA_LAND_LUT_NC_FILENAME = "land_core_modis_aqua_calib_arm.nc4";
+//    static final String MODIS_TERRA_LAND_LUT_NC_FILENAME = "land_core_modis_terra.nc4";
+    static final String MODIS_TERRA_LAND_LUT_NC_FILENAME = "land_core_modis_terra_calib_arm.nc4";
 
     final static String[] MERIS_REFL_BAND_NAMES = new String[]{
             "reflectance_13", // 864 nm
