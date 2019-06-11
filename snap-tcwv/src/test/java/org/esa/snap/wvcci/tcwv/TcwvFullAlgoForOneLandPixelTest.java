@@ -27,8 +27,9 @@ public class TcwvFullAlgoForOneLandPixelTest {
     //     - MODIS TERRA land
 
     @Test
-//    @Ignore
+    @Ignore
     public void testOptimalEstimation_land_meris() {
+        // ignored - TODO: adapt to Cowa and new LUTs
         // make sure you have the right LUT, otherwise ignore this test!
         final Sensor sensor = Sensor.MERIS;
         TcwvAlgorithm algorithm = new TcwvAlgorithm();

@@ -54,6 +54,9 @@ public class TcwvConstants {
 //    static final String MODIS_TERRA_LAND_LUT_NC_FILENAME = "land_core_modis_terra.nc4";
     static final String MODIS_TERRA_LAND_LUT_NC_FILENAME = "land_core_modis_terra_calib_arm.nc4";
 
+    static final String OLCI_LAND_LUT_NC_FILENAME = "land_core_olci_calib_arm.nc4";
+    static final String OLCI_OCEAN_LUT_NC_FILENAME = "ocean_core_olci_calib.nc4";
+
     final static String[] MERIS_REFL_BAND_NAMES = new String[]{
             "reflectance_13", // 864 nm
             "reflectance_14", // 884 nm
@@ -87,6 +90,28 @@ public class TcwvConstants {
             {0.0, 0.0001, 0.0},
             {0.0, 0.0, 0.001}
     };
+
+    // 'cor' from land_core_meris_calib_arm.nc4, bands 13, 14, 15
+    final static double[][] MERIS_LAND_RECT_CORR = {
+            {0.0, 1.0},
+            {0.0, 1.0},
+            {-0.0015867, 0.9185331}
+    };
+
+    // 'cor' from ocean_core_meris_calib.nc4, bands 13, 14, 15
+    final static double[][] MERIS_OCEAN_RECT_CORR = {
+            {0.0, 1.0},
+            {0.0, 1.0},
+            {-0.0342265, 0.7524297}
+    };
+
+    // cwvl from land_core_meris_calib_arm.nc4, bands 13, 14, 15
+    final static double[] MERIS_CWVL_RECT_CORR = {
+            864.6143,
+            884.6766,
+            899.721
+    };
+
 
     final static String[] MODIS_REFL_BAND_NAMES = new String[]{
             "EV_250_Aggr1km_RefSB_2",   // 859 nm
@@ -154,19 +179,48 @@ public class TcwvConstants {
             {0.0, 0.0, 0.0, 0.001}
     };
 
+    // 'cor' from land_core_modis_terra_calib_arm.nc4, bands 2, 5, 17, 18, 19 in this sequence!
+    final static double[][] MODIS_LAND_RECT_CORR = {
+            {0.0, 1.0},
+            {0.0, 1.0},
+            {-0.0034669, 1.0203956},
+            {0.00041882, 0.9378},
+            {-0.0115824, 0.94457}
+    };
+
+    // 'cor' from ocean_core_modis_terra.nc4, bands 2, 5, 17, 18, 19 in this sequence!
+    final static double[][] MODIS_OCEAN_RECT_CORR = {
+            {0.0, 1.0},
+            {0.0, 1.0},
+            {0.0, 1.0},
+            {0.0, 1.0},
+            {0.0, 1.0}
+    };
+
+    // cwvl for MODIS bands 2, 5, 17, 18, 19 in this sequence, taken from MOD021KM product
+    final static double[] MODIS_CWVL_RECT_CORR = {
+            858.0,
+            1240.0,
+            905.0,
+            936.0,
+            940.0
+    };
+
     final static String[] OLCI_REFL_BAND_NAMES = new String[]{
             "Oa17_reflectance",  // 864 nm
             "Oa18_reflectance",  // 884 nm
-            "Oa19_reflectance"   // 900 nm 
+            "Oa19_reflectance",   // 900 nm
+            "Oa19_reflectance"   // 900 nm
     };
 
     final static String[] OLCI_REFL_WIN_BAND_NAMES = new String[]{
-            "Oa17_reflectance",  // 864 nm
-            "Oa18_reflectance",  // 884 nm
+            "Oa18_reflectance",  // 884.3246 nm
+            "Oa21_reflectance",  // 1015.966 nm
     };
 
     final static String[] OLCI_REFL_ABS_BAND_NAMES = new String[]{
-            "Oa19_reflectance"   // 900 nm
+            "Oa19_reflectance",   // 899.316 nm
+            "Oa20_reflectance"    // 939.02 nm
     };
 
     final static String[] OLCI_TPG_NAMES = new String[]{
@@ -174,24 +228,50 @@ public class TcwvConstants {
     };
 
     final static double[][] OLCI_LAND_SE = {
-            {0.0001, 0.0, 0.0},
-            {0.0, 0.0001, 0.0},
-            {0.0, 0.0, 0.001}
+            {0.0001, 0.0, 0.0, 0.0},
+            {0.0, 0.0001, 0.0, 0.0},
+            {0.0, 0.0, 0.001, 0.0},
+            {0.0, 0.0, 0.0, 0.001}
     };
 
     final static double[][] OLCI_OCEAN_SE = {
-            {0.0001, 0.0, 0.0},
-            {0.0, 0.0001, 0.0},
-            {0.0, 0.0, 0.001}
+            {0.0001, 0.0, 0.0, 0.0},
+            {0.0, 0.0001, 0.0, 0.0},
+            {0.0, 0.0, 0.001, 0.0},
+            {0.0, 0.0, 0.0, 0.001}
     };
 
-    public final static double[][] SA_LAND = {
+    // 'cor' from land_core_olci_calib_arm.nc4, bands 18, 21, 19, 20 in this sequence!
+    final static double[][] OLCI_LAND_RECT_CORR = {
+            {0.0, 1.0},
+            {0.0, 1.0},
+            {0.00727, 0.94982},
+            {0.002236, 0.8888878}
+    };
+
+    // 'cor' from ocean_core_olci_calib.nc4, bands 18, 21, 19, 20 in this sequence!
+    final static double[][] OLCI_OCEAN_RECT_CORR = {
+            {0.0, 1.0},
+            {0.0, 1.0},
+            {-2.22494E-4, 0.9156},
+            {-5.7741E-4, 0.9211578}
+    };
+
+    // 'cwvl' from ocean_core_olci_calib.nc4, bands 18, 21, 19, 20 in this sequence!
+    final static double[] OLCI_CWVL_RECT_CORR = {
+            884.3246,
+            1015.966,
+            899.316,
+            939.02
+    };
+
+    final static double[][] SA_LAND = {
             {20.0, 0.0, 0.0},
             {0.0, 1.0, 0.0},
             {0.0, 0.0, 1.0}
     };
 
-    public final static double[][] SA_OCEAN = {
+    final static double[][] SA_OCEAN = {
             {8.0, 0.0, 0.0},
             {0.0, 0.1, 0.0},
             {0.0, 0.0, 25.0}

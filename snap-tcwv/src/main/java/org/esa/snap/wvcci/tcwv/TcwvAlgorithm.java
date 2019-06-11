@@ -16,16 +16,15 @@ public class TcwvAlgorithm {
     /**
      * Provides computation of final TCWV from given input
      *
-     * @param sensor - the sensor (MERIS, MODIS, or OLCI)
-     * @param landLut - lookup table for land pixels for given sensor
-     * @param oceanLut - lookup table for ocean pixels for given sensor
-     * @param tcwvFunctionLand - TCWB function object for land pixels
-     * @param tcwvFunctionOcean - TCWB function object for ocean pixels
-     * @param jacobiFunctionLand - Jacobi function object for land pixels
+     * @param sensor              - the sensor (MERIS, MODIS, or OLCI)
+     * @param landLut             - lookup table for land pixels for given sensor
+     * @param oceanLut            - lookup table for ocean pixels for given sensor
+     * @param tcwvFunctionLand    - TCWB function object for land pixels
+     * @param tcwvFunctionOcean   - TCWB function object for ocean pixels
+     * @param jacobiFunctionLand  - Jacobi function object for land pixels
      * @param jacobiFunctionOcean - Jacobi function object for ocean pixels
-     * @param input - object with all required input variables
-     * @param isLand - land/water flag
-     *
+     * @param input               - object with all required input variables
+     * @param isLand              - land/water flag
      * @return {@link TcwvResult}: TCWV, and possibly additional information
      */
     public TcwvResult compute(Sensor sensor,
@@ -53,9 +52,17 @@ public class TcwvAlgorithm {
             mes[i] = input.getRhoToaWin()[i];
         }
         for (int i = 0; i < input.getRhoToaAbs().length; i++) {
-            mes[input.getRhoToaWin().length + i] =
-                    -1.0*Math.log(input.getRhoToaAbs()[i]/input.getRhoToaWin()[input.getRhoToaWin().length-1]) /
-                            Math.sqrt(input.getAmf());
+            if (sensor == Sensor.MERIS || sensor == Sensor.OLCI) {
+                mes[input.getRhoToaWin().length + i] = rectifyAndO2Correct(sensor, input.getRhoToaWin(),
+                                                                           input.getRhoToaAbs(), null, i,
+                                                                           Math.sqrt(input.getAmf()), true);
+            } else {
+                // we have no tests for MODIS, leave as it is. TODO: clarify with RP if rectification is needed for MODIS
+                mes[input.getRhoToaWin().length + i] =
+                        -1.0 * Math.log(input.getRhoToaAbs()[i] / input.getRhoToaWin()[input.getRhoToaWin().length - 1]) /
+                                Math.sqrt(input.getAmf());
+            }
+
         }
 
         double[] par = new double[6];
@@ -101,9 +108,17 @@ public class TcwvAlgorithm {
 //            self.mes[len(self.wb) + ich] = -np.log(
 //                    data['rtoa'][ch] /
 //                            data['rtoa'][self.wb[-1]]) / np.sqrt(data['amf'])
-            mes[input.getRhoToaWin().length + i] =
-                    -1.0*Math.log(input.getRhoToaAbs()[i]/input.getRhoToaWin()[input.getRhoToaWin().length-1]) /
-                            Math.sqrt(input.getAmf());
+
+            if (sensor == Sensor.MERIS || sensor == Sensor.OLCI) {
+                mes[input.getRhoToaWin().length + i] = rectifyAndO2Correct(sensor, input.getRhoToaWin(),
+                                                                           input.getRhoToaAbs(), null, i,
+                                                                           Math.sqrt(input.getAmf()), false);
+            } else {
+                // we have no tests for MODIS, leave as it is. TODO: clarify with RP if rectification is needed for MODIS
+                mes[input.getRhoToaWin().length + i] =
+                        -1.0 * Math.log(input.getRhoToaAbs()[i] / input.getRhoToaWin()[input.getRhoToaWin().length - 1]) /
+                                Math.sqrt(input.getAmf());
+            }
         }
 
         double[] par = new double[3];
@@ -127,5 +142,38 @@ public class TcwvAlgorithm {
 
 //        return new TcwvResult(resultTcwv);
         return new TcwvResult(resultTcwv, resultAot, resultWsp);
+    }
+
+    double rectifyAndO2Correct(Sensor sensor, double[] rhoWb, double[] rhoAb,
+                                      double[] rectCorrExt, int abIndex,
+                                      double samf, boolean isLand) {
+
+        double[][] rectCorr = isLand ? sensor.getLandRectCorr() : sensor.getOceanRectCorr();    // a, b
+        double a;
+        double b;
+        if (rectCorrExt != null && rectCorrExt.length == 2) {
+            a = rectCorrExt[0];
+            b = rectCorrExt[1];
+        } else {
+            a = rectCorr[rhoWb.length + abIndex][0];
+            b = rectCorr[rhoWb.length + abIndex][1];
+        }
+        double[] cwvl = sensor.getCwvlRectCorr();
+
+        double ref;
+
+        if (rhoWb.length == 1) {
+            ref = rhoWb[0];
+        } else {
+            final double dwvl = cwvl[1] - cwvl[0];
+            final double drho = rhoWb[1] - rhoWb[0];
+            if (Math.abs(dwvl) > 1.E-5) {
+                ref = rhoWb[0] + drho * (cwvl[rhoWb.length + abIndex] - cwvl[0]) / dwvl;
+            } else {
+                ref = rhoWb[0];
+            }
+        }
+
+        return - (a + b * Math.log(rhoAb[abIndex] / ref) / samf);
     }
 }

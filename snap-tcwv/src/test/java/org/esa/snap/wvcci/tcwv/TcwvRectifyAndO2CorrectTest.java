@@ -1,8 +1,5 @@
 package org.esa.snap.wvcci.tcwv;
 
-import org.esa.snap.core.util.math.MathUtils;
-import org.esa.snap.wvcci.tcwv.interpolation.JacobiFunction;
-import org.esa.snap.wvcci.tcwv.interpolation.TcwvInterpolation;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -11,167 +8,80 @@ import static org.junit.Assert.assertEquals;
 
 public class TcwvRectifyAndO2CorrectTest {
 
-    private String auxdataPath;
-
-    @Before
-    public void setUp() throws Exception {
-        auxdataPath = TcwvIO.installAuxdataLuts();
-    }
-
     @Test
-//    @Ignore
     public void testRectifyO2Corr_land_meris() {
+        // extracted from TEST_COWA_LAND_1 in functional_tests.py
         final Sensor sensor = Sensor.MERIS;
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
-        TcwvLandLut landLut = TcwvIO.readLandLookupTable(auxdataPath, Sensor.MERIS);
+
+        final double samf = 1.48959;  // sqrt(amf)
+        final double[] rho_wb = new double[]{0.042, 0.042};  // bands 13, 14
+        final double[] rho_ab = new double[]{0.031};    // band 15
+//        final double[] rectCorrExt = new double[]{0.0, 1.0};
+        final double[] rectCorrExt = null;
+
+        final double ab_corr = algorithm.rectifyAndO2Correct(sensor, rho_wb, rho_ab, rectCorrExt, 0, samf, true);
+//        assertEquals(0.20387, ab_corr, 1.E-5);
+        assertEquals(0.18885, ab_corr, 1.E-5);
     }
 
     @Test
-//    @Ignore
-    public void testOptimalEstimation_land_meris() {
-        // make sure you have the right LUT, otherwise ignore this test!
+    public void testRectifyO2Corr_ocean_meris() {
+        // extracted from TEST_COWA_OCEAN_1 in functional_tests.py
         final Sensor sensor = Sensor.MERIS;
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
-        TcwvLandLut landLut = TcwvIO.readLandLookupTable(auxdataPath, Sensor.MERIS);
-        TcwvFunction tcwvFunctionLand = TcwvInterpolation.getForwardFunctionLand(landLut);
-        JacobiFunction jacobiFunctionland = TcwvInterpolation.getJForwardFunctionLand(landLut);
 
-        double sza = 5.29114494e+01;
-        double vza = 2.70720062e+01;
-        double relAzi = 4.48835754e+01;
-        double amf = 1. / Math.cos(sza * MathUtils.DTOR) + 1. / Math.cos(vza * MathUtils.DTOR);
+        final double samf = 1.48959;  // sqrt(amf)
+        final double[] rho_wb = new double[]{0.031736, 0.031391};  // bands 13, 14
+        final double[] rho_ab = new double[]{0.02135569};    // band 15
+//        final double[] rectCorrExt = new double[]{0.0, 1.0};
+        final double[] rectCorrExt = null;
 
-        // the mes array is taken from test_cawa.py --> test_cawa_land_modis_terra() in wv-cci-parent_se_only:
-        // mes = [0.19290966,  0.19140355,  0.14358414]
-        // here we invert it to the 'true' rhoToa input and re-invert later:
-        double[] mes = new double[]{0.19290966,  0.19140355,  0.14358414};
-        double[] rhoToaWin = new double[2];
-        double[] rhoToaAbs = new double[1];
-        System.arraycopy(mes, 0, rhoToaWin, 0, rhoToaWin.length);
-        for (int i = 0; i < rhoToaAbs.length; i++) {
-            // inversion of line 56-58, TcwvAlgorithm
-            rhoToaAbs[i] = rhoToaWin[1] * Math.exp(-mes[2+i] * Math.sqrt(amf));
-        }
-        double aot865 = 0.1;
-        double priorAot = 0.15;
-        double priorAl0 = 0.13;
-        double priorAl1 = 0.13;
-        double priorT2m = 303.0;
-
-        double priorMslPress = -1013./100.;  // todo: to be fixed by RP
-        double priorWsp = Double.NaN;     // not needed for land
-        double priorTcwv = 30.0;
-        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf, aot865,
-                                                          priorAot, priorAl0, priorAl1, priorT2m, priorMslPress,
-                                                          priorWsp, priorTcwv);
-        final TcwvResult result = algorithm.compute(sensor,
-                                                    landLut, null,
-                                                    tcwvFunctionLand, null,
-                                                    jacobiFunctionland, null,
-                                                    input, true);
-
-        System.out.println("MERIS result.getTcwv() = " + result.getTcwv());
-        assertEquals(7.1699, result.getTcwv(), 1.E-4);     // Python result: 7.1699 --> exactly matching
+        final double ab_corr = algorithm.rectifyAndO2Correct(sensor, rho_wb, rho_ab, rectCorrExt, 0, samf, false);
+//        assertEquals(0.25304, ab_corr, 1.E-5);
+        assertEquals(0.22462, ab_corr, 1.E-5);
     }
 
     @Test
-//    @Ignore
-    public void testOptimalEstimation_land_modis_terra() {
-        // make sure you have the right LUT, otherwise ignore this test!
-        // remember that MODIS land uses 5 input bands, MODIS ocean only 4 !!
-        final Sensor sensor = Sensor.MODIS_TERRA;
+    public void testRectifyO2Corr_land_olci() {
+        // extracted from TEST_COWA_LAND_3 in functional_tests.py
+        final Sensor sensor = Sensor.OLCI;
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
-        TcwvLandLut landLut = TcwvIO.readLandLookupTable(auxdataPath, Sensor.MODIS_TERRA);
-        TcwvFunction tcwvFunctionLand = TcwvInterpolation.getForwardFunctionLand(landLut);
-        JacobiFunction jacobiFunctionland = TcwvInterpolation.getJForwardFunctionLand(landLut);
 
-        double sza = 6.23843994e+01;
-        double vza = 2.59459991e+01;
-        double relAzi = 1.18127800e+02;
-        double amf = 1. / Math.cos(sza * MathUtils.DTOR) + 1. / Math.cos(vza * MathUtils.DTOR);
+        final double samf = 1.48959;  // sqrt(amf)
+        final double[] rho_wb = new double[]{0.042, 0.042};  // bands 18, 21
+        final double[] rho_ab = new double[]{0.031, 0.013};    // bands 19, 20
+//        final double[] rectCorrExt = new double[]{0.0, 1.0};
+        final double[] rectCorrExt = null;
 
-        // the mes array is taken from test_cawa.py --> test_cawa_land_modis_terra() in wv-cci-parent_se_only:
-        // mes = [0.05588217,  0.06197434,  0.10987211,  0.33038937,  0.22174702]
-        // here we invert it to the 'true' rhoToa input and re-invert later:
-        double[] mes = new double[]{0.05588217,  0.06197434, 0.10987211,  0.33038937,  0.22174702};
-        double[] rhoToaWin = new double[2];
-        double[] rhoToaAbs = new double[3];
-        System.arraycopy(mes, 0, rhoToaWin, 0, rhoToaWin.length);
-        for (int i = 0; i < rhoToaAbs.length; i++) {
-            rhoToaAbs[i] = rhoToaWin[1] * Math.exp(-mes[2+i] * Math.sqrt(amf));
-        }
-        double aot865 = 0.1;
-        double priorAot = 0.15;
-        double priorAl0 = 0.13;
-        double priorAl1 = 0.13;
-        double priorT2m = 303.0;
+        final double ab_corr_1 = algorithm.rectifyAndO2Correct(sensor, rho_wb, rho_ab, rectCorrExt, 0, samf, true);
+//        assertEquals(0.20387, ab_corr_1, 1.E-5);
+        assertEquals(0.186369, ab_corr_1, 1.E-5);
 
-        double priorMslPress = 1003./100.;  // todo: to be fixed by RP
-        double priorWsp = Double.NaN;     // not needed for land
-        double priorTcwv = 30.0;
-        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf, aot865,
-                                                          priorAot, priorAl0, priorAl1, priorT2m, priorMslPress,
-                                                          priorWsp, priorTcwv);
-        final TcwvResult result = algorithm.compute(sensor,
-                                                    landLut, null,
-                                                    tcwvFunctionLand, null,
-                                                    jacobiFunctionland, null,
-                                                    input, true);
-
-//        System.out.println("MODIS TERRA result.getTcwv() = " + result.getTcwv());
-//        assertEquals(6.513, result.getTcwv(), 1.E-3);
-        // Python result: 6.38 --> might be ok for the moment because of workaround in MODIS LUTs
-        // todo: re-check later with updated LUTs
+        final double ab_corr_2 = algorithm.rectifyAndO2Correct(sensor, rho_wb, rho_ab, rectCorrExt, 1, samf, true);
+//        assertEquals(0.787277, ab_corr_2, 1.E-5);
+        assertEquals(0.697565, ab_corr_2, 1.E-5);
     }
 
     @Test
-    public void testOptimalEstimation_land_modis_terra_2() {
-        // make sure you have the right LUT, otherwise ignore this test!
-        // remember that MODIS land uses 5 input bands, MODIS ocean only 4 !!
-        final Sensor sensor = Sensor.MODIS_TERRA;
+    public void testRectifyO2Corr_ocean_olci() {
+        // extracted from TEST_COWA_OCEAN_2 in functional_tests.py
+        final Sensor sensor = Sensor.OLCI;
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
-        TcwvLandLut landLut = TcwvIO.readLandLookupTable(auxdataPath, Sensor.MODIS_TERRA);
-        TcwvFunction tcwvFunctionLand = TcwvInterpolation.getForwardFunctionLand(landLut);
-        JacobiFunction jacobiFunctionland = TcwvInterpolation.getJForwardFunctionLand(landLut);
 
-        double sza = 6.23843994e+01;
-        double vza = 2.59459991e+01;
-        double relAzi = 1.18127800e+02;
-        double amf = 1. / Math.cos(sza * MathUtils.DTOR) + 1. / Math.cos(vza * MathUtils.DTOR);
+        final double samf = 1.48959;  // sqrt(amf)
+        final double[] rho_wb = new double[]{0.031, 0.031};    // band 19, 20
+        final double[] rho_ab = new double[]{0.021, 0.007};  // bands 18, 21
+//        final double[] rectCorrExt = new double[]{0.0, 1.0};
+        final double[] rectCorrExt = null;
 
-        // the mes array is taken from test_cawa.py --> test_cawa_land_modis_terra() in wv-cci-parent_se_only:
-        // mes = [0.05588217,  0.06197434,  0.10987211,  0.33038937,  0.22174702]
-        // here we invert it to the 'true' rhoToa input and re-invert later:
-        double[] mes = new double[]{0.05588217,  0.06197434, 0.10987211,  0.33038937,  0.22174702};
-        double[] rhoToaWin = new double[2];
-        double[] rhoToaAbs = new double[3];
-        System.arraycopy(mes, 0, rhoToaWin, 0, rhoToaWin.length);
-        for (int i = 0; i < rhoToaAbs.length; i++) {
-            rhoToaAbs[i] = rhoToaWin[1] * Math.exp(-mes[2+i] * Math.sqrt(amf));
-        }
-        double aot865 = 0.1;
-        double priorAot = 0.15;
-        double priorAl0 = 0.13;
-        double priorAl1 = 0.13;
-        double priorT2m = 303.0;
+        final double ab_corr_1 = algorithm.rectifyAndO2Correct(sensor, rho_wb, rho_ab, rectCorrExt, 0, samf, false);
+//        assertEquals(0.2614577, ab_corr_1, 1.E-5);
+        assertEquals(0.239613, ab_corr_1, 1.E-5);
 
-        double priorMslPress = 1003./100.;  // todo: to be fixed by RP
-        double priorWsp = Double.NaN;     // not needed for land
-        double priorTcwv = 30.0;
-        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf, aot865,
-                                                          priorAot, priorAl0, priorAl1, priorT2m, priorMslPress,
-                                                          priorWsp, priorTcwv);
-        final TcwvResult result = algorithm.compute(sensor,
-                                                    landLut, null,
-                                                    tcwvFunctionLand, null,
-                                                    jacobiFunctionland, null,
-                                                    input, true);
-
-        System.out.println("MODIS TERRA result.getTcwv() = " + result.getTcwv());
-//        assertEquals(6.513, result.getTcwv(), 1.E-3);
-        // Python result: 6.38 --> might be ok for the moment because of workaround in MODIS LUTs
-        // todo: re-check later with updated LUTs
+        final double ab_corr_2 = algorithm.rectifyAndO2Correct(sensor, rho_wb, rho_ab, rectCorrExt, 1, samf, false);
+//        assertEquals(0.998984, ab_corr_2, 1.E-5);
+        assertEquals(0.920799, ab_corr_2, 1.E-5);
     }
-
 
 }
