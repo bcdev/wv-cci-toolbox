@@ -11,8 +11,6 @@ public class TcwvConstants {
 
     public static final String PIXEL_CLASSIF_BAND_NAME = "pixel_classif_flags";
     public static final String TCWV_TARGET_BAND_NAME = "tcwv";
-    public static final String TCWV_STATE_VECTOR1_BAND_NAME = "stateVector_1";
-    public static final String TCWV_STATE_VECTOR2_BAND_NAME = "stateVector_2";
     public static final String TCWV_MEAN_BAND_NAME = "tcwv_mean";
     public static final String TCWV_SSMI_MEAN_BAND_NAME = "wvpa";
     public static final String TCWV_UNCERTAINTY_TARGET_BAND_NAME = "tcwv_uncertainty";
@@ -21,24 +19,27 @@ public class TcwvConstants {
     public static final String TCWV_COUNTS_TARGET_BAND_NAME = "tcwv_counts";
     public static final String TCWV_SSMI_COUNTS_BAND_NAME = "numo";
 
-    public static final String PRIOR_T2M_BAND_NAME = "t2m";
-    public static final String PRIOR_MSL_BAND_NAME = "msl";
-    public static final String PRIOR_TCWV_BAND_NAME = "tcwv";
-    public static final String PRIOR_WS_BAND_NAME = "ws";
+    static final String TCWV_STATE_VECTOR1_BAND_NAME = "stateVector_1";
+    static final String TCWV_STATE_VECTOR2_BAND_NAME = "stateVector_2";
 
-    public static final double AOT865_INIT_VALUE = 0.15;  // AOT 865nm initial value for algorithm
-    public static final double AL0_INIT_VALUE = 0.13;     // AL0 865nm initial value for algorithm
-    public static final double AL1_INIT_VALUE = 0.13;     // AL1 865nm initial value for algorithm
-    public static final double TCWV_INIT_VALUE = 30.0;    // TCWV initial value for algorithm if we have no prior
-    public static final double WS_INIT_VALUE = 7.5;       // Windspeed initial value for algorithm if we have no prior
+    static final String PRIOR_T2M_BAND_NAME = "t2m";
+    static final String PRIOR_MSL_BAND_NAME = "msl";
+    static final String PRIOR_TCWV_BAND_NAME = "tcwv";
+    static final String PRIOR_WS_BAND_NAME = "ws";
 
-    public static int IDEPIX_INVALID_BIT = 0;
-    public static int IDEPIX_CLOUD_AMBIGUOUS_BIT = 2;
-    public static int IDEPIX_CLOUD_SURE_BIT = 3;
-    public static int IDEPIX_CLOUD_BUFFER_BIT = 4;
-    public static int IDEPIX_LAND_BIT = 10;
+    static final double AOT865_INIT_VALUE = 0.15;  // AOT 865nm initial value for algorithm
+    static final double AL0_INIT_VALUE = 0.13;     // AL0 865nm initial value for algorithm
+    static final double AL1_INIT_VALUE = 0.13;     // AL1 865nm initial value for algorithm
+    static final double TCWV_INIT_VALUE = 30.0;    // TCWV initial value for algorithm if we have no prior
+    static final double WS_INIT_VALUE = 7.5;       // Windspeed initial value for algorithm if we have no prior
 
-    public static final String[] MOD35_BAND_NAMES = {
+    static int IDEPIX_INVALID_BIT = 0;
+    static int IDEPIX_CLOUD_AMBIGUOUS_BIT = 2;
+    static int IDEPIX_CLOUD_SURE_BIT = 3;
+    static int IDEPIX_CLOUD_BUFFER_BIT = 4;
+    static int IDEPIX_LAND_BIT = 10;
+
+    static final String[] MOD35_BAND_NAMES = {
             ModisMod35L2Constants.CLOUD_MASK_BYTE_TARGET_BAND_NAME +  "1",
             ModisMod35L2Constants.QUALITY_ASSURANCE_QA_DIMENSION_BAND_NAME +  "1"
     };
@@ -235,10 +236,9 @@ public class TcwvConstants {
     };
 
     final static double[][] OLCI_OCEAN_SE = {
-            {0.0001, 0.0, 0.0, 0.0},
-            {0.0, 0.0001, 0.0, 0.0},
-            {0.0, 0.0, 0.001, 0.0},
-            {0.0, 0.0, 0.0, 0.001}
+            {0.0001, 0.0, 0.0},
+            {0.0, 0.0001, 0.0},
+            {0.0, 0.0, 0.001}
     };
 
     // 'cor' from land_core_olci_calib_arm.nc4, bands 18, 21, 19, 20 in this sequence!
@@ -251,7 +251,6 @@ public class TcwvConstants {
 
     // 'cor' from ocean_core_olci_calib.nc4, bands 18, 21, 19, 20 in this sequence!
     final static double[][] OLCI_OCEAN_RECT_CORR = {
-            {0.0, 1.0},
             {0.0, 1.0},
             {-2.22494E-4, 0.9156},
             {-5.7741E-4, 0.9211578}

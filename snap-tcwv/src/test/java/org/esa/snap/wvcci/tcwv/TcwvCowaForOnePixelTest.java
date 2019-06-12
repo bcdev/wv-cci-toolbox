@@ -4,7 +4,6 @@ import org.esa.snap.core.util.math.MathUtils;
 import org.esa.snap.wvcci.tcwv.interpolation.JacobiFunction;
 import org.esa.snap.wvcci.tcwv.interpolation.TcwvInterpolation;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -146,10 +145,9 @@ public class TcwvCowaForOnePixelTest {
     }
 
     @Test
-    @Ignore
+//    @Ignore
     public void testCowaOcean_2() {
         // this is 'test_cowa_ocean_2' from functional_tests.py
-        // TODO: fails - check matrix dimensions!
         final Sensor sensor = Sensor.OLCI;
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
         TcwvOceanLut oceanLut = TcwvIO.readOceanLookupTable(auxdataPath, Sensor.OLCI);
@@ -171,12 +169,13 @@ public class TcwvCowaForOnePixelTest {
         double priorWsp = 8.0;
         double priorTcwv = 25.0;
 
-        double[] rhoToaWin = new double[]{0.031, 0.031};  // bands 18, 21
+        double[] rhoToaWin = new double[]{0.031};  // band 18 only!!
         double[] rhoToaAbs = new double[]{0.021, 0.007};   // bands 19, 20
 
         TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf, aot865,
                                                           priorAot, priorAl0, priorAl1, priorT2m, priorMslPress,
                                                           priorWsp, priorTcwv);
+
         final TcwvResult result = algorithm.compute(sensor,
                                                     null, oceanLut,
                                                     null, tcwvFunctionOcean,
@@ -184,9 +183,9 @@ public class TcwvCowaForOnePixelTest {
                                                     input, false);
 
         System.out.println("OLCI OCEAN result.getTcwv() = " + result.getTcwv());
-        // Java: 19.54744
-        // Cowa Python: 19.35311
-        assertEquals(19.35311, result.getTcwv(), 0.2);
+        // Java: 22.13765
+        // Cowa Python: 22.18858
+        assertEquals(22.18858, result.getTcwv(), 0.1);
     }
 
 

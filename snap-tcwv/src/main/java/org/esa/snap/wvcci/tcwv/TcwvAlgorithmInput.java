@@ -5,7 +5,7 @@ package org.esa.snap.wvcci.tcwv;
  *
  * @author olafd
  */
-public class TcwvAlgorithmInput {
+class TcwvAlgorithmInput {
 
     private double[] rhoToaWin;
     private double[] rhoToaAbs;
@@ -41,59 +41,59 @@ public class TcwvAlgorithmInput {
         this.priorTcwv = priorTcwv;
     }
 
-    public double[] getRhoToaWin() {
+    double[] getRhoToaWin() {
         return rhoToaWin;
     }
 
-    public double[] getRhoToaAbs() {
+    double[] getRhoToaAbs() {
         return rhoToaAbs;
     }
 
-    public double getSza() {
+    double getSza() {
         return sza;
     }
 
-    public double getVza() {
+    double getVza() {
         return vza;
     }
 
-    public double getRelAzi() {
+    double getRelAzi() {
         return relAzi;
     }
 
-    public double getAmf() {
+    double getAmf() {
         return amf;
     }
 
-    public double getAot865() {
+    double getAot865() {
         return aot865;
     }
 
-    public double getPriorAot() {
+    double getPriorAot() {
         return priorAot;
     }
 
-    public double getPriorAl0() {
+    double getPriorAl0() {
         return priorAl0;
     }
 
-    public double getPriorAl1() {
+    double getPriorAl1() {
         return priorAl1;
     }
 
-    public double getPriorT2m() {
+    double getPriorT2m() {
         return priorT2m;
     }
 
-    public double getPriorMslPress() {
+    double getPriorMslPress() {
         return priorMslPress;
     }
 
-    public double getPriorWsp() {
+    double getPriorWsp() {
         return priorWsp;
     }
 
-    public double getPriorTcwv() {
+    double getPriorTcwv() {
         return priorTcwv;
     }
 }

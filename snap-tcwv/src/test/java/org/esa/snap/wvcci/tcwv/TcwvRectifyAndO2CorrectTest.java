@@ -70,8 +70,8 @@ public class TcwvRectifyAndO2CorrectTest {
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
 
         final double samf = 1.48959;  // sqrt(amf)
-        final double[] rho_wb = new double[]{0.031, 0.031};    // band 19, 20
-        final double[] rho_ab = new double[]{0.021, 0.007};  // bands 18, 21
+        final double[] rho_wb = new double[]{0.031};    // band 18
+        final double[] rho_ab = new double[]{0.021, 0.007};  // bands 19, 20
 //        final double[] rectCorrExt = new double[]{0.0, 1.0};
         final double[] rectCorrExt = null;
 
