@@ -155,7 +155,11 @@ public class TcwvAlgorithm {
             a = rectCorrExt[0];
             b = rectCorrExt[1];
         } else {
-            a = rectCorr[rhoWb.length + abIndex][0];
+            final int rectCorrIndex = rhoWb.length + abIndex;
+            if (rectCorrIndex >= rectCorr.length) {
+                System.out.println("rectCorrIndex = " + rectCorrIndex);
+            }
+            a = rectCorr[rectCorrIndex][0];
             b = rectCorr[rhoWb.length + abIndex][1];
         }
         double[] cwvl = sensor.getCwvlRectCorr();

@@ -64,12 +64,21 @@ public class TcwvConstants {
             "reflectance_15"  // 900 nm
     };
 
-    final static String[] MERIS_REFL_WIN_BAND_NAMES = new String[]{
+    final static String[] MERIS_LAND_REFL_WIN_BAND_NAMES = new String[]{
             "reflectance_13", // 864 nm
             "reflectance_14", // 884 nm
     };
 
-    final static String[] MERIS_REFL_ABS_BAND_NAMES = new String[]{
+    final static String[] MERIS_LAND_REFL_ABS_BAND_NAMES = new String[]{
+            "reflectance_15"  // 900 nm
+    };
+
+    final static String[] MERIS_OCEAN_REFL_WIN_BAND_NAMES = new String[]{
+            "reflectance_13", // 864 nm
+            "reflectance_14", // 884 nm
+    };
+
+    final static String[] MERIS_OCEAN_REFL_ABS_BAND_NAMES = new String[]{
             "reflectance_15"  // 900 nm
     };
 
@@ -77,7 +86,8 @@ public class TcwvConstants {
             "sun_zenith",
             "view_zenith",
             "sun_azimuth",
-            "view_azimuth"
+            "view_azimuth",
+            "latitude", "longitude"
     };
 
     final static double[][] MERIS_LAND_SE = {
@@ -122,12 +132,22 @@ public class TcwvConstants {
             "EV_1KM_RefSB_19"           // 940 nm
     };
 
-    final static String[] MODIS_REFL_WIN_BAND_NAMES = new String[]{
+    final static String[] MODIS_LAND_REFL_WIN_BAND_NAMES = new String[]{
             "EV_250_Aggr1km_RefSB_2",   // 859 nm
             "EV_500_Aggr1km_RefSB_5",   // 1240 nm    currently needed over land only!
     };
 
-    final static String[] MODIS_REFL_ABS_BAND_NAMES = new String[]{
+    final static String[] MODIS_LAND_REFL_ABS_BAND_NAMES = new String[]{
+            "EV_1KM_RefSB_17",          // 905 nm
+            "EV_1KM_RefSB_18",          // 936 nm
+            "EV_1KM_RefSB_19"           // 940 nm
+    };
+
+    final static String[] MODIS_OCEAN_REFL_WIN_BAND_NAMES = new String[]{
+            "EV_250_Aggr1km_RefSB_2",   // 859 nm
+    };
+
+    final static String[] MODIS_OCEAN_REFL_ABS_BAND_NAMES = new String[]{
             "EV_1KM_RefSB_17",          // 905 nm
             "EV_1KM_RefSB_18",          // 936 nm
             "EV_1KM_RefSB_19"           // 940 nm
@@ -162,7 +182,8 @@ public class TcwvConstants {
             "SolarZenith",
             "SensorZenith",
             "SolarAzimuth",
-            "SensorAzimuth"
+            "SensorAzimuth",
+             "latitude", "longitude"
     };
 
     final static double[][] MODIS_LAND_SE = {
@@ -208,24 +229,34 @@ public class TcwvConstants {
     };
 
     final static String[] OLCI_REFL_BAND_NAMES = new String[]{
-            "Oa17_reflectance",  // 864 nm
             "Oa18_reflectance",  // 884 nm
-            "Oa19_reflectance",   // 900 nm
-            "Oa19_reflectance"   // 900 nm
+            "Oa19_reflectance",  // 899 nm
+            "Oa20_reflectance",   // 939 nm
+            "Oa21_reflectance"   // 1015 nm
     };
 
-    final static String[] OLCI_REFL_WIN_BAND_NAMES = new String[]{
+    final static String[] OLCI_LAND_REFL_WIN_BAND_NAMES = new String[]{
             "Oa18_reflectance",  // 884.3246 nm
             "Oa21_reflectance",  // 1015.966 nm
     };
 
-    final static String[] OLCI_REFL_ABS_BAND_NAMES = new String[]{
+    final static String[] OLCI_LAND_REFL_ABS_BAND_NAMES = new String[]{
             "Oa19_reflectance",   // 899.316 nm
             "Oa20_reflectance"    // 939.02 nm
     };
 
+    final static String[] OLCI_OCEAN_REFL_WIN_BAND_NAMES = new String[]{
+            "Oa18_reflectance",  // 884.3246 nm
+    };
+
+    final static String[] OLCI_OCEAN_REFL_ABS_BAND_NAMES = new String[]{
+            "Oa19_reflectance",   // 899.316 nm
+            "Oa20_reflectance"    // 939.02 nm
+    };
+
+
     final static String[] OLCI_TPG_NAMES = new String[]{
-            "SZA", "OZA", "SAA", "OAA"
+            "SZA", "OZA", "SAA", "OAA", "TP_latitude", "TP_longitude"
     };
 
     final static double[][] OLCI_LAND_SE = {

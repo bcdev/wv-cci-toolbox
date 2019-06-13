@@ -188,5 +188,56 @@ public class TcwvCowaForOnePixelTest {
         assertEquals(22.18858, result.getTcwv(), 0.1);
     }
 
+    @Test
+    public void testOptimalEstimation_ocean_modis_terra() {
+        // taken from 1x1 pixel product subset_1x1_ocean_of_MOD021KM.A2011196.0930.061,
+        // comparison with TcwvOp called from SNAP desktop
+        final Sensor sensor = Sensor.MODIS_TERRA;
+        TcwvAlgorithm algorithm = new TcwvAlgorithm();
+        TcwvOceanLut oceanLut = TcwvIO.readOceanLookupTable(auxdataPath, Sensor.MODIS_TERRA);
+        TcwvFunction tcwvFunctionOcean = TcwvInterpolation.getForwardFunctionOcean(oceanLut);
+        JacobiFunction jacobiFunctionOcean = TcwvInterpolation.getJForwardFunctionOcean(oceanLut);
+
+        double sza = 50.97;
+        double saa = 34.2362;
+        double vza = 6.7142;
+        double vaa = 99.53059;
+        double relAzi = 180. - Math.abs(saa - vaa);
+        double amf = 1. / Math.cos(sza * MathUtils.DTOR) + 1. / Math.cos(vza * MathUtils.DTOR);
+
+        double[] rhoToaWin = new double[]{0.00949};  // RefSB_2
+        double[] rhoToaAbs = new double[]{0.00694, 0.0048, 0.00526};   //  RefSB_17, RefSB_18, RefSB_19
+        // todo: check with RP if this needs to be done:
+        rhoToaWin[0] *= Math.cos(sza*MathUtils.DTOR);
+        for (int i = 0; i < rhoToaAbs.length; i++) {
+            rhoToaAbs[i] *= Math.cos(sza*MathUtils.DTOR);
+        }
+
+        double aot865 = 0.1;
+        double priorAot = 0.15;
+        double priorAl0 = 0.13;
+        double priorAl1 = 0.13;
+        double priorT2m = 293.9698;
+
+        double priorMslPress = 1013.25;  // not needed for water
+        double priorWsp = 7.5;
+        double priorTcwv = 18.0153;
+        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf, aot865,
+                                                          priorAot, priorAl0, priorAl1, priorT2m, priorMslPress,
+                                                          priorWsp, priorTcwv);
+        final TcwvResult result = algorithm.compute(sensor,
+                                                    null, oceanLut,
+                                                    null, tcwvFunctionOcean,
+                                                    null, jacobiFunctionOcean,
+                                                    input, false);
+
+        System.out.println("MODIS TERRA OCEAN result.getTcwv() = " + result.getTcwv());
+        assertEquals(41.79, result.getTcwv(), 0.2);
+        // This test result: 41.986
+        // SNAP desktop result: 41.79 --> ok due to some truncations
+        // Python result: tbd
+        // todo: re-check later with updated LUTs etc
+    }
+
 
 }
