@@ -2,9 +2,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.esa.cci.wv</groupId>
+    <parent>
+        <groupId>org.esa.cci.wv</groupId>
+        <artifactId>wv-cci-parent</artifactId>
+        <version>1.1-SNAPSHOT</version>
+    </parent>
+
     <artifactId>snap-tcwv</artifactId>
-    <version>0.81-SNAPSHOT</version>
     <packaging>nbm</packaging>
 
     <name>WaterVapour-CCI for SNAP</name>
@@ -39,6 +43,11 @@
         <dependency>
             <groupId>org.esa.snap</groupId>
             <artifactId>ceres-glayer</artifactId>
+            <version>${snap.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.esa.snap</groupId>
+            <artifactId>snap-binning</artifactId>
             <version>${snap.version}</version>
         </dependency>
         <dependency>
