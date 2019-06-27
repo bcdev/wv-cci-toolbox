@@ -142,6 +142,9 @@ public class TcwvCowaForOnePixelTest {
         // Java: 13.7652
         // Cowa Python: 13.7686
         assertEquals(13.7686, result.getTcwv(), 0.01);
+
+        // uncertainty:
+        assertEquals(13.7686, result.getTcwvUncertainty(), 0.01);
     }
 
     @Test

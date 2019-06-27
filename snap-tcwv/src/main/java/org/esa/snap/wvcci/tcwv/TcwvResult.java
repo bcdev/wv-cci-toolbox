@@ -8,6 +8,7 @@ package org.esa.snap.wvcci.tcwv;
 public class TcwvResult {
 
     private double tcwv;
+    private double tcwvUncertainty;
     private double stateVector1;    // 'albedo 1'
     private double stateVector2;    // 'albedo 2' over land, wind speed over ocean
     // todo: add flags etc. if needed (to be discussed)
@@ -22,12 +23,27 @@ public class TcwvResult {
         this.stateVector2 = stateVector2;
     }
 
+    public TcwvResult(double tcwv, double tcwvUncertainty, double stateVector1, double stateVector2) {
+        this.tcwv = tcwv;
+        this.tcwvUncertainty = tcwvUncertainty;
+        this.stateVector1 = stateVector1;
+        this.stateVector2 = stateVector2;
+    }
+
     public void setTcwv(double tcwv) {
         this.tcwv = tcwv;
     }
 
     public double getTcwv() {
         return tcwv;
+    }
+
+    public double getTcwvUncertainty() {
+        return tcwvUncertainty;
+    }
+
+    public void setTcwvUncertainty(double tcwvUncertainty) {
+        this.tcwvUncertainty = tcwvUncertainty;
     }
 
     public double getStateVector1() {
