@@ -153,31 +153,6 @@ public class TcwvConstants {
             "EV_1KM_RefSB_19"           // 940 nm
     };
 
-
-//    final static String[] MODIS_LAND_REFL_BAND_NAMES = new String[]{
-//            "EV_250_Aggr1km_RefSB_2",   // 859 nm
-//            "EV_500_Aggr1km_RefSB_5",   // 1240 nm
-//            "EV_1KM_RefSB_17",          // 905 nm
-//            "EV_1KM_RefSB_18",          // 936 nm
-//            "EV_1KM_RefSB_19"           // 940 nm
-//    };
-//
-//    final static String[] MODIS_LAND_REFL_WIN_BAND_NAMES = new String[]{
-//            "EV_250_Aggr1km_RefSB_2",   // 859 nm
-//            "EV_500_Aggr1km_RefSB_5",   // 1240 nm
-//    };
-//
-//    final static String[] MODIS_OCEAN_REFL_BAND_NAMES = new String[]{
-//            "EV_250_Aggr1km_RefSB_2",   // 859 nm
-//            "EV_1KM_RefSB_17",          // 905 nm
-//            "EV_1KM_RefSB_18",          // 936 nm
-//            "EV_1KM_RefSB_19"           // 940 nm
-//    };
-//
-//    final static String[] MODIS_OCEAN_REFL_WIN_BAND_NAMES = new String[]{
-//            "EV_250_Aggr1km_RefSB_2",   // 859 nm
-//    };
-
     final static String[] MODIS_TPG_NAMES = new String[]{
             "SolarZenith",
             "SensorZenith",

@@ -345,8 +345,8 @@ public class TcwvOp extends Operator {
                         targetTiles.get(stateVector1Band).setSample(x, y, result.getStateVector1());
                         targetTiles.get(stateVector2Band).setSample(x, y, result.getStateVector2());
                     }
-                    // todo: uncertainty tbd. Set 3% for the moment.
-                    targetTiles.get(tcwvUnvertaintyBand).setSample(x, y, 0.03 * result.getTcwv());
+//                    targetTiles.get(tcwvUnvertaintyBand).setSample(x, y, 0.03 * result.getTcwv());   // 3%
+                    targetTiles.get(tcwvUnvertaintyBand).setSample(x, y, result.getTcwvUncertainty());
                 }
             }
         }

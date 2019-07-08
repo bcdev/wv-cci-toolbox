@@ -79,28 +79,15 @@ public class TcwvAlgorithm {
         xa[2] = input.getPriorAl1();
 
         final double[][] se = sensor.getLandSe();
+        // use per-pixel uncertainty of 3% for all sensors instead: todo: clarify with RP
+//        for (int i = 0; i < se.length; i++) {
+//            se[i][i] = 0.02*mes[i];
+//        }
         final double[][] sa = TcwvConstants.SA_LAND;
 
         OptimalEstimation oe = new OptimalEstimation(tcwvFunction, a, b, mes, par, jacobiFunction);
-//        OptimalEstimationResult result = oe.invert(InversionMethod.OE, a, se, sa, xa, OEOutputMode.BASIC, 3);
 
-        return getTcwvResult(a, xa, se, sa, oe);
-    }
-
-    private TcwvResult getTcwvResult(double[] a, double[] xa, double[][] se, double[][] sa, OptimalEstimation oe) {
-        // now includes uncertainty
-        OptimalEstimationResult result = oe.invert(InversionMethod.OE, a, se, sa, xa, OEOutputMode.FULL, 3);
-        final double resultTcwv = Math.pow(result.getXn()[0], 2.0);
-        double resultTcwvUncertainty = 0.0;
-        if (result.getSr() != null) {
-            resultTcwvUncertainty = result.getSr()[0][0];
-            final double relUncertainty = result.getSr()[0][0]/result.getXn()[0];
-            resultTcwvUncertainty = relUncertainty * resultTcwv;
-        }
-        final double resultAot1 = result.getXn()[1];
-        final double resultAot2 = result.getXn()[2];
-
-        return new TcwvResult(resultTcwv, resultTcwvUncertainty, resultAot1, resultAot2);
+        return getTcwvResult(a, xa, se, sa, oe, sensor, true);
     }
 
     private TcwvResult computeTcwvOcean(Sensor sensor, TcwvAlgorithmInput input, TcwvOceanLut oceanLut,
@@ -144,19 +131,15 @@ public class TcwvAlgorithm {
         xa[2] = input.getPriorWsp();
 
         final double[][] se = sensor.getOceanSe();
+        // use per-pixel uncertainty of 3% for all sensors instead todo: clarify with RP
+//        for (int i = 0; i < se.length; i++) {
+//            se[i][i] = 0.02*mes[i];
+//        }
         final double[][] sa = TcwvConstants.SA_OCEAN;
 
         OptimalEstimation oe = new OptimalEstimation(tcwvFunction, a, b, mes, par, jacobiFunction);
 
-//        OptimalEstimationResult result = oe.invert(InversionMethod.OE, a, se, sa, xa, OEOutputMode.BASIC, 3);
-//        final double resultTcwv = Math.pow(result.getXn()[0], 2.0);
-//        final double resultAot = result.getXn()[1];
-//        final double resultWsp = result.getXn()[2];
-//
-////        return new TcwvResult(resultTcwv);
-//        return new TcwvResult(resultTcwv, resultAot, resultWsp);
-
-        return getTcwvResult(a, xa, se, sa, oe);
+        return getTcwvResult(a, xa, se, sa, oe, sensor, false);
     }
 
     double rectifyAndO2Correct(Sensor sensor, double[] rhoWb, double[] rhoAb,
@@ -171,9 +154,9 @@ public class TcwvAlgorithm {
             b = rectCorrExt[1];
         } else {
             final int rectCorrIndex = rhoWb.length + abIndex;
-            if (rectCorrIndex >= rectCorr.length) {
-                System.out.println("rectCorrIndex = " + rectCorrIndex);
-            }
+//            if (rectCorrIndex >= rectCorr.length) {
+//                System.out.println("rectCorrIndex = " + rectCorrIndex);
+//            }
             a = rectCorr[rectCorrIndex][0];
             b = rectCorr[rhoWb.length + abIndex][1];
         }
@@ -194,5 +177,25 @@ public class TcwvAlgorithm {
         }
 
         return - (a + b * Math.log(rhoAb[abIndex] / ref) / samf);
+    }
+
+    private TcwvResult getTcwvResult(double[] a, double[] xa, double[][] se, double[][] sa,
+                                     OptimalEstimation oe, Sensor sensor, boolean isLand) {
+        // now includes uncertainty
+        OptimalEstimationResult result = oe.invert(InversionMethod.OE, a, se, sa, xa, OEOutputMode.FULL, 3);
+        final double resultTcwv = Math.pow(result.getXn()[0], 2.0);
+        double resultTcwvUncertainty = 0.0;
+        if (result.getSr() != null) {
+            resultTcwvUncertainty = result.getSr()[0][0];
+            if (sensor == Sensor.MERIS || sensor == Sensor.OLCI)  {
+                // todo:
+                final double relUncertainty = result.getSr()[0][0] / result.getXn()[0];
+                resultTcwvUncertainty = relUncertainty * resultTcwv;
+            }
+        }
+        final double resultAot1 = result.getXn()[1];
+        final double resultAot2 = result.getXn()[2];
+
+        return new TcwvResult(resultTcwv, resultTcwvUncertainty, resultAot1, resultAot2);
     }
 }

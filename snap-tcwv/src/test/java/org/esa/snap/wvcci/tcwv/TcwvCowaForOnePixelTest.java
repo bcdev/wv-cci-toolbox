@@ -58,6 +58,7 @@ public class TcwvCowaForOnePixelTest {
         // Java: 16.4272978
         // Cowa Python: 16.46472
         assertEquals(16.46472, result.getTcwv(), 0.05);
+        assertEquals(2.076, result.getTcwvUncertainty(), 0.01);
     }
 
     @Test
@@ -100,11 +101,12 @@ public class TcwvCowaForOnePixelTest {
         // Java: 19.54744
         // Cowa Python: 19.35311
         assertEquals(19.35311, result.getTcwv(), 0.2);
+        assertEquals(1.373, result.getTcwvUncertainty(), 0.001);
     }
 
     @Test
     public void testCowaLand_3() {
-        // this is 'test_cowa_land_1' from functional_tests.py
+        // this is 'test_cowa_land_3' from functional_tests.py
         final Sensor sensor = Sensor.OLCI;
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
         TcwvLandLut landLut = TcwvIO.readLandLookupTable(auxdataPath, Sensor.OLCI);
@@ -141,10 +143,10 @@ public class TcwvCowaForOnePixelTest {
         System.out.println("OLCI LAND result.getTcwv() = " + result.getTcwv());
         // Java: 13.7652
         // Cowa Python: 13.7686
-        assertEquals(13.7686, result.getTcwv(), 0.01);
-
+         assertEquals(13.7686, result.getTcwv(), 0.01);
+//        assertEquals(13.918, result.getTcwv(), 0.01);  // with refl uncertainty estimate of 2% instead of fix SE matrix
         // uncertainty:
-        assertEquals(13.7686, result.getTcwvUncertainty(), 0.01);
+        assertEquals(0.103, result.getTcwvUncertainty(), 0.001);
     }
 
     @Test
@@ -189,6 +191,7 @@ public class TcwvCowaForOnePixelTest {
         // Java: 22.13765
         // Cowa Python: 22.18858
         assertEquals(22.18858, result.getTcwv(), 0.1);
+        assertEquals(0.181, result.getTcwvUncertainty(), 0.001);
     }
 
     @Test
@@ -239,7 +242,8 @@ public class TcwvCowaForOnePixelTest {
         // This test result: 41.986
         // SNAP desktop result: 41.79 --> ok due to some truncations
         // Python result: tbd
-        // todo: re-check later with updated LUTs etc
+        // todo: re-check later with updated LUTs etc. We also need a test for MODIS land
+        assertEquals(6.829, result.getTcwvUncertainty(), 0.001);
     }
 
 
