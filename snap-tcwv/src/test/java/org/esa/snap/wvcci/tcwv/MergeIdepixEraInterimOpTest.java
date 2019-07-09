@@ -1,10 +1,11 @@
-package org.esa.snap.wvcci.tcwv.util;
+package org.esa.snap.wvcci.tcwv;
 
 import org.esa.snap.core.datamodel.Product;
 import org.esa.snap.core.datamodel.ProductData;
 import org.esa.snap.core.gpf.GPF;
 import org.esa.snap.core.gpf.OperatorSpi;
 import org.esa.snap.core.gpf.OperatorSpiRegistry;
+import org.esa.snap.wvcci.tcwv.MergeIdepixEraInterimOp;
 import org.esa.snap.wvcci.tcwv.Sensor;
 import org.junit.Test;
 

@@ -8,6 +8,7 @@ import org.esa.snap.core.gpf.annotations.OperatorMetadata;
 import org.esa.snap.core.gpf.annotations.SourceProduct;
 import org.esa.snap.core.gpf.pointop.*;
 import org.esa.snap.wvcci.tcwv.TcwvConstants;
+import org.esa.snap.wvcci.tcwv.util.TcwvUtils;
 
 /**
  * Operator for sensor merging of TCWV L3 products of 2 or 3 sensors.
@@ -109,12 +110,7 @@ public class L3MergeSensorsOp extends PixelOperator {
 
         for (Band b : targetProduct.getBands()) {
             final Band sourceBand = mergeInputProducts[0].getBand(b.getName());
-            b.setNoDataValue(sourceBand.getNoDataValue());
-            b.setNoDataValueUsed(sourceBand.isNoDataValueUsed());
-            b.setScalingFactor(sourceBand.getScalingFactor());
-            b.setScalingOffset(sourceBand.getScalingOffset());
-            b.setUnit(sourceBand.getUnit());
-            b.setDescription(sourceBand.getDescription());
+            TcwvUtils.setBandProperties(b, sourceBand);
         }
 
     }

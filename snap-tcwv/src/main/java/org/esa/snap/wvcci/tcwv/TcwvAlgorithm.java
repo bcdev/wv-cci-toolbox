@@ -113,7 +113,7 @@ public class TcwvAlgorithm {
                                                                            input.getRhoToaAbs(), null, i,
                                                                            Math.sqrt(input.getAmf()), false);
             } else {
-                // we have no tests for MODIS, leave as it is. TODO: clarify with RP if rectification is needed for MODIS
+                // we have no tests for MODIS, leave as it is.
                 mes[input.getRhoToaWin().length + i] =
                         -1.0 * Math.log(input.getRhoToaAbs()[i] / input.getRhoToaWin()[input.getRhoToaWin().length - 1]) /
                                 Math.sqrt(input.getAmf());
