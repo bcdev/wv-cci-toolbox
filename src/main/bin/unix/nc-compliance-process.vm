@@ -3,6 +3,8 @@ set -x
 set -e
 set -m
 
+### CURRENTLY NOT USED !! We use  nc-compliance-py-process.vm instead.
+
 nc_gz_infile=$1
 nc_infile=`basename ${nc_gz_infile} .gz`
 gunzip -c ${nc_gz_infile} > ./${nc_infile}

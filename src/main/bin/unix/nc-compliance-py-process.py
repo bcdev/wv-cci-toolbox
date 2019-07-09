@@ -11,6 +11,7 @@ import datetime
 import uuid
 import numpy as np
 import netCDF4
+import calendar
 
 from netCDF4 import Dataset
 
@@ -141,12 +142,13 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
     # if not present,set lat/lon variables:
     has_latlon = False
     for name, variable in src.variables.iteritems():
+        print ('src variable: ', name)
         if name == 'lat' or name == 'lon':
             has_latlon = True
 
     if not has_latlon:
         incr = 0.05 if res == '005' else 0.5
-        lat_arr = np.arange(-90.0, 90.0, incr) + incr/2.0
+        lat_arr = np.arange(90.0, -90.0, -incr) - incr/2.0
         lon_arr = np.arange(-180.0, 180.0, incr) + incr/2.0
         # set new lat/lon variables:
         lat = dst.createVariable('lat', 'f4', ('lat'), zlib=True)
@@ -176,15 +178,18 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
 
     # set variable data from src
     for variable in dst.variables:
-        print ('variable: ', variable)
+        print ('dst variable: ', variable)
 
         if has_timedim: 
             # SSMI original or other merged product after compliance step
             if variable == 'time':
                 dst.variables[variable][:] = src.variables[variable][:]
             elif variable == 'crs':
+                dst.variables[variable][:] = src.variables[variable][:]
+            elif variable.find("tcwv") != -1:
+                # tcwv* are still 2D (20190612)
                 dst.variables[variable][:,:] = src.variables[variable][:,:]
-            elif variable.find("tcwv") != -1 or variable == 'wvpa' or variable == 'numo' or variable == 'stdv':
+            elif variable == 'wvpa' or variable == 'numo' or variable == 'stdv':
                 dst.variables[variable][:,:,:] = src.variables[variable][:,:,:]
         else:
             # MERIS or MODIS non-merged
