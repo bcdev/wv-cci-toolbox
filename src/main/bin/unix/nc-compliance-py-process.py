@@ -21,8 +21,8 @@ def getNumDaysInMonth(year, month):
 ###########################################################
 
 
-if len(sys.argv) != 7:
-    print ('Usage:  python nc-compliance-py-process.py <nc_infile> <sensor> <year> <month> <day> <resolution>')
+if len(sys.argv) != 8:
+    print ('Usage:  python nc-compliance-py-process.py <nc_infile> <sensor> <year> <month> <day> <resolution> < product version>')
     sys.exit(-1)
 
 nc_infile = sys.argv[1]
@@ -31,6 +31,7 @@ year = sys.argv[3]
 month = sys.argv[4]
 day = sys.argv[5]
 res = sys.argv[6]
+version = sys.argv[7]
 
 print ('nc_infile: ', nc_infile)
 print ('sensor: ', sensor)
@@ -38,25 +39,36 @@ print ('year: ', year)
 print ('month: ', month)
 print ('day: ', day)
 print ('res: ', res)
+print ('version: ', version)
 
 nc_infile_root_index = nc_infile.find(year)
 
 if int(day) == 0:
     # monthly products:
     # --> final output name e.g.: WV_CCI_L3_tcwv_meris_05deg_2011-01.nc
-    datestring = year + '-' + month
+    # datestring = year + '-' + month
+    datestring = year + month
 
     # use days since 1970-01-01 as time value:
     timeval = (datetime.datetime(int(year),int(month),1)  - datetime.datetime(1970,1,1)).days
 else:
     # daily products:
     # --> final output name e.g.: WV_CCI_L3_tcwv_meris_05deg_2011-01-16.nc
-    datestring = year + '-' + month + '-' + day
+    #datestring = year + '-' + month + '-' + day
+    datestring = year + month + day
 
     # use days since 1970-01-01 as time value:
     timeval = (datetime.datetime(int(year),int(month),int(day))  - datetime.datetime(1970,1,1)).days
 
-nc_outfile = 'WV_CCI_L3_tcwv_' + sensor + '_' + res + 'deg_' + datestring + '.nc'    
+#nc_outfile = 'WV_CCI_L3_tcwv_' + sensor + '_' + res + 'deg_' + datestring + '.nc'    
+if sensor.find("-") != -1:
+    l3_suffix = 'S'
+else:
+    l3_suffix = 'C' 
+
+sensor = sensor.replace('ssmi', 'cmsaf_hoaps')
+
+nc_outfile = 'ESACCI-WATERVAPOUR-L3' + l3_suffix + '-TCWV-' + sensor + '-'  + datestring + '-' + res + 'deg-fv' + version + '.nc'
 
 print ('nc_outfile: ', nc_outfile)
 outpath = './' + nc_outfile
@@ -69,13 +81,14 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
     dst.setncattr('institution', 'Brockmann Consult GmbH; EUMETSAT/CMSAF')
     dst.setncattr('source', 'MERIS RR L1B 3rd Reprocessing; MODIS MOD021KM L1B; HOAPS-S version 4.0')
     dst.setncattr('history', 'python nc-compliance-py-process.py ' + nc_infile)
-    dst.setncattr('references', 'tbd')
+    dst.setncattr('references', 'WV_cci D2.2: ATBD Part 1 - MERIS-MODIS-OLCI L2 Products, Issue 1.1, 3 April 2019; WV_cci D4.2: CRDP Issue 1.0, 13 June 2019 ')
     dst.setncattr('tracking_id', str(uuid.uuid1()))
     dst.setncattr('Conventions', 'CF-1.7')
-    dst.setncattr('product_version', 'Dataset1')
-    dst.setncattr('summary', 'Water Vapour CCI TCWV Dataset1 (2010-2012)')
+    dst.setncattr('product_version', version)
+    dst.setncattr('format_version', 'CCI Data Standards v2.0')
+    dst.setncattr('summary', 'Water Vapour CCI TCWV Dataset 1 (2010-2012)')
     dst.setncattr('keywords', 'EARTH SCIENCE > ATMOSPHERE > ATMOSPHERIC WATER VAPOR > WATER VAPOR,EARTH SCIENCE > ATMOSPHERE > ATMOSPHERIC WATER VAPOR > PRECIPITABLE WATER')
-    dst.setncattr('id', nc_infile)
+    dst.setncattr('id', nc_outfile)
     dst.setncattr('naming-authority', 'brockmann-consult.de')
     dst.setncattr('keywords-vocabulary', 'GCMD Science Keywords, Version 8.1')
     dst.setncattr('cdm_data_type', 'grid')
@@ -137,6 +150,8 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
         time.setncattr('long_name', 'Product dataset time given as days since 1970-01-01')
         time.setncattr('standard_name', 'time')
         time.setncattr('units', 'days since 1970-01-01')
+        time.setncattr('month_lengths', np.array([31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31], 'i4'))
+        time.setncattr('leap_year', np.array(2000, 'i4'))
         time[:] = int(timeval)
 
     # if not present,set lat/lon variables:
@@ -155,17 +170,18 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
         lon = dst.createVariable('lon', 'f4', ('lon'), zlib=True)
         lat.setncattr('long_name', 'Latitude')
         lat.setncattr('standard_name', 'latitude')
-        lat.setncattr('units', 'degrees north')
+        lat.setncattr('units', 'degrees_north')
         lon.setncattr('long_name', 'Longitude')
         lon.setncattr('standard_name', 'longitude')
-        lon.setncattr('units', 'degrees east')
+        lon.setncattr('units', 'degrees_east')
 
         lat[:] = lat_arr
         lon[:] = lon_arr
 
     # set variable attributes from src
     for name, variable in src.variables.iteritems():
-        if name.find("_sigma") == -1 and (name.find("tcwv") != -1 or name == 'wvpa' or name == 'numo' or name == 'stdv' or name == 'crs' or name == 'time'):
+        if name.find("_sigma") == -1 and name.find("_sum") == -1 and name.find("_weights") == -1 and \
+           (name.find("tcwv") != -1 or name == 'wvpa' or name == 'numo' or name == 'stdv' or name == 'crs' or name == 'time'):
             print ('variable.dimensions: ', variable.dimensions)
             dstvar = dst.createVariable(name, variable.datatype, variable.dimensions, zlib=True)
             for attr in variable.ncattrs():
@@ -208,4 +224,26 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
         elif variable.find("stdv") != -1:
             dst.renameVariable(variable, variable.replace("stdv", "tcwv_uncertainty")) 
 
+    # make sure tcwv_* variables have a long_name, correct units, and tcwv as key variable has a bit more...:
+    for name, variable in dst.variables.iteritems():
+        if name == 'tcwv':
+            if int(day) == 0:
+                variable.setncattr('long_name', 'Mean of Total Column of Water (Level-3 global monthly aggregation) ')
+            else:
+                variable.setncattr('long_name', 'Mean of Total Column of Water (Level-3 global daily aggregation) ')
+            variable.setncattr('standard_name', 'atmosphere_water_vapor_content ')
+            variable.setncattr('ancillary_variables', 'tcwv_uncertainty tcwv_counts')
+            variable.setncattr('units', 'kg/m^2')
+            tcwv_arr = np.array(variable)
+            tcwv_min = np.nanmin(tcwv_arr)
+            tcwv_max = np.nanmax(tcwv_arr)
+            variable.setncattr('actual_range', np.array([tcwv_min, tcwv_max], 'f4'))
+            variable.setncattr('ancillary_variables', 'tcwv_uncertainty tcwv_counts')
+
+        if name == 'tcwv_uncertainty':
+            variable.setncattr('long_name', 'Uncertainty associated with the mean  of Total Column of Water ')
+            variable.setncattr('units', 'kg/m^2')
+
+        if name == 'tcwv_counts':
+            variable.setncattr('long_name', 'Number of samples of Total Column of Water ')
 

@@ -8,6 +8,7 @@ res="$parameters.get('res')"
 year="$parameters.get('year')"
 month="$parameters.get('month')"
 day="$parameters.get('day')"
+version="$parameters.get('version')"
 
 #[[
 
@@ -19,7 +20,7 @@ echo "nc_infile: ${nc_infile}"
 
 echo "`ls -la $(pwd)`"
 
-/usr/bin/python $(pwd)/process.py ./${nc_infile} ${year} ${month} ${day}
+/usr/bin/python $(pwd)/process.py ./${nc_infile} ${sensor} ${year} ${month} ${day} ${res} ${version}
 
 status=$?
 echo "Status: $status"
@@ -33,11 +34,33 @@ fi
 
 # dailyly nc_infile: e.g. L2_of_l3_tcwv_meris_005deg_2011-07-03.nc
 # monthly nc_infile: e.g. L2_of_l3_tcwv_meris_005deg_2011-07.nc
+#if [ "$day" == "0" ]
+#then
+#  nc_outfile="WV_CCI_L3_tcwv_${sensor}_${res}deg_${year}-${month}.nc"
+#else
+#  nc_outfile="WV_CCI_L3_tcwv_${sensor}_${res}deg_${year}-${month}-${day}.nc"
+#fi
+
+## filename following CCI standards:
 if [ "$day" == "0" ]
 then
-  nc_outfile="WV_CCI_L3_tcwv_${sensor}_${res}deg_${year}-${month}.nc"
+  # monthly products
+  if [[ $sensor == *"-"* ]]; then
+    # merged product
+    nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor}-${year}${month}-${res}deg-fv${version}.nc"
+  else
+    # single sensor
+    nc_outfile="ESACCI-WATERVAPOUR-L3C-TCWV-${sensor}-${year}${month}-${res}deg-fv${version}.nc"
+  fi
 else
-  nc_outfile="WV_CCI_L3_tcwv_${sensor}_${res}deg_${year}-${month}-${day}.nc"
+  # daily products
+  if [[ $sensor == *"-"* ]]; then
+    # merged product
+    nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor}-${year}${month}${day}.-${res}deg-fv${version}.nc"
+  else
+    # single sensor
+    nc_outfile="ESACCI-WATERVAPOUR-L3C-TCWV-${sensor}-${year}${month}${day}.-${res}deg-fv${version}.nc"
+  fi
 fi
 
 echo CALVALUS_OUTPUT_PRODUCT ${nc_outfile}
