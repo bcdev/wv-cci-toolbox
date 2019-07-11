@@ -60,7 +60,7 @@ else:
     # use days since 1970-01-01 as time value:
     timeval = (datetime.datetime(int(year),int(month),int(day))  - datetime.datetime(1970,1,1)).days
 
-#nc_outfile = 'WV_CCI_L3_tcwv_' + sensor + '_' + res + 'deg_' + datestring + '.nc'    
+#nc_outfile = 'WV_CCI_L3_tcwv_' + sensor + '_' + res + 'deg_' + datestring + '.nc'
 if sensor.find("-") != -1:
     l3_suffix = 'S'
 else:
@@ -135,7 +135,7 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
         dst.createDimension(name, len(dimension) if not dimension.isunlimited() else None)
 
     # check if source product contains 'time: dimension:
-    has_timedim = False    
+    has_timedim = False
     for name, dimension in src.dimensions.iteritems():
         print ('dimension: ', name)
         if name == 'time':
@@ -226,7 +226,13 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
 
     # make sure tcwv_* variables have a long_name, correct units, and tcwv as key variable has a bit more...:
     for name, variable in dst.variables.iteritems():
+        print('dst variable name: ', name)
+
         if name == 'tcwv':
+            if 'long_name' in variable.ncattrs():
+                variable.delncattr('long_name')
+            if 'units' in variable.ncattrs():
+                variable.delncattr('units')
             if int(day) == 0:
                 variable.setncattr('long_name', 'Mean of Total Column of Water (Level-3 global monthly aggregation) ')
             else:
@@ -237,13 +243,22 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
             tcwv_arr = np.array(variable)
             tcwv_min = np.nanmin(tcwv_arr)
             tcwv_max = np.nanmax(tcwv_arr)
+            tcwv_min_valid = 0.0
+            tcwv_max_valid = 70.0
             variable.setncattr('actual_range', np.array([tcwv_min, tcwv_max], 'f4'))
+            variable.setncattr('valid_range', np.array([tcwv_min_valid, tcwv_max_valid], 'f4'))
             variable.setncattr('ancillary_variables', 'tcwv_uncertainty tcwv_counts')
 
         if name == 'tcwv_uncertainty':
-            variable.setncattr('long_name', 'Uncertainty associated with the mean  of Total Column of Water ')
+            if 'long_name' in variable.ncattrs():
+                variable.delncattr('long_name')
+            if 'units' in variable.ncattrs():
+                variable.delncattr('units')
+            variable.setncattr('long_name', 'Uncertainty associated with the mean of Total Column of Water')
             variable.setncattr('units', 'kg/m^2')
 
         if name == 'tcwv_counts':
+            if 'long_name' in variable.ncattrs():
+                variable.delncattr('long_name')
             variable.setncattr('long_name', 'Number of samples of Total Column of Water ')
 
