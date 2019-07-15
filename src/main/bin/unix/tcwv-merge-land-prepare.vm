@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+# CURRENTLY NOT USED (OD, 20190712) !!
+
 sensor1="$parameters.get('sensor1')"
 sensor2="$parameters.get('sensor2')"
 

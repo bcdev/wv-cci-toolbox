@@ -34,15 +34,6 @@ then
     rm -f ./${nc_infile}
 fi
 
-# dailyly nc_infile: e.g. L2_of_l3_tcwv_meris_005deg_2011-07-03.nc
-# monthly nc_infile: e.g. L2_of_l3_tcwv_meris_005deg_2011-07.nc
-#if [ "$day" == "0" ]
-#then
-#  nc_outfile="WV_CCI_L3_tcwv_${sensor}_${res}deg_${year}-${month}.nc"
-#else
-#  nc_outfile="WV_CCI_L3_tcwv_${sensor}_${res}deg_${year}-${month}-${day}.nc"
-#fi
-
 ## filename following CCI standards:
 if [ "$day" == "0" ]
 then

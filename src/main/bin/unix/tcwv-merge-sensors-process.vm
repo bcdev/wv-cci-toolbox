@@ -7,13 +7,15 @@ set -m
 # A sensor can also represent a previous merge of sensors.
 # So overall we have as combinations: 
 #     meris-modis_terra
-#     meris-ssmi
-#     modis_terra-ssmi
-#     meris-modis_terra-ssmi
+#     meris-cmsaf_hoaps
+#     modis_terra-cmsaf_hoaps
+#     meris-modis_terra-cmsaf_hoaps
 
 # e.g.
-# from MERIS: /calvalus/projects/wvcci/tcwv/meris/l3-daily-final-nc/005/2011/07/07/WV_CCI_L3_tcwv_meris_005deg_2011-07-07.nc
-# copy to local pwd MODIS: /calvalus/projects/wvcci/tcwv/modis_terra/l3-daily-final-nc/005/2011/07/07/WV_CCI_L3_tcwv_modis_terra_005deg_2011-07-07.nc
+## from MERIS: /calvalus/projects/wvcci/tcwv/meris/l3-daily-final-nc/005/2011/07/07/WV_CCI_L3_tcwv_meris_005deg_2011-07-07.nc
+## copy to local pwd MODIS: /calvalus/projects/wvcci/tcwv/modis_terra/l3-daily-final-nc/005/2011/07/07/WV_CCI_L3_tcwv_modis_terra_005deg_2011-07-07.nc
+# from MERIS: /calvalus/projects/wvcci/tcwv/meris/l3-daily-final-nc/05/2011/07/07/ESACCI-WATERVAPOUR-L3C-TCWV-meris-20110707-05deg-fv1.0.nc
+# copy to local pwd MODIS: /calvalus/projects/wvcci/tcwv/modis_terra/l3-daily-final-nc/05/2011/07/07/ESACCI-WATERVAPOUR-L3C-TCWV-modis_terra-20110113-05deg-fv1.0.nc
 function copy_sensor2_from_hdfs {
   local sensor2Path=$1
   result=1
@@ -40,10 +42,17 @@ tcwvJarVersion="$parameters.get('tcwvJarVersion')"
 # --> Merge: /calvalus/projects/wvcci/tcwv/merge/l3-daily/005/2011/07/07/WV_CCI_L3_tcwv_meris-modis_terra_005deg_2011-07-07.nc
 
 sensor1_infile=$1
-sensor1_infile_name=`basename ${sensor1_infile} .nc`           # WV_CCI_L3_tcwv_meris_005deg_2011-07-07
-sensor2_infile_name=${sensor1_infile_name//$sensor1/$sensor2}  # WV-CCI_L3_tcwv_modis_terra_005deg_2011-07-07 , note: double slash to replace ALL substrings
+sensor1_infile_name=`basename ${sensor1_infile} .nc`           # ESACCI-WATERVAPOUR-L3C-TCWV-meris-20110707-05deg-fv1.0
+sensor2_infile_name=${sensor1_infile_name//$sensor1/$sensor2}  # ESACCI-WATERVAPOUR-L3C-TCWV-modis_terra-20110707-05deg-fv1.0 , note: double slash to replace ALL substrings
+if [[ $sensor2 =~ "-" ]]
+then
+   sensor2_infile_name=${sensor2_infile_name//-L3C-/-L3S-}
+else
+   sensor2_infile_name=${sensor2_infile_name//-L3S-/-L3C-}
+fi
+
 sensor2HdfsInputDir=${sensor1HdfsInputDir//$sensor1/$sensor2} 
-sensor2_infile=${sensor2HdfsInputDir}/${sensor2_infile_name}.nc # /calvalus/projects/wvcci/tcwv/modis_terra/l3-daily-final-nc/005/2011/07/07/WV_CCI_L3_tcwv_modis_terra_005deg_2011-07-07.nc 
+sensor2_infile=${sensor2HdfsInputDir}/${sensor2_infile_name}.nc # /calvalus/projects/wvcci/tcwv/modis_terra/l3-daily-final-nc/005/2011/07/07/ESACCI-WATERVAPOUR-L3-TCWV-modis_terra-20110707-05deg-fv1.0.nc 
 
 if ! copy_sensor2_from_hdfs ${sensor2_infile}; then
   echo "failed to get sensor2 input file"
@@ -51,14 +60,17 @@ if ! copy_sensor2_from_hdfs ${sensor2_infile}; then
 fi
 
 sensorsMerge="${sensor1}-${sensor2}"
-outfile=${sensor1_infile_name//$sensor1/$sensorsMerge}
+outfile_name=${sensor1_infile_name//-L3C-/-L3-}
+outfile_name=${outfile_name//-L3S-/-L3-}
+outfile=${outfile_name//$sensor1/$sensorsMerge}
 
 echo "`ls -la $(pwd)`"
 
 jars=snap-all.jar:snap-tcwv-${tcwvJarVersion}.jar
 class=org.esa.snap.core.gpf.main.GPT
-echo "/usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge -Ssensor1Product=${sensor1_infile} -Ssensor2Product=./${sensor2_infile_name}.nc -f NetCDF4-WVCCI -t ./${outfile}_merge.nc"
-/usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge -Ssensor1Product=${sensor1_infile} -Ssensor2Product=./${sensor2_infile_name}.nc -f NetCDF4-WVCCI -t ./${outfile}_merge.nc
+
+echo "/usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge -Ssensor1Product=${sensor1_infile} -Ssensor2Product=./${sensor2_infile_name}.nc -f NetCDF4-WVCCI -t ./${outfile}.nc"
+/usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge -Ssensor1Product=${sensor1_infile} -Ssensor2Product=./${sensor2_infile_name}.nc -f NetCDF4-WVCCI -t ./${outfile}.nc
 
 status=$?
 echo "Status: $status"
@@ -70,6 +82,6 @@ then
     rm -f ./${sensor2_infile_name}.nc
 fi
 
-echo CALVALUS_OUTPUT_PRODUCT ${outfile}_merge.nc
+echo CALVALUS_OUTPUT_PRODUCT ${outfile}.nc
 
 ]]#

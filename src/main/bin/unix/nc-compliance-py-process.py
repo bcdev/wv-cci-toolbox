@@ -66,8 +66,6 @@ if sensor.find("-") != -1:
 else:
     l3_suffix = 'C' 
 
-sensor = sensor.replace('ssmi', 'cmsaf_hoaps')
-
 nc_outfile = 'ESACCI-WATERVAPOUR-L3' + l3_suffix + '-TCWV-' + sensor + '-'  + datestring + '-' + res + 'deg-fv' + version + '.nc'
 
 print ('nc_outfile: ', nc_outfile)
@@ -160,7 +158,7 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
         print ('src variable: ', name)
         if name == 'lat' or name == 'lon':
             has_latlon = True
-
+            
     if not has_latlon:
         incr = 0.05 if res == '005' else 0.5
         lat_arr = np.arange(90.0, -90.0, -incr) - incr/2.0
@@ -177,7 +175,7 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
 
         lat[:] = lat_arr
         lon[:] = lon_arr
-
+        
     # set variable attributes from src
     for name, variable in src.variables.iteritems():
         if name.find("_sigma") == -1 and name.find("_sum") == -1 and name.find("_weights") == -1 and \
@@ -185,13 +183,15 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
             print ('variable.dimensions: ', variable.dimensions)
             dstvar = dst.createVariable(name, variable.datatype, variable.dimensions, zlib=True)
             for attr in variable.ncattrs():
+                if attr in dstvar.ncattrs():
+                    dstvar.delncattr(attr)
                 dstvar.setncattr(attr, getattr(variable, attr))
 
-            if name.find("counts") != -1:
-                dstvar.setncattr('units', ' ')
-
-    #print ('variable keys: ', dst.variables.keys())
-
+        if name.find("counts") != -1:
+            if 'units' in dstvar.ncattrs():
+                dstvar.delncattr('units')
+            dstvar.setncattr('units', ' ')
+    
     # set variable data from src
     for variable in dst.variables:
         print ('dst variable: ', variable)
@@ -223,42 +223,44 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
             dst.renameVariable(variable, variable.replace("numo", "tcwv_counts"))
         elif variable.find("stdv") != -1:
             dst.renameVariable(variable, variable.replace("stdv", "tcwv_uncertainty")) 
+            
+    # for VIS/NIR sensors, make sure tcwv_* variables have a long_name, correct units, and tcwv as key variable has a bit more...
+    # not necessary for SSMI as this will not be published
+    if sensor.startswith('meris') or sensor.startswith('modis') or sensor.startswith('olci'):
+        for name, variable in dst.variables.iteritems():
+            print('dst variable name: ', name)
 
-    # make sure tcwv_* variables have a long_name, correct units, and tcwv as key variable has a bit more...:
-    for name, variable in dst.variables.iteritems():
-        print('dst variable name: ', name)
+            if name == 'tcwv':
+                if 'long_name' in variable.ncattrs():
+                    variable.delncattr('long_name')
+                if 'units' in variable.ncattrs():
+                    variable.delncattr('units')
+                if int(day) == 0:
+                    variable.setncattr('long_name', 'Mean of Total Column of Water (Level-3 global monthly aggregation) ')
+                else:
+                    variable.setncattr('long_name', 'Mean of Total Column of Water (Level-3 global daily aggregation) ')
+                variable.setncattr('standard_name', 'atmosphere_water_vapor_content ')
+                variable.setncattr('ancillary_variables', 'tcwv_uncertainty tcwv_counts')
+                variable.setncattr('units', 'kg/m^2')
+                tcwv_arr = np.array(variable)
+                tcwv_min = np.nanmin(tcwv_arr)
+                tcwv_max = np.nanmax(tcwv_arr)
+                tcwv_min_valid = 0.0
+                tcwv_max_valid = 70.0
+                variable.setncattr('actual_range', np.array([tcwv_min, tcwv_max], 'f4'))
+                variable.setncattr('valid_range', np.array([tcwv_min_valid, tcwv_max_valid], 'f4'))
+                variable.setncattr('ancillary_variables', 'tcwv_uncertainty tcwv_counts')
 
-        if name == 'tcwv':
-            if 'long_name' in variable.ncattrs():
-                variable.delncattr('long_name')
-            if 'units' in variable.ncattrs():
-                variable.delncattr('units')
-            if int(day) == 0:
-                variable.setncattr('long_name', 'Mean of Total Column of Water (Level-3 global monthly aggregation) ')
-            else:
-                variable.setncattr('long_name', 'Mean of Total Column of Water (Level-3 global daily aggregation) ')
-            variable.setncattr('standard_name', 'atmosphere_water_vapor_content ')
-            variable.setncattr('ancillary_variables', 'tcwv_uncertainty tcwv_counts')
-            variable.setncattr('units', 'kg/m^2')
-            tcwv_arr = np.array(variable)
-            tcwv_min = np.nanmin(tcwv_arr)
-            tcwv_max = np.nanmax(tcwv_arr)
-            tcwv_min_valid = 0.0
-            tcwv_max_valid = 70.0
-            variable.setncattr('actual_range', np.array([tcwv_min, tcwv_max], 'f4'))
-            variable.setncattr('valid_range', np.array([tcwv_min_valid, tcwv_max_valid], 'f4'))
-            variable.setncattr('ancillary_variables', 'tcwv_uncertainty tcwv_counts')
+            if name == 'tcwv_uncertainty':
+                if 'long_name' in variable.ncattrs():
+                    variable.delncattr('long_name')
+                if 'units' in variable.ncattrs():
+                    variable.delncattr('units')
+                variable.setncattr('long_name', 'Uncertainty associated with the mean of Total Column of Water')
+                variable.setncattr('units', 'kg/m^2')
 
-        if name == 'tcwv_uncertainty':
-            if 'long_name' in variable.ncattrs():
-                variable.delncattr('long_name')
-            if 'units' in variable.ncattrs():
-                variable.delncattr('units')
-            variable.setncattr('long_name', 'Uncertainty associated with the mean of Total Column of Water')
-            variable.setncattr('units', 'kg/m^2')
-
-        if name == 'tcwv_counts':
-            if 'long_name' in variable.ncattrs():
-                variable.delncattr('long_name')
-            variable.setncattr('long_name', 'Number of samples of Total Column of Water ')
+            if name == 'tcwv_counts':
+                if 'long_name' in variable.ncattrs():
+                    variable.delncattr('long_name')
+                variable.setncattr('long_name', 'Number of samples of Total Column of Water ')
 
