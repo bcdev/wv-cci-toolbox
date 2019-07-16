@@ -60,6 +60,7 @@ public class ScripGeocodingWriterPlugIn implements ProductWriterPlugIn {
 
     @Override
     public EncodeQualification getEncodeQualification(Product product) {
-        return null;
+        // todo: check if we need to be more careful here
+        return new EncodeQualification(EncodeQualification.Preservation.FULL);
     }
 }
