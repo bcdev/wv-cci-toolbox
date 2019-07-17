@@ -117,7 +117,7 @@ public class L3UncertaintiesOp extends PixelOperator {
 
         for (Band b : targetProduct.getBands()) {
             final Band sourceBand = sourceProduct.getBand(b.getName());
-            TcwvUtils.setBandProperties(b, sourceBand);
+            TcwvUtils.copyBandProperties(b, sourceBand);
         }
     }
 

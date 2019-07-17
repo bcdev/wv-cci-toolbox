@@ -110,7 +110,7 @@ public class L3MergeSensorsOp extends PixelOperator {
 
         for (Band b : targetProduct.getBands()) {
             final Band sourceBand = mergeInputProducts[0].getBand(b.getName());
-            TcwvUtils.setBandProperties(b, sourceBand);
+            TcwvUtils.copyBandProperties(b, sourceBand);
         }
 
     }

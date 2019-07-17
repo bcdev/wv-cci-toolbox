@@ -14,6 +14,7 @@ import org.esa.snap.core.util.math.MathUtils;
 import org.esa.snap.wvcci.tcwv.dataio.mod35.ModisMod35L2Constants;
 import org.esa.snap.wvcci.tcwv.interpolation.JacobiFunction;
 import org.esa.snap.wvcci.tcwv.interpolation.TcwvInterpolation;
+import org.esa.snap.wvcci.tcwv.util.TcwvUtils;
 
 import java.awt.*;
 import java.io.IOException;
@@ -205,8 +206,11 @@ public class TcwvOp extends Operator {
 
         final Band tcwvBand = targetProduct.getBand(TcwvConstants.TCWV_TARGET_BAND_NAME);
         final Band tcwvUnvertaintyBand = targetProduct.getBand(TcwvConstants.TCWV_UNCERTAINTY_TARGET_BAND_NAME);
+        final Band tcwvQualityFlagBand = targetProduct.getBand(TcwvConstants.TCWV_QUALITY_FLAG_BAND_NAME);
         final Band stateVector1Band = targetProduct.getBand(TcwvConstants.TCWV_STATE_VECTOR1_BAND_NAME);
         final Band stateVector2Band = targetProduct.getBand(TcwvConstants.TCWV_STATE_VECTOR2_BAND_NAME);
+
+        final Tile tcwvQualityFlagTile = targetTiles.get(tcwvQualityFlagBand);
 
         Tile[] landWinBandTiles = new Tile[landWinBands.length];
         for (int i = 0; i < landWinBandTiles.length; i++) {
@@ -272,6 +276,7 @@ public class TcwvOp extends Operator {
                 if (!isValid || isCloud || (!processOcean && !isLand)) {
                     targetTiles.get(tcwvBand).setSample(x, y, Float.NaN);
                     targetTiles.get(tcwvUnvertaintyBand).setSample(x, y, Float.NaN);
+                    targetTiles.get(tcwvQualityFlagBand).setSample(x, y, TcwvConstants.TCWV_INVALID, true);
                     if (writeFullStateVector) {
                         targetTiles.get(stateVector1Band).setSample(x, y, Float.NaN);
                         targetTiles.get(stateVector2Band).setSample(x, y, Float.NaN);
@@ -345,8 +350,14 @@ public class TcwvOp extends Operator {
                         targetTiles.get(stateVector1Band).setSample(x, y, result.getStateVector1());
                         targetTiles.get(stateVector2Band).setSample(x, y, result.getStateVector2());
                     }
-//                    targetTiles.get(tcwvUnvertaintyBand).setSample(x, y, 0.03 * result.getTcwv());   // 3%
                     targetTiles.get(tcwvUnvertaintyBand).setSample(x, y, result.getTcwvUncertainty());
+
+                    final double relativeUncertainty = result.getTcwvUncertainty() / result.getTcwv();
+                    if (relativeUncertainty > 0.05) {
+                        targetTiles.get(tcwvQualityFlagBand).setSample(x, y, TcwvConstants.TCWV_AMBIGUOUS, true);
+                    } else {
+                        targetTiles.get(tcwvQualityFlagBand).setSample(x, y, TcwvConstants.TCWV_OK, true);
+                    }
                 }
             }
         }
@@ -432,7 +443,7 @@ public class TcwvOp extends Operator {
 //        final Band tcwvBand = targetProduct.addBand(TcwvConstants.TCWV_BAND_NAME, ProductData.TYPE_FLOAT32);
         final Band tcwvBand = targetProduct.addBand(TcwvConstants.TCWV_TARGET_BAND_NAME, ProductData.TYPE_UINT16);
         tcwvBand.setScalingFactor(0.01);
-        tcwvBand.setUnit("mm");
+        tcwvBand.setUnit("kg/m^2");
         tcwvBand.setDescription("Total Column of Water Vapour");
         tcwvBand.setNoDataValue(Float.NaN);
         tcwvBand.setNoDataValueUsed(true);
@@ -441,12 +452,20 @@ public class TcwvOp extends Operator {
 //                targetProduct.addBand(TcwvConstants.TCWV_UNCERTAINTY_BAND_NAME, ProductData.TYPE_FLOAT32);
                 targetProduct.addBand(TcwvConstants.TCWV_UNCERTAINTY_TARGET_BAND_NAME, ProductData.TYPE_UINT16);
         tcwvUncertaintyBand.setScalingFactor(0.01);
-        tcwvUncertaintyBand.setUnit("mm");
+        tcwvUncertaintyBand.setUnit("kg/m^2");
         tcwvUncertaintyBand.setDescription("Uncertainty of Total Column of Water Vapour");
         tcwvUncertaintyBand.setNoDataValue(Float.NaN);
         tcwvUncertaintyBand.setNoDataValueUsed(true);
 
+        final Band tcwvQualityFlagBand =
+                targetProduct.addBand(TcwvConstants.TCWV_QUALITY_FLAG_BAND_NAME, ProductData.TYPE_INT8);
+        FlagCoding flagCoding = TcwvUtils.createTcwvQualityFlagCoding(TcwvConstants.TCWV_QUALITY_FLAG_BAND_NAME);
+        tcwvQualityFlagBand.setSampleCoding(flagCoding);
+        targetProduct.getFlagCodingGroup().add(flagCoding);
+        TcwvUtils.setupTcwvQualityFlagBitmask(targetProduct);
+
         if (writeFullStateVector) {
+            // for debugging and result quality checks
             final Band stateVector1Band = targetProduct.addBand("stateVector_1", ProductData.TYPE_FLOAT32);
             stateVector1Band.setDescription("stateVector_1 (aot1 over land, aot over ocean)");
             stateVector1Band.setNoDataValue(Float.NaN);

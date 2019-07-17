@@ -9,7 +9,9 @@ import org.esa.snap.wvcci.tcwv.dataio.mod35.ModisMod35L2Constants;
  */
 public class TcwvConstants {
 
-    public static final String PIXEL_CLASSIF_BAND_NAME = "pixel_classif_flags";
+    static final String PIXEL_CLASSIF_BAND_NAME = "pixel_classif_flags";
+    public static final String TCWV_QUALITY_FLAG_BAND_NAME = "tcwv_quality_flags";
+
     public static final String TCWV_TARGET_BAND_NAME = "tcwv";
     public static final String TCWV_MEAN_BAND_NAME = "tcwv_mean";
     public static final String TCWV_SSMI_MEAN_BAND_NAME = "wvpa";
@@ -38,6 +40,15 @@ public class TcwvConstants {
     static int IDEPIX_CLOUD_SURE_BIT = 3;
     static int IDEPIX_CLOUD_BUFFER_BIT = 4;
     static int IDEPIX_LAND_BIT = 10;
+
+    public static final int TCWV_INVALID = 0;
+    public static final int TCWV_AMBIGUOUS = 1;
+    public static final int TCWV_OK = 2;
+
+    public static final String TCWV_INVALID_DESCR_TEXT = "No valid TCWV was retrieved for this pixel";
+    public static final String TCWV_AMBIGUOUS_DESCR_TEXT = "TCWV was retrieved for this pixel, but may be doubtful";
+    // todo: define 'ambiguous' with the group. E.g., set if uncertainty is high?
+    public static final String TCWV_OK_DESCR_TEXT = "TCWV was successfully retrieved for this pixel";
 
     static final String[] MOD35_BAND_NAMES = {
             ModisMod35L2Constants.CLOUD_MASK_BYTE_TARGET_BAND_NAME +  "1",
