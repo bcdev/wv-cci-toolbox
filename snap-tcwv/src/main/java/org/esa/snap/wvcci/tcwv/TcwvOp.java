@@ -352,9 +352,10 @@ public class TcwvOp extends Operator {
                     }
                     targetTiles.get(tcwvUnvertaintyBand).setSample(x, y, result.getTcwvUncertainty());
 
-                    final double relativeUncertainty = result.getTcwvUncertainty() / result.getTcwv();
-                    if (relativeUncertainty > 0.05) {
-                        targetTiles.get(tcwvQualityFlagBand).setSample(x, y, TcwvConstants.TCWV_AMBIGUOUS, true);
+//                    final double relativeUncertainty = result.getTcwvUncertainty() / result.getTcwv();
+//                    if (relativeUncertainty > 0.05) {
+                    if (result.getTcwvUncertainty() > 5.0) {   // todo: discuss
+                        targetTiles.get(tcwvQualityFlagBand).setSample(x, y, TcwvConstants.TCWV_UNCERTAIN, true);
                     } else {
                         targetTiles.get(tcwvQualityFlagBand).setSample(x, y, TcwvConstants.TCWV_OK, true);
                     }
@@ -451,7 +452,7 @@ public class TcwvOp extends Operator {
         final Band tcwvUncertaintyBand =
 //                targetProduct.addBand(TcwvConstants.TCWV_UNCERTAINTY_BAND_NAME, ProductData.TYPE_FLOAT32);
                 targetProduct.addBand(TcwvConstants.TCWV_UNCERTAINTY_TARGET_BAND_NAME, ProductData.TYPE_UINT16);
-        tcwvUncertaintyBand.setScalingFactor(0.01);
+        tcwvUncertaintyBand.setScalingFactor(0.001);
         tcwvUncertaintyBand.setUnit("kg/m^2");
         tcwvUncertaintyBand.setDescription("Uncertainty of Total Column of Water Vapour");
         tcwvUncertaintyBand.setNoDataValue(Float.NaN);
@@ -492,7 +493,8 @@ public class TcwvOp extends Operator {
             targetProduct.getFlagCodingGroup().get(TcwvConstants.PIXEL_CLASSIF_BAND_NAME).
                     setName("IDEPIX_" + TcwvConstants.PIXEL_CLASSIF_BAND_NAME);
         } else {
-            ProductUtils.copyFlagCodings(sourceProduct, targetProduct);
+            ProductUtils.copyFlagCoding(sourceProduct.getFlagCodingGroup().get(TcwvConstants.PIXEL_CLASSIF_BAND_NAME),
+                                        targetProduct);
             ProductUtils.copyMasks(sourceProduct, targetProduct);
         }
 

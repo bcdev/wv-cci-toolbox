@@ -45,8 +45,8 @@ public class TcwvUtils {
 
         flagCoding.addFlag("TCWV_INVALID", BitSetter.setFlag(0, TcwvConstants.TCWV_INVALID),
                            TcwvConstants.TCWV_INVALID_DESCR_TEXT);
-        flagCoding.addFlag("TCWV_AMBIGUOUS", BitSetter.setFlag(0, TcwvConstants.TCWV_AMBIGUOUS),
-                           TcwvConstants.TCWV_AMBIGUOUS_DESCR_TEXT);
+        flagCoding.addFlag("TCWV_UNCERTAIN", BitSetter.setFlag(0, TcwvConstants.TCWV_UNCERTAIN),
+                           TcwvConstants.TCWV_UNCERTAIN_DESCR_TEXT);
         flagCoding.addFlag("TCWV_OK", BitSetter.setFlag(0, TcwvConstants.TCWV_OK),
                            TcwvConstants.TCWV_OK_DESCR_TEXT);
 
@@ -75,8 +75,8 @@ public class TcwvUtils {
                                          Color.RED, 0.5f);
         tcwvProduct.getMaskGroup().add(index++, mask);
 
-        mask = Mask.BandMathsType.create("TCWV_AMBIGUOUS", TcwvConstants.TCWV_AMBIGUOUS_DESCR_TEXT, w, h,
-                                         flagBandName + ".TCWV_AMBIGUOUS",
+        mask = Mask.BandMathsType.create("TCWV_UNCERTAIN", TcwvConstants.TCWV_UNCERTAIN_DESCR_TEXT, w, h,
+                                         flagBandName + ".TCWV_UNCERTAIN",
                                          Color.YELLOW, 0.5f);
         tcwvProduct.getMaskGroup().add(index++, mask);
 

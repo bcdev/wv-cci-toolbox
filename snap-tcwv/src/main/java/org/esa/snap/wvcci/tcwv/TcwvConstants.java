@@ -42,12 +42,12 @@ public class TcwvConstants {
     static int IDEPIX_LAND_BIT = 10;
 
     public static final int TCWV_INVALID = 0;
-    public static final int TCWV_AMBIGUOUS = 1;
+    public static final int TCWV_UNCERTAIN = 1;
     public static final int TCWV_OK = 2;
 
     public static final String TCWV_INVALID_DESCR_TEXT = "No valid TCWV was retrieved for this pixel";
-    public static final String TCWV_AMBIGUOUS_DESCR_TEXT = "TCWV was retrieved for this pixel, but may be doubtful";
-    // todo: define 'ambiguous' with the group. E.g., set if uncertainty is high?
+    public static final String TCWV_UNCERTAIN_DESCR_TEXT = "Retrieved TCWV has rather high uncertainty (> 5 kg/m^2)";
+    // todo: define 'high uncertainty' with the group.
     public static final String TCWV_OK_DESCR_TEXT = "TCWV was successfully retrieved for this pixel";
 
     static final String[] MOD35_BAND_NAMES = {
@@ -101,17 +101,35 @@ public class TcwvConstants {
             "latitude", "longitude"
     };
 
+    // Introduce reasonable input reflectance uncertainty:
+    // MERIS: radiometric accuracy < 4% 
+    // https://earth.esa.int/handbooks/meris/CNTR2-6-2.html
+    // 4% of 0.25 for bands 13, 14; 4% of 0.125
+    // Based on rough estimates from histograms in a land subset!
+//    final static double[][] MERIS_LAND_SE = {
+//            {0.0001, 0.0, 0.0},
+//            {0.0, 0.0001, 0.0},
+//            {0.0, 0.0, 0.001}
+//    };
     final static double[][] MERIS_LAND_SE = {
-            {0.0001, 0.0, 0.0},
-            {0.0, 0.0001, 0.0},
-            {0.0, 0.0, 0.001}
+            {0.001, 0.0, 0.0},
+            {0.0, 0.001, 0.0},
+            {0.0, 0.0, 0.0005}
     };
 
+//    final static double[][] MERIS_OCEAN_SE = {
+//            {0.0001, 0.0, 0.0},
+//            {0.0, 0.0001, 0.0},
+//            {0.0, 0.0, 0.001}
+//    };
+    // 4% of 0.1 for bands 13, 14; 4% of 0.05
+    // Based on rough estimates from histograms in an ocean subset!
     final static double[][] MERIS_OCEAN_SE = {
-            {0.0001, 0.0, 0.0},
-            {0.0, 0.0001, 0.0},
-            {0.0, 0.0, 0.001}
+            {0.004, 0.0, 0.0},
+            {0.0, 0.004, 0.0},
+            {0.0, 0.0, 0.002}
     };
+
 
     // 'cor' from land_core_meris_calib_arm.nc4, bands 13, 14, 15
     final static double[][] MERIS_LAND_RECT_CORR = {
@@ -172,19 +190,36 @@ public class TcwvConstants {
              "latitude", "longitude"
     };
 
+//    final static double[][] MODIS_LAND_SE = {
+//            {0.0001, 0.0, 0.0, 0.0, 0.0},
+//            {0.0, 0.0001, 0.0, 0.0, 0.0},
+//            {0.0, 0.0, 0.001, 0.0, 0.0},
+//            {0.0, 0.0, 0.0, 0.001, 0.0},
+//            {0.0, 0.0, 0.0, 0.0, 0.001}
+//    };
+    // RSS total < 3% (https://modis.gsfc.nasa.gov/data/atbd/atbd_mod01.pdf)
+    // 3% of 0.3, 0.1, 0.15, 0.4, 0.5
+    // todo: we need ~1 more order of magnitude in resulting TCWV uncertainty
     final static double[][] MODIS_LAND_SE = {
-            {0.0001, 0.0, 0.0, 0.0, 0.0},
-            {0.0, 0.0001, 0.0, 0.0, 0.0},
-            {0.0, 0.0, 0.001, 0.0, 0.0},
-            {0.0, 0.0, 0.0, 0.001, 0.0},
-            {0.0, 0.0, 0.0, 0.0, 0.001}
+            {0.009, 0.0, 0.0, 0.0, 0.0},
+            {0.0, 0.0003, 0.0, 0.0, 0.0},
+            {0.0, 0.0, 0.0045, 0.0, 0.0},
+            {0.0, 0.0, 0.0, 0.012, 0.0},
+            {0.0, 0.0, 0.0, 0.0, 0.015}
     };
 
+//    final static double[][] MODIS_OCEAN_SE = {
+//            {0.0001, 0.0, 0.0, 0.0},
+//            {0.0, 0.001, 0.0, 0.0},
+//            {0.0, 0.0, 0.001, 0.0},
+//            {0.0, 0.0, 0.0, 0.001}
+//    };
+    // 3% of 0.05, 0.05, 0.05, 0.05
     final static double[][] MODIS_OCEAN_SE = {
-            {0.0001, 0.0, 0.0, 0.0},
-            {0.0, 0.001, 0.0, 0.0},
-            {0.0, 0.0, 0.001, 0.0},
-            {0.0, 0.0, 0.0, 0.001}
+            {0.0015, 0.0, 0.0, 0.0},
+            {0.0, 0.0015, 0.0, 0.0},
+            {0.0, 0.0, 0.0015, 0.0},
+            {0.0, 0.0, 0.0, 0.0015}
     };
 
     // 'cor' from land_core_modis_terra_calib_arm.nc4, bands 2, 5, 17, 18, 19 in this sequence!
@@ -245,17 +280,38 @@ public class TcwvConstants {
             "SZA", "OZA", "SAA", "OAA", "TP_latitude", "TP_longitude"
     };
 
+//    final static double[][] OLCI_LAND_SE = {
+//            {0.0001, 0.0, 0.0, 0.0},
+//            {0.0, 0.0001, 0.0, 0.0},
+//            {0.0, 0.0, 0.001, 0.0},
+//            {0.0, 0.0, 0.0, 0.001}
+//    };
+//
+//    final static double[][] OLCI_OCEAN_SE = {
+//            {0.0001, 0.0, 0.0},
+//            {0.0, 0.0001, 0.0},
+//            {0.0, 0.0, 0.001}
+//    };
+
+    // Introduce reasonable input reflectance uncertainty:
+    // see https://sentinel.esa.int/web/sentinel/technical-guides/sentinel-3-olci/olci-instrument/specifications
+    // 2% of 0.5 for band 18, 5% of 0.5 for bands 19-21 --> gives ~10% TCWV L2 uncertainty
+    // Based on rough estimates from histograms in an ocean subset!
     final static double[][] OLCI_LAND_SE = {
-            {0.0001, 0.0, 0.0, 0.0},
-            {0.0, 0.0001, 0.0, 0.0},
-            {0.0, 0.0, 0.001, 0.0},
-            {0.0, 0.0, 0.0, 0.001}
+            {0.01, 0.0, 0.0, 0.0},
+            {0.0, 0.025, 0.0, 0.0},
+            {0.0, 0.0, 0.025, 0.0},
+            {0.0, 0.0, 0.0, 0.025}
     };
 
+    // Introduce reasonable input reflectance uncertainty:
+    // see https://sentinel.esa.int/web/sentinel/technical-guides/sentinel-3-olci/olci-instrument/specifications
+    // 2% of 0.01 for band 18, 5% of 0.01 for bands 19-20 --> gives ~10% TCWV L2 uncertainty
+    // Based on rough estimates from histograms in an ocean subset!
     final static double[][] OLCI_OCEAN_SE = {
-            {0.0001, 0.0, 0.0},
-            {0.0, 0.0001, 0.0},
-            {0.0, 0.0, 0.001}
+            {0.0002, 0.0, 0.0},
+            {0.0, 0.0005, 0.0},
+            {0.0, 0.0, 0.0005}
     };
 
     // 'cor' from land_core_olci_calib_arm.nc4, bands 18, 21, 19, 20 in this sequence!
