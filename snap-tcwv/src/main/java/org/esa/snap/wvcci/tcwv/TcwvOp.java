@@ -65,7 +65,7 @@ public class TcwvOp extends Operator {
     private boolean processOcean;
 
     @Parameter(defaultValue = "false",
-            description = "Write full state vector, not just TCWV (debug).")
+            description = "Write full state vector, not just TCWV (for debugging purpose).")
     private boolean writeFullStateVector;
 
 

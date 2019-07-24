@@ -21,6 +21,16 @@ public class TcwvConstants {
     public static final String TCWV_COUNTS_TARGET_BAND_NAME = "tcwv_counts";
     public static final String TCWV_SSMI_COUNTS_BAND_NAME = "numo";
 
+    public static final int TCWV_OK = 0;
+    public static final int TCWV_UNCERTAIN = 1;
+    public static final int TCWV_INVALID = 2;
+
+    public static final String TCWV_OK_DESCR_TEXT = "TCWV was successfully retrieved for this pixel";
+    public static final String TCWV_UNCERTAIN_DESCR_TEXT = "TCWV was successfully retrieved, but has rather high uncertainty (> 5 kg/m^2)";
+    // todo: define 'high uncertainty' with the group.
+    public static final String TCWV_INVALID_DESCR_TEXT = "No valid TCWV was retrieved for this pixel";
+
+
     static final String TCWV_STATE_VECTOR1_BAND_NAME = "stateVector_1";
     static final String TCWV_STATE_VECTOR2_BAND_NAME = "stateVector_2";
 
@@ -35,20 +45,11 @@ public class TcwvConstants {
     static final double TCWV_INIT_VALUE = 30.0;    // TCWV initial value for algorithm if we have no prior
     static final double WS_INIT_VALUE = 7.5;       // Windspeed initial value for algorithm if we have no prior
 
-    static int IDEPIX_INVALID_BIT = 0;
-    static int IDEPIX_CLOUD_AMBIGUOUS_BIT = 2;
-    static int IDEPIX_CLOUD_SURE_BIT = 3;
-    static int IDEPIX_CLOUD_BUFFER_BIT = 4;
-    static int IDEPIX_LAND_BIT = 10;
-
-    public static final int TCWV_INVALID = 0;
-    public static final int TCWV_UNCERTAIN = 1;
-    public static final int TCWV_OK = 2;
-
-    public static final String TCWV_INVALID_DESCR_TEXT = "No valid TCWV was retrieved for this pixel";
-    public static final String TCWV_UNCERTAIN_DESCR_TEXT = "Retrieved TCWV has rather high uncertainty (> 5 kg/m^2)";
-    // todo: define 'high uncertainty' with the group.
-    public static final String TCWV_OK_DESCR_TEXT = "TCWV was successfully retrieved for this pixel";
+    static final int IDEPIX_INVALID_BIT = 0;
+    static final int IDEPIX_CLOUD_AMBIGUOUS_BIT = 2;
+    static final int IDEPIX_CLOUD_SURE_BIT = 3;
+    static final int IDEPIX_CLOUD_BUFFER_BIT = 4;
+    static final int IDEPIX_LAND_BIT = 10;
 
     static final String[] MOD35_BAND_NAMES = {
             ModisMod35L2Constants.CLOUD_MASK_BYTE_TARGET_BAND_NAME +  "1",
@@ -122,11 +123,11 @@ public class TcwvConstants {
 //            {0.0, 0.0001, 0.0},
 //            {0.0, 0.0, 0.001}
 //    };
-    // 4% of 0.1 for bands 13, 14; 4% of 0.05
+    // 4% of 0.05 for bands 13, 14; 4% of 0.05 for band 15
     // Based on rough estimates from histograms in an ocean subset!
     final static double[][] MERIS_OCEAN_SE = {
-            {0.004, 0.0, 0.0},
-            {0.0, 0.004, 0.0},
+            {0.002, 0.0, 0.0},
+            {0.0, 0.002, 0.0},
             {0.0, 0.0, 0.002}
     };
 
@@ -190,31 +191,20 @@ public class TcwvConstants {
              "latitude", "longitude"
     };
 
-//    final static double[][] MODIS_LAND_SE = {
-//            {0.0001, 0.0, 0.0, 0.0, 0.0},
-//            {0.0, 0.0001, 0.0, 0.0, 0.0},
-//            {0.0, 0.0, 0.001, 0.0, 0.0},
-//            {0.0, 0.0, 0.0, 0.001, 0.0},
-//            {0.0, 0.0, 0.0, 0.0, 0.001}
-//    };
     // RSS total < 3% (https://modis.gsfc.nasa.gov/data/atbd/atbd_mod01.pdf)
-    // 3% of 0.3, 0.1, 0.15, 0.4, 0.5
-    // todo: we need ~1 more order of magnitude in resulting TCWV uncertainty
+    // 3% of 0.5, 0.5, 0.5, 0.5, 0.6
+    // --> gives ~1% TCWV L2 uncertainty
     final static double[][] MODIS_LAND_SE = {
-            {0.009, 0.0, 0.0, 0.0, 0.0},
-            {0.0, 0.0003, 0.0, 0.0, 0.0},
-            {0.0, 0.0, 0.0045, 0.0, 0.0},
-            {0.0, 0.0, 0.0, 0.012, 0.0},
-            {0.0, 0.0, 0.0, 0.0, 0.015}
+            {0.015, 0.0, 0.0, 0.0, 0.0},
+            {0.0, 0.015, 0.0, 0.0, 0.0},
+            {0.0, 0.0, 0.015, 0.0, 0.0},
+            {0.0, 0.0, 0.0, 0.015, 0.0},
+            {0.0, 0.0, 0.0, 0.0, 0.018}
     };
 
-//    final static double[][] MODIS_OCEAN_SE = {
-//            {0.0001, 0.0, 0.0, 0.0},
-//            {0.0, 0.001, 0.0, 0.0},
-//            {0.0, 0.0, 0.001, 0.0},
-//            {0.0, 0.0, 0.0, 0.001}
-//    };
+    // RSS total < 3% (https://modis.gsfc.nasa.gov/data/atbd/atbd_mod01.pdf)
     // 3% of 0.05, 0.05, 0.05, 0.05
+    // --> gives ~1% TCWV L2 uncertainty
     final static double[][] MODIS_OCEAN_SE = {
             {0.0015, 0.0, 0.0, 0.0},
             {0.0, 0.0015, 0.0, 0.0},
@@ -295,22 +285,22 @@ public class TcwvConstants {
 
     // Introduce reasonable input reflectance uncertainty:
     // see https://sentinel.esa.int/web/sentinel/technical-guides/sentinel-3-olci/olci-instrument/specifications
-    // 2% of 0.5 for band 18, 5% of 0.5 for bands 19-21 --> gives ~10% TCWV L2 uncertainty
+    // 2% of 0.5 for band 18, 2% of 0.4 for band 19, 5% of 0.1 for band 20, 5% of 0.5 for band 21 --> gives ~5% TCWV L2 uncertainty ( < 2 kg/m^2)
     // Based on rough estimates from histograms in an ocean subset!
     final static double[][] OLCI_LAND_SE = {
             {0.01, 0.0, 0.0, 0.0},
-            {0.0, 0.025, 0.0, 0.0},
-            {0.0, 0.0, 0.025, 0.0},
+            {0.0, 0.008, 0.0, 0.0},
+            {0.0, 0.0, 0.005, 0.0},
             {0.0, 0.0, 0.0, 0.025}
     };
 
     // Introduce reasonable input reflectance uncertainty:
     // see https://sentinel.esa.int/web/sentinel/technical-guides/sentinel-3-olci/olci-instrument/specifications
-    // 2% of 0.01 for band 18, 5% of 0.01 for bands 19-20 --> gives ~10% TCWV L2 uncertainty
+    // 2% of 0.02 for band 18, 2% of 0.01 for band 19, 5% of 0.01 for band 20 --> gives ~5% TCWV L2 uncertainty
     // Based on rough estimates from histograms in an ocean subset!
     final static double[][] OLCI_OCEAN_SE = {
-            {0.0002, 0.0, 0.0},
-            {0.0, 0.0005, 0.0},
+            {0.0004, 0.0, 0.0},
+            {0.0, 0.0001, 0.0},
             {0.0, 0.0, 0.0005}
     };
 

@@ -43,12 +43,12 @@ public class TcwvUtils {
 
         FlagCoding flagCoding = new FlagCoding(flagId);
 
-        flagCoding.addFlag("TCWV_INVALID", BitSetter.setFlag(0, TcwvConstants.TCWV_INVALID),
-                           TcwvConstants.TCWV_INVALID_DESCR_TEXT);
-        flagCoding.addFlag("TCWV_UNCERTAIN", BitSetter.setFlag(0, TcwvConstants.TCWV_UNCERTAIN),
-                           TcwvConstants.TCWV_UNCERTAIN_DESCR_TEXT);
         flagCoding.addFlag("TCWV_OK", BitSetter.setFlag(0, TcwvConstants.TCWV_OK),
                            TcwvConstants.TCWV_OK_DESCR_TEXT);
+        flagCoding.addFlag("TCWV_UNCERTAIN", BitSetter.setFlag(0, TcwvConstants.TCWV_UNCERTAIN),
+                           TcwvConstants.TCWV_UNCERTAIN_DESCR_TEXT);
+        flagCoding.addFlag("TCWV_INVALID", BitSetter.setFlag(0, TcwvConstants.TCWV_INVALID),
+                           TcwvConstants.TCWV_INVALID_DESCR_TEXT);
 
         // todo: discuss these and maybe more flags with group
         return flagCoding;
@@ -70,9 +70,9 @@ public class TcwvUtils {
         Random r = new Random(1234567);
 
         final String flagBandName = TcwvConstants.TCWV_QUALITY_FLAG_BAND_NAME;
-        mask = Mask.BandMathsType.create("TCWV_INVALID", TcwvConstants.TCWV_INVALID_DESCR_TEXT, w, h,
-                                         flagBandName + ".TCWV_INVALID",
-                                         Color.RED, 0.5f);
+        mask = Mask.BandMathsType.create("TCWV_OK", TcwvConstants.TCWV_OK_DESCR_TEXT, w, h,
+                                         flagBandName + ".TCWV_OK",
+                                         Color.GREEN, 0.5f);
         tcwvProduct.getMaskGroup().add(index++, mask);
 
         mask = Mask.BandMathsType.create("TCWV_UNCERTAIN", TcwvConstants.TCWV_UNCERTAIN_DESCR_TEXT, w, h,
@@ -80,9 +80,9 @@ public class TcwvUtils {
                                          Color.YELLOW, 0.5f);
         tcwvProduct.getMaskGroup().add(index++, mask);
 
-        mask = Mask.BandMathsType.create("TCWV_OK", TcwvConstants.TCWV_OK_DESCR_TEXT, w, h,
-                                         flagBandName + ".TCWV_OK",
-                                         Color.GREEN, 0.5f);
+        mask = Mask.BandMathsType.create("TCWV_INVALID", TcwvConstants.TCWV_INVALID_DESCR_TEXT, w, h,
+                                         flagBandName + ".TCWV_INVALID",
+                                         Color.RED, 0.5f);
         tcwvProduct.getMaskGroup().add(index++, mask);
 
         return index;
