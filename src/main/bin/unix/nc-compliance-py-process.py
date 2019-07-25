@@ -21,6 +21,7 @@ def getNumDaysInMonth(year, month):
 ###########################################################
 
 
+########## initialize input parameters ######################
 if len(sys.argv) != 8:
     print ('Usage:  python nc-compliance-py-process.py <nc_infile> <sensor> <year> <month> <day> <resolution> < product version>')
     sys.exit(-1)
@@ -60,7 +61,6 @@ else:
     # use days since 1970-01-01 as time value:
     timeval = (datetime.datetime(int(year),int(month),int(day))  - datetime.datetime(1970,1,1)).days
 
-#nc_outfile = 'WV_CCI_L3_tcwv_' + sensor + '_' + res + 'deg_' + datestring + '.nc'
 if sensor.find("-") != -1:
     l3_suffix = 'S'
 else:
@@ -68,10 +68,12 @@ else:
 
 nc_outfile = 'ESACCI-WATERVAPOUR-L3' + l3_suffix + '-TCWV-' + sensor + '-'  + datestring + '-' + res + 'deg-fv' + version + '.nc'
 
+print ('nc_infile: ', nc_infile)
 print ('nc_outfile: ', nc_outfile)
 outpath = './' + nc_outfile
-print ('nc_infile: ', nc_infile)
 print ('outpath: ', outpath)
+
+############# set global attributes to destination file #######################
 with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
 
     # set global attributes following CF and CCI standards:
@@ -132,7 +134,7 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
     for name, dimension in src.dimensions.iteritems():
         dst.createDimension(name, len(dimension) if not dimension.isunlimited() else None)
 
-    # check if source product contains 'time: dimension:
+    # if not present in source product, create 'time: dimension:
     has_timedim = False
     for name, dimension in src.dimensions.iteritems():
         print ('dimension: ', name)
@@ -152,7 +154,7 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
         time.setncattr('leap_year', np.array(2000, 'i4'))
         time[:] = int(timeval)
 
-    # if not present,set lat/lon variables:
+    # if not present in source product, create lat/lon variables:
     has_latlon = False
     for name, variable in src.variables.iteritems():
         print ('src variable: ', name)
@@ -175,8 +177,23 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
 
         lat[:] = lat_arr
         lon[:] = lon_arr
+
+    width = len(dst.dimensions['lon'])
+    height = len(dst.dimensions['lat'])
+    print('width: ', width)
+    print('height: ', height)
+
+    # if not present in source product, create final quality flag:
+    has_quality = False
+    for name, variable in src.variables.iteritems():
+        if name == 'tcwv_quality_flag':
+            has_quality = True
+    
+    if not has_quality:
+        tcwv_quality_flag = dst.createVariable('tcwv_quality_flag', 'b', (dst.dimensions['lat'].name,dst.dimensions['lon'].name), zlib=True)
+        tcwv_quality_flag_arr = np.zeros(shape=(height, width))
         
-    # set variable attributes from src
+    # copy variables with attributes from source product:
     for name, variable in src.variables.iteritems():
         if name.find("_sigma") == -1 and name.find("_sum") == -1 and name.find("_weights") == -1 and \
            (name.find("tcwv") != -1 or name == 'wvpa' or name == 'numo' or name == 'stdv' or name == 'crs' or name == 'time'):
@@ -191,8 +208,11 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
             if 'units' in dstvar.ncattrs():
                 dstvar.delncattr('units')
             dstvar.setncattr('units', ' ')
-    
-    # set variable data from src
+
+    #for name, variable in dst.variables.iteritems():
+    #    print ('dst variable and dimensions: ', variable, ' /// ', variable.dimensions)
+
+    # copy variable data from source product
     for variable in dst.variables:
         print ('dst variable: ', variable)
 
@@ -211,9 +231,10 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
             # MERIS or MODIS non-merged
             if variable == 'crs':
                 dst.variables[variable][:] = src.variables[variable][:]
-            elif variable.find("tcwv") != -1:
-                dst.variables[variable][:,:] = src.variables[variable][:,:]            
+            elif variable.find("tcwv") != -1 and variable.find("tcwv_quality_flag") == -1:
+                dst.variables[variable][:,:] = src.variables[variable][:,:]
 
+    # rename variables to their final names following PSD:
     for variable in dst.variables:        
         if variable.find("_mean") != -1:
             dst.renameVariable(variable, variable.replace("_mean", ""))
@@ -228,7 +249,7 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
     # not necessary for SSMI as this will not be published
     if sensor.startswith('meris') or sensor.startswith('modis') or sensor.startswith('olci'):
         for name, variable in dst.variables.iteritems():
-            print('dst variable name: ', name)
+            #print('dst variable name: ', name, variable.name)
 
             if name == 'tcwv':
                 if 'long_name' in variable.ncattrs():
@@ -250,15 +271,39 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
                 variable.setncattr('actual_range', np.array([tcwv_min, tcwv_max], 'f4'))
                 variable.setncattr('valid_range', np.array([tcwv_min_valid, tcwv_max_valid], 'f4'))
                 variable.setncattr('ancillary_variables', 'tcwv_uncertainty tcwv_counts')
-
+                
             if name == 'tcwv_uncertainty':
                 if 'long_name' in variable.ncattrs():
                     variable.delncattr('long_name')
                 if 'units' in variable.ncattrs():
                     variable.delncattr('units')
-                variable.setncattr('long_name', 'Uncertainty associated with the mean of Total Column of Water')
+                variable.setncattr('long_name', 'Uncertainty associated with the mean of Total Column of Water Vapour')
                 variable.setncattr('units', 'kg/m^2')
 
+                if not has_quality:
+                    # set the quality flag values here, depending on uncertainties:
+                    # flag = 0 for uncert < 5.0 mm, flag = 1 for uncert < 5.0 mm, flag = 2 for NaN pixels 
+                    tcwv_uncertainty_arr = np.array(variable)
+                    tcwv_quality_flag_arr[np.where(np.isnan(tcwv_uncertainty_arr))] = 2
+                    # the usage of 'where' is nasty if we have NaNs, so make a copy of the uncertainty array and replace the NaNs by -1.0:
+                    tmparr = np.copy(tcwv_uncertainty_arr)
+                    tmparr[np.where(np.isnan(tmparr))] = -1.0
+                    tcwv_quality_flag_arr[np.where(tmparr > 5.0)] = 1
+                    dst.variables['tcwv_quality_flag'][:,:] = tcwv_quality_flag_arr 
+
+            if name == 'tcwv_quality_flag' and not has_quality:
+                if 'long_name' in variable.ncattrs():
+                    variable.delncattr('long_name')
+                variable.setncattr('long_name', 'Quality flag associated with the mean of Total Column of Water Vapour')
+                variable.setncattr('standard_name', 'status_flag ')
+                fill_value = -128
+                variable.setncattr('_FillValue', np.array([fill_value], 'b'))
+                quality_min_valid = 0
+                quality_max_valid = 2
+                variable.setncattr('valid_range', np.array([quality_min_valid, quality_max_valid], 'b'))
+                variable.setncattr('flag_values', np.array([0, 1, 2], 'b'))
+                variable.setncattr('flag_meanings', 'TCWV_OK TCWV_UNCERTAIN TCWV_NODATA')
+                
             if name == 'tcwv_counts':
                 if 'long_name' in variable.ncattrs():
                     variable.delncattr('long_name')
