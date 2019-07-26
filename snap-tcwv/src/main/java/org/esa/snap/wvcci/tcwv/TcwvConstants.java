@@ -25,6 +25,8 @@ public class TcwvConstants {
     public static final int TCWV_UNCERTAIN = 1;
     public static final int TCWV_INVALID = 2;
 
+    public static final double TCWV_UNCERTAIN_THRESH = 4.0;  // todo: discuss
+
     public static final String TCWV_OK_DESCR_TEXT = "TCWV was successfully retrieved for this pixel";
     public static final String TCWV_UNCERTAIN_DESCR_TEXT = "TCWV was successfully retrieved, but has rather high uncertainty (> 5 kg/m^2)";
     // todo: define 'high uncertainty' with the group.

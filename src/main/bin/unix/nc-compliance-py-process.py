@@ -195,8 +195,8 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
         
     # copy variables with attributes from source product:
     for name, variable in src.variables.iteritems():
-        if name.find("_sigma") == -1 and name.find("_sum") == -1 and name.find("_weights") == -1 and \
-           (name.find("tcwv") != -1 or name == 'wvpa' or name == 'numo' or name == 'stdv' or name == 'crs' or name == 'time'):
+        if name.find("counts") == -1 and name.find("_sigma") == -1 and name.find("_sum") == -1 and name.find("_weights") == -1 and \
+           (name.find("num_passes") != -1 or name.find("tcwv") != -1 or name == 'wvpa' or name == 'numo' or name == 'stdv' or name == 'crs' or name == 'time'):
             print ('variable.dimensions: ', variable.dimensions)
             dstvar = dst.createVariable(name, variable.datatype, variable.dimensions, zlib=True)
             for attr in variable.ncattrs():
@@ -204,10 +204,10 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
                     dstvar.delncattr(attr)
                 dstvar.setncattr(attr, getattr(variable, attr))
 
-        if name.find("counts") != -1:
-            if 'units' in dstvar.ncattrs():
-                dstvar.delncattr('units')
-            dstvar.setncattr('units', ' ')
+        #if name.find("counts") != -1:
+        #    if 'units' in dstvar.ncattrs():
+        #        dstvar.delncattr('units')
+        #    dstvar.setncattr('units', ' ')
 
     #for name, variable in dst.variables.iteritems():
     #    print ('dst variable and dimensions: ', variable, ' /// ', variable.dimensions)
@@ -222,7 +222,7 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
                 dst.variables[variable][:] = src.variables[variable][:]
             elif variable == 'crs':
                 dst.variables[variable][:] = src.variables[variable][:]
-            elif variable.find("tcwv") != -1:
+            elif variable.find("tcwv") != -1 or variable.find("num_passes") != -1:
                 # tcwv* are still 2D (20190612)
                 dst.variables[variable][:,:] = src.variables[variable][:,:]
             elif variable == 'wvpa' or variable == 'numo' or variable == 'stdv':
@@ -231,7 +231,7 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
             # MERIS or MODIS non-merged
             if variable == 'crs':
                 dst.variables[variable][:] = src.variables[variable][:]
-            elif variable.find("tcwv") != -1 and variable.find("tcwv_quality_flag") == -1:
+            elif (variable.find("tcwv") != -1 or variable.find("num_passes") != -1) and variable.find("tcwv_quality_flag") == -1:
                 dst.variables[variable][:,:] = src.variables[variable][:,:]
 
     # rename variables to their final names following PSD:
@@ -242,6 +242,11 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
             dst.renameVariable(variable, variable.replace("wvpa", "tcwv"))
         elif variable.find("numo") != -1:
             dst.renameVariable(variable, variable.replace("numo", "tcwv_counts"))
+        elif variable.find("num_passes") != -1:
+            dst.renameVariable(variable, variable.replace("num_passes", "tcwv_counts"))
+            #if 'units' in variable.ncattrs():
+            #    variable.delncattr('units')
+            #    variable.setncattr('units', ' ')
         elif variable.find("stdv") != -1:
             dst.renameVariable(variable, variable.replace("stdv", "tcwv_uncertainty")) 
             
@@ -288,7 +293,8 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
                     # the usage of 'where' is nasty if we have NaNs, so make a copy of the uncertainty array and replace the NaNs by -1.0:
                     tmparr = np.copy(tcwv_uncertainty_arr)
                     tmparr[np.where(np.isnan(tmparr))] = -1.0
-                    tcwv_quality_flag_arr[np.where(tmparr > 5.0)] = 1
+                    tcwv_uncertain_thresh = 4.0  # todo: discuss
+                    tcwv_quality_flag_arr[np.where(tmparr > tcwv_uncertain_thresh)] = 1 
                     dst.variables['tcwv_quality_flag'][:,:] = tcwv_quality_flag_arr 
 
             if name == 'tcwv_quality_flag' and not has_quality:
@@ -308,4 +314,7 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
                 if 'long_name' in variable.ncattrs():
                     variable.delncattr('long_name')
                 variable.setncattr('long_name', 'Number of samples of Total Column of Water ')
+                if 'units' in variable.ncattrs():
+                    variable.delncattr('units')
+                variable.setncattr('units', ' ')
 

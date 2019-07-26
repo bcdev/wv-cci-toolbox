@@ -354,7 +354,7 @@ public class TcwvOp extends Operator {
 
 //                    final double relativeUncertainty = result.getTcwvUncertainty() / result.getTcwv();
 //                    if (relativeUncertainty > 0.05) {
-                    if (result.getTcwvUncertainty() > 5.0) {   // todo: discuss
+                    if (result.getTcwvUncertainty() > TcwvConstants.TCWV_UNCERTAIN_THRESH) {   // todo: discuss
                         targetTiles.get(tcwvQualityFlagBand).setSample(x, y, TcwvConstants.TCWV_UNCERTAIN, true);
                     } else {
                         targetTiles.get(tcwvQualityFlagBand).setSample(x, y, TcwvConstants.TCWV_OK, true);
