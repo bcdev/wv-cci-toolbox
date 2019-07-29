@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.esa.cci.wv</groupId>
         <artifactId>wv-cci-parent</artifactId>
-        <version>1.2-SNAPSHOT</version>
+        <version>1.3-SNAPSHOT</version>
     </parent>
 
     <artifactId>snap-tcwv</artifactId>
@@ -16,7 +16,8 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!--<snap.version>6.0.0</snap.version>-->
-        <snap.version>7.0.0-SNAPSHOT</snap.version>
+        <!--<snap.version>7.0.0-SNAPSHOT</snap.version>-->
+        <snap.version>8.0.0-SNAPSHOT</snap.version>
     </properties>
 
     <dependencies>

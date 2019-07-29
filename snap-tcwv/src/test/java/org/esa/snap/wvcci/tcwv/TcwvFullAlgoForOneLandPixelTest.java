@@ -121,7 +121,7 @@ public class TcwvFullAlgoForOneLandPixelTest {
                                                     input, true);
 
         System.out.println("MODIS TERRA result.getTcwv() = " + result.getTcwv());
-        assertEquals(6.039, result.getTcwv(), 1.E-3);      // with new LUT, 20190607
+        assertEquals(7.009, result.getTcwv(), 1.E-3);      // with new LUT, 20190607
         // Python result: 6.38 --> might be ok
     }
 
