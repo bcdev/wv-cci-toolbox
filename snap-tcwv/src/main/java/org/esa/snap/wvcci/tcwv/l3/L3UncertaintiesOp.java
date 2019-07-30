@@ -36,10 +36,12 @@ public class L3UncertaintiesOp extends PixelOperator {
     private static final int SRC_TCWV_UNCERTAINTY_SUM = 4;
     private static final int SRC_TCWV_UNCERTAINTY_SUM_SQ = 5;
     private static final int SRC_TCWV_COUNTS = 6;
+    private static final int SRC_NUM_PASSES = 7;
 
     private static final int TRG_TCWV_MEAN = 0;
     private static final int TRG_TCWV_UNCERTAINTY_MEAN = 1;
     private static final int TRG_TCWV_COUNTS = 2;
+    private static final int TRG_NUM_PASSES = 3;
 
     private static final String TCWV_MEAN_BAND_NAME = "tcwv_mean";
     private static final String TCWV_SUM_BAND_NAME = "tcwv_sum";
@@ -48,6 +50,7 @@ public class L3UncertaintiesOp extends PixelOperator {
     private static final String TCWV_UNCERTAINTY_SUM_BAND_NAME = "tcwv_uncertainty_sum";  // eq. (5) CCI
     private static final String TCWV_UNCERTAINTY_SUM_SQ_BAND_NAME = "tcwv_uncertainty_sum_sq";
     private static final String TCWV_COUNTS_BAND_NAME = "tcwv_counts";
+    private static final String NUM_PASSES_BAND_NAME = "num_passes";
 
 
 
@@ -68,20 +71,16 @@ public class L3UncertaintiesOp extends PixelOperator {
     @Override
     protected void computePixel(int x, int y, Sample[] sourceSamples, WritableSample[] targetSamples) {
 
-        if (x == 62 && y == 226) {
-            System.out.println("x = " + x);
-        }
-        if (x == 62 && y == 225) {
-            System.out.println("x = " + x);
-        }
-
         final float tcwvMean = sourceSamples[SRC_TCWV_MEAN].getFloat();
         final float tcwvSum = sourceSamples[SRC_TCWV_SUM].getFloat();
         final float tcwvSumSq = sourceSamples[SRC_TCWV_SUM_SQ].getFloat();
         final float tcwvCounts = sourceSamples[SRC_TCWV_COUNTS].getFloat();
         final float tcwvUncertaintyMean = sourceSamples[SRC_TCWV_UNCERTAINTY_MEAN].getFloat();
-        final float tcwvUncertaintySum = sourceSamples[SRC_TCWV_UNCERTAINTY_SUM].getFloat();
         final float tcwvUncertaintySumSq = sourceSamples[SRC_TCWV_UNCERTAINTY_SUM_SQ].getFloat();
+        int numPasses = -1;
+        if (sourceProduct.containsBand(NUM_PASSES_BAND_NAME)) {
+            numPasses = sourceSamples[SRC_NUM_PASSES].getInt();
+        }
 
         if (tcwvCounts > 0.0 && !Float.isNaN(tcwvMean)) {
             // eq. (1):
@@ -105,12 +104,14 @@ public class L3UncertaintiesOp extends PixelOperator {
 
             targetSamples[TRG_TCWV_MEAN].set(tcwvMean);
             targetSamples[TRG_TCWV_UNCERTAINTY_MEAN].set(sigmaMeanUncertainty);
-
         } else {
             targetSamples[TRG_TCWV_MEAN].set(Float.NaN);
             targetSamples[TRG_TCWV_UNCERTAINTY_MEAN].set(Float.NaN);
         }
         targetSamples[TRG_TCWV_COUNTS].set(tcwvCounts);
+        if (sourceProduct.containsBand(NUM_PASSES_BAND_NAME)) {
+            targetSamples[TRG_NUM_PASSES].set(numPasses);
+        }
     }
 
     @Override
@@ -122,6 +123,9 @@ public class L3UncertaintiesOp extends PixelOperator {
         targetProduct.addBand(TCWV_UNCERTAINTY_MEAN_BAND_NAME,
                               sourceProduct.getBand(TCWV_UNCERTAINTY_MEAN_BAND_NAME).getDataType());
         targetProduct.addBand(TCWV_COUNTS_BAND_NAME, sourceProduct.getBand(TCWV_COUNTS_BAND_NAME).getDataType());
+        if (sourceProduct.containsBand(NUM_PASSES_BAND_NAME)) {
+            targetProduct.addBand(NUM_PASSES_BAND_NAME, sourceProduct.getBand(NUM_PASSES_BAND_NAME).getDataType());
+        }
 
         for (Band b : targetProduct.getBands()) {
             final Band sourceBand = sourceProduct.getBand(b.getName());
@@ -138,6 +142,7 @@ public class L3UncertaintiesOp extends PixelOperator {
         configurator.defineSample(SRC_TCWV_UNCERTAINTY_SUM, TCWV_UNCERTAINTY_SUM_BAND_NAME, sourceProduct);
         configurator.defineSample(SRC_TCWV_UNCERTAINTY_SUM_SQ, TCWV_UNCERTAINTY_SUM_SQ_BAND_NAME, sourceProduct);
         configurator.defineSample(SRC_TCWV_COUNTS, TCWV_COUNTS_BAND_NAME, sourceProduct);
+        configurator.defineSample(SRC_NUM_PASSES, NUM_PASSES_BAND_NAME, sourceProduct);
     }
 
     @Override
@@ -145,6 +150,7 @@ public class L3UncertaintiesOp extends PixelOperator {
         configurator.defineSample(TRG_TCWV_MEAN, TCWV_MEAN_BAND_NAME);
         configurator.defineSample(TRG_TCWV_UNCERTAINTY_MEAN, TCWV_UNCERTAINTY_MEAN_BAND_NAME);
         configurator.defineSample(TRG_TCWV_COUNTS, TCWV_COUNTS_BAND_NAME);
+        configurator.defineSample(TRG_NUM_PASSES, NUM_PASSES_BAND_NAME);
     }
 
     private void validateInput() {
