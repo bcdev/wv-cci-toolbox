@@ -1,0 +1,31 @@
+#!/bin/bash
+set -e
+
+sensor="$parameters.get('sensor')"
+res="$parameters.get('res')"
+year="$parameters.get('year')"
+month="$parameters.get('month')"
+day="$parameters.get('day')"
+version="$parameters.get('version')"
+
+#[[
+
+nc_outdir=$2
+
+## filename following CCI standards:
+if [ "$day" == "0" ]
+then
+  # monthly products
+  nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor}-${year}${month}-${res}deg-fv${version}.nc"
+else
+  # daily products
+  nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor}-${year}${month}${day}-${res}deg-fv${version}.nc"
+fi
+
+if /opt/hadoop/bin/hadoop fs -ls ${nc_outdir}/${nc_outfile} ; then
+  # output exist
+  echo CALVALUS_SKIP_PROCESSING yes
+fi
+
+]]#
+

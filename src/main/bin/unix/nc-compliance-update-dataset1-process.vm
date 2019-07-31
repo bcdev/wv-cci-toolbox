@@ -1,0 +1,50 @@
+#!/bin/bash
+set -x
+set -e
+set -m
+
+sensor="$parameters.get('sensor')"
+res="$parameters.get('res')"
+year="$parameters.get('year')"
+month="$parameters.get('month')"
+day="$parameters.get('day')"
+version="$parameters.get('version')"
+
+#[[
+
+#nc_gz_infile=$1
+#nc_infile=`basename ${nc_gz_infile} .gz`
+#gunzip -c ${nc_gz_infile} > ./${nc_infile}
+nc_infile=`basename $1`
+echo "nc_infile: ${nc_infile}"
+
+echo "`ls -la $(pwd)`"
+
+/usr/bin/python --version
+echo "/usr/bin/python $(pwd)/process.py ./${nc_infile} ${sensor} ${year} ${month} ${day} ${res} ${version}"
+/usr/bin/python $(pwd)/process.py ./${nc_infile} ${sensor} ${year} ${month} ${day} ${res} ${version}
+
+status=$?
+echo "Status: $status"
+
+if [ $status = 0 ]
+then
+    echo "NetCDF compliance file created."
+    echo "Status: $status"
+    rm -f ./${nc_infile}
+fi
+
+## filename following CCI standards:
+if [ "$day" == "0" ]
+then
+  # monthly products
+  nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor}-${year}${month}-${res}deg-fv${version}.nc"
+else
+  # daily products
+  nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor}-${year}${month}${day}-${res}deg-fv${version}.nc"
+fi
+
+echo CALVALUS_OUTPUT_PRODUCT ${nc_outfile}
+
+]]#
+
