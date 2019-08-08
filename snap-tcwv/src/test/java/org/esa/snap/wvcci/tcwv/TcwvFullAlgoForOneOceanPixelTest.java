@@ -26,6 +26,7 @@ public class TcwvFullAlgoForOneOceanPixelTest {
     @Test
     @Ignore
     public void testOptimalEstimation_ocean_meris() {
+        // ignored - TODO: adapt to Cowa and new LUTs
         // make sure you have the right LUT, otherwise ignore this test!
         final Sensor sensor = Sensor.MERIS;
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
@@ -72,7 +73,6 @@ public class TcwvFullAlgoForOneOceanPixelTest {
     }
 
     @Test
-
     public void testOptimalEstimation_ocean_modis_terra() {
         // make sure you have the right LUT, otherwise ignore this test!
         // remember that MODIS land uses 5 input bands, MODIS ocean only 4 !!
@@ -117,7 +117,8 @@ public class TcwvFullAlgoForOneOceanPixelTest {
                                                     input, false);
 
         System.out.println("MODIS TERRA OCEAN result.getTcwv() = " + result.getTcwv());
-        assertEquals(46.252, result.getTcwv(), 1.E-3);
+        // assertEquals(46.252, result.getTcwv(), 1.E-3);
+        assertEquals(41.128, result.getTcwv(), 1.E-3);  // with new L1 uncertainty estimates
         // Python result: 46.252 --> exactly matching
         // todo: re-check later with updated LUTs
     }
@@ -168,7 +169,8 @@ public class TcwvFullAlgoForOneOceanPixelTest {
                                                     input, false);
 
         System.out.println("MODIS TERRA OCEAN result.getTcwv() = " + result.getTcwv());
-        assertEquals(65.636, result.getTcwv(), 1.E-3);
+//        assertEquals(65.636, result.getTcwv(), 1.E-2);
+        assertEquals(66.664, result.getTcwv(), 1.E-2);   // with new L1 uncertainty estimates
         // Python result: 65.636 --> exactly matching
         // todo: re-check later with updated LUTs
     }

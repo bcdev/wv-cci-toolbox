@@ -38,22 +38,10 @@ fi
 if [ "$day" == "0" ]
 then
   # monthly products
-  if [[ $sensor == *"-"* ]]; then
-    # merged product
-    nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor}-${year}${month}-${res}deg-fv${version}.nc"
-  else
-    # single sensor
-    nc_outfile="ESACCI-WATERVAPOUR-L3C-TCWV-${sensor}-${year}${month}-${res}deg-fv${version}.nc"
-  fi
+  nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor}-${year}${month}-${res}deg-fv${version}.nc"
 else
   # daily products
-  if [[ $sensor == *"-"* ]]; then
-    # merged product
-    nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor}-${year}${month}${day}-${res}deg-fv${version}.nc"
-  else
-    # single sensor
-    nc_outfile="ESACCI-WATERVAPOUR-L3C-TCWV-${sensor}-${year}${month}${day}-${res}deg-fv${version}.nc"
-  fi
+  nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor}-${year}${month}${day}-${res}deg-fv${version}.nc"
 fi
 
 echo CALVALUS_OUTPUT_PRODUCT ${nc_outfile}

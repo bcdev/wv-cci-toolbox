@@ -1,0 +1,24 @@
+#!/bin/bash
+set -e
+
+# CURRENTLY NOT USED (OD, 20190712) !!
+
+sensor1="$parameters.get('sensor1')"
+sensor2="$parameters.get('sensor2')"
+
+#[[
+
+sensor1_infile=$1
+sensor1_infile_name=`basename ${sensor1_infile} .nc`
+output_path=$2
+
+sensorsMerge="${sensor1}-${sensor2}"
+outfile=${sensor1_infile_name//$sensor1/$sensorsMerge}.nc
+
+if /opt/hadoop/bin/hadoop fs -ls ${output_path}/${outfile} ; then
+  # output exist
+  echo CALVALUS_SKIP_PROCESSING yes
+fi
+
+]]#
+

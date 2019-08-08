@@ -1,4 +1,4 @@
-package org.esa.snap.wvcci.tcwv.util;
+package org.esa.snap.wvcci.tcwv;
 
 import org.esa.snap.core.datamodel.Product;
 import org.esa.snap.core.gpf.Operator;
@@ -9,8 +9,6 @@ import org.esa.snap.core.gpf.annotations.Parameter;
 import org.esa.snap.core.gpf.annotations.SourceProduct;
 import org.esa.snap.core.gpf.common.MergeOp;
 import org.esa.snap.core.util.ProductUtils;
-import org.esa.snap.wvcci.tcwv.Sensor;
-import org.esa.snap.wvcci.tcwv.TcwvConstants;
 
 /**
  * Merges Idepix and EraInterim intermediate products in Water_Vapour_cci TCWV chain.

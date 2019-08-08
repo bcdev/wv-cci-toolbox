@@ -22,7 +22,6 @@ import java.io.IOException;
 /**
  * Modification of BeamGeocodingPart for WV_cci purposes, i.e. do not write lat/lon bands
  * into target netcdf file, as we want to keep products small and we still have the TPGs
- * *** CURRENTLY NOT USED ***
  *
  * @author olafd
  */
@@ -78,7 +77,7 @@ public class SnapWvcciGeocodingPart extends CfGeocodingPart {
             crsVariable.addAttribute("wkt", crs.toWKT());
             crsVariable.addAttribute("i2m", StringUtils.arrayToCsv(matrix));
             crsVariable.addAttribute("long_name", "Coordinate Reference System");
-            final String crsCommentString = "A coordinate reference system (CRS) defines defines how the georeferenced " +
+            final String crsCommentString = "A coordinate reference system (CRS) defines how the georeferenced " +
                     "spatial data relates to real locations on the Earth\'s surface";
             crsVariable.addAttribute("comment", crsCommentString);
         }

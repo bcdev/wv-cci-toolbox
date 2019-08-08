@@ -57,14 +57,14 @@ public class L3MergeSensorsOpTest {
         double[] srcTcwvCounts = new double[]{5.0, 3.0};
         double[] srcTcwvCountsNodata = new double[]{-666.6, -666.6};
 
-        double[] mergeTcwv = L3MergeSensorsOp.mergeTcwv(2, srcTcwv, srcTcwvCounts, srcTcwvNodata, srcTcwvCountsNodata);
+        double[] mergeTcwv = L3MergeSensorsOp.mergeTcwv(0, 2, srcTcwv, srcTcwvCounts, srcTcwvNodata, srcTcwvCountsNodata);
         assertEquals(2, mergeTcwv.length);
         assertEquals(27.5, mergeTcwv[0], 1.E-6);
         assertEquals(8.0, mergeTcwv[1], 1.E-6);
 
         double[] mergeTcwvUncertainty =
-                L3MergeSensorsOp.mergeTcwv(2, srcTcwvUncertainty, srcTcwvCounts,
-                                           srcTcwvUncertaintyNodata, srcTcwvCountsNodata);
+                L3MergeSensorsOp.mergeTcwv(0, 2, srcTcwvUncertainty, srcTcwvCounts,
+                        srcTcwvUncertaintyNodata, srcTcwvCountsNodata);
         assertEquals(2, mergeTcwvUncertainty.length);
         assertEquals(1.375, mergeTcwvUncertainty[0], 1.E-6);
         assertEquals(8.0, mergeTcwvUncertainty[1], 1.E-6);
@@ -77,14 +77,14 @@ public class L3MergeSensorsOpTest {
         srcTcwvCounts = new double[]{5.0, 3.0, 2.0};
         srcTcwvCountsNodata = new double[]{-666.6, -666.6, -666.6};
 
-        mergeTcwv = L3MergeSensorsOp.mergeTcwv(3, srcTcwv, srcTcwvCounts, srcTcwvNodata, srcTcwvCountsNodata);
+        mergeTcwv = L3MergeSensorsOp.mergeTcwv(0, 3, srcTcwv, srcTcwvCounts, srcTcwvNodata, srcTcwvCountsNodata);
         assertEquals(2, mergeTcwv.length);
         assertEquals(32.0, mergeTcwv[0], 1.E-6);
         assertEquals(10.0, mergeTcwv[1], 1.E-6);
 
         mergeTcwvUncertainty =
-                L3MergeSensorsOp.mergeTcwv(3, srcTcwvUncertainty, srcTcwvCounts,
-                                           srcTcwvUncertaintyNodata, srcTcwvCountsNodata);
+                L3MergeSensorsOp.mergeTcwv(0, 3, srcTcwvUncertainty, srcTcwvCounts,
+                        srcTcwvUncertaintyNodata, srcTcwvCountsNodata);
         assertEquals(2, mergeTcwvUncertainty.length);
         assertEquals(1.7, mergeTcwvUncertainty[0], 1.E-6);
         assertEquals(10.0, mergeTcwvUncertainty[1], 1.E-6);
@@ -97,17 +97,35 @@ public class L3MergeSensorsOpTest {
         srcTcwvCounts = new double[]{5.0, 3.0, 2.0};
         srcTcwvCountsNodata = new double[]{-666.6, -666.6, -666.6};
 
-        mergeTcwv = L3MergeSensorsOp.mergeTcwv(3, srcTcwv, srcTcwvCounts, srcTcwvNodata, srcTcwvCountsNodata);
+        mergeTcwv = L3MergeSensorsOp.mergeTcwv(0, 3, srcTcwv, srcTcwvCounts, srcTcwvNodata, srcTcwvCountsNodata);
         assertEquals(2, mergeTcwv.length);
         assertEquals(27.5, mergeTcwv[0], 1.E-6);
         assertEquals(8.0, mergeTcwv[1], 1.E-6);
 
         mergeTcwvUncertainty =
-                L3MergeSensorsOp.mergeTcwv(3, srcTcwvUncertainty, srcTcwvCounts,
-                                           srcTcwvUncertaintyNodata, srcTcwvCountsNodata);
+                L3MergeSensorsOp.mergeTcwv(0, 3, srcTcwvUncertainty, srcTcwvCounts,
+                        srcTcwvUncertaintyNodata, srcTcwvCountsNodata);
         assertEquals(2, mergeTcwvUncertainty.length);
         assertEquals(2.4, mergeTcwvUncertainty[0], 1.E-6);
         assertEquals(5.0, mergeTcwvUncertainty[1], 1.E-6);
+
+        // various aggregation modes
+        mergeTcwv = L3MergeSensorsOp.mergeTcwv(1, 2, srcTcwv, srcTcwvCounts, srcTcwvNodata, srcTcwvCountsNodata);
+        assertEquals(2, mergeTcwv.length);
+        assertEquals(20.0, mergeTcwv[0], 1.E-6);
+        assertEquals(5.0, mergeTcwv[1], 1.E-6);
+
+        mergeTcwv = L3MergeSensorsOp.mergeTcwv(2, 2, srcTcwv, srcTcwvCounts, srcTcwvNodata, srcTcwvCountsNodata);
+        assertEquals(2, mergeTcwv.length);
+        assertEquals(40.0, mergeTcwv[0], 1.E-6);
+        assertEquals(3.0, mergeTcwv[1], 1.E-6);
+
+        // sensor 2 to be used for aggregation has no data: aggregate sensor 1 instead
+        // this is the WV-CCI use case for NIR-SSMI merge over water
+        mergeTcwv = L3MergeSensorsOp.mergeTcwv(2, 2, new double[]{20.0, -999.9}, srcTcwvCounts, srcTcwvNodata, srcTcwvCountsNodata);
+        assertEquals(2, mergeTcwv.length);
+        assertEquals(20.0, mergeTcwv[0], 1.E-6);
+        assertEquals(5.0, mergeTcwv[1], 1.E-6);
 
     }
 }
