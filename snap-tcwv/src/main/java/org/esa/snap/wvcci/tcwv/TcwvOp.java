@@ -486,12 +486,18 @@ public class TcwvOp extends Operator {
         targetProduct.setSceneGeoCoding(tiePointGeoCoding);
 
         if (mod35Used) {
-            mod35Product.getFlagCodingGroup().get(TcwvConstants.PIXEL_CLASSIF_BAND_NAME).
-                    setName("MOD35_L2_" + TcwvConstants.PIXEL_CLASSIF_BAND_NAME);
-            ProductUtils.copyFlagCodings(mod35Product, targetProduct);
-            ProductUtils.copyMasks(mod35Product, targetProduct);
-            targetProduct.getFlagCodingGroup().get(TcwvConstants.PIXEL_CLASSIF_BAND_NAME).
-                    setName("IDEPIX_" + TcwvConstants.PIXEL_CLASSIF_BAND_NAME);
+//            mod35Product.getFlagCodingGroup().get(TcwvConstants.PIXEL_CLASSIF_BAND_NAME).
+//                    setName("MOD35_L2_" + TcwvConstants.PIXEL_CLASSIF_BAND_NAME);
+//            ProductUtils.copyFlagCodings(mod35Product, targetProduct);
+//            ProductUtils.copyMasks(mod35Product, targetProduct);
+//            targetProduct.getFlagCodingGroup().get(TcwvConstants.PIXEL_CLASSIF_BAND_NAME).
+//                    setName("IDEPIX_" + TcwvConstants.PIXEL_CLASSIF_BAND_NAME);
+            // todo: check if we need this!
+            final FlagCoding mod35FlagCoding = mod35Product.getFlagCodingGroup().get(TcwvConstants.PIXEL_CLASSIF_BAND_NAME);
+            final FlagCoding idepixFlagCoding = targetProduct.getFlagCodingGroup().get(TcwvConstants.PIXEL_CLASSIF_BAND_NAME);
+            targetProduct.getFlagCodingGroup().remove(idepixFlagCoding);
+            targetProduct.getFlagCodingGroup().add(mod35FlagCoding);
+
         } else {
             ProductUtils.copyFlagCoding(sourceProduct.getFlagCodingGroup().get(TcwvConstants.PIXEL_CLASSIF_BAND_NAME),
                                         targetProduct);

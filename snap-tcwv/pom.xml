@@ -84,7 +84,8 @@
         <dependency>
             <groupId>org.esa.snap</groupId>
             <artifactId>snap-netcdf</artifactId>
-            <version>${snap.version}</version>
+            <!--<version>${snap.version}</version>-->
+            <version>6.0.0</version>
         </dependency>
         
         <dependency>

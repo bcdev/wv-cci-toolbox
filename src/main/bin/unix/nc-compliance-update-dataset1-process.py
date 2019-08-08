@@ -223,7 +223,7 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
             tcwv_min = np.nanmin(tcwv_arr)
             tcwv_max = np.nanmax(tcwv_arr)
             tcwv_min_valid = 0.0
-            tcwv_max_valid = 70.0
+            tcwv_max_valid = 80.0
             variable.setncattr('actual_range', np.array([tcwv_min, tcwv_max], 'f4'))
             variable.setncattr('valid_range', np.array([tcwv_min_valid, tcwv_max_valid], 'f4'))
             variable.setncattr('ancillary_variables', 'tcwv_uncertainty tcwv_counts')
