@@ -79,7 +79,7 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
     # set global attributes following CF and CCI standards:
     dst.setncattr('title', 'Water Vapour CCI Total Column of Water Vapour Product')
     dst.setncattr('institution', 'Brockmann Consult GmbH; EUMETSAT/CMSAF')
-    dst.setncattr('source', 'MERIS RR L1B 3rd Reprocessing; MODIS MOD021KM L1B; HOAPS-S version 4.0')
+    dst.setncattr('source', 'MERIS RR L1B 3rd Reprocessing; MODIS MOD021KM L1B; HOAPS-S version 4.0 released by CM SAF')
     dst.setncattr('history', 'python nc-compliance-py-process.py ' + nc_infile)
     dst.setncattr('references', 'WV_cci D2.2: ATBD Part 1 - MERIS-MODIS-OLCI L2 Products, Issue 1.1, 3 April 2019; WV_cci D4.2: CRDP Issue 1.0, 13 June 2019 ')
     dst.setncattr('tracking_id', str(uuid.uuid1()))
@@ -92,7 +92,7 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
     dst.setncattr('naming-authority', 'brockmann-consult.de')
     dst.setncattr('keywords-vocabulary', 'GCMD Science Keywords, Version 8.1')
     dst.setncattr('cdm_data_type', 'grid')
-    dst.setncattr('comment', 'These data were produced in the frame of the Water Vapour ECV (Water_Vapour_cci) of the ESA Climate Change Initiative Extension (CCI+) Phase 1')
+    dst.setncattr('comment', 'These data were produced in the frame of the Water Vapour ECV (Water_Vapour_cci) of the ESA Climate Change Initiative Extension (CCI+) Phase 1. They include CM SAF products over the ocean.')
     
     from datetime import datetime, timedelta
     date_created = str(datetime.utcnow())[:19] + ' UTC'
@@ -118,7 +118,7 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
     dst.setncattr('time_coverage_duration', 'P1D')
     dst.setncattr('time_coverage_resolution', 'P1D')
     dst.setncattr('standard_name_vocabulary', 'NetCDF Climate and Forecast (CF) Metadata Convention version 18')
-    dst.setncattr('license', 'ESA CCI Data Policy: free and open access')
+    dst.setncattr('license', 'ESA CCI Data Policy: free and open access. Products containing CM SAF data are made available under the CM SAF data policy.')
     dst.setncattr('platform', 'Envisat, Terra, DMSP 5D-3/F16, DMSP 5D-3/F17, DMSP 5D-3/F18')
     dst.setncattr('sensor', 'MERIS, MODIS, SSMIS')
     spatial_resolution = '5.6km at Equator' if res == '005' else '56km at Equator'
