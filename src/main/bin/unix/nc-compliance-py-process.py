@@ -1,8 +1,8 @@
 __author__ = 'olafd'
 
 # Generates final CF- and CCI-compliant TCWV products ready for delivery.
-# Usage: nc-compliance-py-process.py ./${nc_infile} ${sensor} ${year} ${month} ${day} ${resolution}
-
+# Usage: python nc-compliance-py-process.py ./${nc_infile} ${sensor} ${year} ${month} ${day} ${resolution} ${version}
+# Example: python nc-compliance-py-process.py L2_of_l3_tcwv_olci_005deg_2018-07-25_2018-07-25.nc olci 2018 07 25 005 2.0
 
 import os
 import sys
@@ -13,13 +13,8 @@ import numpy as np
 import netCDF4
 import calendar
 
+from calendar import monthrange, isleap
 from netCDF4 import Dataset
-
-###########################################################
-def getNumDaysInMonth(year, month):
-    return calendar.monthrange(int(year), int(month))[1]
-###########################################################
-
 
 ########## initialize input parameters ######################
 if len(sys.argv) != 8:
@@ -46,37 +41,39 @@ nc_infile_root_index = nc_infile.find(year)
 
 if int(day) == 0:
     # monthly products:
-    # --> final output name e.g.: WV_CCI_L3_tcwv_meris_05deg_2011-01.nc
-    # datestring = year + '-' + month
     datestring = year + month
 
-    # use days since 1970-01-01 as time value:
-    timeval = (datetime.datetime(int(year),int(month),1)  - datetime.datetime(1970,1,1)).days
+    # use days since 1970-01-01 as time base value, and the 15th of given month at 00:00 as reference time:
+    num_days_in_month = calendar.monthrange(int(year), int(month))[1]
+    timeval = (datetime.datetime(int(year),int(month),15)  - datetime.datetime(1970,1,1)).days
+    time_bnds_0 = timeval - 15 
+    time_bnds_1 = time_bnds_0 + num_days_in_month 
 else:
     # daily products:
-    # --> final output name e.g.: WV_CCI_L3_tcwv_meris_05deg_2011-01-16.nc
-    #datestring = year + '-' + month + '-' + day
     datestring = year + month + day
 
-    # use days since 1970-01-01 as time value:
+    # use days since 1970-01-01 as time value, and the given day at 12:00 as reference time:
     timeval = (datetime.datetime(int(year),int(month),int(day))  - datetime.datetime(1970,1,1)).days
-
+    time_bnds_0 = timeval 
+    time_bnds_1 = timeval + 1
+    
 if sensor.find("-") != -1:
     l3_suffix = 'S'
 else:
     l3_suffix = 'C' 
 
-nc_outfile = 'ESACCI-WATERVAPOUR-L3' + l3_suffix + '-TCWV-' + sensor + '-'  + datestring + '-' + res + 'deg-fv' + version + '.nc'
+# final product name following CCI data standards v2.1 section 2.7:
+nc_outfile = 'ESACCI-WATERVAPOUR-L3' + l3_suffix + '-TCWV-' + sensor + '-'  + res + 'deg-' + datestring + '-fv' + version + '.nc'
 
 print ('nc_infile: ', nc_infile)
 print ('nc_outfile: ', nc_outfile)
 outpath = './' + nc_outfile
 print ('outpath: ', outpath)
 
-############# set global attributes to destination file #######################
+############# set up and fill NetCDF destination file  #######################
 with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
 
-    # set global attributes following CF and CCI standards:
+    # set global attributes (CCI data standards v2.1 section 2.5.1):
     dst.setncattr('title', 'Water Vapour CCI Total Column of Water Vapour Product')
     dst.setncattr('institution', 'Brockmann Consult GmbH; EUMETSAT/CMSAF')
     dst.setncattr('source', 'MERIS RR L1B 3rd Reprocessing; MODIS MOD021KM L1B; HOAPS-S version 4.0 released by CM SAF')
@@ -100,7 +97,7 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
     dst.setncattr('creator_name', 'Brockmann Consult GmbH; EUMETSAT/CMSAF')
     dst.setncattr('creator_url', 'www.brockmann-consult.de; http://www.cmsaf.eu')
     dst.setncattr('creator_email', 'info@brockmann-consult.de; contact.cmsaf@dwd.de')
-    dst.setncattr('project', 'WV_cci')
+    dst.setncattr('project', 'Climate Change Initiative - European Space Agency')
     dst.setncattr('geospatial_lat_min', '-90.0')
     dst.setncattr('geospatial_lat_max', '90.0')
     dst.setncattr('geospatial_lon_min', '-180.0')
@@ -110,16 +107,19 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
     if int(day) == 0:
         starttime = datestring + '-01 00:00:00 UTC'
         endtime = datestring + '-' + str(getNumDaysInMonth(year, month)) +  ' 23:59:59 UTC'
+        dst.setncattr('time_coverage_duration', 'P1M')
+        dst.setncattr('time_coverage_resolution', 'P1M')
     else:
         starttime = datestring + ' 00:00:00 UTC'
         endtime = datestring + ' 23:59:59 UTC'
+        dst.setncattr('time_coverage_duration', 'P1D')
+        dst.setncattr('time_coverage_resolution', 'P1D')
+
     dst.setncattr('time_coverage_start', starttime)
     dst.setncattr('time_coverage_end', endtime)
-    dst.setncattr('time_coverage_duration', 'P1D')
-    dst.setncattr('time_coverage_resolution', 'P1D')
-    dst.setncattr('standard_name_vocabulary', 'NetCDF Climate and Forecast (CF) Metadata Convention version 18')
+    dst.setncattr('standard_name_vocabulary', 'NetCDF Climate and Forecast (CF) Metadata Convention version 67')
     dst.setncattr('license', 'ESA CCI Data Policy: free and open access. Products containing CM SAF data are made available under the CM SAF data policy.')
-    dst.setncattr('platform', 'Envisat, Terra, DMSP 5D-3/F16, DMSP 5D-3/F17, DMSP 5D-3/F18')
+    dst.setncattr('platform', 'Envisat, Terra, DMSP-F16, DMSP-F17, DMSP-F18')
     dst.setncattr('sensor', 'MERIS, MODIS, SSMIS')
     spatial_resolution = '5.6km at Equator' if res == '005' else '56km at Equator'
     dst.setncattr('spatial_resolution', spatial_resolution)
@@ -150,17 +150,25 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
         time.setncattr('long_name', 'Product dataset time given as days since 1970-01-01')
         time.setncattr('standard_name', 'time')
         time.setncattr('units', 'days since 1970-01-01')
-        time.setncattr('month_lengths', np.array([31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31], 'i4'))
-        time.setncattr('leap_year', np.array(2000, 'i4'))
+        #time.setncattr('month_lengths', np.array([31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31], 'i4'))
+        #time.setncattr('leap_year', np.array(2000, 'i4'))
+        time.setncattr('calendar', 'gregorian')
+        time.setncattr('axis', 'T')
+        time.setncattr('bounds', 'time_bnds')
         time[:] = int(timeval)
-
-    # if not present in source product, create lat/lon variables:
+        
+    # if not present in source product, create lat/lon variables as 1D:
     has_latlon = False
     for name, variable in src.variables.iteritems():
         print ('src variable: ', name)
         if name == 'lat' or name == 'lon':
             has_latlon = True
-            
+
+    lat_min_valid = -90.0
+    lat_max_valid = 90.0
+    lon_min_valid = -180.0
+    lon_max_valid = 180.0
+
     if not has_latlon:
         incr = 0.05 if res == '005' else 0.5
         lat_arr = np.arange(90.0, -90.0, -incr) - incr/2.0
@@ -171,10 +179,18 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
         lat.setncattr('long_name', 'Latitude')
         lat.setncattr('standard_name', 'latitude')
         lat.setncattr('units', 'degrees_north')
+        lat.setncattr('valid_range', np.array([lat_min_valid, lat_max_valid], 'f4'))
+        lat.setncattr('reference_datum', 'geographical coordinates, WGS84 projection')
+        lat.setncattr('axis', 'Y')
+        lat.setncattr('bounds', 'lat_bnds')
         lon.setncattr('long_name', 'Longitude')
         lon.setncattr('standard_name', 'longitude')
         lon.setncattr('units', 'degrees_east')
-
+        lon.setncattr('valid_range', np.array([lon_min_valid, lon_max_valid], 'f4'))
+        lon.setncattr('reference_datum', 'geographical coordinates, WGS84 projection')
+        lon.setncattr('axis', 'X')
+        lon.setncattr('bounds', 'lon_bnds')
+        
         lat[:] = lat_arr
         lon[:] = lon_arr
 
@@ -183,6 +199,47 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
     print('width: ', width)
     print('height: ', height)
 
+    # create 'nv' dimension and '*_bnds' variables (CCI data standards v2.1 section 2.5.3):
+    dst.createDimension('nv', 2)
+
+    # create 'time_bnds' variable:
+    time_bnds_arr = np.array([time_bnds_0, time_bnds_1])
+    time_bnds = dst.createVariable('time_bnds', 'i4', ('time','nv'), zlib=True)
+    time_bnds[:,0] = time_bnds_arr[0]
+    time_bnds[:,1] = time_bnds_arr[1]
+    time_bnds.setncattr('long_name', 'Time cell boundaries')
+    #time_bnds.setncattr('units', 'days since 1970-01-01')
+    time_bnds.setncattr('comment', 'Contains the start and end times for the time period the data represent.')
+    
+    # create 'lat_bnds' and 'lon_bnds' variables:
+    incr = 0.05 if res == '005' else 0.5
+    lat_bnds_arr_0 = np.arange(90.0, -90.0, -incr)
+    lat_bnds_arr_1 = np.arange(90.0-incr, -90.0-incr, -incr)
+    lon_bnds_arr_0 = np.arange(-180.0, 180.0, incr)
+    lon_bnds_arr_1 = np.arange(-180.0+incr, 180.0+incr, incr)
+    lat_bnds_arr = np.empty(shape=[height, 2])
+    lon_bnds_arr = np.empty(shape=[width, 2])
+    lat_bnds_arr[:,0] = lat_bnds_arr_0
+    lat_bnds_arr[:,1] = lat_bnds_arr_1
+    lon_bnds_arr[:,0] = lon_bnds_arr_0
+    lon_bnds_arr[:,1] = lon_bnds_arr_1
+
+    lat_bnds = dst.createVariable('lat_bnds', 'f4', ('lat','nv'), zlib=True)
+    lon_bnds = dst.createVariable('lon_bnds', 'f4', ('lon','nv'), zlib=True)
+    lat_bnds.setncattr('long_name', 'Latitude cell boundaries')
+    # CF compliance checker sometimes complains about units, sometimes not... leave them out for now
+    #lat_bnds.setncattr('units', 'degrees_north')
+    lat_bnds.setncattr('valid_range', np.array([lat_min_valid, lat_max_valid], 'f4'))
+    lat_bnds.setncattr('reference_datum', 'geographical coordinates, WGS84 projection')
+    lat_bnds.setncattr('comment', 'Contains the northern and southern boundaries of the grid cells.')
+    lon_bnds.setncattr('long_name', 'Longitude cell boundaries')
+    #lon_bnds.setncattr('units', 'degrees_east')
+    lon_bnds.setncattr('valid_range', np.array([lon_min_valid, lon_max_valid], 'f4'))
+    lon_bnds.setncattr('reference_datum', 'geographical coordinates, WGS84 projection')
+    lon_bnds.setncattr('comment', 'Contains the eastern and western boundaries of the grid cells.')
+    lat_bnds[:,:] = lat_bnds_arr
+    lon_bnds[:,:] = lon_bnds_arr
+    
     # if not present in source product, create final quality flag:
     has_quality = False
     for name, variable in src.variables.iteritems():
@@ -210,7 +267,7 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
         print ('dst variable: ', variable)
 
         if has_timedim: 
-            # SSMI original or other merged product after compliance step
+            # CM SAF HOAPS original or other merged product after compliance step
             if variable == 'time':
                 dst.variables[variable][:] = src.variables[variable][:]
             elif variable == 'crs':
@@ -231,7 +288,7 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
             elif variable.find("tcwv") != -1 and variable.find("tcwv_quality_flag") == -1:
                 dst.variables[variable][:,:] = src.variables[variable][:,:]
 
-    # rename variables to their final names following PSD:
+    # if necessary, rename variables to their final names following PSD:
     for variable in dst.variables:        
         if variable.find("_mean") != -1:
             dst.renameVariable(variable, variable.replace("_mean", ""))
@@ -239,17 +296,13 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
             dst.renameVariable(variable, variable.replace("wvpa", "tcwv"))
         elif variable.find("numo") != -1:
             dst.renameVariable(variable, variable.replace("numo", "tcwv_counts"))
-        #elif variable.find("num_passes") != -1:
-        #    dst.renameVariable(variable, variable.replace("num_passes", "tcwv_counts"))
         elif variable.find("stdv") != -1:
             dst.renameVariable(variable, variable.replace("stdv", "tcwv_uncertainty")) 
             
     # for VIS/NIR sensors, make sure tcwv_* variables have a long_name, correct units, and tcwv as key variable has a bit more...
-    # not necessary for SSMI as this will not be published
+    # not necessary for CM SAF HOAPS as they will not be published separately
     if sensor.startswith('meris') or sensor.startswith('modis') or sensor.startswith('olci'):
         for name, variable in dst.variables.iteritems():
-            #print('dst variable name: ', name, variable.name)
-
             if name == 'tcwv':
                 if 'long_name' in variable.ncattrs():
                     variable.delncattr('long_name')
@@ -311,4 +364,13 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
                 if 'units' in variable.ncattrs():
                     variable.delncattr('units')
                 variable.setncattr('units', ' ')
+
+            if name == 'crs':
+                # this check is necessary as the merged monthly products have no long_name and comment attributes in their crs variable
+                if 'long_name' in variable.ncattrs():
+                    variable.delncattr('long_name')
+                variable.setncattr('long_name', 'Coordinate Reference System ')
+                if 'comment' in variable.ncattrs():
+                    variable.delncattr('comment')
+                variable.setncattr('comment', 'A coordinate reference system (CRS) defines how the georeferenced spatial data relates to real locations on the Earth\'s surface ')
 
