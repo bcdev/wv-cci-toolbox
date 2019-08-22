@@ -1,0 +1,24 @@
+#set( $idepixBase = $parameters.getProperty("idepix") )
+#set( $erainterimBase = $parameters.getProperty("erainterim") )
+#set( $idepixPath = $inputPath.toString().replace("${erainterimBase}","${idepixBase}").replace("MER_RR_","L2_of_MER_RR_").replace("_era-interim.nc",".seq") )
+
+<graph id="wvcci-idepix-erainterim-meris">
+    <version>1.0</version>
+
+    <header>
+      <target refid="idepix-erainterim-meris" />
+      <source name="erainterim">${inputPath}</source>
+      <source name="idepix">${idepixPath}</source>
+    </header>
+
+    <node id="idepix-erainterim-meris">
+        <operator>ESACCI.MergeIdepixEraInterim</operator>
+        <sources>
+            <eraInterimProduct>erainterim</eraInterimProduct>
+            <idepixProduct>idepix</idepixProduct>
+        </sources>
+        <parameters>
+            <sensor>MERIS</sensor>
+        </parameters>
+    </node>
+</graph>

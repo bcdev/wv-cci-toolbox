@@ -106,8 +106,8 @@ public class TcwvConstants {
 
     // Introduce reasonable input reflectance uncertainty:
     // MERIS: radiometric accuracy < 4% 
-    // https://earth.esa.int/handbooks/meris/CNTR2-6-2.html
-    // 4% of 0.25 for bands 13, 14; 4% of 0.125
+    // https://earth.esa.int/handbooks/meris/CNTR2-6-2.html (2014)
+    // 4% of 0.25 for bands 13, 14; 4% of 0.125 for band 15
     // Based on rough estimates from histograms in a land subset!
 //    final static double[][] MERIS_LAND_SE = {
 //            {0.0001, 0.0, 0.0},
