@@ -1,7 +1,7 @@
 __author__ = 'olafd'
 
 # Further improves TCWV L2 nc product, i.e. adds 1D scan_time variable as requested by T. Trent, Univ of Leicester.
-# Usage: nc-compliance-tcwv-l2-process.py ./${nc_infile} ${sensor} ${product version}
+# Usage: python nc-compliance-tcwv-l2-process.py ./${nc_infile} ${sensor} ${year} ${month} ${day} ${product version}
 
 
 import os
@@ -13,8 +13,6 @@ import numpy as np
 import netCDF4
 import calendar
 
-from datetime import datetime
-
 from netCDF4 import Dataset
 
 ###########################################################
@@ -24,65 +22,102 @@ def getNumDaysInMonth(year, month):
 
 
 ########## initialize input parameters ######################
-if len(sys.argv) != 4:
-    print ('Usage:  python nc-compliance-tcwv-l2-process.py <nc_infile> <sensor> <product version>')
+if len(sys.argv) != 7:
+    print ('Usage:  python nc-compliance-tcwv-l2-process.py <nc_infile> <sensor> <year> <month> <day> <product version>')
     sys.exit(-1)
 
 nc_infile = sys.argv[1]
 sensor = sys.argv[2]
-version = sys.argv[3]
+year = sys.argv[3]
+month = sys.argv[4]
+day = sys.argv[5]
+version = sys.argv[6]
 
 print ('nc_infile: ', nc_infile)
 print ('sensor: ', sensor)
+print ('year: ', year)
+print ('month: ', month)
+print ('day: ', day)
 print ('version: ', version)
 
+from datetime import datetime as dt
+from datetime import timedelta
+
+time1970 = dt(1970, 1, 1)
 if sensor == 'meris':
     # e.g. L2_of_L2_of_MER_RR__1PRACR20110116_112159_000026023098_00296_46431_0000_era-interim.nc
+    source = 'MERIS RR L1B 3rd Reprocessing'
     start_index = nc_infile.find("MER_RR__") + 14
-    year = nc_infile[start_index:start_index+4]
-    month = nc_infile[start_index+4:start_index+6]
-    day = nc_infile[start_index+6:start_index+8]
-    hour = nc_infile[start_index+9:start_index+11]
-    min = nc_infile[start_index+11:start_index+13]
-    sec = nc_infile[start_index+13:start_index+15]
     datestring = nc_infile[start_index:start_index+15]
     print ('datestring: ', datestring)
-
+elif sensor == 'olci':
+    # e.g. L2_of_L2_of_S3A_OL_1_ERR____20181023T112231_20181023T120647_20181024T174418_2656_037_137______MAR_O_NT_002.SEN3_era-interim.nc
+    source = ' OLCI RR L1b'
+    start_index = nc_infile.find("S3A_OL_1_") + 16
+    start_hour = nc_infile[start_index+25:start_index+27]
+    start_min = nc_infile[start_index+27:start_index+29]
+    start_sec = nc_infile[start_index+29:start_index+31]
+    datestring = year + str(month).zfill(2) + str(day).zfill(2) + '_' + start_hour + start_min + start_sec
+    #print ('startdatestring: ', datestring)
+    stop_hour = nc_infile[start_index+41:start_index+43]
+    stop_min = nc_infile[start_index+43:start_index+45]
+    stop_sec = nc_infile[start_index+45:start_index+47]
+    stopdatestring_yyMMMdd_hhmmss = year + str(month).zfill(2) + str(day).zfill(2) + '_' + stop_hour + stop_min + stop_sec
+    #print ('stopdatestring: ', stopdatestring_yyMMMdd_hhmmss)
+    start_date = dt.strptime(datestring, "%Y%m%d_%H%M%S")        
+    start_since_1970 = (start_date-time1970).total_seconds()
+    #print ('starttime: ', start_since_1970)
+    start_date_string = start_date.strftime("%d-%b-%Y %H:%M:%S.%f")
+    stop_date = dt.strptime(stopdatestring_yyMMMdd_hhmmss, "%Y%m%d_%H%M%S")        
+    stop_since_1970 = (stop_date-time1970).total_seconds()
+    #print ('stoptime: ', stop_since_1970)
+    stop_date_string = stop_date.strftime("%d-%b-%Y %H:%M:%S.%f")
+elif sensor == 'modis_terra':
+    # e.g. MOD021KM.A2011069.1520.061.2017321122220_tcwv.nc
+    source = 'MODIS MOD021KM L1b'
+    start_index = nc_infile.find("MOD021KM") + 10
+    hour = nc_infile[start_index+8:start_index+10]
+    min = nc_infile[start_index+10:start_index+12]
+    sec = '00'
+    datestring = year + str(month).zfill(2) + str(day).zfill(2) + '_' + hour + min + sec
+    #print ('datestring: ', datestring)
+    start_date = dt.strptime(datestring, "%Y%m%d_%H%M%S")        
+    start_since_1970 = (start_date-time1970).total_seconds()
+    stop_since_1970 = (start_date-time1970).total_seconds() + 300
+    stop_date = dt.utcfromtimestamp(stop_since_1970)
+    #print ('starttime: ', start_since_1970)
+    #print ('stoptime: ', stop_since_1970)
+    #print ('start_date: ', start_date)
+    #print ('stop_date: ', stop_date)
+    start_date_string = start_date.strftime("%d-%b-%Y %H:%M:%S.%f")
+    stop_date_string = stop_date.strftime("%d-%b-%Y %H:%M:%S.%f")
+else:
+    print ('sensor ' + sensor + ' not supported')
+    sys.exit(1)    
+    
 nc_outfile = 'ESACCI-WATERVAPOUR-L2-TCWV-' + sensor + '-'  + datestring + '-fv' + version + '.nc'
 
 print ('nc_infile: ', nc_infile)
 print ('nc_outfile: ', nc_outfile)
 outpath = './' + nc_outfile
-print ('outpath: ', outpath)
 
 ############# set global attributes to destination file #######################
 with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
-
     if sensor == 'meris':
         # e.g. L2_of_L2_of_MER_RR__1PRACR20110116_112159_000026023098_00296_46431_0000_era-interim.nc
         # start_date = "16-JAN-2011 11:21:59.126000" ;
         # stop_date = "16-JAN-2011 12:05:23.748387" ;
-
-        source = 'MERIS RR L1B 3rd Reprocessing'
-
-        start_date = src.getncattr('start_date')        
-        stop_date = src.getncattr('stop_date')        
-        starttime = datetime.strptime(start_date, "%d-%b-%Y %H:%M:%S.%f")        
-        stoptime = datetime.strptime(stop_date, "%d-%b-%Y %H:%M:%S.%f")
-        time1970 = datetime(1970, 1, 1)
-        print ('start_date: ', start_date)
-        print ('stop_date: ', stop_date)
+        start_date_string = src.getncattr('start_date')        
+        stop_date_string = src.getncattr('stop_date')        
+        starttime = dt.strptime(start_date_string, "%d-%b-%Y %H:%M:%S.%f")        
+        stoptime = dt.strptime(stop_date_string, "%d-%b-%Y %H:%M:%S.%f")
         start_since_1970 = (starttime-time1970).total_seconds()
         stop_since_1970 = (stoptime-time1970).total_seconds()
-        print ('starttime: ', start_since_1970)
-        print ('stoptime: ', stop_since_1970)
-    elif sensor == 'olci':
-        sys.exit(0)
-    elif sensor == 'modis_terra':
-        source = 'MODIS MOD021KM L1b'
-        sys.exit(0)
-    else:
-        sys.exit(0)
+        #print ('starttime: ', start_since_1970)
+        #print ('stoptime: ', stop_since_1970)
+
+    print ('start_date_string: ', start_date_string)
+    print ('stop_date_string: ', stop_date_string)
         
     # set subset of global attributes following CF and CCI standards:
     dst.setncattr('title', 'Water Vapour CCI Total Column of Water Vapour L2 Product')
@@ -94,15 +129,14 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
     dst.setncattr('naming-authority', 'brockmann-consult.de')
     dst.setncattr('comment', 'These data were produced in the frame of the Water Vapour ECV (Water_Vapour_cci) of the ESA Climate Change Initiative Extension (CCI+) Phase 2')
     
-    from datetime import datetime, timedelta
-    date_created = str(datetime.utcnow())[:19] + ' UTC'
+    date_created = str(dt.utcnow())[:19] + ' UTC'
     dst.setncattr('date_created', date_created)
     dst.setncattr('creator_name', 'Brockmann Consult GmbH')
     dst.setncattr('creator_url', 'www.brockmann-consult.de')
     dst.setncattr('creator_email', 'info@brockmann-consult.de')
     dst.setncattr('project', 'WV_cci')
-    dst.setncattr('time_coverage_start', start_date)
-    dst.setncattr('time_coverage_end', stop_date)
+    dst.setncattr('time_coverage_start', start_date_string)
+    dst.setncattr('time_coverage_end', stop_date_string)
     dst.setncattr('key_variables', 'tcwv')
     # metadata_profile is needed by SNAP in order to allow reading as Netcdf-BEAM and display TPGs and masks properly
     dst.setncattr('metadata_profile', 'beam')
@@ -112,13 +146,8 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
     for name, dimension in src.dimensions.iteritems():
         dst.createDimension(name, len(dimension) if not dimension.isunlimited() else None)
 
-    width = len(dst.dimensions['x'])
-    height = len(dst.dimensions['y'])
-    print('width: ', width)
-    print('height: ', height)
-
     scantime_incr = (stop_since_1970 - start_since_1970)*1.0 / (len(dst.dimensions['y']) - 1)
-    scantime_arr = np.arange(start_since_1970, stop_since_1970 + scantime_incr, scantime_incr)
+    scantime_arr = np.arange(start_since_1970, stop_since_1970 + scantime_incr/2, scantime_incr)
     scan_time = dst.createVariable('scan_time', np.float64, ('y'), zlib=True)
     scan_time[:] = scantime_arr
     scan_time.setncattr('long_name', 'Across-track scan time')

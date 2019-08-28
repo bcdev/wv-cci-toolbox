@@ -1,0 +1,60 @@
+#!/bin/bash
+set -e
+
+sensor="$parameters.get('sensor')"
+year="$parameters.get('year')"
+month="$parameters.get('month')"
+day="$parameters.get('day')"
+version="$parameters.get('version')"
+
+#[[
+
+nc_outdir=$2
+
+## filename following CCI standards:
+if [ "$sensor" == "meris" ]
+then
+  # e.g. L2_of_L2_of_MER_RR__1PRACR20110116_112159_000026023098_00296_46431_0000_era-interim.nc
+  substring="MER_RR__"
+  start_index=`awk -v a="${nc_infile}" -v b="$substring" 'BEGIN{print index(a,b)}'`
+  offset=$((${start_index} + 22))
+  hour=${nc_infile:$offset:2}
+  offset=$((${start_index} + 24))
+  min=${nc_infile:$offset:2}
+  offset=$((${start_index} + 26))
+  sec=${nc_infile:$offset:2}
+elif [ "$sensor" == "olci" ]
+then
+  # e.g. L2_of_L2_of_S3A_OL_1_ERR____20181023T112231_20181023T120647_20181024T174418_2656_037_137______MAR_O_NT_002.SEN3_era-interim.nc
+  substring="S3A_OL_1_"
+  start_index=`awk -v a="${nc_infile}" -v b="$substring" 'BEGIN{print index(a,b)}'`
+  offset=$((${start_index} + 24))
+  hour=${nc_infile:$offset:2}
+  offset=$((${start_index} + 26))
+  min=${nc_infile:$offset:2}
+  offset=$((${start_index} + 28))
+  sec=${nc_infile:$offset:2}
+elif [ "$sensor" == "modis_terra" ]
+then
+  # e.g. MOD021KM.A2011069.1520.061.2017321122220_tcwv.nc
+  substring="MOD021KM"
+  start_index=`awk -v a="${nc_infile}" -v b="$substring" 'BEGIN{print index(a,b)}'`
+  offset=$((${start_index} + 8))
+  hour=${nc_infile:$offset:2}
+  offset=$((${start_index} + 10))
+  min=${nc_infile:$offset:2}
+  sec="00"
+else
+  echo "sensor '$sensor' not supported"
+  exit 1
+fi
+
+nc_outfile="ESACCI-WATERVAPOUR-L2-TCWV-${sensor}-${year}${month}${day}_${hour}${min}${sec}-fv${version}.nc"
+
+if /opt/hadoop/bin/hadoop fs -ls ${nc_outdir}/${nc_outfile} ; then
+  # output exist
+  echo CALVALUS_SKIP_PROCESSING yes
+fi
+
+]]#
+

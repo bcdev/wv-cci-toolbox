@@ -105,8 +105,9 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
     dst.setncattr('geospatial_vertical_min', '0.0')
     dst.setncattr('geospatial_vertical_max', '0.0')
     if int(day) == 0:
+        num_days_in_month = calendar.monthrange(int(year), int(month))[1]
         starttime = datestring + '-01 00:00:00 UTC'
-        endtime = datestring + '-' + str(getNumDaysInMonth(year, month)) +  ' 23:59:59 UTC'
+        endtime = datestring + '-' + str(num_days_in_month) +  ' 23:59:59 UTC'
         dst.setncattr('time_coverage_duration', 'P1M')
         dst.setncattr('time_coverage_resolution', 'P1M')
     else:
@@ -274,7 +275,7 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
                 dst.variables[variable][:] = src.variables[variable][:]
             elif has_latlon and (variable == 'lat' or variable == 'lon'):
                 dst.variables[variable][:] = src.variables[variable][:]
-            elif variable.find("tcwv") != -1:
+            elif variable.find("tcwv") != -1 and variable.find("tcwv_quality_flag") == -1:
                 # tcwv* are still 2D (20190612)
                 dst.variables[variable][:,:] = src.variables[variable][:,:]
             elif variable == 'wvpa' or variable == 'numo' or variable == 'stdv':
