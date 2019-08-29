@@ -9,12 +9,22 @@ version="$parameters.get('version')"
 
 #[[
 
+nc_gz_infile=$1
+nc_infile=`basename ${nc_gz_infile} .gz`
+#if [ ! -f ./${nc_infile} ] 
+#then
+#   echo "gunzipping ${nc_gz_infile} ..."
+#   gunzip -c ${nc_gz_infile} > ./${nc_infile}
+#fi
+echo "nc_infile: ${nc_infile}"
+
 nc_outdir=$2
 
 ## filename following CCI standards:
 if [ "$sensor" == "meris" ]
 then
   # e.g. L2_of_L2_of_MER_RR__1PRACR20110116_112159_000026023098_00296_46431_0000_era-interim.nc
+  echo "is meris"
   substring="MER_RR__"
   start_index=`awk -v a="${nc_infile}" -v b="$substring" 'BEGIN{print index(a,b)}'`
   offset=$((${start_index} + 22))
@@ -23,6 +33,11 @@ then
   min=${nc_infile:$offset:2}
   offset=$((${start_index} + 26))
   sec=${nc_infile:$offset:2}
+  echo "nc_infile: ${nc_infile}"
+  echo "start_index: ${start_index}"
+  echo "hour: $hour"
+  echo "min: $min"
+  echo "sec: $sec"
 elif [ "$sensor" == "olci" ]
 then
   # e.g. L2_of_L2_of_S3A_OL_1_ERR____20181023T112231_20181023T120647_20181024T174418_2656_037_137______MAR_O_NT_002.SEN3_era-interim.nc

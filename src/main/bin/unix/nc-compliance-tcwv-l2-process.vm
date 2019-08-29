@@ -13,8 +13,11 @@ version="$parameters.get('version')"
 
 nc_gz_infile=$1
 nc_infile=`basename ${nc_gz_infile} .gz`
-gunzip -c ${nc_gz_infile} > ./${nc_infile}
-#nc_infile=`basename $1`
+if [ ! -f ./${nc_infile} ]
+then
+   echo "gunzipping ${nc_gz_infile} ..."
+   gunzip -c ${nc_gz_infile} > ./${nc_infile}
+fi
 echo "nc_infile: ${nc_infile}"
 
 echo "`ls -la $(pwd)`"
