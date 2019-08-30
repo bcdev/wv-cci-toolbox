@@ -1,9 +1,9 @@
 1. in Miniconda3 dir, open Windows Shell
 2. dort: 'cmd'
-3. 'activate root' --> we have now the correct conda, Python etc.
+3. '.\Scripts\activate root' --> we have now the correct conda, Python etc.
 4. 'conda create -n xr -c conda-forge python=3 xarray jupyterlab matplotlib'
 5. 'conda activate xr'
 6. 'conda install -c conda-forge netcdf4' 
 7. 'conda install -c conda-forge dask' 
 8. 'conda install -c conda-forge zarr' 
-9. cd to dir where the .ipynb and the input products are. There: 'jupyter-lab'
+9. cd to dir where the .ipynb and the input products are: 'cd /D <dir>'. There: 'jupyter-lab'
