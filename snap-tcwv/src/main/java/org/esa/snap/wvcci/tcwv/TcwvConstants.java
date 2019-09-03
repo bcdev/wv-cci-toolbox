@@ -39,6 +39,8 @@ public class TcwvConstants {
     static final String PRIOR_T2M_BAND_NAME = "t2m";
     static final String PRIOR_MSL_BAND_NAME = "msl";
     static final String PRIOR_TCWV_BAND_NAME = "tcwv";
+    static final String PRIOR_U10_BAND_NAME = "u10";
+    static final String PRIOR_V10_BAND_NAME = "v10";
     static final String PRIOR_WS_BAND_NAME = "ws";
 
     static final double AOT865_INIT_VALUE = 0.15;  // AOT 865nm initial value for algorithm
@@ -62,8 +64,10 @@ public class TcwvConstants {
     static final String MERIS_LAND_LUT_NC_FILENAME = "land_core_meris_calib_arm.nc4";
 //    static final String MERIS_OCEAN_LUT_NC_FILENAME = "ocean_core_meris.nc4";
     static final String MERIS_OCEAN_LUT_NC_FILENAME = "ocean_core_meris_calib.nc4";
-    static final String MODIS_AQUA_OCEAN_LUT_NC_FILENAME = "ocean_core_modis_aqua.nc4";
-    static final String MODIS_TERRA_OCEAN_LUT_NC_FILENAME = "ocean_core_modis_terra.nc4";
+//    static final String MODIS_AQUA_OCEAN_LUT_NC_FILENAME = "ocean_core_modis_aqua.nc4";
+    static final String MODIS_AQUA_OCEAN_LUT_NC_FILENAME = "ocean_core_modis_aqua_calib.nc4";     // delivered by RP 20190902
+//    static final String MODIS_TERRA_OCEAN_LUT_NC_FILENAME = "ocean_core_modis_terra.nc4";
+    static final String MODIS_TERRA_OCEAN_LUT_NC_FILENAME = "ocean_core_modis_aqua_calib.nc4";    // delivered by RP 20190902
 //    static final String MODIS_AQUA_LAND_LUT_NC_FILENAME = "land_core_modis_aqua.nc4";
     static final String MODIS_AQUA_LAND_LUT_NC_FILENAME = "land_core_modis_aqua_calib_arm.nc4";
 //    static final String MODIS_TERRA_LAND_LUT_NC_FILENAME = "land_core_modis_terra.nc4";
@@ -196,22 +200,37 @@ public class TcwvConstants {
     // RSS total < 3% (https://modis.gsfc.nasa.gov/data/atbd/atbd_mod01.pdf)
     // 3% of 0.5, 0.5, 0.5, 0.5, 0.6
     // --> gives ~1% TCWV L2 uncertainty
+//    final static double[][] MODIS_LAND_SE = {
+//            {0.015, 0.0, 0.0, 0.0, 0.0},
+//            {0.0, 0.015, 0.0, 0.0, 0.0},
+//            {0.0, 0.0, 0.015, 0.0, 0.0},
+//            {0.0, 0.0, 0.0, 0.015, 0.0},
+//            {0.0, 0.0, 0.0, 0.0, 0.018}
+//    };
+    // RP 20190902:
     final static double[][] MODIS_LAND_SE = {
-            {0.015, 0.0, 0.0, 0.0, 0.0},
-            {0.0, 0.015, 0.0, 0.0, 0.0},
-            {0.0, 0.0, 0.015, 0.0, 0.0},
-            {0.0, 0.0, 0.0, 0.015, 0.0},
-            {0.0, 0.0, 0.0, 0.0, 0.018}
+            {0.001, 0.0, 0.0, 0.0, 0.0},
+            {0.0, 0.001, 0.0, 0.0, 0.0},
+            {0.0, 0.0, 0.012, 0.0, 0.0},
+            {0.0, 0.0, 0.0, 0.012, 0.0},
+            {0.0, 0.0, 0.0, 0.0, 0.012}
     };
 
     // RSS total < 3% (https://modis.gsfc.nasa.gov/data/atbd/atbd_mod01.pdf)
     // 3% of 0.05, 0.05, 0.05, 0.05
     // --> gives ~1% TCWV L2 uncertainty
+//    final static double[][] MODIS_OCEAN_SE = {
+//            {0.0015, 0.0, 0.0, 0.0},
+//            {0.0, 0.0015, 0.0, 0.0},
+//            {0.0, 0.0, 0.0015, 0.0},
+//            {0.0, 0.0, 0.0, 0.0015}
+//    };
+    // RP 20190902:
     final static double[][] MODIS_OCEAN_SE = {
-            {0.0015, 0.0, 0.0, 0.0},
-            {0.0, 0.0015, 0.0, 0.0},
-            {0.0, 0.0, 0.0015, 0.0},
-            {0.0, 0.0, 0.0, 0.0015}
+            {0.001, 0.0, 0.0, 0.0},
+            {0.0, 0.012, 0.0, 0.0},
+            {0.0, 0.0, 0.012, 0.0},
+            {0.0, 0.0, 0.0, 0.012}
     };
 
     // 'cor' from land_core_modis_terra_calib_arm.nc4, bands 2, 5, 17, 18, 19 in this sequence!
@@ -329,8 +348,14 @@ public class TcwvConstants {
             939.02
     };
 
+//    final static double[][] SA_LAND = {
+//            {20.0, 0.0, 0.0},
+//            {0.0, 1.0, 0.0},
+//            {0.0, 0.0, 1.0}
+//    };
+    // RP 20100902:
     final static double[][] SA_LAND = {
-            {20.0, 0.0, 0.0},
+            {8.0, 0.0, 0.0},
             {0.0, 1.0, 0.0},
             {0.0, 0.0, 1.0}
     };

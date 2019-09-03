@@ -56,10 +56,10 @@ public class TcwvCowaForOnePixelTest {
 
         System.out.println("MERIS LAND result.getTcwv() = " + result.getTcwv());
         // Java: 16.4272978
-        // Java: 16.3825 (with new L1 uncertainty estimates)
+        // Java: 16.2862 (with new L1 uncertainty estimates)
         // Cowa Python: 16.46472
-        assertEquals(16.3825, result.getTcwv(), 0.05);
-        assertEquals(5.075, result.getTcwvUncertainty(), 0.01);
+        assertEquals(16.2862, result.getTcwv(), 0.05);
+        assertEquals(4.54, result.getTcwvUncertainty(), 0.01);
     }
 
     @Test
@@ -143,12 +143,12 @@ public class TcwvCowaForOnePixelTest {
 
         System.out.println("OLCI LAND result.getTcwv() = " + result.getTcwv());
         // Java: 13.7652
-        // Java: 13.965 (with new L1 uncertainty estimates)
+        // Java: 14.012 (with new L1 uncertainty estimates)
         // Cowa Python: 13.7686
-         assertEquals(13.965, result.getTcwv(), 0.01);
+         assertEquals(14.012, result.getTcwv(), 0.01);
 //        assertEquals(13.918, result.getTcwv(), 0.01);  // with refl uncertainty estimate of 2% instead of fix SE matrix
         // uncertainty:
-        assertEquals(3.348, result.getTcwvUncertainty(), 0.001);
+        assertEquals(3.193, result.getTcwvUncertainty(), 0.001);
     }
 
     @Test
@@ -208,9 +208,12 @@ public class TcwvCowaForOnePixelTest {
 
         double sza = 50.97;
         double saa = 34.2362;
+        double saaR = saa*MathUtils.DTOR;
         double vza = 6.7142;
         double vaa = 99.53059;
-        double relAzi = 180. - Math.abs(saa - vaa);
+        double vaaR = vaa*MathUtils.DTOR;
+//        double relAzi = 180. - Math.abs(saa - vaa);
+        double relAzi = 180. - Math.acos(Math.cos(saaR)*Math.cos(vaaR) + Math.sin(saaR)*Math.sin(vaaR))*MathUtils.RTOD;
         double amf = 1. / Math.cos(sza * MathUtils.DTOR) + 1. / Math.cos(vza * MathUtils.DTOR);
 
         double[] rhoToaWin = new double[]{0.00949};  // RefSB_2
@@ -240,10 +243,11 @@ public class TcwvCowaForOnePixelTest {
                                                     input, false);
 
         System.out.println("MODIS TERRA OCEAN result.getTcwv() = " + result.getTcwv());
-        assertEquals(33.86, result.getTcwv(), 0.2);
+//        assertEquals(33.86, result.getTcwv(), 0.2);
+        assertEquals(22.4, result.getTcwv(), 0.2);  // MODIS update RP, 20190902
         // Python result: tbd
         // todo: re-check later with updated LUTs etc. We also need a test for MODIS land
-        assertEquals(7.086, result.getTcwvUncertainty(), 0.001);
+        assertEquals(3.516, result.getTcwvUncertainty(), 0.001);
     }
 
 

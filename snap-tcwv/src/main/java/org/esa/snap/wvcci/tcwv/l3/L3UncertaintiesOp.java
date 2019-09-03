@@ -24,7 +24,7 @@ public class L3UncertaintiesOp extends PixelOperator {
     @Parameter(interval = "[0.0f, 1.0f]", defaultValue = "0.5",
             description = "Correlation parameter, see https://www.earth-syst-sci-data.net/9/881/2017/")
     private float c;
-    
+
     @SourceProduct(description = "Source product")
     private Product sourceProduct;
 
@@ -39,19 +39,24 @@ public class L3UncertaintiesOp extends PixelOperator {
     private static final int SRC_NUM_PASSES = 7;
 
     private static final int TRG_TCWV_MEAN = 0;
-    private static final int TRG_TCWV_UNCERTAINTY_MEAN = 1;
-    private static final int TRG_TCWV_COUNTS = 2;
-    private static final int TRG_NUM_PASSES = 3;
+    //    private static final int TRG_TCWV_UNCERTAINTY_MEAN = 1;
+    private static final int TRG_TCWV_UNCERTAINTY_SIGMA_SD_SQR = 1;     // eq. (1) CCI
+    private static final int TRG_TCWV_UNCERTAINTY_SIGMA_MEAN = 2;       // eq. (2) CCI
+    private static final int TRG_TCWV_UNCERTAINTY_SIGMA_SQR_MEAN = 3;   // eq. (3) CCI
+    private static final int TRG_TCWV_COUNTS = 4;
+    private static final int TRG_NUM_PASSES = 5;
 
     private static final String TCWV_MEAN_BAND_NAME = "tcwv_mean";
     private static final String TCWV_SUM_BAND_NAME = "tcwv_sum";
     private static final String TCWV_SUM_SQ_BAND_NAME = "tcwv_sum_sq";
     private static final String TCWV_UNCERTAINTY_MEAN_BAND_NAME = "tcwv_uncertainty_mean";  // eq. (5) CCI
+    private static final String TCWV_UNCERTAINTY_SIGMA_SD_BAND_NAME = "tcwv_standard_deviation";  // eq. (1) CCI
+    private static final String TCWV_UNCERTAINTY_SIGMA_MEAN_BAND_NAME = "tcwv_mean_uncertainty";  // eq. (2) CCI
+    private static final String TCWV_UNCERTAINTY_SIGMA_SQR_MEAN_BAND_NAME = "tcwv_mean_uncertainty_squares";  // eq. (3) CCI
     private static final String TCWV_UNCERTAINTY_SUM_BAND_NAME = "tcwv_uncertainty_sum";  // eq. (5) CCI
     private static final String TCWV_UNCERTAINTY_SUM_SQ_BAND_NAME = "tcwv_uncertainty_sum_sq";
     private static final String TCWV_COUNTS_BAND_NAME = "tcwv_counts";
     private static final String NUM_PASSES_BAND_NAME = "num_passes";
-
 
 
     private static final String[] TCWV_SRC_BAND_NAMES = new String[]{
@@ -83,9 +88,12 @@ public class L3UncertaintiesOp extends PixelOperator {
         }
 
         if (tcwvCounts > 0.0 && !Float.isNaN(tcwvMean)) {
-            // eq. (1):
-            final float sigmaSdSqr =
-                    (float) (tcwvSumSq / tcwvCounts - 2.0 * tcwvMean * tcwvSum / tcwvCounts + tcwvMean * tcwvMean);
+            // eq. (1), use sqrt:
+            float sigmaSd = 0.0f;
+            if (tcwvCounts > 1.0f) {
+                sigmaSd = (float) Math.sqrt((tcwvSumSq / tcwvCounts - 2.0 * tcwvMean * tcwvSum /
+                        tcwvCounts + tcwvMean * tcwvMean));
+            }
 
             // eq. (2):
             final float sigmaMean = tcwvUncertaintyMean;
@@ -94,19 +102,25 @@ public class L3UncertaintiesOp extends PixelOperator {
             final float sigmaSqrMean = tcwvUncertaintySumSq / tcwvCounts;
 
             // eq. (4):
-            final float sigmaTrueSqr = (float) (sigmaSdSqr - (1.0 - c) * sigmaSqrMean);
+            final float sigmaTrueSqr = (float) (sigmaSd * sigmaSd - (1.0 - c) * sigmaSqrMean);
 
             // eq. (5):
             final float sigmaMeanUncertaintySq =
-                    (float) (sigmaTrueSqr/tcwvCounts + c * sigmaMean * sigmaMean +
+                    (float) (sigmaTrueSqr / tcwvCounts + c * sigmaMean * sigmaMean +
                             (1.0 - c) * sigmaSqrMean / tcwvCounts);
             final float sigmaMeanUncertainty = (float) Math.sqrt(sigmaMeanUncertaintySq);
 
             targetSamples[TRG_TCWV_MEAN].set(tcwvMean);
-            targetSamples[TRG_TCWV_UNCERTAINTY_MEAN].set(sigmaMeanUncertainty);
+//            targetSamples[TRG_TCWV_UNCERTAINTY_MEAN].set(sigmaMeanUncertainty);
+            targetSamples[TRG_TCWV_UNCERTAINTY_SIGMA_SD_SQR].set(sigmaSd);
+            targetSamples[TRG_TCWV_UNCERTAINTY_SIGMA_MEAN].set(sigmaMean);
+            targetSamples[TRG_TCWV_UNCERTAINTY_SIGMA_SQR_MEAN].set(sigmaSqrMean);
         } else {
             targetSamples[TRG_TCWV_MEAN].set(Float.NaN);
-            targetSamples[TRG_TCWV_UNCERTAINTY_MEAN].set(Float.NaN);
+//            targetSamples[TRG_TCWV_UNCERTAINTY_MEAN].set(Float.NaN);
+            targetSamples[TRG_TCWV_UNCERTAINTY_SIGMA_SD_SQR].set(Float.NaN);
+            targetSamples[TRG_TCWV_UNCERTAINTY_SIGMA_MEAN].set(Float.NaN);
+            targetSamples[TRG_TCWV_UNCERTAINTY_SIGMA_SQR_MEAN].set(Float.NaN);
         }
         targetSamples[TRG_TCWV_COUNTS].set(tcwvCounts);
         if (sourceProduct.containsBand(NUM_PASSES_BAND_NAME)) {
@@ -120,8 +134,16 @@ public class L3UncertaintiesOp extends PixelOperator {
         final Product targetProduct = productConfigurer.getTargetProduct();
 
         targetProduct.addBand(TCWV_MEAN_BAND_NAME, sourceProduct.getBand(TCWV_MEAN_BAND_NAME).getDataType());
-        targetProduct.addBand(TCWV_UNCERTAINTY_MEAN_BAND_NAME,
+//        targetProduct.addBand(TCWV_UNCERTAINTY_MEAN_BAND_NAME,
+//                              sourceProduct.getBand(TCWV_UNCERTAINTY_MEAN_BAND_NAME).getDataType());
+        targetProduct.addBand(TCWV_UNCERTAINTY_SIGMA_SD_BAND_NAME,
                               sourceProduct.getBand(TCWV_UNCERTAINTY_MEAN_BAND_NAME).getDataType());
+        targetProduct.addBand(TCWV_UNCERTAINTY_SIGMA_MEAN_BAND_NAME,
+                              sourceProduct.getBand(TCWV_UNCERTAINTY_MEAN_BAND_NAME).getDataType());
+        targetProduct.addBand(TCWV_UNCERTAINTY_SIGMA_SQR_MEAN_BAND_NAME,
+                              sourceProduct.getBand(TCWV_UNCERTAINTY_MEAN_BAND_NAME).getDataType());
+
+
         targetProduct.addBand(TCWV_COUNTS_BAND_NAME, sourceProduct.getBand(TCWV_COUNTS_BAND_NAME).getDataType());
         if (sourceProduct.containsBand(NUM_PASSES_BAND_NAME)) {
             targetProduct.addBand(NUM_PASSES_BAND_NAME, sourceProduct.getBand(NUM_PASSES_BAND_NAME).getDataType());
@@ -129,7 +151,9 @@ public class L3UncertaintiesOp extends PixelOperator {
 
         for (Band b : targetProduct.getBands()) {
             final Band sourceBand = sourceProduct.getBand(b.getName());
-            TcwvUtils.copyBandProperties(b, sourceBand);
+            if (sourceBand != null) {
+                TcwvUtils.copyBandProperties(b, sourceBand);
+            }
         }
     }
 
@@ -148,7 +172,10 @@ public class L3UncertaintiesOp extends PixelOperator {
     @Override
     protected void configureTargetSamples(TargetSampleConfigurer configurator) throws OperatorException {
         configurator.defineSample(TRG_TCWV_MEAN, TCWV_MEAN_BAND_NAME);
-        configurator.defineSample(TRG_TCWV_UNCERTAINTY_MEAN, TCWV_UNCERTAINTY_MEAN_BAND_NAME);
+//        configurator.defineSample(TRG_TCWV_UNCERTAINTY_MEAN, TCWV_UNCERTAINTY_MEAN_BAND_NAME);
+        configurator.defineSample(TRG_TCWV_UNCERTAINTY_SIGMA_SD_SQR, TCWV_UNCERTAINTY_SIGMA_SD_BAND_NAME);
+        configurator.defineSample(TRG_TCWV_UNCERTAINTY_SIGMA_MEAN, TCWV_UNCERTAINTY_SIGMA_MEAN_BAND_NAME);
+        configurator.defineSample(TRG_TCWV_UNCERTAINTY_SIGMA_SQR_MEAN, TCWV_UNCERTAINTY_SIGMA_SQR_MEAN_BAND_NAME);
         configurator.defineSample(TRG_TCWV_COUNTS, TCWV_COUNTS_BAND_NAME);
         configurator.defineSample(TRG_NUM_PASSES, NUM_PASSES_BAND_NAME);
     }

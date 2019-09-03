@@ -118,7 +118,8 @@ public class TcwvFullAlgoForOneOceanPixelTest {
 
         System.out.println("MODIS TERRA OCEAN result.getTcwv() = " + result.getTcwv());
         // assertEquals(46.252, result.getTcwv(), 1.E-3);
-        assertEquals(41.128, result.getTcwv(), 1.E-3);  // with new L1 uncertainty estimates
+//        assertEquals(41.128, result.getTcwv(), 1.E-3);  // with new L1 uncertainty estimates
+        assertEquals(29.707, result.getTcwv(), 1.E-3);  // with new L1 uncertainty estimates
         // Python result: 46.252 --> exactly matching
         // todo: re-check later with updated LUTs
     }
@@ -135,9 +136,12 @@ public class TcwvFullAlgoForOneOceanPixelTest {
 
         double sza = 24.951;
         double saa = 118.234;
+        double saaR = saa*MathUtils.DTOR;
         double vza = 38.047;
         double vaa = 97.217;
-        double relAzi = 180. - Math.abs(saa - vaa);;
+        double vaaR = vaa*MathUtils.DTOR;
+        double relAzi_old = 180. - Math.abs(saa - vaa);
+        double relAzi = 180. - Math.acos(Math.cos(saaR)*Math.cos(vaaR) + Math.sin(saaR)*Math.sin(vaaR))*MathUtils.RTOD;
         double amf = 1. / Math.cos(sza * MathUtils.DTOR) + 1. / Math.cos(vza * MathUtils.DTOR);
 
         // the mes array is taken from test_cawa.py --> test_cawa_land_modis_terra() in wv-cci-parent_se_only:
@@ -145,10 +149,14 @@ public class TcwvFullAlgoForOneOceanPixelTest {
         // mes = [0.00320285,  0.15861148,  0.35012841,  0.27699689]
         double[] mes = new double[]{0.019208,  0.013863,  0.007082,  0.008598};
         double[] rhoToaWin = new double[1];
-        rhoToaWin[0] = mes[0]*Math.cos(sza*MathUtils.DTOR);
+//        rhoToaWin[0] = mes[0]*Math.cos(sza*MathUtils.DTOR);
+//        rhoToaWin[0] = mes[0]*Math.cos(sza*MathUtils.DTOR)/Math.PI;
+        rhoToaWin[0] = mes[0]/Math.PI;
         double[] rhoToaAbs = new double[3];
         for (int i = 0; i < rhoToaAbs.length; i++) {
             rhoToaAbs[i] = mes[i+1]*Math.cos(sza*MathUtils.DTOR);
+//            rhoToaAbs[i] = mes[i+1]*Math.cos(sza*MathUtils.DTOR)/Math.PI;
+//            rhoToaAbs[i] = mes[i+1]/Math.PI;
         }
         double aot865 = 0.1;
         double priorAot = 0.15;
@@ -170,7 +178,7 @@ public class TcwvFullAlgoForOneOceanPixelTest {
 
         System.out.println("MODIS TERRA OCEAN result.getTcwv() = " + result.getTcwv());
 //        assertEquals(65.636, result.getTcwv(), 1.E-2);
-        assertEquals(66.664, result.getTcwv(), 1.E-2);   // with new L1 uncertainty estimates
+        assertEquals(26.492, result.getTcwv(), 1.E-2);   // with new L1 uncertainty estimates
         // Python result: 65.636 --> exactly matching
         // todo: re-check later with updated LUTs
     }

@@ -95,7 +95,8 @@ public class TcwvOp extends Operator {
     private Band priorT2mBand;
     private Band priorMslBand;
     private Band priorTcwvBand;
-    private Band priorWsBand;
+    private Band priorU10Band;
+    private Band priorV10Band;
 
     private Band[] landWinBands;
     private Band[] landAbsBands;
@@ -171,7 +172,8 @@ public class TcwvOp extends Operator {
         priorT2mBand = null;
         priorMslBand = null;
         priorTcwvBand = null;
-        priorWsBand = null;
+        priorU10Band = null;
+        priorV10Band = null;
         if (sourceProduct.containsBand(TcwvConstants.PRIOR_T2M_BAND_NAME)) {
             priorT2mBand = sourceProduct.getBand(TcwvConstants.PRIOR_T2M_BAND_NAME);
         }
@@ -181,8 +183,11 @@ public class TcwvOp extends Operator {
         if (sourceProduct.containsBand(TcwvConstants.PRIOR_TCWV_BAND_NAME)) {
             priorTcwvBand = sourceProduct.getBand(TcwvConstants.PRIOR_TCWV_BAND_NAME);
         }
-        if (sourceProduct.containsBand(TcwvConstants.PRIOR_WS_BAND_NAME)) {
-            priorWsBand = sourceProduct.getBand(TcwvConstants.PRIOR_WS_BAND_NAME);
+        if (sourceProduct.containsBand(TcwvConstants.PRIOR_U10_BAND_NAME)) {
+            priorU10Band = sourceProduct.getBand(TcwvConstants.PRIOR_U10_BAND_NAME);
+        }
+        if (sourceProduct.containsBand(TcwvConstants.PRIOR_V10_BAND_NAME)) {
+            priorU10Band = sourceProduct.getBand(TcwvConstants.PRIOR_V10_BAND_NAME);
         }
 
         szaBand = sourceProduct.getRasterDataNode(sensor.getTpgNames()[0]);
@@ -207,6 +212,7 @@ public class TcwvOp extends Operator {
         final Band tcwvBand = targetProduct.getBand(TcwvConstants.TCWV_TARGET_BAND_NAME);
         final Band tcwvUnvertaintyBand = targetProduct.getBand(TcwvConstants.TCWV_UNCERTAINTY_TARGET_BAND_NAME);
         final Band tcwvQualityFlagBand = targetProduct.getBand(TcwvConstants.TCWV_QUALITY_FLAG_BAND_NAME);
+        final Band aziDiffBand = targetProduct.getBand("azimuth_difference");
         final Band stateVector1Band = targetProduct.getBand(TcwvConstants.TCWV_STATE_VECTOR1_BAND_NAME);
         final Band stateVector2Band = targetProduct.getBand(TcwvConstants.TCWV_STATE_VECTOR2_BAND_NAME);
 
@@ -254,9 +260,14 @@ public class TcwvOp extends Operator {
             priorTcwvTile = getSourceTile(priorTcwvBand, targetRectangle);
         }
 
-        Tile priorWsTile = null;
-        if (priorWsBand != null) {
-            priorWsTile = getSourceTile(priorWsBand, targetRectangle);
+        Tile priorU10Tile = null;
+        if (priorU10Band != null) {
+            priorU10Tile = getSourceTile(priorU10Band, targetRectangle);
+        }
+
+        Tile priorV10Tile = null;
+        if (priorV10Band != null) {
+            priorV10Tile = getSourceTile(priorV10Band, targetRectangle);
         }
 
         double[] landWinBandData = new double[landWinBandTiles.length];
@@ -284,12 +295,17 @@ public class TcwvOp extends Operator {
                 } else {
                     // Preparing input data...
                     final double sza = szaTile.getSampleDouble(x, y);
+                    final double szaR = sza*MathUtils.DTOR;
                     final double vza = vzaTile.getSampleDouble(x, y);
+                    final double vzaR = vza*MathUtils.DTOR;
                     final double saa = saaTile.getSampleDouble(x, y);
+                    final double saaR = saa*MathUtils.DTOR;
                     final double vaa = vaaTile.getSampleDouble(x, y);
-                    final double relAzi = 180. - Math.abs(saa - vaa);
-                    final double csza = Math.cos(sza * MathUtils.DTOR);
-                    final double amf = 1. / csza + 1. / Math.cos(vza * MathUtils.DTOR);
+                    final double vaaR = vaa*MathUtils.DTOR;
+//                    final double relAzi = 180. - Math.abs(saa - vaa);
+                    final double relAzi = 180. - Math.acos(Math.cos(saaR)*Math.cos(vaaR) + Math.sin(saaR)*Math.sin(vaaR))*MathUtils.RTOD;
+                    final double csza = Math.cos(szaR);
+                    final double amf = 1. / csza + 1. / Math.cos(vzaR);
 
                     // we have as pressure:
                     // ERA Interim: Pa, e.g. 100500  --> divide by -100 to get negative hPa for current LUTs
@@ -306,8 +322,13 @@ public class TcwvOp extends Operator {
 
                     final double t2m =
                             priorT2mTile != null ? priorT2mTile.getSampleDouble(x, y) : temperature;
-                    final double priorWs =
-                            priorWsTile != null ? priorWsTile.getSampleDouble(x, y) : TcwvConstants.WS_INIT_VALUE;
+                    double priorWs = TcwvConstants.WS_INIT_VALUE;
+                    if (priorU10Tile != null && priorV10Tile != null) {
+                        final double u10 = priorU10Tile.getSampleDouble(x, y);
+                        final double v10 = priorV10Tile.getSampleDouble(x, y);
+                        priorWs = Math.sqrt(u10*u10 + v10*v10);
+                    }
+
                     final double priorAot = TcwvConstants.AOT865_INIT_VALUE;
                     final double priorAl0 = TcwvConstants.AL0_INIT_VALUE;
                     final double priorAl1 = TcwvConstants.AL1_INIT_VALUE;
@@ -319,10 +340,20 @@ public class TcwvOp extends Operator {
                     if (isLand) {
                         for (int i = 0; i < landWinBandData.length; i++) {
                             // multiply with cos(sza), see CAWA: cawa_tcwv_<sensor>_op.py!
-                            landWinBandData[i] = landWinBandTiles[i].getSampleDouble(x, y) * csza;
+                            if (sensor == Sensor.MODIS_TERRA) {
+                                landWinBandData[i] = landWinBandTiles[i].getSampleDouble(x, y) / Math.PI;
+                            } else {
+                                landWinBandData[i] = landWinBandTiles[i].getSampleDouble(x, y) * csza;
+                            }
+//                            landWinBandData[i] = landWinBandTiles[i].getSampleDouble(x, y) * csza;
                         }
                         for (int i = 0; i < landAbsBandData.length; i++) {
-                            landAbsBandData[i] = landAbsBandTiles[i].getSampleDouble(x, y) * csza;
+                            if (sensor == Sensor.MODIS_TERRA) {
+                                landAbsBandData[i] = landAbsBandTiles[i].getSampleDouble(x, y) / Math.PI;
+                            } else {
+                                landAbsBandData[i] = landAbsBandTiles[i].getSampleDouble(x, y) * csza;
+                            }
+//                            landAbsBandData[i] = landAbsBandTiles[i].getSampleDouble(x, y) * csza;
                         }
                         input = new TcwvAlgorithmInput(landWinBandData, landAbsBandData, sza, vza, relAzi,
                                                        amf, aot865, priorAot, priorAl0, priorAl1,
@@ -359,6 +390,8 @@ public class TcwvOp extends Operator {
                     } else {
                         targetTiles.get(tcwvQualityFlagBand).setSample(x, y, TcwvConstants.TCWV_OK, true);
                     }
+
+                    targetTiles.get(aziDiffBand).setSample(x, y, relAzi);
                 }
             }
         }
@@ -455,6 +488,13 @@ public class TcwvOp extends Operator {
         tcwvUncertaintyBand.setScalingFactor(0.001);
         tcwvUncertaintyBand.setUnit("kg/m^2");
         tcwvUncertaintyBand.setDescription("Uncertainty of Total Column of Water Vapour");
+        tcwvUncertaintyBand.setNoDataValue(Float.NaN);
+        tcwvUncertaintyBand.setNoDataValueUsed(true);
+
+        final Band aziDiffBand =
+                targetProduct.addBand("azimuth_difference", ProductData.TYPE_FLOAT32);
+        tcwvUncertaintyBand.setUnit("degree");
+        tcwvUncertaintyBand.setDescription("Azimuth difference");
         tcwvUncertaintyBand.setNoDataValue(Float.NaN);
         tcwvUncertaintyBand.setNoDataValueUsed(true);
 
