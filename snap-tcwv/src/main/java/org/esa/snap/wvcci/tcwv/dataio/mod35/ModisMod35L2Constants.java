@@ -15,6 +15,7 @@ public class ModisMod35L2Constants {
     public static final int CLOUD_DETERMINED_BIT_INDEX = 0;
     public static final int CLOUD_CERTAIN_BIT_INDEX = 1;
     public static final int CLOUD_UNCERTAIN_BIT_INDEX = 2;
+    public static final int CLEAR_CERTAIN_BIT_INDEX = 4;
     public static final int SNOW_ICE_BIT_INDEX = 7;
     public static final int DESERT_BIT_INDEX = 10;
     public static final int LAND_BIT_INDEX = 11;

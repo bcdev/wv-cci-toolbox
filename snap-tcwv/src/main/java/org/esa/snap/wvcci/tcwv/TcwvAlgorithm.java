@@ -87,7 +87,7 @@ public class TcwvAlgorithm {
 
         OptimalEstimation oe = new OptimalEstimation(tcwvFunction, a, b, mes, par, jacobiFunction);
 
-        return getTcwvResult(a, xa, se, sa, oe, sensor, true);
+        return getTcwvResult(a, xa, se, sa, oe, sensor);
     }
 
     private TcwvResult computeTcwvOcean(Sensor sensor, TcwvAlgorithmInput input, TcwvOceanLut oceanLut,
@@ -139,7 +139,7 @@ public class TcwvAlgorithm {
 
         OptimalEstimation oe = new OptimalEstimation(tcwvFunction, a, b, mes, par, jacobiFunction);
 
-        return getTcwvResult(a, xa, se, sa, oe, sensor, false);
+        return getTcwvResult(a, xa, se, sa, oe, sensor);
     }
 
     double rectifyAndO2Correct(Sensor sensor, double[] rhoWb, double[] rhoAb,
@@ -180,7 +180,7 @@ public class TcwvAlgorithm {
     }
 
     private TcwvResult getTcwvResult(double[] a, double[] xa, double[][] se, double[][] sa,
-                                     OptimalEstimation oe, Sensor sensor, boolean isLand) {
+                                     OptimalEstimation oe, Sensor sensor) {
         // now includes uncertainty
         OptimalEstimationResult result = oe.invert(InversionMethod.OE, a, se, sa, xa, OEOutputMode.FULL, 3);
         final double resultTcwv = Math.pow(result.getXn()[0], 2.0);
@@ -196,6 +196,7 @@ public class TcwvAlgorithm {
         final double resultAot1 = result.getXn()[1];
         final double resultAot2 = result.getXn()[2];
 
-        return new TcwvResult(resultTcwv, resultTcwvUncertainty, resultAot1, resultAot2);
+        final double cost = result.getDiagnoseResult().getCost();
+        return new TcwvResult(resultTcwv, resultTcwvUncertainty, cost, resultAot1, resultAot2);
     }
 }

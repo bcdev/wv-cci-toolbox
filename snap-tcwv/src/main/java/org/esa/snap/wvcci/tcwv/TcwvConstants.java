@@ -9,8 +9,10 @@ import org.esa.snap.wvcci.tcwv.dataio.mod35.ModisMod35L2Constants;
  */
 public class TcwvConstants {
 
+
     static final String PIXEL_CLASSIF_BAND_NAME = "pixel_classif_flags";
     public static final String TCWV_QUALITY_FLAG_BAND_NAME = "tcwv_quality_flags";
+    public static final String SURFACE_TYPE_FLAG_BAND_NAME = "surface_type_flags";
 
     public static final String TCWV_TARGET_BAND_NAME = "tcwv";
     public static final String TCWV_MEAN_BAND_NAME = "tcwv_mean";
@@ -22,16 +24,33 @@ public class TcwvConstants {
     public static final String TCWV_SSMI_COUNTS_BAND_NAME = "numo";
 
     public static final int TCWV_OK = 0;
-    public static final int TCWV_UNCERTAIN = 1;
-    public static final int TCWV_INVALID = 2;
+    public static final int TCWV_L1_QUALITY_ISSUES = 1;
+    public static final int TCWV_CRITICAL_RETRIEVAL_CONDITIONS = 2;
+    public static final int TCWV_HIGH_COST_FUNCTION = 3;
+    public static final int TCWV_INACCURATE_UNCERTAINTY = 4;
+    public static final int TCWV_INVALID= 5;
 
-    public static final double TCWV_UNCERTAIN_THRESH = 4.0;  // todo: discuss
+    public static final int SURFACE_TYPE_LAND = 0;
+    public static final int SURFACE_TYPE_OCEAN = 1;
+    public static final int SURFACE_TYPE_CLOUD = 2;
+    public static final int SURFACE_TYPE_SEA_ICE = 3;
+    public static final int SURFACE_TYPE_COASTAL_ZONE = 4;
 
-    public static final String TCWV_OK_DESCR_TEXT = "TCWV was successfully retrieved for this pixel";
-    public static final String TCWV_UNCERTAIN_DESCR_TEXT = "TCWV was successfully retrieved, but has rather high uncertainty (> 4 kg/m^2)";
-    // todo: define 'high uncertainty' with the group.
-    public static final String TCWV_INVALID_DESCR_TEXT = "No valid TCWV was retrieved for this pixel";
+    public static final double TCWV_UNCERTAIN_THRESH = 4.0;
 
+    // todo: DWD/SE to provide exact criteria, then refine texts
+    public static final String TCWV_OK_DESCR_TEXT = "TCWV retrieval has no known issues";
+    public static final String TCWV_L1_QUALITY_ISSUES_DESCR_TEXT = "L1 input data for TCWV retrieval has quality issues";
+    public static final String TCWV_CRITICAL_RETRIEVAL_CONDITIONS_DESCR_TEXT = "TCWV is based on critical retrieval conditions";
+    public static final String TCWV_HIGH_COST_FUNCTION_DESCR_TEXT = "High cost function in TCWV retrieval";
+    public static final String TCWV_INACCURATE_UNCERTAINTY_DESCR_TEXT = "TCWV retrieval has inaccurate uncertainty";
+    public static final String TCWV_INVALID_DESCR_TEXT = "Invalid pixel (no TCWV retrieval)";
+
+    public static final String LAND_DESCR_TEXT = "Land";
+    public static final String OCEAN_DESCR_TEXT = "Ocean";
+    public static final String CLOUD_DESCR_TEXT = "Cloud";
+    public static final String SEA_ICE_DESCR_TEXT = "Sea ice";
+    public static final String COASTAL_ZONE_DESCR_TEXT = "Coastal zone (distance to land < 50km)";
 
     static final String TCWV_STATE_VECTOR1_BAND_NAME = "stateVector_1";
     static final String TCWV_STATE_VECTOR2_BAND_NAME = "stateVector_2";
@@ -53,7 +72,10 @@ public class TcwvConstants {
     static final int IDEPIX_CLOUD_AMBIGUOUS_BIT = 2;
     static final int IDEPIX_CLOUD_SURE_BIT = 3;
     static final int IDEPIX_CLOUD_BUFFER_BIT = 4;
+    static final int IDEPIX_SNOW_ICE_BIT = 6;
     static final int IDEPIX_LAND_BIT = 10;
+
+    static final double TCWV_RETRIEVAL_HIGH_COST = 2.0;
 
     static final String[] MOD35_BAND_NAMES = {
             ModisMod35L2Constants.CLOUD_MASK_BYTE_TARGET_BAND_NAME +  "1",

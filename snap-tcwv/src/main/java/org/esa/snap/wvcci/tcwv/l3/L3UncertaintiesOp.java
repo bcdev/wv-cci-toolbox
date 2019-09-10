@@ -114,7 +114,10 @@ public class L3UncertaintiesOp extends PixelOperator {
 //            targetSamples[TRG_TCWV_UNCERTAINTY_MEAN].set(sigmaMeanUncertainty);
             targetSamples[TRG_TCWV_UNCERTAINTY_SIGMA_SD_SQR].set(sigmaSd);
             targetSamples[TRG_TCWV_UNCERTAINTY_SIGMA_MEAN].set(sigmaMean);
-            targetSamples[TRG_TCWV_UNCERTAINTY_SIGMA_SQR_MEAN].set(sigmaSqrMean);
+//            targetSamples[TRG_TCWV_UNCERTAINTY_SIGMA_SQR_MEAN].set(sigmaSqrMean);
+            // DWD wants this term stored instead, as this is what is written into HOAPS products (MS, 20190826):
+            final float sigmaSqrMeanHoaps = 1.0f / (tcwvCounts * sigmaSqrMean);
+            targetSamples[TRG_TCWV_UNCERTAINTY_SIGMA_SQR_MEAN].set(sigmaSqrMeanHoaps);
         } else {
             targetSamples[TRG_TCWV_MEAN].set(Float.NaN);
 //            targetSamples[TRG_TCWV_UNCERTAINTY_MEAN].set(Float.NaN);
@@ -133,23 +136,41 @@ public class L3UncertaintiesOp extends PixelOperator {
         super.configureTargetProduct(productConfigurer);
         final Product targetProduct = productConfigurer.getTargetProduct();
 
-        targetProduct.addBand(TCWV_MEAN_BAND_NAME, sourceProduct.getBand(TCWV_MEAN_BAND_NAME).getDataType());
+        final Band tcwvBand = targetProduct.addBand(TCWV_MEAN_BAND_NAME, sourceProduct.getBand(TCWV_MEAN_BAND_NAME).getDataType());
+        // Mean of Total Column of Water
+        tcwvBand.setUnit("kg/m^2");
+        tcwvBand.setDescription("Standard deviation of Total Column of Water");
+
 //        targetProduct.addBand(TCWV_UNCERTAINTY_MEAN_BAND_NAME,
 //                              sourceProduct.getBand(TCWV_UNCERTAINTY_MEAN_BAND_NAME).getDataType());
-        targetProduct.addBand(TCWV_UNCERTAINTY_SIGMA_SD_BAND_NAME,
-                              sourceProduct.getBand(TCWV_UNCERTAINTY_MEAN_BAND_NAME).getDataType());
-        targetProduct.addBand(TCWV_UNCERTAINTY_SIGMA_MEAN_BAND_NAME,
-                              sourceProduct.getBand(TCWV_UNCERTAINTY_MEAN_BAND_NAME).getDataType());
-        targetProduct.addBand(TCWV_UNCERTAINTY_SIGMA_SQR_MEAN_BAND_NAME,
-                              sourceProduct.getBand(TCWV_UNCERTAINTY_MEAN_BAND_NAME).getDataType());
+        final Band sigmaSdBand = targetProduct.addBand(TCWV_UNCERTAINTY_SIGMA_SD_BAND_NAME,
+                                                sourceProduct.getBand(TCWV_UNCERTAINTY_MEAN_BAND_NAME).getDataType());
+        sigmaSdBand.setUnit("kg/m^2");
+        sigmaSdBand.setDescription("Standard deviation of Total Column of Water");
 
+        final Band retrievalUncertBand = targetProduct.addBand(TCWV_UNCERTAINTY_SIGMA_MEAN_BAND_NAME,
+                                                sourceProduct.getBand(TCWV_UNCERTAINTY_MEAN_BAND_NAME).getDataType());
+        retrievalUncertBand.setUnit("kg/m^2");
+        retrievalUncertBand.setDescription("Retrieval uncertainty of Total Column of Water");
 
-        targetProduct.addBand(TCWV_COUNTS_BAND_NAME, sourceProduct.getBand(TCWV_COUNTS_BAND_NAME).getDataType());
+        final Band randomUncertBand = targetProduct.addBand(TCWV_UNCERTAINTY_SIGMA_SQR_MEAN_BAND_NAME,
+                                                sourceProduct.getBand(TCWV_UNCERTAINTY_MEAN_BAND_NAME).getDataType());
+        randomUncertBand.setUnit("m^2/kg");
+        randomUncertBand.setDescription("Random uncertainty of Total Column of Water (reciprocal and normalised with " +
+                                                "number of observations, given in m^2/kg");
+
+        final Band countsBand = targetProduct.addBand(TCWV_COUNTS_BAND_NAME,
+                                                      sourceProduct.getBand(TCWV_COUNTS_BAND_NAME).getDataType());
+        countsBand.setUnit(" ");
+        countsBand.setDescription("Number of observations");
+
         if (sourceProduct.containsBand(NUM_PASSES_BAND_NAME)) {
             targetProduct.addBand(NUM_PASSES_BAND_NAME, sourceProduct.getBand(NUM_PASSES_BAND_NAME).getDataType());
         }
 
         for (Band b : targetProduct.getBands()) {
+            b.setNoDataValue(Double.NaN);
+            b.setNoDataValueUsed(true);
             final Band sourceBand = sourceProduct.getBand(b.getName());
             if (sourceBand != null) {
                 TcwvUtils.copyBandProperties(b, sourceBand);

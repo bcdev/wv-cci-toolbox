@@ -9,7 +9,7 @@
                 <attr name="delegate" methodvalue="org.esa.snap.core.gpf.ui.DefaultOperatorAction.create"/>
                 <attr name="displayName" stringvalue="Water Vapour Processor (MERIS, MODIS, OLCI)"/>
                 <attr name="operatorName" stringvalue="ESACCI.Tcwv"/>
-                <attr name="dialogTitle" stringvalue="Water Vapour Processor (MERIS, MODIS, OLCI) - v0.81"/>
+                <attr name="dialogTitle" stringvalue="Water Vapour Processor (MERIS, MODIS, OLCI) - v1.4"/>
                 <attr name="targetProductNameSuffix" stringvalue="_wv"/>
                 <attr name="helpId" stringvalue="waterVapourTool"/>
             </file>

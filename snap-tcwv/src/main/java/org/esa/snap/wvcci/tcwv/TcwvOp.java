@@ -27,7 +27,7 @@ import java.util.Map;
  *
  * @author Olaf Danne
  */
-@OperatorMetadata(alias = "ESACCI.Tcwv", version = "0.81",
+@OperatorMetadata(alias = "ESACCI.Tcwv", version = "1.4",
         authors = "R.Preusker, O.Danne",
         category = "Optical/Preprocessing",
         copyright = "Copyright (C) 2018 by Spectral Earth, Brockmann Consult",
@@ -40,7 +40,7 @@ public class TcwvOp extends Operator {
 
     @Parameter(valueSet = {"NO_FILTER", "CLOUD_SURE", "CLOUD_SURE_BUFFER",
             "CLOUD_SURE_AMBIGUOUS", "CLOUD_SURE_AMBIGUOUS_BUFFER"},
-            defaultValue = "CLOUD_SURE_AMBIGUOUS",
+            defaultValue = "CLOUD_SURE_AMBIGUOUS_BUFFER",
             description = "Strength of cloud filter.",
             label = "Strength of cloud filter.")
     private CloudFilterLevel cloudFilterLevel;
@@ -91,6 +91,7 @@ public class TcwvOp extends Operator {
     private RasterDataNode vaaBand;
 
     private Band pixelClassifBand;
+    private Band idepixClassifBand;
 
     private Band priorT2mBand;
     private Band priorMslBand;
@@ -122,9 +123,11 @@ public class TcwvOp extends Operator {
         if (mod35Product != null && (sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA)) {
             validateMod35Product(mod35Product);
             pixelClassifBand = mod35Product.getBand(TcwvConstants.PIXEL_CLASSIF_BAND_NAME);
+            idepixClassifBand = sourceProduct.getBand(TcwvConstants.PIXEL_CLASSIF_BAND_NAME);
             mod35Used = true;
         } else {
             pixelClassifBand = sourceProduct.getBand(TcwvConstants.PIXEL_CLASSIF_BAND_NAME);
+            idepixClassifBand = pixelClassifBand;
             mod35Used = false;
         }
 
@@ -210,13 +213,12 @@ public class TcwvOp extends Operator {
     public void computeTileStack(Map<Band, Tile> targetTiles, Rectangle targetRectangle, ProgressMonitor pm) throws OperatorException {
 
         final Band tcwvBand = targetProduct.getBand(TcwvConstants.TCWV_TARGET_BAND_NAME);
-        final Band tcwvUnvertaintyBand = targetProduct.getBand(TcwvConstants.TCWV_UNCERTAINTY_TARGET_BAND_NAME);
+        final Band tcwvUncertaintyBand = targetProduct.getBand(TcwvConstants.TCWV_UNCERTAINTY_TARGET_BAND_NAME);
         final Band tcwvQualityFlagBand = targetProduct.getBand(TcwvConstants.TCWV_QUALITY_FLAG_BAND_NAME);
+        final Band tcwvSurfaceTypeFlagBand = targetProduct.getBand(TcwvConstants.SURFACE_TYPE_FLAG_BAND_NAME);
         final Band aziDiffBand = targetProduct.getBand("azimuth_difference");
         final Band stateVector1Band = targetProduct.getBand(TcwvConstants.TCWV_STATE_VECTOR1_BAND_NAME);
         final Band stateVector2Band = targetProduct.getBand(TcwvConstants.TCWV_STATE_VECTOR2_BAND_NAME);
-
-        final Tile tcwvQualityFlagTile = targetTiles.get(tcwvQualityFlagBand);
 
         Tile[] landWinBandTiles = new Tile[landWinBands.length];
         for (int i = 0; i < landWinBandTiles.length; i++) {
@@ -244,6 +246,7 @@ public class TcwvOp extends Operator {
         Tile vaaTile = getSourceTile(vaaBand, targetRectangle);
 
         Tile pixelClassifTile = getSourceTile(pixelClassifBand, targetRectangle);
+        Tile idepixClassifTile = getSourceTile(idepixClassifBand, targetRectangle);
 
         Tile priorT2mTile = null;
         if (priorT2mBand != null) {
@@ -282,11 +285,20 @@ public class TcwvOp extends Operator {
                         !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_INVALID_BIT);
                 final boolean isCloud = mod35Used ? isMod35Cloud(x, y, pixelClassifTile) :
                         isIdepixCloud(x, y, pixelClassifTile);
-                boolean isLand = mod35Used ? isMod35Land(x, y, pixelClassifTile) : isIdepixLand(x, y, pixelClassifTile);
+                final boolean isLand = mod35Used ? isMod35Land(x, y, pixelClassifTile) :
+                        isIdepixLand(x, y, pixelClassifTile);
+                final boolean isSeaIce = isIdepixSeaIce(x, y, idepixClassifTile);
+                final boolean isOcean = !isLand && !isSeaIce;
+
+                targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_LAND, isLand);
+                targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_OCEAN, isOcean);
+                targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_CLOUD, isCloud);
+                targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_SEA_ICE, isSeaIce);
+                // todo: determine coastal zone elsewhere, tbd
 
                 if (!isValid || isCloud || (!processOcean && !isLand)) {
                     targetTiles.get(tcwvBand).setSample(x, y, Float.NaN);
-                    targetTiles.get(tcwvUnvertaintyBand).setSample(x, y, Float.NaN);
+                    targetTiles.get(tcwvUncertaintyBand).setSample(x, y, Float.NaN);
                     targetTiles.get(tcwvQualityFlagBand).setSample(x, y, TcwvConstants.TCWV_INVALID, true);
                     if (writeFullStateVector) {
                         targetTiles.get(stateVector1Band).setSample(x, y, Float.NaN);
@@ -295,15 +307,15 @@ public class TcwvOp extends Operator {
                 } else {
                     // Preparing input data...
                     final double sza = szaTile.getSampleDouble(x, y);
-                    final double szaR = sza*MathUtils.DTOR;
+                    final double szaR = sza * MathUtils.DTOR;
                     final double vza = vzaTile.getSampleDouble(x, y);
-                    final double vzaR = vza*MathUtils.DTOR;
+                    final double vzaR = vza * MathUtils.DTOR;
                     final double saa = saaTile.getSampleDouble(x, y);
-                    final double saaR = saa*MathUtils.DTOR;
+                    final double saaR = saa * MathUtils.DTOR;
                     final double vaa = vaaTile.getSampleDouble(x, y);
-                    final double vaaR = vaa*MathUtils.DTOR;
+                    final double vaaR = vaa * MathUtils.DTOR;
 //                    final double relAzi = 180. - Math.abs(saa - vaa);
-                    final double relAzi = 180. - Math.acos(Math.cos(saaR)*Math.cos(vaaR) + Math.sin(saaR)*Math.sin(vaaR))*MathUtils.RTOD;
+                    final double relAzi = 180. - Math.acos(Math.cos(saaR) * Math.cos(vaaR) + Math.sin(saaR) * Math.sin(vaaR)) * MathUtils.RTOD;
                     final double csza = Math.cos(szaR);
                     final double amf = 1. / csza + 1. / Math.cos(vzaR);
 
@@ -326,7 +338,7 @@ public class TcwvOp extends Operator {
                     if (priorU10Tile != null && priorV10Tile != null) {
                         final double u10 = priorU10Tile.getSampleDouble(x, y);
                         final double v10 = priorV10Tile.getSampleDouble(x, y);
-                        priorWs = Math.sqrt(u10*u10 + v10*v10);
+                        priorWs = Math.sqrt(u10 * u10 + v10 * v10);
                     }
 
                     final double priorAot = TcwvConstants.AOT865_INIT_VALUE;
@@ -337,23 +349,28 @@ public class TcwvOp extends Operator {
 
                     TcwvAlgorithmInput input;
 
+                    // clarification of correct normalisation of input reflectances (email RP, 20190903):
+                    // - MODIS: refl_for_tcwv = refl_input / PI
+                    // - MERIS/OLCI: refl_for_tcwv = radiance / flux = refl_input * cos(sza) because
+                    //          refl_input = radiance / (flux * cos(sza)), see RsMathUtils.radianceToReflectance(...)
                     if (isLand) {
                         for (int i = 0; i < landWinBandData.length; i++) {
-                            // multiply with cos(sza), see CAWA: cawa_tcwv_<sensor>_op.py!
-                            if (sensor == Sensor.MODIS_TERRA) {
+                            if (sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA) {
+                                // this was wrong before!
                                 landWinBandData[i] = landWinBandTiles[i].getSampleDouble(x, y) / Math.PI;
                             } else {
+                                // this was already correct before
                                 landWinBandData[i] = landWinBandTiles[i].getSampleDouble(x, y) * csza;
                             }
-//                            landWinBandData[i] = landWinBandTiles[i].getSampleDouble(x, y) * csza;
                         }
                         for (int i = 0; i < landAbsBandData.length; i++) {
-                            if (sensor == Sensor.MODIS_TERRA) {
+                            if (sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA) {
+                                // this was wrong before!
                                 landAbsBandData[i] = landAbsBandTiles[i].getSampleDouble(x, y) / Math.PI;
                             } else {
+                                // this was already correct before
                                 landAbsBandData[i] = landAbsBandTiles[i].getSampleDouble(x, y) * csza;
                             }
-//                            landAbsBandData[i] = landAbsBandTiles[i].getSampleDouble(x, y) * csza;
                         }
                         input = new TcwvAlgorithmInput(landWinBandData, landAbsBandData, sza, vza, relAzi,
                                                        amf, aot865, priorAot, priorAl0, priorAl1,
@@ -381,17 +398,14 @@ public class TcwvOp extends Operator {
                         targetTiles.get(stateVector1Band).setSample(x, y, result.getStateVector1());
                         targetTiles.get(stateVector2Band).setSample(x, y, result.getStateVector2());
                     }
-                    targetTiles.get(tcwvUnvertaintyBand).setSample(x, y, result.getTcwvUncertainty());
+                    targetTiles.get(tcwvUncertaintyBand).setSample(x, y, result.getTcwvUncertainty());
 
-//                    final double relativeUncertainty = result.getTcwvUncertainty() / result.getTcwv();
-//                    if (relativeUncertainty > 0.05) {
-                    if (result.getTcwvUncertainty() > TcwvConstants.TCWV_UNCERTAIN_THRESH) {   // todo: discuss
-                        targetTiles.get(tcwvQualityFlagBand).setSample(x, y, TcwvConstants.TCWV_UNCERTAIN, true);
+                    if (result.getCost() > TcwvConstants.TCWV_RETRIEVAL_HIGH_COST) {
+                        targetTiles.get(tcwvQualityFlagBand).setSample(x, y, TcwvConstants.TCWV_HIGH_COST_FUNCTION, true);
                     } else {
+                        // todo: DWD/SE to provide definitions for other flags. In the meantime just set ok
                         targetTiles.get(tcwvQualityFlagBand).setSample(x, y, TcwvConstants.TCWV_OK, true);
                     }
-
-                    targetTiles.get(aziDiffBand).setSample(x, y, relAzi);
                 }
             }
         }
@@ -433,10 +447,20 @@ public class TcwvOp extends Operator {
         return pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_LAND_BIT);
     }
 
+    private boolean isIdepixSeaIce(int x, int y, Tile pixelClassifTile) {
+        return !(isIdepixLand(x, y, pixelClassifTile)) &&
+                pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_SNOW_ICE_BIT);
+    }
+
     private boolean isMod35Cloud(int x, int y, Tile pixelClassifTile) {
-        return pixelClassifTile.getSampleBit(x, y, ModisMod35L2Constants.CLOUD_DETERMINED_BIT_INDEX) &&
-                (pixelClassifTile.getSampleBit(x, y, ModisMod35L2Constants.CLOUD_CERTAIN_BIT_INDEX) ||
-                        pixelClassifTile.getSampleBit(x, y, ModisMod35L2Constants.CLOUD_UNCERTAIN_BIT_INDEX));
+//        return pixelClassifTile.getSampleBit(x, y, ModisMod35L2Constants.CLOUD_DETERMINED_BIT_INDEX) &&
+//                (pixelClassifTile.getSampleBit(x, y, ModisMod35L2Constants.CLOUD_CERTAIN_BIT_INDEX) ||
+//                        pixelClassifTile.getSampleBit(x, y, ModisMod35L2Constants.CLOUD_UNCERTAIN_BIT_INDEX));
+
+        // make this even more strict: regard as cloud and exclude everything which is not certainly clear and not snow
+        // (RP, 20190902)
+        return !pixelClassifTile.getSampleBit(x, y, ModisMod35L2Constants.CLEAR_CERTAIN_BIT_INDEX) &&
+                !pixelClassifTile.getSampleBit(x, y, ModisMod35L2Constants.SNOW_ICE_BIT_INDEX);
 
     }
 
@@ -491,19 +515,19 @@ public class TcwvOp extends Operator {
         tcwvUncertaintyBand.setNoDataValue(Float.NaN);
         tcwvUncertaintyBand.setNoDataValueUsed(true);
 
-        final Band aziDiffBand =
-                targetProduct.addBand("azimuth_difference", ProductData.TYPE_FLOAT32);
-        tcwvUncertaintyBand.setUnit("degree");
-        tcwvUncertaintyBand.setDescription("Azimuth difference");
-        tcwvUncertaintyBand.setNoDataValue(Float.NaN);
-        tcwvUncertaintyBand.setNoDataValueUsed(true);
-
         final Band tcwvQualityFlagBand =
                 targetProduct.addBand(TcwvConstants.TCWV_QUALITY_FLAG_BAND_NAME, ProductData.TYPE_INT8);
-        FlagCoding flagCoding = TcwvUtils.createTcwvQualityFlagCoding(TcwvConstants.TCWV_QUALITY_FLAG_BAND_NAME);
-        tcwvQualityFlagBand.setSampleCoding(flagCoding);
-        targetProduct.getFlagCodingGroup().add(flagCoding);
+        FlagCoding tcwvQualityFlagCoding = TcwvUtils.createTcwvQualityFlagCoding(TcwvConstants.TCWV_QUALITY_FLAG_BAND_NAME);
+        tcwvQualityFlagBand.setSampleCoding(tcwvQualityFlagCoding);
+        targetProduct.getFlagCodingGroup().add(tcwvQualityFlagCoding);
         TcwvUtils.setupTcwvQualityFlagBitmask(targetProduct);
+
+        final Band tcwvSurfaceTypeFlagBand =
+                targetProduct.addBand(TcwvConstants.SURFACE_TYPE_FLAG_BAND_NAME, ProductData.TYPE_INT8);
+        FlagCoding surfaceTypeFlagCoding = TcwvUtils.createSurfaceTypeFlagCoding(TcwvConstants.SURFACE_TYPE_FLAG_BAND_NAME);
+        tcwvSurfaceTypeFlagBand.setSampleCoding(surfaceTypeFlagCoding);
+        targetProduct.getFlagCodingGroup().add(surfaceTypeFlagCoding);
+        TcwvUtils.setupSurfaceTypeFlagBitmask(targetProduct);
 
         if (writeFullStateVector) {
             // for debugging and result quality checks
