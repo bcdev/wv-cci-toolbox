@@ -5,4 +5,3 @@ org.esa.snap.wvcci.tcwv.l3.L3MonthlyPostProcessOp$Spi
 org.esa.snap.wvcci.tcwv.l3.L3SsmiPostProcessOp$Spi
 org.esa.snap.wvcci.tcwv.l3.L3MergeSensorsOp$Spi
 org.esa.snap.wvcci.tcwv.l3.L3UncertaintiesOp$Spi
-org.esa.snap.wvcci.tcwv.l3.L3Uncertainties2Op$Spi
