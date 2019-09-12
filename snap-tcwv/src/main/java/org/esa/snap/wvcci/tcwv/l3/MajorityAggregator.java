@@ -30,12 +30,17 @@ public class MajorityAggregator extends AbstractAggregator {
     private final int varIndex;
     private final int[] classes;
     private final Random random;
+    private boolean extendedOutput;
 
     public MajorityAggregator(VariableContext varCtx, String varName, int[] classes) {
+        this(varCtx, varName, classes, false);
+    }
+
+    public MajorityAggregator(VariableContext varCtx, String varName, int[] classes, boolean extendedOutput) {
         super(Descriptor.NAME,
                 getIntermediateFeatureNames(varName, classes),
                 getIntermediateFeatureNames(varName, classes),
-                getOutputFeatureNames(varName, classes));
+                getOutputFeatureNames(varName, classes, extendedOutput));
         this.classes = classes;
 
         if (varCtx == null) {
@@ -46,6 +51,7 @@ public class MajorityAggregator extends AbstractAggregator {
         }
         this.varIndex = varCtx.getVariableIndex(varName);
         random = new Random();
+        this.extendedOutput = extendedOutput;
     }
 
     @Override
@@ -147,15 +153,20 @@ public class MajorityAggregator extends AbstractAggregator {
         return features;
     }
 
-    static String[] getOutputFeatureNames(String varName, int[] classes) {
-        String[] features = new String[classes.length + 3];
-        for (int i = 0; i < classes.length; i++) {
-            features[i] = String.format("%s_class_%d_counts", varName, classes[i]);
+    static String[] getOutputFeatureNames(String varName, int[] classes, boolean extendedOutput) {
+        if (extendedOutput) {
+            String[] features = new String[classes.length + 3];
+            for (int i = 0; i < classes.length; i++) {
+                features[i] = String.format("%s_class_%d_counts", varName, classes[i]);
+            }
+            features[classes.length] = varName + "_sum_all";
+            features[classes.length + 1] = varName + "_sum_analyzed";
+            features[classes.length + 2] = varName + "_majority";
+            return features;
+        } else {
+            // just write majority band
+            return new String[]{varName + "_majority"};
         }
-        features[classes.length] = varName + "_sum_all";
-        features[classes.length + 1] = varName + "_sum_analyzed";
-        features[classes.length + 2] = varName + "_majority_class";
-        return features;
     }
 
 
@@ -175,9 +186,22 @@ public class MajorityAggregator extends AbstractAggregator {
         String varName;
         @Parameter
         int[] classes;
+        @Parameter
+        boolean extendedOutput;
 
         public Config() {
             super(Descriptor.NAME);
+        }
+
+        public Config(String varName, int[] classes) {
+            this(varName, classes, false);
+        }
+
+        public Config(String varName, int[] classes, Boolean extendedOutput) {
+            super(Descriptor.NAME);
+            this.varName = varName;
+            this.classes = classes;
+            this.extendedOutput = extendedOutput;
         }
     }
 
@@ -193,7 +217,7 @@ public class MajorityAggregator extends AbstractAggregator {
         @Override
         public Aggregator createAggregator(VariableContext varCtx, AggregatorConfig aggregatorConfig) {
             Config config = (Config) aggregatorConfig;
-            return new MajorityAggregator(varCtx, config.varName, config.classes);
+            return new MajorityAggregator(varCtx, config.varName, config.classes, config.extendedOutput);
         }
 
         @Override
@@ -210,7 +234,7 @@ public class MajorityAggregator extends AbstractAggregator {
         @Override
         public String[] getTargetVarNames(AggregatorConfig aggregatorConfig) {
             Config config = (Config) aggregatorConfig;
-            return getOutputFeatureNames(config.varName, config.classes);
+            return getOutputFeatureNames(config.varName, config.classes, config.extendedOutput);
         }
     }
 }

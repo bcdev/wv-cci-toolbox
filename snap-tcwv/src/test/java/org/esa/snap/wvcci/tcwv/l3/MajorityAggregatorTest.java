@@ -52,13 +52,35 @@ public class MajorityAggregatorTest {
         assertEquals("surface_type_class_3_counts", agg.getTemporalFeatureNames()[1]);
         assertEquals("surface_type_class_other_counts", agg.getTemporalFeatureNames()[2]);
 
+        assertEquals(1, agg.getOutputFeatureNames().length);
+        assertEquals("surface_type_majority", agg.getOutputFeatureNames()[0]);
+    }
+
+    @Test
+    public void testMetadataExtended() {
+        MyVariableContext varCtx = new MyVariableContext("surface_type");
+        Aggregator agg = new MajorityAggregator(varCtx, "surface_type", new int[]{1, 3}, true);
+
+        assertEquals("MAJORITY_CLASS", agg.getName());
+
+        assertEquals(3, agg.getSpatialFeatureNames().length);
+        assertEquals("surface_type_class_1_counts", agg.getSpatialFeatureNames()[0]);
+        assertEquals("surface_type_class_3_counts", agg.getSpatialFeatureNames()[1]);
+        assertEquals("surface_type_class_other_counts", agg.getSpatialFeatureNames()[2]);
+
+        assertEquals(3, agg.getTemporalFeatureNames().length);
+        assertEquals("surface_type_class_1_counts", agg.getTemporalFeatureNames()[0]);
+        assertEquals("surface_type_class_3_counts", agg.getTemporalFeatureNames()[1]);
+        assertEquals("surface_type_class_other_counts", agg.getTemporalFeatureNames()[2]);
+
         assertEquals(5, agg.getOutputFeatureNames().length);
         assertEquals("surface_type_class_1_counts", agg.getOutputFeatureNames()[0]);
         assertEquals("surface_type_class_3_counts", agg.getOutputFeatureNames()[1]);
         assertEquals("surface_type_sum_all", agg.getOutputFeatureNames()[2]);
         assertEquals("surface_type_sum_analyzed", agg.getOutputFeatureNames()[3]);
-        assertEquals("surface_type_majority_class", agg.getOutputFeatureNames()[4]);
+        assertEquals("surface_type_majority", agg.getOutputFeatureNames()[4]);
     }
+
 
     @Test
     public void tesAggregator() {
