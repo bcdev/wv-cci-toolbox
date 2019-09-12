@@ -32,11 +32,9 @@ public class TcwvConstants {
 
     public static final int SURFACE_TYPE_LAND = 0;
     public static final int SURFACE_TYPE_OCEAN = 1;
-    public static final int SURFACE_TYPE_CLOUD = 2;
-    public static final int SURFACE_TYPE_SEA_ICE = 3;
+    public static final int SURFACE_TYPE_SEA_ICE = 2;
+    public static final int SURFACE_TYPE_CLOUD = 3;
     public static final int SURFACE_TYPE_COASTAL_ZONE = 4;
-
-    public static final double TCWV_UNCERTAIN_THRESH = 4.0;
 
     // todo: DWD/SE to provide exact criteria, then refine texts
     public static final String TCWV_OK_DESCR_TEXT = "TCWV retrieval has no known issues";
@@ -48,8 +46,8 @@ public class TcwvConstants {
 
     public static final String LAND_DESCR_TEXT = "Land";
     public static final String OCEAN_DESCR_TEXT = "Ocean";
-    public static final String CLOUD_DESCR_TEXT = "Cloud";
     public static final String SEA_ICE_DESCR_TEXT = "Sea ice";
+    public static final String CLOUD_DESCR_TEXT = "Cloud";
     public static final String COASTAL_ZONE_DESCR_TEXT = "Coastal zone (distance to land < 50km)";
 
     static final String TCWV_STATE_VECTOR1_BAND_NAME = "stateVector_1";

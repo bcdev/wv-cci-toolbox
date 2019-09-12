@@ -283,12 +283,12 @@ public class TcwvOp extends Operator {
             for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
                 final boolean isValid = mod35Used ||
                         !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_INVALID_BIT);
-                final boolean isCloud = mod35Used ? isMod35Cloud(x, y, pixelClassifTile) :
-                        isIdepixCloud(x, y, pixelClassifTile);
                 final boolean isLand = mod35Used ? isMod35Land(x, y, pixelClassifTile) :
                         isIdepixLand(x, y, pixelClassifTile);
                 final boolean isSeaIce = isIdepixSeaIce(x, y, idepixClassifTile);
                 final boolean isOcean = !isLand && !isSeaIce;
+                final boolean isCloud = mod35Used ? isMod35Cloud(x, y, pixelClassifTile) :
+                        isIdepixCloud(x, y, pixelClassifTile);
 
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_LAND, isLand);
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_OCEAN, isOcean);

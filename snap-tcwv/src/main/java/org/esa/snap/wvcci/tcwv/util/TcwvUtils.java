@@ -81,12 +81,12 @@ public class TcwvUtils {
                            TcwvConstants.LAND_DESCR_TEXT);
         flagCoding.addFlag("OCEAN", BitSetter.setFlag(0, TcwvConstants.SURFACE_TYPE_OCEAN),
                            TcwvConstants.OCEAN_DESCR_TEXT);
-        flagCoding.addFlag("CLOUD", BitSetter.setFlag(0, TcwvConstants.SURFACE_TYPE_CLOUD),
-                           TcwvConstants.CLOUD_DESCR_TEXT);
         flagCoding.addFlag("SEA_ICE", BitSetter.setFlag(0, TcwvConstants.SURFACE_TYPE_SEA_ICE),
                            TcwvConstants.SEA_ICE_DESCR_TEXT);
-        flagCoding.addFlag("COASTAL_ZONE", BitSetter.setFlag(0, TcwvConstants.SURFACE_TYPE_COASTAL_ZONE),
-                           TcwvConstants.COASTAL_ZONE_DESCR_TEXT);
+        flagCoding.addFlag("CLOUD", BitSetter.setFlag(0, TcwvConstants.SURFACE_TYPE_CLOUD),
+                           TcwvConstants.CLOUD_DESCR_TEXT);
+//        flagCoding.addFlag("COASTAL_ZONE", BitSetter.setFlag(0, TcwvConstants.SURFACE_TYPE_COASTAL_ZONE),
+//                           TcwvConstants.COASTAL_ZONE_DESCR_TEXT);
 
         return flagCoding;
     }
@@ -171,23 +171,24 @@ public class TcwvUtils {
                                          Color.BLUE, 0.5f);
         tcwvProduct.getMaskGroup().add(index++, mask);
 
-        mask = Mask.BandMathsType.create("CLOUD",
-                                         TcwvConstants.CLOUD_DESCR_TEXT, w, h,
-                                         flagBandName + ".CLOUD",
-                                         Color.YELLOW, 0.5f);
-        tcwvProduct.getMaskGroup().add(index++, mask);
-
         mask = Mask.BandMathsType.create("SEA_ICE",
                                          TcwvConstants.SEA_ICE_DESCR_TEXT, w, h,
                                          flagBandName + ".SEA_ICE",
                                          Color.CYAN, 0.5f);
         tcwvProduct.getMaskGroup().add(index++, mask);
 
-        mask = Mask.BandMathsType.create("COASTAL_ZONE",
-                                         TcwvConstants.COASTAL_ZONE_DESCR_TEXT, w, h,
-                                         flagBandName + ".COASTAL_ZONE",
-                                         Color.ORANGE, 0.5f);
+        mask = Mask.BandMathsType.create("CLOUD",
+                                         TcwvConstants.CLOUD_DESCR_TEXT, w, h,
+                                         flagBandName + ".CLOUD",
+                                         Color.YELLOW, 0.5f);
+
         tcwvProduct.getMaskGroup().add(index, mask);
+
+//        mask = Mask.BandMathsType.create("COASTAL_ZONE",
+//                                         TcwvConstants.COASTAL_ZONE_DESCR_TEXT, w, h,
+//                                         flagBandName + ".COASTAL_ZONE",
+//                                         Color.ORANGE, 0.5f);
+//        tcwvProduct.getMaskGroup().add(index, mask);
 
     }
 

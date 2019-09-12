@@ -57,7 +57,7 @@ public class MajorityAggregatorTest {
     }
 
     @Test
-    public void testMetadataExtended() {
+    public void testMetadataExtendedOutput() {
         MyVariableContext varCtx = new MyVariableContext("surface_type");
         Aggregator agg = new MajorityAggregator(varCtx, "surface_type", new int[]{1, 3}, true);
 
@@ -83,9 +83,71 @@ public class MajorityAggregatorTest {
 
 
     @Test
-    public void tesAggregator() {
+    public void testAggregator() {
         MyVariableContext varCtx = new MyVariableContext("surface_type");
         Aggregator agg = new MajorityAggregator(varCtx, "surface_type", new int[]{1, 3});
+
+        VectorImpl svec = vec(NaN, NaN, NaN);
+        VectorImpl tvec = vec(NaN, NaN, NaN);
+        VectorImpl out = vec(NaN);
+
+        ////////////////////////////////////////////////////////
+        agg.initSpatial(ctx, svec);
+        assertEquals(0.0f, svec.get(0), 0.0f);
+        assertEquals(0.0f, svec.get(1), 0.0f);
+        assertEquals(0.0f, svec.get(2), 0.0f);
+
+        agg.aggregateSpatial(ctx, obsNT(1f), svec);
+        assertEquals(1f, svec.get(0), 1e-5f);
+        assertEquals(0f, svec.get(1), 1e-5f);
+        assertEquals(0f, svec.get(2), 1e-5f);
+
+        agg.aggregateSpatial(ctx, obsNT(2f), svec);
+        assertEquals(1f, svec.get(0), 1e-5f);
+        assertEquals(0f, svec.get(1), 1e-5f);
+        assertEquals(1f, svec.get(2), 1e-5f);
+
+        agg.aggregateSpatial(ctx, obsNT(3f), svec);
+        assertEquals(1f, svec.get(0), 1e-5f);
+        assertEquals(1f, svec.get(1), 1e-5f);
+        assertEquals(1f, svec.get(2), 1e-5f);
+
+        agg.completeSpatial(ctx, 3, svec);
+        assertEquals(1f, svec.get(0), 1e-5f);
+        assertEquals(1f, svec.get(1), 1e-5f);
+        assertEquals(1f, svec.get(2), 1e-5f);
+
+        ////////////////////////////////////////////////////////
+        agg.initTemporal(ctx, tvec);
+        assertEquals(0.0f, tvec.get(0), 0.0f);
+        assertEquals(0.0f, tvec.get(1), 0.0f);
+        assertEquals(0.0f, tvec.get(2), 0.0f);
+
+        agg.aggregateTemporal(ctx, vec(1f, 2f, 3f), 3, tvec);
+        assertEquals(1f, tvec.get(0), 1e-5f);
+        assertEquals(2f, tvec.get(1), 1e-5f);
+        assertEquals(3f, tvec.get(2), 1e-5f);
+
+        agg.aggregateTemporal(ctx, vec(5f, 6f, 7f), 5, tvec);
+        assertEquals(6f, tvec.get(0), 1e-5f);
+        assertEquals(8f, tvec.get(1), 1e-5f);
+        assertEquals(10f, tvec.get(2), 1e-5f);
+
+        agg.completeTemporal(ctx, 3, svec);
+        assertEquals(6f, tvec.get(0), 1e-5f);
+        assertEquals(8f, tvec.get(1), 1e-5f);
+        assertEquals(10f, tvec.get(2), 1e-5f);
+
+        ////////////////////////////////////////////////////////
+        agg.computeOutput(tvec, out);
+        assertEquals(1, out.size());
+        assertEquals(3f, out.get(0), 1e-5f);
+    }
+
+    @Test
+    public void testAggregatorExtendedOutput() {
+        MyVariableContext varCtx = new MyVariableContext("surface_type");
+        Aggregator agg = new MajorityAggregator(varCtx, "surface_type", new int[]{1, 3}, true);
 
         VectorImpl svec = vec(NaN, NaN, NaN);
         VectorImpl tvec = vec(NaN, NaN, NaN);
@@ -140,6 +202,7 @@ public class MajorityAggregatorTest {
 
         ////////////////////////////////////////////////////////
         agg.computeOutput(tvec, out);
+        assertEquals(5, out.size());
         assertEquals(6f, out.get(0), 1e-5f);
         assertEquals(8f, out.get(1), 1e-5f);
         assertEquals(24f, out.get(2), 1e-5f);

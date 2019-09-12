@@ -118,7 +118,9 @@ public class MajorityAggregator extends AbstractAggregator {
             float sum_analyzed = 0f;
             for (int i = 0; i < classes.length; i++) {
                 float counts = temporalVector.get(i);
-                outputVector.set(i, counts);
+                if (extendedOutput) {
+                    outputVector.set(i, counts);
+                }
                 sum_analyzed += counts;
                 sum_all += counts;
                 if (counts > majorityClassCounts) {
@@ -134,9 +136,13 @@ public class MajorityAggregator extends AbstractAggregator {
                 }
             }
             sum_all += temporalVector.get(classes.length);
-            outputVector.set(classes.length, sum_all);
-            outputVector.set(classes.length + 1, sum_analyzed);
-            outputVector.set(classes.length + 2, classes[majorityClassIndex]);
+            if (extendedOutput) {
+                outputVector.set(classes.length, sum_all);
+                outputVector.set(classes.length + 1, sum_analyzed);
+                outputVector.set(classes.length + 2, classes[majorityClassIndex]);
+            } else {
+                outputVector.set(0, classes[majorityClassIndex]);
+            }
         } else {
             for (int i = 0; i < outputVector.size(); i++) {
                 outputVector.set(i, Float.NaN);
