@@ -26,8 +26,15 @@ echo "`date -u +%Y%m%d-%H%M%S` submitting job '${jobname}' for task ${task}"
 echo "calling read_task_jobs()..."
 read_task_jobs ${jobname}
 
+#if [ -z ${jobs} ]; then
+#    submit_job ${jobname} ${command}
+#fi
+
 if [ -z ${jobs} ]; then
-    submit_job ${jobname} ${command}
+    timelim=180
+    memlim=16000
+    echo "submit_job ${jobname} ${command} ${timelim} ${memlim}"
+    submit_job ${jobname} "${command}" ${timelim} ${memlim}
 fi
 
 wait_for_task_jobs_completion ${jobname} 

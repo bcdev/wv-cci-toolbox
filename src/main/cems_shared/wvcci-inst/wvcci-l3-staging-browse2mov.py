@@ -15,7 +15,7 @@ years=['2010']
 sensors=['meris']
 bands=['tcwv_mean_mean']
 
-gaRootDir = '/group_workspaces/cems2/qa4ecv/vol4/olafd/GlobAlbedoTest'
+gaRootDir = '/gws/nopw/j04/esacci_wv/odanne/GlobAlbedoTest'
 
 inputs = ['dummy']
 

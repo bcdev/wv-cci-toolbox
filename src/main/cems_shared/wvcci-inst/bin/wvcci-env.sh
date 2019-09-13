@@ -11,7 +11,7 @@ fi
 WVCCI_TASKS=${WVCCI_INST}/tasks
 WVCCI_LOG=${WVCCI_INST}/log
 #export PM_LOG_DIR=${WVCCI_LOG}
-#export PM_PYTHON_EXEC='/group_workspaces/cems2/qa4ecv/vol4/software/miniconda3/envs/wvcci/bin/python'
+#export PM_PYTHON_EXEC='/gws/nopw/j04/esacci_wv/software/miniconda3/envs/wvcci/bin/python'
 
 read_task_jobs() {
     echo "entered read_task_jobs()..."

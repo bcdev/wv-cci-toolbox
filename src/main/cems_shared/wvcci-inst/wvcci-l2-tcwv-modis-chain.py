@@ -13,25 +13,30 @@ sensor = 'MODIS_TERRA'
 
 years = ['2011']    #test  
 #years = ['2012']    #test  
-allMonths = ['07']
+#years = ['2018']    #test  
 #allMonths = ['01','02','03']
-#allMonths = ['08','09','10','11']
-#allMonths = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+#allMonths = ['03','04','05']
+#allMonths = ['06','07','08','09']
+#allMonths = ['04','05','06']
+#allMonths = ['07','08','09']
+#allMonths = ['10','11','12']
+#allMonths = ['01', '07']
+allMonths = ['05']
+##allMonths = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+
+#days = ['07', '16', ,'17', '21', '23', '24', '25', '26', '28', '30', '31']
+#days = ['17']
 
 #################################################################
 
 def getMonth(year):
-    #if year == '2002':
-    #    return ['04', '05', '06', '07', '08', '09', '10', '11', '12']
-    #if year == '2012':
-    #    return ['01', '02', '03', '04']
     return allMonths
 
 ######################## L1b --> Idepix --> IdepixEraInterim --> TCWV: ###########################
 
-wvcciRootDir = '/group_workspaces/cems2/qa4ecv/vol4/olafd/WvcciTest'
+wvcciRootDir = '/gws/nopw/j04/esacci_wv/odanne/WvcciRoot'
 eraInterimRootDir = wvcciRootDir + '/auxiliary/era-interim-t2m-mslp-tcwv-u10-v10'
-snapDir = '/group_workspaces/cems2/qa4ecv/vol4/software/snap'
+snapDir = '/gws/nopw/j04/esacci_wv/software/snap'
 
 inputs = ['dummy']
 
@@ -55,7 +60,8 @@ for year in years:
         if os.path.exists(l1bRootDir + '/' + year + '/' + month):
 
             numMonthDays = monthrange(int(year), int(month))[1]
-            #for iday in range(7, 8):
+            #for day in days:
+            #for iday in range(15, 16):
             for iday in range(1, numMonthDays+1):
                 day = str(iday).zfill(2)
 
@@ -104,6 +110,7 @@ for year in years:
                                         # =============== Merge Idepix with ERA-INTERIM, then TCWV from Idepix-ERA-INTERIM merge product  =======================
 
                                         # !!! TODO: make sure that l1bFiles[index], modisLandMaskFiles[index] and modisCloudMaskFiles[0] refer to the same swath/time !!!
+                                        # should be OK?! (20190716)
 
                                         idepixEraFile = l1bFileBase + '_idepix-era-interim.nc'
                                         m.execute('wvcci-l2-tcwv-modis-step.sh',

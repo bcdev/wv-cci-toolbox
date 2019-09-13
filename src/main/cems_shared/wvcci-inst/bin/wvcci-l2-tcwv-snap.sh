@@ -16,10 +16,11 @@ then
     mkdir -p $tcwvL2Dir
 fi
 
-auxdataPath=/group_workspaces/cems2/qa4ecv/vol4/software/dot_snap/auxdata/wvcci
+auxdataPath=/gws/nopw/j04/esacci_wv/software/dot_snap/auxdata/wvcci
 
 if [ "$sensor" == "MERIS" ]
 then
+    # use NetCDF4-WVCCI writer to omit lat/lon variables, as they blow up the products which we need to transfer to Calvalus...
     echo "time $snapRootDir/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixPath -PauxdataPath=$auxdataPath -Psensor=$sensor -PcloudFilterLevel=CLOUD_SURE_BUFFER -f NetCDF4-WVCCI -t $tcwvFile"
     time $snapRootDir/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixPath -PauxdataPath=$auxdataPath -Psensor=$sensor -PcloudFilterLevel=CLOUD_SURE_BUFFER -f NetCDF4-WVCCI -t $tcwvFile
 elif [ "$sensor" == "MODIS_TERRA" ]
@@ -29,10 +30,6 @@ then
 else
     echo "Invalid sensor $sensor - no Idepix processing started."
 fi
-
-
-
-
 
 status=$?
 echo "Status: $status"

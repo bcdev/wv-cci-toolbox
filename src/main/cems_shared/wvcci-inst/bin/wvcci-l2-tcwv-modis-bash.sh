@@ -80,7 +80,9 @@ echo "$(date +%Y-%m-%dT%H:%M:%S -u) extracting geo information of $idepixName ..
 
 scripfile=$tmpdir/${modisstem}-scrip.nc
 if [ ! -e $scripfile ]; then
-  if ! $BEAM_HOME/bin/gpt.sh Write -PformatName=SCRIP -Pfile=$scripfile $idepixPath
+  #if ! $BEAM_HOME/bin/gpt.sh Write -PformatName=SCRIP -Pfile=$scripfile $idepixPath
+  # TODO: replace by SNAP, test:
+  if ! $SNAP_HOME/bin/gpt Write -PformatName=SCRIP -Pfile=$scripfile $idepixPath
   then
     cat gpt.out
     exit 1
@@ -117,29 +119,30 @@ echo "$(date +%Y-%m-%dT%H:%M:%S -u) interpolate spatially ..."
 eramodisspatial=$tmpdir/${modisstem}_era-interim_spatial.nc
 cdo -L -f nc4c remapbil,$scripfile $eramodistimeslice $eramodisspatial
 
-# band subset: we only need t2m, msl, tcwv
-$BEAM_HOME/bin/gpt.sh Subset -Ssource=$eramodisspatial -PbandNames=t2m,msl,tcwv -f Netcdf4-BEAM -t $eramodis
+# band subset: we need t2m, msl, tcwv, u10, v10
+#$BEAM_HOME/bin/gpt.sh Subset -Ssource=$eramodisspatial -PbandNames=t2m,msl,tcwv,u10,v10 -f Netcdf4-BEAM -t $eramodis
+# TODO: replace by SNAP, test:
+$SNAP_HOME/bin/gpt Subset -Ssource=$eramodisspatial -PbandNames=t2m,msl,tcwv,u10,v10 -f Netcdf4-BEAM -t $eramodis
+
 
 # merge Idepix with EraInterim band subset
 idepixEraInterimMerge=$idepixEraInterimDir/${modisstem}_idepix-era-interim.nc
-$SNAP_HOME/bin/gpt ESACCI.MergeIdepixEraInterim -SidepixProduct=$idepixPath -SeraInterimProduct=$eramodis -Psensor=MODIS_TERRA -f Netcdf4-BEAM -t $idepixEraInterimMerge
+$SNAP_HOME/bin/gpt ESACCI.MergeIdepixEraInterim -SidepixProduct=$idepixPath -SeraInterimProduct=$eramodis -Psensor=MODIS_TERRA -PeraInterimBandsToCopy=t2m,msl,tcwv,u10,v10 -f Netcdf4-BEAM -t $idepixEraInterimMerge
 
 
 ## TCWV
 if [ -f $idepixEraInterimMerge ]; then
-    auxdataPath=/group_workspaces/cems2/qa4ecv/vol4/software/dot_snap/auxdata/wvcci
+    auxdataPath=/gws/nopw/j04/esacci_wv/software/dot_snap/auxdata/wvcci
     tcwv=$tcwvDir/${modisstem}_tcwv.nc
-    #$SNAP_HOME/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixEraInterimMerge -PauxdataPath=$auxdataPath -Psensor=MODIS_TERRA -PcloudFilterLevel=CLOUD_SURE -f NetCDF4-WVCCI -t $tcwv
-    #$SNAP_HOME/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixEraInterimMerge -PauxdataPath=$auxdataPath -Psensor=MODIS_TERRA -PcloudFilterLevel=CLOUD_SURE_AMBIGUOUS -f NetCDF4-WVCCI -t $tcwv
 
-    # TODO: if existing, add MOD35_L2 product as optional source product, like: 
-     if [ -f $cloudMaskPath ]; then
-       echo "$SNAP_HOME/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixEraInterimMerge -Smod35Product=$cloudMaskPath -PauxdataPath=$auxdataPath -Psensor=MODIS_TERRA -PprocessOcean=true -f NetCDF4-WVCCI -t $tcwv"
-       $SNAP_HOME/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixEraInterimMerge -Smod35Product=$cloudMaskPath -PauxdataPath=$auxdataPath -Psensor=MODIS_TERRA -PprocessOcean=true -f NetCDF4-WVCCI -t $tcwv
-     else
-       echo "$SNAP_HOME/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixEraInterimMerge -PauxdataPath=$auxdataPath -Psensor=MODIS_TERRA -PprocessOcean=true -f NetCDF4-WVCCI -t $tcwv"
-       $SNAP_HOME/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixEraInterimMerge -PauxdataPath=$auxdataPath -Psensor=MODIS_TERRA -PprocessOcean=true -f NetCDF4-WVCCI -t $tcwv
-     fi
+    # if existing, add MOD35_L2 product as optional source product, like: 
+    if [ -f $cloudMaskPath ]; then
+      echo "$SNAP_HOME/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixEraInterimMerge -Smod35Product=$cloudMaskPath -PauxdataPath=$auxdataPath -Psensor=MODIS_TERRA -PprocessOcean=true -f NetCDF4-BEAM -t $tcwv"
+      $SNAP_HOME/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixEraInterimMerge -Smod35Product=$cloudMaskPath -PauxdataPath=$auxdataPath -Psensor=MODIS_TERRA -PprocessOcean=true -f NetCDF4-BEAM -t $tcwv
+    else
+      echo "$SNAP_HOME/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixEraInterimMerge -PauxdataPath=$auxdataPath -Psensor=MODIS_TERRA -PprocessOcean=true -f NetCDF4-BEAM -t $tcwv"
+      $SNAP_HOME/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixEraInterimMerge -PauxdataPath=$auxdataPath -Psensor=MODIS_TERRA -PprocessOcean=true -f NetCDF4-BEAM -t $tcwv
+    fi
 
 fi
 ## 
