@@ -111,14 +111,7 @@ public class SnapWvcciNc4WriterPlugIn extends AbstractNetCdfWriterPlugIn {
             addGlobalAttributes(writeable, product);
 
             for (Band b : product.getBands()) {
-                final String bandName = b.getName();
-                if (bandName.startsWith("tcwv") || 
-                        bandName.startsWith("stateVector") ||
-                        bandName.startsWith("ctp") ||
-                        bandName.endsWith("_classif_flags")) {
-                    addNc4BandVariableAndAttributes(writeable, b);
-
-                }
+                addNc4BandVariableAndAttributes(writeable, b);
             }
         }
 
