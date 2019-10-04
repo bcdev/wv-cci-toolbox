@@ -545,8 +545,15 @@ public class TcwvOp extends Operator {
 
         final TiePointGrid latTpg = targetProduct.getTiePointGrid(sensor.getTpgNames()[4]);
         final TiePointGrid lonTpg = targetProduct.getTiePointGrid(sensor.getTpgNames()[5]);
-        final TiePointGeoCoding tiePointGeoCoding = new TiePointGeoCoding(latTpg, lonTpg);
-        targetProduct.setSceneGeoCoding(tiePointGeoCoding);
+        if (latTpg != null && lonTpg != null) {
+            final TiePointGeoCoding tiePointGeoCoding = new TiePointGeoCoding(latTpg, lonTpg);
+            targetProduct.setSceneGeoCoding(tiePointGeoCoding);
+        } else {
+            // MODIS
+            final Band latBand = sourceProduct.getBand(sensor.getTpgNames()[4]);
+            final Band lonBand = sourceProduct.getBand(sensor.getTpgNames()[5]);
+            targetProduct.setSceneGeoCoding(new PixelGeoCoding(latBand, lonBand, null, 5));
+        }
 
         setTargetProduct(targetProduct);
     }

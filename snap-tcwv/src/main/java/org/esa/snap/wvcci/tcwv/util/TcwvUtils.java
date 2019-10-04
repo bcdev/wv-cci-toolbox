@@ -46,18 +46,18 @@ public class TcwvUtils {
         flagCoding.addFlag("TCWV_OK",
                            BitSetter.setFlag(0, TcwvConstants.TCWV_OK),
                            TcwvConstants.TCWV_OK_DESCR_TEXT);
-        flagCoding.addFlag("TCWV_L1_QUALITY_ISSUES",
-                           BitSetter.setFlag(0, TcwvConstants.TCWV_L1_QUALITY_ISSUES),
-                           TcwvConstants.TCWV_L1_QUALITY_ISSUES_DESCR_TEXT);
-        flagCoding.addFlag("TCWV_CRITICAL_RETRIEVAL_CONDITIONS",
-                           BitSetter.setFlag(0, TcwvConstants.TCWV_CRITICAL_RETRIEVAL_CONDITIONS),
-                           TcwvConstants.TCWV_CRITICAL_RETRIEVAL_CONDITIONS_DESCR_TEXT);
+//        flagCoding.addFlag("TCWV_L1_QUALITY_ISSUES",
+//                           BitSetter.setFlag(0, TcwvConstants.TCWV_L1_QUALITY_ISSUES),
+//                           TcwvConstants.TCWV_L1_QUALITY_ISSUES_DESCR_TEXT);
+//        flagCoding.addFlag("TCWV_CRITICAL_RETRIEVAL_CONDITIONS",
+//                           BitSetter.setFlag(0, TcwvConstants.TCWV_CRITICAL_RETRIEVAL_CONDITIONS),
+//                           TcwvConstants.TCWV_CRITICAL_RETRIEVAL_CONDITIONS_DESCR_TEXT);
         flagCoding.addFlag("TCWV_HIGH_COST_FUNCTION",
                            BitSetter.setFlag(0, TcwvConstants.TCWV_HIGH_COST_FUNCTION),
                            TcwvConstants.TCWV_HIGH_COST_FUNCTION_DESCR_TEXT);
-        flagCoding.addFlag("TCWV_INACCURATE_UNCERTAINTY",
-                           BitSetter.setFlag(0, TcwvConstants.TCWV_INACCURATE_UNCERTAINTY),
-                           TcwvConstants.TCWV_INACCURATE_UNCERTAINTY_DESCR_TEXT);
+//        flagCoding.addFlag("TCWV_INACCURATE_UNCERTAINTY",
+//                           BitSetter.setFlag(0, TcwvConstants.TCWV_INACCURATE_UNCERTAINTY),
+//                           TcwvConstants.TCWV_INACCURATE_UNCERTAINTY_DESCR_TEXT);
         flagCoding.addFlag("TCWV_INVALID",
                            BitSetter.setFlag(0, TcwvConstants.TCWV_INVALID),
                            TcwvConstants.TCWV_INVALID_DESCR_TEXT);
@@ -113,29 +113,29 @@ public class TcwvUtils {
                                          Color.GREEN, 0.5f);
         tcwvProduct.getMaskGroup().add(index++, mask);
 
-        mask = Mask.BandMathsType.create("TCWV_L1_QUALITY_ISSUES",
-                                         TcwvConstants.TCWV_L1_QUALITY_ISSUES_DESCR_TEXT, w, h,
-                                         flagBandName + ".TCWV_L1_QUALITY_ISSUES",
-                                         Color.YELLOW, 0.5f);
-        tcwvProduct.getMaskGroup().add(index++, mask);
-
-        mask = Mask.BandMathsType.create("TCWV_CRITICAL_RETRIEVAL_CONDITIONS",
-                                         TcwvConstants.TCWV_CRITICAL_RETRIEVAL_CONDITIONS_DESCR_TEXT, w, h,
-                                         flagBandName + ".TCWV_CRITICAL_RETRIEVAL_CONDITIONS",
-                                         Color.BLUE, 0.5f);
-        tcwvProduct.getMaskGroup().add(index++, mask);
+//        mask = Mask.BandMathsType.create("TCWV_L1_QUALITY_ISSUES",
+//                                         TcwvConstants.TCWV_L1_QUALITY_ISSUES_DESCR_TEXT, w, h,
+//                                         flagBandName + ".TCWV_L1_QUALITY_ISSUES",
+//                                         Color.YELLOW, 0.5f);
+//        tcwvProduct.getMaskGroup().add(index++, mask);
+//
+//        mask = Mask.BandMathsType.create("TCWV_CRITICAL_RETRIEVAL_CONDITIONS",
+//                                         TcwvConstants.TCWV_CRITICAL_RETRIEVAL_CONDITIONS_DESCR_TEXT, w, h,
+//                                         flagBandName + ".TCWV_CRITICAL_RETRIEVAL_CONDITIONS",
+//                                         Color.BLUE, 0.5f);
+//        tcwvProduct.getMaskGroup().add(index++, mask);
 
         mask = Mask.BandMathsType.create("TCWV_HIGH_COST_FUNCTION",
                                          TcwvConstants.TCWV_HIGH_COST_FUNCTION_DESCR_TEXT, w, h,
                                          flagBandName + ".TCWV_HIGH_COST_FUNCTION",
-                                         Color.ORANGE, 0.5f);
+                                         Color.YELLOW, 0.5f);
         tcwvProduct.getMaskGroup().add(index++, mask);
 
-        mask = Mask.BandMathsType.create("TCWV_INACCURATE_UNCERTAINTY",
-                                         TcwvConstants.TCWV_INACCURATE_UNCERTAINTY_DESCR_TEXT, w, h,
-                                         flagBandName + ".TCWV_INACCURATE_UNCERTAINTY",
-                                         Color.CYAN, 0.5f);
-        tcwvProduct.getMaskGroup().add(index++, mask);
+//        mask = Mask.BandMathsType.create("TCWV_INACCURATE_UNCERTAINTY",
+//                                         TcwvConstants.TCWV_INACCURATE_UNCERTAINTY_DESCR_TEXT, w, h,
+//                                         flagBandName + ".TCWV_INACCURATE_UNCERTAINTY",
+//                                         Color.CYAN, 0.5f);
+//        tcwvProduct.getMaskGroup().add(index++, mask);
 
         mask = Mask.BandMathsType.create("TCWV_INVALID",
                                          TcwvConstants.TCWV_INVALID_DESCR_TEXT, w, h,

@@ -23,12 +23,17 @@ public class TcwvConstants {
     public static final String TCWV_COUNTS_TARGET_BAND_NAME = "tcwv_counts";
     public static final String TCWV_SSMI_COUNTS_BAND_NAME = "numo";
 
+//    public static final int TCWV_OK = 0;
+//    public static final int TCWV_L1_QUALITY_ISSUES = 1;
+//    public static final int TCWV_CRITICAL_RETRIEVAL_CONDITIONS = 2;
+//    public static final int TCWV_HIGH_COST_FUNCTION = 3;
+//    public static final int TCWV_INACCURATE_UNCERTAINTY = 4;
+//    public static final int TCWV_INVALID= 5;
+
+    // MS, 201909
     public static final int TCWV_OK = 0;
-    public static final int TCWV_L1_QUALITY_ISSUES = 1;
-    public static final int TCWV_CRITICAL_RETRIEVAL_CONDITIONS = 2;
-    public static final int TCWV_HIGH_COST_FUNCTION = 3;
-    public static final int TCWV_INACCURATE_UNCERTAINTY = 4;
-    public static final int TCWV_INVALID= 5;
+    public static final int TCWV_HIGH_COST_FUNCTION = 1;
+    public static final int TCWV_INVALID= 2;
 
     public static final int SURFACE_TYPE_LAND = 0;
     public static final int SURFACE_TYPE_OCEAN = 1;
