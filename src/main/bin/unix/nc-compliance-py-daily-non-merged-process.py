@@ -320,7 +320,6 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
         if has_latlon:
             if name == 'lat' or name == 'lon': 
                 dstvar = dst.createVariable(name, variable.datatype, variable.dimensions, zlib=True)
-                copyVariableAttributesFromSource(variable, dstvar)
                 dstvar[:] = variable[:]
 
             
