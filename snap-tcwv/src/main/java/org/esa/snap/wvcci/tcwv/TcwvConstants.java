@@ -11,6 +11,7 @@ public class TcwvConstants {
 
 
     static final String PIXEL_CLASSIF_BAND_NAME = "pixel_classif_flags";
+
     public static final String TCWV_QUALITY_FLAG_BAND_NAME = "tcwv_quality_flags";
     public static final String SURFACE_TYPE_FLAG_BAND_NAME = "surface_type_flags";
 
@@ -18,10 +19,18 @@ public class TcwvConstants {
     public static final String TCWV_MEAN_BAND_NAME = "tcwv_mean";
     public static final String TCWV_SSMI_MEAN_BAND_NAME = "wvpa";
     public static final String TCWV_UNCERTAINTY_TARGET_BAND_NAME = "tcwv_uncertainty";
-    public static final String TCWV_UNCERTAINTY_MEAN_BAND_NAME = "tcwv_uncertainty_mean";
     public static final String TCWV_SSMI_UNCERTAINTY_MEAN_BAND_NAME = "stdv";
     public static final String TCWV_COUNTS_TARGET_BAND_NAME = "tcwv_counts";
     public static final String TCWV_SSMI_COUNTS_BAND_NAME = "numo";
+
+    public static final String NUM_OBS_L3_BAND_NAME = "num_obs";
+    public static final String TCWV_L3_BAND_NAME = "tcwv_mean";
+    public static final String TCWV_SIGMA_L3_BAND_NAME = "tcwv_sigma";
+    public static final String TCWV_UNCERTAINTY_L3_BAND_NAME = "tcwv_uncertainty_mean";
+    public static final String TCWV_UNCERTAINTY_COUNTS_L3_BAND_NAME = "tcwv_uncertainty_counts";
+    public static final String TCWV_SUMS_SUM_SQ_L3_BAND_NAME = "tcwv_uncertainty_sums_sum_sq";
+    public static final String TCWV_QUALITY_FLAG_L3_BAND_NAME = "tcwv_quality_flags_majority";
+    public static final String SURFACE_TYPE_FLAG_L3_BAND_NAME = "surface_type_flags_majority";
 
 //    public static final int TCWV_OK = 0;
 //    public static final int TCWV_L1_QUALITY_ISSUES = 1;

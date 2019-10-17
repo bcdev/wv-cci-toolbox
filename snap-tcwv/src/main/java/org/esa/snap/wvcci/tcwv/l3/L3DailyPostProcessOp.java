@@ -32,11 +32,11 @@ public class L3DailyPostProcessOp extends L3PostProcessOp {
         validateSourceProduct(sourceProduct, TcwvConstants.TCWV_MEAN_BAND_NAME);
 
         tcwvSourceBand = sourceProduct.getBand(TcwvConstants.TCWV_MEAN_BAND_NAME);
-        tcwvUncertaintySourceBand = sourceProduct.getBand(TcwvConstants.TCWV_UNCERTAINTY_MEAN_BAND_NAME);
+        tcwvUncertaintySourceBand = sourceProduct.getBand(TcwvConstants.TCWV_UNCERTAINTY_L3_BAND_NAME);
         tcwvCountsSourceBand = sourceProduct.getBand(TcwvConstants.TCWV_COUNTS_TARGET_BAND_NAME);
 
         createTargetProduct(TcwvConstants.TCWV_MEAN_BAND_NAME,
-                            TcwvConstants.TCWV_UNCERTAINTY_MEAN_BAND_NAME,
+                            TcwvConstants.TCWV_UNCERTAINTY_L3_BAND_NAME,
                             TcwvConstants.TCWV_COUNTS_TARGET_BAND_NAME);
     }
 

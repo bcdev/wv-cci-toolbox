@@ -4,4 +4,5 @@ org.esa.snap.wvcci.tcwv.l3.L3DailyPostProcessOp$Spi
 org.esa.snap.wvcci.tcwv.l3.L3MonthlyPostProcessOp$Spi
 org.esa.snap.wvcci.tcwv.l3.L3SsmiPostProcessOp$Spi
 org.esa.snap.wvcci.tcwv.l3.L3MergeSensorsOp$Spi
+org.esa.snap.wvcci.tcwv.l3.L3MergeNirSensorsDailyDataset2Op$Spi
 org.esa.snap.wvcci.tcwv.l3.L3UncertaintiesOp$Spi
