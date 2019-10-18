@@ -29,15 +29,15 @@ public class L3SsmiPostProcessOp extends L3PostProcessOp {
     public void initialize() throws OperatorException {
         super.initialize();
 
-        validateSourceProduct(sourceProduct, TcwvConstants.TCWV_SSMI_MEAN_BAND_NAME);
+        validateSourceProduct(sourceProduct, TcwvConstants.TCWV_HOAPS_BAND_NAME);
 
-        tcwvSourceBand = sourceProduct.getBand(TcwvConstants.TCWV_SSMI_MEAN_BAND_NAME);
-        tcwvUncertaintySourceBand = sourceProduct.getBand(TcwvConstants.TCWV_SSMI_UNCERTAINTY_MEAN_BAND_NAME);
-        tcwvCountsSourceBand = sourceProduct.getBand(TcwvConstants.TCWV_SSMI_COUNTS_BAND_NAME);
+        tcwvSourceBand = sourceProduct.getBand(TcwvConstants.TCWV_HOAPS_BAND_NAME);
+        tcwvUncertaintySourceBand = sourceProduct.getBand(TcwvConstants.TCWV_SIGMA_HOAPS_BAND_NAME);
+        tcwvCountsSourceBand = sourceProduct.getBand(TcwvConstants.NIUM_OBS_HOAPS_BAND_NAME);
 
-        createTargetProduct(TcwvConstants.TCWV_SSMI_MEAN_BAND_NAME,
-                            TcwvConstants.TCWV_SSMI_UNCERTAINTY_MEAN_BAND_NAME,
-                            TcwvConstants.TCWV_SSMI_COUNTS_BAND_NAME);
+        createTargetProduct(TcwvConstants.TCWV_HOAPS_BAND_NAME,
+                            TcwvConstants.TCWV_SIGMA_HOAPS_BAND_NAME,
+                            TcwvConstants.NIUM_OBS_HOAPS_BAND_NAME);
     }
 
     public static class Spi extends OperatorSpi {

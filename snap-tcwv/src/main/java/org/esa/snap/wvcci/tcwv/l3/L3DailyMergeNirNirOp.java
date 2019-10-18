@@ -5,7 +5,6 @@ import org.esa.snap.core.datamodel.Product;
 import org.esa.snap.core.gpf.OperatorException;
 import org.esa.snap.core.gpf.OperatorSpi;
 import org.esa.snap.core.gpf.annotations.OperatorMetadata;
-import org.esa.snap.core.gpf.annotations.Parameter;
 import org.esa.snap.core.gpf.annotations.SourceProduct;
 import org.esa.snap.core.gpf.pointop.*;
 import org.esa.snap.wvcci.tcwv.TcwvConstants;
@@ -19,18 +18,11 @@ import org.esa.snap.wvcci.tcwv.util.TcwvUtils;
  *
  * @author Olaf Danne
  */
-@OperatorMetadata(alias = "ESACCI.Tcwv.L3.Merge.Ds2", version = "0.8",
+@OperatorMetadata(alias = "ESACCI.Tcwv.L3.Merge.Nir.Nir", version = "0.8",
         authors = "O.Danne",
         internal = true,
-        description = "Operator for merge of TCWV L3 daily products (version for recent Dataset 2 products.")
-public class L3MergeNirSensorsDailyDataset2Op extends PixelOperator {
-
-    @Parameter(valueSet = {"0", "1", "2", "3"}, defaultValue = "0",
-            description = "Aggregation mode: 0 = aggregate all sensors, " +
-                    "1 = use sensor 1 sample only, " +
-                    "2 = use sensor 2 sample only, " +
-                    "3 = use sensor 3 sample only.")
-    private int aggregationMode;
+        description = "Operator for merge of TCWV L3 NIR daily products .")
+public class L3DailyMergeNirNirOp extends PixelOperator {
 
     @SourceProduct(description = "Source product 1")
     private Product sensor1Product;
@@ -111,19 +103,19 @@ public class L3MergeNirSensorsDailyDataset2Op extends PixelOperator {
             srcSurfaceTypeFlag[i] = sourceSamples[SRC_TCWV_SURFACE_TYPE_FLAGS_MAJORITY[i]].getInt();
         }
 
-        final int numObsMerge = mergeNumObs(aggregationMode, srcNumObs, srcNumObsNodata);
+        final int numObsMerge = mergeNumObs(srcNumObs, srcNumObsNodata);
         final double[] tcwvMeanMerge =
-                mergeTcwv(aggregationMode, srcTcwvMean, srcTcwvUncertaintyCounts, srcTcwvNodata, srcTcwvCountsNodata);
+                mergeTcwv(srcTcwvMean, srcTcwvUncertaintyCounts, srcTcwvNodata, srcTcwvCountsNodata);
         final double[] tcwvSigmaMerge =
-                mergeTcwv(aggregationMode, srcTcwvSigma, srcTcwvUncertaintyCounts, srcTcwvNodata, srcTcwvCountsNodata);
+                mergeTcwv(srcTcwvSigma, srcTcwvUncertaintyCounts, srcTcwvNodata, srcTcwvCountsNodata);
         final double[] tcwvUncertaintyMeanMerge =
-                mergeTcwv(aggregationMode, srcTcwvUncertaintyMean, srcTcwvUncertaintyCounts, srcTcwvNodata, srcTcwvCountsNodata);
+                mergeTcwv(srcTcwvUncertaintyMean, srcTcwvUncertaintyCounts, srcTcwvNodata, srcTcwvCountsNodata);
         final double[] tcwvUncertaintyCountsMerge =
-                mergeTcwv(aggregationMode, srcTcwvUncertaintyMean, srcTcwvUncertaintyCounts, srcTcwvNodata, srcTcwvCountsNodata);
+                mergeTcwv(srcTcwvUncertaintyMean, srcTcwvUncertaintyCounts, srcTcwvNodata, srcTcwvCountsNodata);
         final double[] tcwvSumsSumSqMerge =
-                mergeTcwv(aggregationMode, srcTcwvSumsSumSq, srcTcwvUncertaintyCounts, srcTcwvNodata, srcTcwvCountsNodata);
-        final int qualityFlagMerge = mergeFlag(aggregationMode, srcQualityFlag, srcTcwvUncertaintyCounts, srcTcwvCountsNodata);
-        final int surfaceTypeFlagMerge = mergeFlag(aggregationMode, srcSurfaceTypeFlag, srcTcwvUncertaintyCounts, srcTcwvCountsNodata);
+                mergeTcwv(srcTcwvSumsSumSq, srcTcwvUncertaintyCounts, srcTcwvNodata, srcTcwvCountsNodata);
+        final int qualityFlagMerge = mergeFlag(srcQualityFlag, srcTcwvUncertaintyCounts, srcTcwvNodata);
+        final int surfaceTypeFlagMerge = mergeFlag(srcSurfaceTypeFlag, srcTcwvUncertaintyCounts, srcTcwvNodata);
 
         targetSamples[TRG_NUM_OBS].set(numObsMerge);
         targetSamples[TRG_TCWV_MEAN].set(tcwvMeanMerge[0]);
@@ -168,14 +160,14 @@ public class L3MergeNirSensorsDailyDataset2Op extends PixelOperator {
     @Override
     protected void configureSourceSamples(SourceSampleConfigurer configurator) throws OperatorException {
         for (int i = 0; i < 2; i++) {
-            SRC_NUM_OBS[i] = 2 * i;
-            SRC_TCWV_MEAN[i] = 2 * i;
-            SRC_TCWV_SIGMA[i] = 2 * i;
-            SRC_TCWV_UNCERTAINTY_MEAN[i] = 2 * i;
-            SRC_TCWV_UNCERTAINTY_COUNTS[i] = 2 * i;
-            SRC_TCWV_SUMS_SUM_SQ[i] = 2 * i + 1;
-            SRC_TCWV_QUALITY_FLAGS_MAJORITY[i] = 2 * i + 2;
-            SRC_TCWV_SURFACE_TYPE_FLAGS_MAJORITY[i] = 2 * i + 2;
+            SRC_NUM_OBS[i] = i;
+            SRC_TCWV_MEAN[i] = i + 2;
+            SRC_TCWV_SIGMA[i] = i + 4;
+            SRC_TCWV_UNCERTAINTY_MEAN[i] = i + 6;
+            SRC_TCWV_UNCERTAINTY_COUNTS[i] = i + 8;
+            SRC_TCWV_SUMS_SUM_SQ[i] = i + 10;
+            SRC_TCWV_QUALITY_FLAGS_MAJORITY[i] = i + 12;
+            SRC_TCWV_SURFACE_TYPE_FLAGS_MAJORITY[i] = i + 14;
         }
 
         for (int i = 0; i < 2; i++) {
@@ -210,89 +202,42 @@ public class L3MergeNirSensorsDailyDataset2Op extends PixelOperator {
         configurator.defineSample(TRG_TCWV_SURFACE_TYPE_FLAGS_MAJORITY, TcwvConstants.SURFACE_TYPE_FLAG_L3_BAND_NAME);
     }
 
-    private static int mergeNumObs(int aggregationMode, int[] srcNumObs, int[] srcTcwvNumObsNodata) {
+    private static int mergeNumObs(int[] srcNumObs, int[] srcTcwvNumObsNodata) {
         int numObs = 0;
-
-        if (aggregationMode == 0) {
-            for (int i = 0; i < 2; i++) {
-                if (srcNumObs[i] != srcTcwvNumObsNodata[i]) {
-                    numObs += srcNumObs[i];
-                }
-            }
-        } else {
-            final int index = aggregationMode - 1;
-            if (srcNumObs[index] != srcTcwvNumObsNodata[index]) {
-                return srcNumObs[index];
-            } else {
-                for (int i = 0; i < 2; i++) {
-                    if (srcNumObs[i] != srcTcwvNumObsNodata[i]) {
-                        numObs += srcNumObs[i];
-                    }
-                }
+        for (int i = 0; i < 2; i++) {
+            if (srcNumObs[i] != srcTcwvNumObsNodata[i]) {
+                numObs += srcNumObs[i];
             }
         }
-
         return numObs;
     }
 
 
-    private static double[] mergeTcwv(int aggregationMode, double[] srcTcwv, double[] srcTcwvCounts,
-                              double[] srcTcwvNodata, double[] srcTcwvCountsNodata) {
+    private static double[] mergeTcwv(double[] srcTcwv, double[] srcTcwvCounts,
+                                      double[] srcTcwvNodata, double[] srcTcwvCountsNodata) {
         double tcwv = 0.0;
         double tcwvCounts = 0.0;
 
-        if (aggregationMode == 0) {
-            for (int i = 0; i < 2; i++) {
-                if (!Double.isNaN(srcTcwv[i]) && !Double.isNaN(srcTcwvCounts[i]) &&
-                        srcTcwv[i] != srcTcwvNodata[i] && srcTcwvCounts[i] != srcTcwvCountsNodata[i]) {
-                    tcwv += srcTcwvCounts[i] * srcTcwv[i];
-                    tcwvCounts += srcTcwvCounts[i];
-                }
-            }
-        } else {
-            final int index = aggregationMode - 1;
-            if (!Double.isNaN(srcTcwv[index]) && !Double.isNaN(srcTcwvCounts[index]) &&
-                    srcTcwv[index] != srcTcwvNodata[index] && srcTcwvCounts[index] != srcTcwvCountsNodata[index]) {
-                return new double[]{srcTcwv[index], srcTcwvCounts[index]};
-            } else {
-                for (int i = 0; i < 2; i++) {
-                    if (!Double.isNaN(srcTcwv[i]) && !Double.isNaN(srcTcwvCounts[i]) &&
-                            srcTcwv[i] != srcTcwvNodata[i] && srcTcwvCounts[i] != srcTcwvCountsNodata[i]) {
-                        tcwv += srcTcwvCounts[i] * srcTcwv[i];
-                        tcwvCounts += srcTcwvCounts[i];
-                    }
-                }
+        for (int i = 0; i < 2; i++) {
+            if (!Double.isNaN(srcTcwv[i]) && !Double.isNaN(srcTcwvCounts[i]) &&
+                    srcTcwv[i] != srcTcwvNodata[i] && srcTcwvCounts[i] != srcTcwvCountsNodata[i]) {
+                tcwv += srcTcwvCounts[i] * srcTcwv[i];
+                tcwvCounts += srcTcwvCounts[i];
             }
         }
-
         tcwv /= tcwvCounts;
 
         return new double[]{tcwv, tcwvCounts};
     }
 
-    private static int mergeFlag(int aggregationMode, int[] srcFlags, double[] srcTcwvCounts, double[] srcTcwvCountsNodata) {
+    private static int mergeFlag(int[] srcFlags, double[] srcTcwvCounts, double[] srcTcwvCountsNodata) {
         int majorityIndex = srcTcwvCounts[0] >= srcTcwvCounts[1] ? 0 : 1;
         int minorityIndex = srcTcwvCounts[0] >= srcTcwvCounts[1] ? 1 : 0;
-        if (aggregationMode == 0) {
-            if (srcFlags[majorityIndex] >= 0 && srcTcwvCounts[majorityIndex] != srcTcwvCountsNodata[majorityIndex]) {
-                return srcFlags[majorityIndex];
-            } else {
-                return srcFlags[minorityIndex];
-            }
+        if (srcFlags[majorityIndex] >= 0 && srcTcwvCounts[majorityIndex] != srcTcwvCountsNodata[majorityIndex]) {
+            return srcFlags[majorityIndex];
         } else {
-            final int index = aggregationMode - 1;
-            if (srcFlags[index] >= 0) {
-                return srcFlags[index];
-            } else {
-                for (int i = 0; i < 2; i++) {
-                    if (srcFlags[i] >= 0) {
-                        return srcFlags[i];
-                    }
-                }
-            }
+            return srcFlags[minorityIndex];
         }
-
-        return srcFlags[0];
     }
 
     private void validate() {
@@ -302,7 +247,7 @@ public class L3MergeNirSensorsDailyDataset2Op extends PixelOperator {
         if (width != width2 || height != height2) {
             throw new OperatorException("Dimension of first source product (" + width + "/" + height +
                                                 ") differs from second source product (" + width2 + "/" + height2 + ").");
-        } 
+        }
 
         // band names
         // todo
@@ -314,7 +259,7 @@ public class L3MergeNirSensorsDailyDataset2Op extends PixelOperator {
     public static class Spi extends OperatorSpi {
 
         public Spi() {
-            super(L3MergeNirSensorsDailyDataset2Op.class);
+            super(L3DailyMergeNirNirOp.class);
         }
     }
 }
