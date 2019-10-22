@@ -33,12 +33,12 @@ month = sys.argv[4]
 day = sys.argv[5]
 version = sys.argv[6]
 
-print ('nc_infile: ', nc_infile)
-print ('sensor: ', sensor)
-print ('year: ', year)
-print ('month: ', month)
-print ('day: ', day)
-print ('version: ', version)
+print 'nc_infile: ', nc_infile
+print 'sensor: ', sensor
+print 'year: ', year
+print 'month: ', month
+print 'day: ', day
+print 'version: ', version
 
 from datetime import datetime as dt
 from datetime import timedelta
@@ -49,7 +49,7 @@ if sensor == 'meris':
     source = 'MERIS RR L1B 3rd Reprocessing'
     start_index = nc_infile.find("MER_RR__") + 14
     datestring = nc_infile[start_index:start_index+15]
-    print ('datestring: ', datestring)
+    print 'datestring: ', datestring
 elif sensor == 'olci':
     # e.g. L2_of_L2_of_S3A_OL_1_ERR____20181023T112231_20181023T120647_20181024T174418_2656_037_137______MAR_O_NT_002.SEN3_era-interim.nc
     source = ' OLCI RR L1b'
@@ -92,7 +92,7 @@ elif sensor == 'modis_terra':
     start_date_string = start_date.strftime("%d-%b-%Y %H:%M:%S.%f")
     stop_date_string = stop_date.strftime("%d-%b-%Y %H:%M:%S.%f")
 else:
-    print ('sensor ' + sensor + ' not supported')
+    print 'sensor ' + sensor + ' not supported'
     sys.exit(1)    
     
 nc_outfile = 'ESACCI-WATERVAPOUR-L2-TCWV-' + sensor + '-'  + datestring + '-fv' + version + '.nc'
@@ -156,7 +156,7 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
         
     # copy variables with attributes from source product:
     for name, variable in src.variables.iteritems():
-        print ('variable.dimensions: ', name, variable.dimensions)
+        print 'variable.dimensions: ', name, variable.dimensions
         #if name.find("metadata") == -1:
         dstvar = dst.createVariable(name, variable.datatype, variable.dimensions, zlib=True)
         for attr in variable.ncattrs():
@@ -166,13 +166,32 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
 
     # copy variable data from source product
     for variable in dst.variables:
-        print ('dst variable: ', variable)
+        #print ('dst variable: ', variable)
+        print 'dst variable: ', variable
         if variable.find("scan_time") == -1:
-            if variable.find("metadata") != -1:
+            if variable.find("metadata") != -1 or variable.find("_mask") != -1:
                 dst.variables[variable] = src.variables[variable]
             elif variable.find("TCWV_") != -1 or variable.find("IDEPIX_") != -1:
                 dst.variables[variable][:] = src.variables[variable][:]
             else:
                 dst.variables[variable][:,:] = src.variables[variable][:,:]
+                
+                if variable.find("surface_type_flags") != -1:
+                    
+                    # We lost the l1_invalid pixels (MERIS, OLCI), they are currently set to ocean in 'Dataset 2' L2 retrieval.
+                    # Workaround to avoid L2 reprocessing: set them to cloud with condition below, describe in
+                    # attribute as 'cloud or L1 invalid'.
+                    # todo: fix in TCWV L2 retrieval, introduce a new flag value (invalid, unknown, 'not set' etc.)
 
-
+                    # we modify the 'TCWV invalid' pixels (== 4) which should not be invalid as they are
+                    # over land, ocean, sea ice, but not cloudy (< 8). These remaining pixels must be l1_invalid
+                    # dst.variables[variable][(np.where(src.variables[variable] < 8)) and
+                    #                         (np.where(src.variables["tcwv_quality_flags"] > 2))] = 8
+                    dst.variables[variable].setncattr('comment',
+                                                      'NOTE: L1 invalid pixels (no TCWV retrieval at all) are flagged as CLOUD in this product version.')
+                    surface_type_flags_arr = src.variables["surface_type_flags"][:,:]
+                    quality_flags_arr = src.variables["tcwv_quality_flags"][:,:]
+                    corr_arr = np.where((src.variables["surface_type_flags"][:,:] < 8) & (src.variables["tcwv_quality_flags"][:,:] > 2),
+                                      8,
+                                      src.variables["surface_type_flags"])
+                    
