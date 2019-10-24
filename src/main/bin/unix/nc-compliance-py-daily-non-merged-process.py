@@ -396,11 +396,21 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
             # but we want LAND (0), OCEAN (1), SEA_ICE (2), CLOUD_OVER_LAND (3), INVALID (4) (invalid is i.e. outside any swaths in daily L3)
             # TODO: add 'COAST' mask (4) when available and set INVALID to (5)
             surface_type_flag_arr_src = np.array(src.variables['surface_type_flags_majority'])
+            tcwv_quality_flag_arr_src = np.array(src.variables['tcwv_quality_flags_majority'])
+            tcwv_arr_src = np.array(src.variables['tcwv_mean'])
+            
             tmparr = np.copy(surface_type_flag_arr_src)
-            tmparr[np.where(np.isnan(tmparr))] = 16
+            tmparr2 = np.copy(tcwv_quality_flag_arr_src)
+            tmparr3 = np.copy(tcwv_arr_src)
+            tmparr[np.where(np.isnan(tmparr))] = 16  # make NaN to INVALID
+            tmparr2[np.where(np.isnan(tmparr2))] = 16  # make NaN to INVALID
+            # make ocean + tcwv_quality_flag.TCWV_INVALID + tcwv = NaN to INVALID (fix of originally L2 bug)):
+            tmparr[np.where((tmparr > 1) & (tmparr < 3) & (tmparr2 > 2) & (np.isnan(tmparr3)))] = 16
+            #tmparr[np.where((tmparr2 > 2))] = 16
             tmparr[np.where(tmparr == 9)] = 8  # make land+cloud to CLOUD
             tmparr[np.where(tmparr == 10)] = 2 # make ocean + cloud to OCEAN
             tmparr[np.where(tmparr == 12)] = 4 # make seaice+cloud to SEA_ICE
+            #print 'src.variables[surface_type_flags_majority][0,0]: ' , src.variables['surface_type_flags_majority'][0,0]
             #print('tmparr[396,396]: ' , tmparr[396,396]) # 9
             surface_type_flag_arr = np.log2(tmparr)
             variable[:,:] = surface_type_flag_arr[:,:]
