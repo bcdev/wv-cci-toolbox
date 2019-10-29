@@ -18,6 +18,7 @@ import time
 import datetime
 import uuid
 import numpy as np
+import scipy.ndimage
 import netCDF4
 import calendar
 
@@ -44,19 +45,28 @@ def setVariableLongNameAndUnitAttributes(variable, long_name_string, unit_string
 #############################################################################
             
 ########## initialize input parameters ######################
-if len(sys.argv) != 8:
-    print ('Usage:  python nc-compliance-py-process.py <nc_infile> <sensor> <year> <month> <day> <resolution> < product version>')
+if len(sys.argv) != 9 and len(sys.argv) != 10:
+    print ('Usage:  python nc-compliance-py-process.py <nc_infile> <landmask_file> <sensor> <year> <month> <day> <resolution> < product version> [<seaice_mask_file>] ')
     sys.exit(-1)
 
 nc_infile = sys.argv[1]
-sensor = sys.argv[2]
-year = sys.argv[3]
-month = sys.argv[4]
-day = sys.argv[5]
-res = sys.argv[6]
-version = sys.argv[7]
+landmask_file = sys.argv[2]
+sensor = sys.argv[3]
+year = sys.argv[4]
+month = sys.argv[5]
+day = sys.argv[6]
+res = sys.argv[7]
+version = sys.argv[8]
+
+seaice_available = False
+if len(sys.argv) == 10:
+    seaice_mask_file = sys.argv[9]
+    seaice_available = True
 
 print ('nc_infile: ', nc_infile)
+print ('landmask_file: ', landmask_file)
+if seaice_available:
+    print ('seaice_mask_file: ', seaice_mask_file)
 print ('sensor: ', sensor)
 print ('year: ', year)
 print ('month: ', month)
@@ -97,8 +107,22 @@ print ('nc_outfile: ', nc_outfile)
 outpath = './' + nc_outfile
 print ('outpath: ', outpath)
 
+if seaice_available:
+    try:
+        ds_seaice = Dataset(seaice_mask_file)
+    except:
+        print 'Cannot read seaice mask file'
+        ds_seaice = None
+        seaice_available = False    
+
 ############# set up and fill NetCDF destination file  #######################
-with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
+with Dataset(nc_infile) as src, Dataset(landmask_file) as ds_landmask, Dataset(outpath, 'w', format='NETCDF4') as dst:
+
+    for name, variable in ds_landmask.variables.iteritems():
+        print ('ds landmask variable: ', name)
+    if seaice_available:
+        for name, variable in ds_seaice.variables.iteritems():
+            print ('ds seaice variable: ', name)
 
     # set global attributes (CCI data standards v2.1 section 2.5.1):
     dst.setncattr('title', 'Water Vapour CCI Total Column of Water Vapour Product')
@@ -375,8 +399,23 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
 
             # set the quality flag values here:
             # flag = 0 for TCWV_OK, flag = 1 for TCWV_HIGH_COST_FUNCTION, flag = 2 for TCWV_INVALID (all NaN pixels)
-            tcwv_quality_flag_arr_src = np.array(src.variables['tcwv_quality_flags_majority'])
-            tmparr = np.copy(tcwv_quality_flag_arr_src)
+            #tcwv_quality_flag_arr_src = np.array(src.variables['tcwv_quality_flags_majority'])
+            #tmparr = np.copy(tcwv_quality_flag_arr_src)
+            #tmparr[np.where(np.isnan(tmparr))] = 4
+            #tcwv_quality_flag_arr = np.log2(tmparr)
+            #variable[:,:] = tcwv_quality_flag_arr[:,:]
+
+            tcwv_quality_flag_maj_arr_src = np.array(src.variables['tcwv_quality_flags_majority'])
+            tcwv_quality_flag_min_arr_src = np.array(src.variables['tcwv_quality_flags_min'])
+            tcwv_quality_flag_maj_arr = np.copy(tcwv_quality_flag_maj_arr_src)
+            tcwv_quality_flag_min_arr = np.copy(tcwv_quality_flag_min_arr_src)
+            tcwv_quality_flag_maj_arr[np.where(np.isnan(tcwv_quality_flag_maj_arr))] = 4
+            tcwv_quality_flag_min_arr[np.where(np.isnan(tcwv_quality_flag_min_arr))] = 4
+            tmparr = np.copy(tcwv_quality_flag_maj_arr)
+            # if the majority is INVALID, we need to take the minimum of the existing samples
+            # (otherwise we may have an INVALID flag together with a valid TCWV value)
+            indices = np.where(tcwv_quality_flag_maj_arr > 2)
+            tmparr[indices] = tcwv_quality_flag_min_arr_src[indices]
             tmparr[np.where(np.isnan(tmparr))] = 4
             tcwv_quality_flag_arr = np.log2(tmparr)
             variable[:,:] = tcwv_quality_flag_arr[:,:]
@@ -387,29 +426,63 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
             fill_value = -128
             variable.setncattr('_FillValue', np.array([fill_value], 'b'))
             min_valid = 0
-            max_valid = 4
+            max_valid = 6
             variable.setncattr('valid_range', np.array([min_valid, max_valid], 'b'))
-            variable.setncattr('flag_values', np.array([0, 1, 2, 3, 4], 'b'))
-            variable.setncattr('flag_meanings', 'LAND OCEAN SEA_ICE CLOUD_OVER_LAND UNDEFINED')
+            variable.setncattr('flag_values', np.array([0, 1, 2, 3, 4, 5, 6], 'b'))
+            variable.setncattr('flag_meanings', 'LAND OCEAN CLOUD_OVER_LAND SEA_ICE COAST PARTLY_CLOUDY_OVER_LAND PARTLY_SEA_ICE')
 
             # we can have LAND (1), OCEAN (2), SEAICE (4), LAND+CLOUD (9), OCEAN+CLOUD (10), SEAICE+CLOUD (12):
-            # but we want LAND (0), OCEAN (1), SEA_ICE (2), CLOUD_OVER_LAND (3), INVALID (4) (invalid is i.e. outside any swaths in daily L3)
-            # TODO: add 'COAST' mask (4) when available and set INVALID to (5)
+            # but we want LAND (0), OCEAN (1), CLOUD_OVER_LAND (2), SEA_ICE (3), COAST (4), PARTLY_CLOUDY_OVER_LAND (5), PARTLY_SEA_ICE (6)
+            # (invalid is i.e. outside any swaths in daily L3)
+            
             surface_type_flag_arr_src = np.array(src.variables['surface_type_flags_majority'])
-            tcwv_quality_flag_arr_src = np.array(src.variables['tcwv_quality_flags_majority'])
+            hoaps_surface_type_flag_arr_src = np.array(ds_landmask.variables['mask'])
+            #tcwv_quality_flag_maj_arr_src = np.array(src.variables['tcwv_quality_flags_majority'])
+            tcwv_quality_flag_min_arr_src = np.array(src.variables['tcwv_quality_flags_min'])
             tcwv_arr_src = np.array(src.variables['tcwv_mean'])
             
             tmparr = np.copy(surface_type_flag_arr_src)
-            tmparr2 = np.copy(tcwv_quality_flag_arr_src)
-            tmparr3 = np.copy(tcwv_arr_src)
-            tmparr[np.where(np.isnan(tmparr))] = 16  # make NaN to INVALID
-            tmparr2[np.where(np.isnan(tmparr2))] = 16  # make NaN to INVALID
+            tmparr[np.where(np.isnan(tmparr))] = -128  # make NaN to INVALID
+            
+            tcwv_arr = np.copy(tcwv_arr_src)
+            
+            #tcwv_quality_flag_maj_arr = np.copy(tcwv_quality_flag_maj_arr_src)
+            tcwv_quality_flag_min_arr = np.copy(tcwv_quality_flag_min_arr_src)
+            #tcwv_quality_flag_maj_arr[np.where(np.isnan(tcwv_quality_flag_maj_arr))] = -128  # make NaN to INVALID
+            tcwv_quality_flag_min_arr[np.where(np.isnan(tcwv_quality_flag_min_arr))] = -128  # make NaN to INVALID
+            
+            hoaps_surface_type_flag_arr = np.copy(hoaps_surface_type_flag_arr_src[0])
+            if res == '005':
+                hoaps_surface_type_flag_arr = scipy.ndimage.zoom(hoaps_surface_type_flag_arr, 10, order=0)
+            hoaps_surface_type_flag_arr[np.where(np.isnan(hoaps_surface_type_flag_arr))] = 0  # make NaN to water
+                
             # make ocean + tcwv_quality_flag.TCWV_INVALID + tcwv = NaN to INVALID (fix of originally L2 bug)):
-            tmparr[np.where((tmparr > 1) & (tmparr < 3) & (tmparr2 > 2) & (np.isnan(tmparr3)))] = 16
-            #tmparr[np.where((tmparr2 > 2))] = 16
-            tmparr[np.where(tmparr == 9)] = 8  # make land+cloud to CLOUD
+            tmparr[np.where((tmparr > 1) & (tmparr < 3) & (tcwv_quality_flag_min_arr > 2) & (np.isnan(tcwv_arr)))] = -128
+            tmparr[np.where(tmparr == 9)] = 4  # make land+cloud to CLOUD OVER LAND
             tmparr[np.where(tmparr == 10)] = 2 # make ocean + cloud to OCEAN
             tmparr[np.where(tmparr == 12)] = 4 # make seaice+cloud to SEA_ICE
+            print 'tmparr shape                     : ' , tmparr.shape
+            print 'hoaps_surface_type_flag_arr shape: ' , hoaps_surface_type_flag_arr.shape
+            tmparr[np.where(hoaps_surface_type_flag_arr < 1)] = 2  # make hoaps water to OCEAN
+            tmparr[np.where(hoaps_surface_type_flag_arr > 1)] = 16 # make hoaps coast to COAST
+            tmparr[np.where((hoaps_surface_type_flag_arr == 1) & (tmparr != 4))] = 1 # make hoaps land to LAND if not cloudy
+            if seaice_available:
+                seaice_arr_src = np.array(ds_seaice.variables['mask'])
+                seaice_frac_arr_src = np.array(ds_seaice.variables['icec'])
+                day_index = int(day.zfill(1))
+                seaice_arr_src_day = seaice_arr_src[day_index]
+                seaice_frac_arr_src_day = seaice_frac_arr_src[day_index]
+                if res == '005':
+                    seaice_arr_src_day = scipy.ndimage.zoom(seaice_arr_src_day, 10, order=0)
+                    seaice_frac_arr_src_day = scipy.ndimage.zoom(seaice_frac_arr_src_day, 10, order=0)
+                seaice_frac_arr_src_day[np.where(np.isnan(seaice_frac_arr_src_day))] = 0  # make NaN to 0
+                tmparr[np.where(seaice_arr_src_day == 11)] = 8 # make hoaps seaice to SEA_ICE
+                #tmparr[np.where(seaice_arr_src_day == 12)] = 64 # make hoaps seaice edge to PARTLY_SEA_ICE
+                # maybe as suggestion: make hoaps seaice < 90% to PARTLY_SEA_ICE, TODO: discuss value of 90%:
+                tmparr[np.where( (seaice_arr_src_day >= 11) & (seaice_frac_arr_src_day > 0) & (seaice_frac_arr_src_day < 90) )] = 64 
+
+            # TODO: get PARTLY_CLOUDY_OVER_LAND from MIN_MAX aggregator
+            
             #print 'src.variables[surface_type_flags_majority][0,0]: ' , src.variables['surface_type_flags_majority'][0,0]
             #print('tmparr[396,396]: ' , tmparr[396,396]) # 9
             surface_type_flag_arr = np.log2(tmparr)

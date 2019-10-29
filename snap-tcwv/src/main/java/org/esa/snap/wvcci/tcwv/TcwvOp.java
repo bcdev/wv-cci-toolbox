@@ -283,17 +283,18 @@ public class TcwvOp extends Operator {
             for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
                 final boolean isValid = mod35Used ||
                         !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_INVALID_BIT);
-                final boolean isLand = mod35Used ? isMod35Land(x, y, pixelClassifTile) :
-                        isIdepixLand(x, y, pixelClassifTile);
-                final boolean isSeaIce = isIdepixSeaIce(x, y, idepixClassifTile);
-                final boolean isOcean = !isLand && !isSeaIce;
-                final boolean isCloud = mod35Used ? isMod35Cloud(x, y, pixelClassifTile) :
-                        isIdepixCloud(x, y, pixelClassifTile);
+                final boolean isLand = isValid && (mod35Used ? isMod35Land(x, y, pixelClassifTile) :
+                        isIdepixLand(x, y, pixelClassifTile));
+                final boolean isSeaIce = isValid && isIdepixSeaIce(x, y, idepixClassifTile);
+                final boolean isOcean = isValid && !isLand && !isSeaIce;
+                final boolean isCloud = isValid && (mod35Used ? isMod35Cloud(x, y, pixelClassifTile) :
+                        isIdepixCloud(x, y, pixelClassifTile));
 
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_LAND, isLand);
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_OCEAN, isOcean);
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_CLOUD, isCloud);
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_SEA_ICE, isSeaIce);
+                targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_UNDEFINED, !isValid);
                 // todo: determine coastal zone elsewhere, tbd
 
                 if (!isValid || isCloud || (!processOcean && !isLand)) {
@@ -394,16 +395,18 @@ public class TcwvOp extends Operator {
                                                                     input, isLand);
 
                     targetTiles.get(tcwvBand).setSample(x, y, result.getTcwv());
+//                    targetTiles.get(tcwvBand).setSample(x, y, result.getCost());        // test!!
                     if (writeFullStateVector) {
                         targetTiles.get(stateVector1Band).setSample(x, y, result.getStateVector1());
                         targetTiles.get(stateVector2Band).setSample(x, y, result.getStateVector2());
                     }
                     targetTiles.get(tcwvUncertaintyBand).setSample(x, y, result.getTcwvUncertainty());
 
-                    if (result.getCost() > TcwvConstants.TCWV_RETRIEVAL_HIGH_COST) {
-                        targetTiles.get(tcwvQualityFlagBand).setSample(x, y, TcwvConstants.TCWV_HIGH_COST_FUNCTION, true);
+                    if (result.getCost() > TcwvConstants.TCWV_RETRIEVAL_COST_2) {
+                        targetTiles.get(tcwvQualityFlagBand).setSample(x, y, TcwvConstants.TCWV_COST_FUNCTION_2, true);
+                    } else if (result.getCost() > TcwvConstants.TCWV_RETRIEVAL_COST_1) {
+                        targetTiles.get(tcwvQualityFlagBand).setSample(x, y, TcwvConstants.TCWV_COST_FUNCTION_1, true);
                     } else {
-                        // todo: DWD/SE to provide definitions for other flags. In the meantime just set ok
                         targetTiles.get(tcwvQualityFlagBand).setSample(x, y, TcwvConstants.TCWV_OK, true);
                     }
                 }

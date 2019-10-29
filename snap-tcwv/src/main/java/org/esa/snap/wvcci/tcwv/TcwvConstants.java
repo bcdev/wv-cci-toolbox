@@ -42,30 +42,33 @@ public class TcwvConstants {
 //    public static final int TCWV_INACCURATE_UNCERTAINTY = 4;
 //    public static final int TCWV_INVALID= 5;
 
-    // MS, 201909
+    // MS, 201909/10
+    // NOTE: this adaptation was done AFTER Dataset 2 L2 generation!
     public static final int TCWV_OK = 0;
-    public static final int TCWV_HIGH_COST_FUNCTION = 1;
-    public static final int TCWV_INVALID= 2;
+    public static final int TCWV_COST_FUNCTION_1 = 1;
+    public static final int TCWV_COST_FUNCTION_2 = 2;
+    public static final int TCWV_INVALID= 3;
 
     public static final int SURFACE_TYPE_LAND = 0;
     public static final int SURFACE_TYPE_OCEAN = 1;
     public static final int SURFACE_TYPE_SEA_ICE = 2;
     public static final int SURFACE_TYPE_CLOUD = 3;
-    public static final int SURFACE_TYPE_COASTAL_ZONE = 4;
+    public static final int SURFACE_TYPE_UNDEFINED = 4;
 
     // todo: DWD/SE to provide exact criteria, then refine texts
     public static final String TCWV_OK_DESCR_TEXT = "TCWV retrieval has no known issues";
-    public static final String TCWV_L1_QUALITY_ISSUES_DESCR_TEXT = "L1 input data for TCWV retrieval has quality issues";
-    public static final String TCWV_CRITICAL_RETRIEVAL_CONDITIONS_DESCR_TEXT = "TCWV is based on critical retrieval conditions";
-    public static final String TCWV_HIGH_COST_FUNCTION_DESCR_TEXT = "High cost function in TCWV retrieval";
-    public static final String TCWV_INACCURATE_UNCERTAINTY_DESCR_TEXT = "TCWV retrieval has inaccurate uncertainty";
+//    public static final String TCWV_L1_QUALITY_ISSUES_DESCR_TEXT = "L1 input data for TCWV retrieval has quality issues";
+//    public static final String TCWV_CRITICAL_RETRIEVAL_CONDITIONS_DESCR_TEXT = "TCWV is based on critical retrieval conditions";
+    public static final String TCWV_COST_FUNCTION_1_DESCR_TEXT = "Value of cost function in TCWV retrieval is in [1.0, 2.0]";
+    public static final String TCWV_COST_FUNCTION_2_DESCR_TEXT = "Value of cost function in TCWV retrieval is greater than 2.0";
+//    public static final String TCWV_INACCURATE_UNCERTAINTY_DESCR_TEXT = "TCWV retrieval has inaccurate uncertainty";
     public static final String TCWV_INVALID_DESCR_TEXT = "Invalid pixel (no TCWV retrieval)";
 
     public static final String LAND_DESCR_TEXT = "Land";
     public static final String OCEAN_DESCR_TEXT = "Ocean";
     public static final String SEA_ICE_DESCR_TEXT = "Sea ice";
     public static final String CLOUD_DESCR_TEXT = "Cloud";
-    public static final String COASTAL_ZONE_DESCR_TEXT = "Coastal zone (distance to land < 50km)";
+    public static final String UNDEFINED_DESCR_TEXT = "Undefined";
 
     static final String TCWV_STATE_VECTOR1_BAND_NAME = "stateVector_1";
     static final String TCWV_STATE_VECTOR2_BAND_NAME = "stateVector_2";
@@ -75,7 +78,7 @@ public class TcwvConstants {
     static final String PRIOR_TCWV_BAND_NAME = "tcwv";
     static final String PRIOR_U10_BAND_NAME = "u10";
     static final String PRIOR_V10_BAND_NAME = "v10";
-    static final String PRIOR_WS_BAND_NAME = "ws";
+//    static final String PRIOR_WS_BAND_NAME = "ws";
 
     static final double AOT865_INIT_VALUE = 0.15;  // AOT 865nm initial value for algorithm
     static final double AL0_INIT_VALUE = 0.13;     // AL0 865nm initial value for algorithm
@@ -90,7 +93,8 @@ public class TcwvConstants {
     static final int IDEPIX_SNOW_ICE_BIT = 6;
     static final int IDEPIX_LAND_BIT = 10;
 
-    static final double TCWV_RETRIEVAL_HIGH_COST = 2.0;
+    static final double TCWV_RETRIEVAL_COST_1 = 1.0;
+    static final double TCWV_RETRIEVAL_COST_2 = 2.0;
 
     static final String[] MOD35_BAND_NAMES = {
             ModisMod35L2Constants.CLOUD_MASK_BYTE_TARGET_BAND_NAME +  "1",

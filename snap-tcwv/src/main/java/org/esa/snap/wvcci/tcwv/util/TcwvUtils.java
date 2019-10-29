@@ -8,7 +8,6 @@ import org.esa.snap.core.util.BitSetter;
 import org.esa.snap.wvcci.tcwv.TcwvConstants;
 
 import java.awt.*;
-import java.util.Random;
 
 /**
  * Utility class for TCWV retrievals
@@ -46,18 +45,12 @@ public class TcwvUtils {
         flagCoding.addFlag("TCWV_OK",
                            BitSetter.setFlag(0, TcwvConstants.TCWV_OK),
                            TcwvConstants.TCWV_OK_DESCR_TEXT);
-//        flagCoding.addFlag("TCWV_L1_QUALITY_ISSUES",
-//                           BitSetter.setFlag(0, TcwvConstants.TCWV_L1_QUALITY_ISSUES),
-//                           TcwvConstants.TCWV_L1_QUALITY_ISSUES_DESCR_TEXT);
-//        flagCoding.addFlag("TCWV_CRITICAL_RETRIEVAL_CONDITIONS",
-//                           BitSetter.setFlag(0, TcwvConstants.TCWV_CRITICAL_RETRIEVAL_CONDITIONS),
-//                           TcwvConstants.TCWV_CRITICAL_RETRIEVAL_CONDITIONS_DESCR_TEXT);
-        flagCoding.addFlag("TCWV_HIGH_COST_FUNCTION",
-                           BitSetter.setFlag(0, TcwvConstants.TCWV_HIGH_COST_FUNCTION),
-                           TcwvConstants.TCWV_HIGH_COST_FUNCTION_DESCR_TEXT);
-//        flagCoding.addFlag("TCWV_INACCURATE_UNCERTAINTY",
-//                           BitSetter.setFlag(0, TcwvConstants.TCWV_INACCURATE_UNCERTAINTY),
-//                           TcwvConstants.TCWV_INACCURATE_UNCERTAINTY_DESCR_TEXT);
+        flagCoding.addFlag("TCWV_COST_FUNCTION_1",
+                           BitSetter.setFlag(0, TcwvConstants.TCWV_COST_FUNCTION_1),
+                           TcwvConstants.TCWV_COST_FUNCTION_1_DESCR_TEXT);
+        flagCoding.addFlag("TCWV_COST_FUNCTION_2",
+                           BitSetter.setFlag(0, TcwvConstants.TCWV_COST_FUNCTION_2),
+                           TcwvConstants.TCWV_COST_FUNCTION_2_DESCR_TEXT);
         flagCoding.addFlag("TCWV_INVALID",
                            BitSetter.setFlag(0, TcwvConstants.TCWV_INVALID),
                            TcwvConstants.TCWV_INVALID_DESCR_TEXT);
@@ -85,8 +78,8 @@ public class TcwvUtils {
                            TcwvConstants.SEA_ICE_DESCR_TEXT);
         flagCoding.addFlag("CLOUD", BitSetter.setFlag(0, TcwvConstants.SURFACE_TYPE_CLOUD),
                            TcwvConstants.CLOUD_DESCR_TEXT);
-//        flagCoding.addFlag("COASTAL_ZONE", BitSetter.setFlag(0, TcwvConstants.SURFACE_TYPE_COASTAL_ZONE),
-//                           TcwvConstants.COASTAL_ZONE_DESCR_TEXT);
+        flagCoding.addFlag("UNDEFINED", BitSetter.setFlag(0, TcwvConstants.SURFACE_TYPE_UNDEFINED),
+                           TcwvConstants.UNDEFINED_DESCR_TEXT);
 
         return flagCoding;
     }
@@ -104,7 +97,6 @@ public class TcwvUtils {
         int w = tcwvProduct.getSceneRasterWidth();
         int h = tcwvProduct.getSceneRasterHeight();
         Mask mask;
-        Random r = new Random(1234567);
 
         final String flagBandName = TcwvConstants.TCWV_QUALITY_FLAG_BAND_NAME;
         mask = Mask.BandMathsType.create("TCWV_OK",
@@ -113,29 +105,17 @@ public class TcwvUtils {
                                          Color.GREEN, 0.5f);
         tcwvProduct.getMaskGroup().add(index++, mask);
 
-//        mask = Mask.BandMathsType.create("TCWV_L1_QUALITY_ISSUES",
-//                                         TcwvConstants.TCWV_L1_QUALITY_ISSUES_DESCR_TEXT, w, h,
-//                                         flagBandName + ".TCWV_L1_QUALITY_ISSUES",
-//                                         Color.YELLOW, 0.5f);
-//        tcwvProduct.getMaskGroup().add(index++, mask);
-//
-//        mask = Mask.BandMathsType.create("TCWV_CRITICAL_RETRIEVAL_CONDITIONS",
-//                                         TcwvConstants.TCWV_CRITICAL_RETRIEVAL_CONDITIONS_DESCR_TEXT, w, h,
-//                                         flagBandName + ".TCWV_CRITICAL_RETRIEVAL_CONDITIONS",
-//                                         Color.BLUE, 0.5f);
-//        tcwvProduct.getMaskGroup().add(index++, mask);
-
         mask = Mask.BandMathsType.create("TCWV_HIGH_COST_FUNCTION",
-                                         TcwvConstants.TCWV_HIGH_COST_FUNCTION_DESCR_TEXT, w, h,
+                                         TcwvConstants.TCWV_COST_FUNCTION_1_DESCR_TEXT, w, h,
                                          flagBandName + ".TCWV_HIGH_COST_FUNCTION",
                                          Color.YELLOW, 0.5f);
         tcwvProduct.getMaskGroup().add(index++, mask);
 
-//        mask = Mask.BandMathsType.create("TCWV_INACCURATE_UNCERTAINTY",
-//                                         TcwvConstants.TCWV_INACCURATE_UNCERTAINTY_DESCR_TEXT, w, h,
-//                                         flagBandName + ".TCWV_INACCURATE_UNCERTAINTY",
-//                                         Color.CYAN, 0.5f);
-//        tcwvProduct.getMaskGroup().add(index++, mask);
+        mask = Mask.BandMathsType.create("TCWV_VERY_HIGH_COST_FUNCTION",
+                                         TcwvConstants.TCWV_COST_FUNCTION_2_DESCR_TEXT, w, h,
+                                         flagBandName + ".TCWV_VERY_HIGH_COST_FUNCTION",
+                                         Color.ORANGE, 0.5f);
+        tcwvProduct.getMaskGroup().add(index++, mask);
 
         mask = Mask.BandMathsType.create("TCWV_INVALID",
                                          TcwvConstants.TCWV_INVALID_DESCR_TEXT, w, h,
@@ -156,7 +136,6 @@ public class TcwvUtils {
         int w = tcwvProduct.getSceneRasterWidth();
         int h = tcwvProduct.getSceneRasterHeight();
         Mask mask;
-        Random r = new Random(1234567);
 
         final String flagBandName = TcwvConstants.SURFACE_TYPE_FLAG_BAND_NAME;
         mask = Mask.BandMathsType.create("LAND",
@@ -181,14 +160,14 @@ public class TcwvUtils {
                                          TcwvConstants.CLOUD_DESCR_TEXT, w, h,
                                          flagBandName + ".CLOUD",
                                          Color.YELLOW, 0.5f);
+        tcwvProduct.getMaskGroup().add(index++, mask);
+
+        mask = Mask.BandMathsType.create("UNDEFINED",
+                                         TcwvConstants.UNDEFINED_DESCR_TEXT, w, h,
+                                         flagBandName + ".UNDEFINED",
+                                         Color.gray, 0.5f);
 
         tcwvProduct.getMaskGroup().add(index, mask);
-
-//        mask = Mask.BandMathsType.create("COASTAL_ZONE",
-//                                         TcwvConstants.COASTAL_ZONE_DESCR_TEXT, w, h,
-//                                         flagBandName + ".COASTAL_ZONE",
-//                                         Color.ORANGE, 0.5f);
-//        tcwvProduct.getMaskGroup().add(index, mask);
 
     }
 
