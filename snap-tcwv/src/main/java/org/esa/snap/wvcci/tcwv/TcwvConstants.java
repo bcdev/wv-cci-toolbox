@@ -31,8 +31,11 @@ public class TcwvConstants {
     public static final String TCWV_SIGMA_L3_BAND_NAME = "tcwv_sigma";
     public static final String TCWV_UNCERTAINTY_L3_BAND_NAME = "tcwv_uncertainty_mean";
     public static final String TCWV_UNCERTAINTY_COUNTS_L3_BAND_NAME = "tcwv_uncertainty_counts";
+    public static final String TCWV_SUMS_SUM_L3_BAND_NAME = "tcwv_uncertainty_sums_sum";
     public static final String TCWV_SUMS_SUM_SQ_L3_BAND_NAME = "tcwv_uncertainty_sums_sum_sq";
-    public static final String TCWV_QUALITY_FLAG_L3_BAND_NAME = "tcwv_quality_flags_majority";
+    public static final String TCWV_QUALITY_FLAG_MAJORITY_L3_BAND_NAME = "tcwv_quality_flags_majority";
+    public static final String TCWV_QUALITY_FLAG_MIN_L3_BAND_NAME = "tcwv_quality_flags_min";
+    public static final String TCWV_QUALITY_FLAG_MAX_L3_BAND_NAME = "tcwv_quality_flags_max";
     public static final String SURFACE_TYPE_FLAG_L3_BAND_NAME = "surface_type_flags_majority";
 
 //    public static final int TCWV_OK = 0;

@@ -39,8 +39,11 @@ public class L3DailyMergeNirNirOp extends PixelOperator {
     private int[] SRC_TCWV_SIGMA;
     private int[] SRC_TCWV_UNCERTAINTY_MEAN;
     private int[] SRC_TCWV_UNCERTAINTY_COUNTS;
+    private int[] SRC_TCWV_SUMS_SUM;
     private int[] SRC_TCWV_SUMS_SUM_SQ;
     private int[] SRC_TCWV_QUALITY_FLAGS_MAJORITY;
+    private int[] SRC_TCWV_QUALITY_FLAGS_MIN;
+    private int[] SRC_TCWV_QUALITY_FLAGS_MAX;
     private int[] SRC_TCWV_SURFACE_TYPE_FLAGS_MAJORITY;
 
     private static final int TRG_NUM_OBS = 0;
@@ -48,9 +51,12 @@ public class L3DailyMergeNirNirOp extends PixelOperator {
     private static final int TRG_TCWV_SIGMA = 2;
     private static final int TRG_TCWV_UNCERTAINTY_MEAN = 3;
     private static final int TRG_TCWV_UNCERTAINTY_COUNTS = 4;
-    private static final int TRG_TCWV_SUMS_SUM_SQ = 5;
-    private static final int TRG_TCWV_QUALITY_FLAGS_MAJORITY = 6;
-    private static final int TRG_TCWV_SURFACE_TYPE_FLAGS_MAJORITY = 7;
+    private static final int TRG_TCWV_SUMS_SUM = 5;
+    private static final int TRG_TCWV_SUMS_SUM_SQ = 6;
+    private static final int TRG_TCWV_QUALITY_FLAGS_MAJORITY = 7;
+    private static final int TRG_TCWV_QUALITY_FLAGS_MIN = 8;
+    private static final int TRG_TCWV_QUALITY_FLAGS_MAX = 9;
+    private static final int TRG_TCWV_SURFACE_TYPE_FLAGS_MAJORITY = 10;
 
 
     @Override
@@ -69,8 +75,13 @@ public class L3DailyMergeNirNirOp extends PixelOperator {
         SRC_TCWV_SIGMA = new int[2];
         SRC_TCWV_UNCERTAINTY_MEAN = new int[2];
         SRC_TCWV_UNCERTAINTY_COUNTS = new int[2];
+        SRC_TCWV_SUMS_SUM = new int[2];
         SRC_TCWV_SUMS_SUM_SQ = new int[2];
         SRC_TCWV_QUALITY_FLAGS_MAJORITY = new int[2];
+        SRC_TCWV_QUALITY_FLAGS_MIN = new int[2];
+        SRC_TCWV_QUALITY_FLAGS_MAX = new int[2];
+        SRC_TCWV_QUALITY_FLAGS_MIN = new int[2];
+        SRC_TCWV_QUALITY_FLAGS_MAX = new int[2];
         SRC_TCWV_SURFACE_TYPE_FLAGS_MAJORITY = new int[2];
 
     }
@@ -85,8 +96,11 @@ public class L3DailyMergeNirNirOp extends PixelOperator {
         final double[] srcTcwvUncertaintyMean = new double[2];
         final double[] srcTcwvUncertaintyCounts = new double[2];
         final double[] srcTcwvCountsNodata = new double[2];
+        final double[] srcTcwvSumsSum = new double[2];
         final double[] srcTcwvSumsSumSq = new double[2];
-        final int[] srcQualityFlag = new int[2];
+        final int[] srcQualityFlagsMajority = new int[2];
+        final int[] srcQualityFlagsMin = new int[2];
+        final int[] srcQualityFlagsMax = new int[2];
         final int[] srcSurfaceTypeFlag = new int[2];
 
         for (int i = 0; i < 2; i++) {
@@ -98,8 +112,11 @@ public class L3DailyMergeNirNirOp extends PixelOperator {
             srcTcwvUncertaintyMean[i] = sourceSamples[SRC_TCWV_UNCERTAINTY_MEAN[i]].getDouble();
             srcTcwvUncertaintyCounts[i] = sourceSamples[SRC_TCWV_UNCERTAINTY_COUNTS[i]].getDouble();
             srcTcwvCountsNodata[i] = mergeInputProducts[i].getBand(TcwvConstants.TCWV_UNCERTAINTY_COUNTS_L3_BAND_NAME).getNoDataValue();
+            srcTcwvSumsSum[i] = sourceSamples[SRC_TCWV_SUMS_SUM[i]].getDouble();
             srcTcwvSumsSumSq[i] = sourceSamples[SRC_TCWV_SUMS_SUM_SQ[i]].getDouble();
-            srcQualityFlag[i] = sourceSamples[SRC_TCWV_QUALITY_FLAGS_MAJORITY[i]].getInt();
+            srcQualityFlagsMajority[i] = sourceSamples[SRC_TCWV_QUALITY_FLAGS_MAJORITY[i]].getInt();
+            srcQualityFlagsMin[i] = sourceSamples[SRC_TCWV_QUALITY_FLAGS_MIN[i]].getInt();
+            srcQualityFlagsMax[i] = sourceSamples[SRC_TCWV_QUALITY_FLAGS_MAX[i]].getInt();
             srcSurfaceTypeFlag[i] = sourceSamples[SRC_TCWV_SURFACE_TYPE_FLAGS_MAJORITY[i]].getInt();
         }
 
@@ -112,9 +129,13 @@ public class L3DailyMergeNirNirOp extends PixelOperator {
                 mergeTcwv(srcTcwvUncertaintyMean, srcTcwvUncertaintyCounts, srcTcwvNodata, srcTcwvCountsNodata);
         final double[] tcwvUncertaintyCountsMerge =
                 mergeTcwv(srcTcwvUncertaintyMean, srcTcwvUncertaintyCounts, srcTcwvNodata, srcTcwvCountsNodata);
+        final double[] tcwvSumsSumMerge =
+                mergeTcwv(srcTcwvSumsSum, srcTcwvUncertaintyCounts, srcTcwvNodata, srcTcwvCountsNodata);
         final double[] tcwvSumsSumSqMerge =
                 mergeTcwv(srcTcwvSumsSumSq, srcTcwvUncertaintyCounts, srcTcwvNodata, srcTcwvCountsNodata);
-        final int qualityFlagMerge = mergeFlag(srcQualityFlag, srcTcwvUncertaintyCounts, srcTcwvNodata);
+        final int qualityFlagMajorityMerge = mergeFlag(srcQualityFlagsMajority, srcTcwvUncertaintyCounts, srcTcwvNodata);
+        final int qualityFlagMinMerge = mergeFlag(srcQualityFlagsMin, srcTcwvUncertaintyCounts, srcTcwvNodata);
+        final int qualityFlagMaxMerge = mergeFlag(srcQualityFlagsMax, srcTcwvUncertaintyCounts, srcTcwvNodata);
         final int surfaceTypeFlagMerge = mergeFlag(srcSurfaceTypeFlag, srcTcwvUncertaintyCounts, srcTcwvNodata);
 
         targetSamples[TRG_NUM_OBS].set(numObsMerge);
@@ -122,8 +143,11 @@ public class L3DailyMergeNirNirOp extends PixelOperator {
         targetSamples[TRG_TCWV_SIGMA].set(tcwvSigmaMerge[0]);
         targetSamples[TRG_TCWV_UNCERTAINTY_MEAN].set(tcwvUncertaintyMeanMerge[0]);
         targetSamples[TRG_TCWV_UNCERTAINTY_COUNTS].set(tcwvUncertaintyCountsMerge[1]);
+        targetSamples[TRG_TCWV_SUMS_SUM].set(tcwvSumsSumMerge[0]);
         targetSamples[TRG_TCWV_SUMS_SUM_SQ].set(tcwvSumsSumSqMerge[0]);
-        targetSamples[TRG_TCWV_QUALITY_FLAGS_MAJORITY].set(qualityFlagMerge);
+        targetSamples[TRG_TCWV_QUALITY_FLAGS_MAJORITY].set(qualityFlagMajorityMerge);
+        targetSamples[TRG_TCWV_QUALITY_FLAGS_MIN].set(qualityFlagMinMerge);
+        targetSamples[TRG_TCWV_QUALITY_FLAGS_MAX].set(qualityFlagMaxMerge);
         targetSamples[TRG_TCWV_SURFACE_TYPE_FLAGS_MAJORITY].set(surfaceTypeFlagMerge);
     }
 
@@ -143,10 +167,16 @@ public class L3DailyMergeNirNirOp extends PixelOperator {
                               mergeInputProducts[0].getBand(TcwvConstants.TCWV_UNCERTAINTY_L3_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.TCWV_UNCERTAINTY_COUNTS_L3_BAND_NAME,
                               mergeInputProducts[0].getBand(TcwvConstants.TCWV_UNCERTAINTY_COUNTS_L3_BAND_NAME).getDataType());
+        targetProduct.addBand(TcwvConstants.TCWV_SUMS_SUM_L3_BAND_NAME,
+                              mergeInputProducts[0].getBand(TcwvConstants.TCWV_SUMS_SUM_L3_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.TCWV_SUMS_SUM_SQ_L3_BAND_NAME,
                               mergeInputProducts[0].getBand(TcwvConstants.TCWV_SUMS_SUM_SQ_L3_BAND_NAME).getDataType());
-        targetProduct.addBand(TcwvConstants.TCWV_QUALITY_FLAG_L3_BAND_NAME,
-                              mergeInputProducts[0].getBand(TcwvConstants.TCWV_QUALITY_FLAG_L3_BAND_NAME).getDataType());
+        targetProduct.addBand(TcwvConstants.TCWV_QUALITY_FLAG_MAJORITY_L3_BAND_NAME,
+                              mergeInputProducts[0].getBand(TcwvConstants.TCWV_QUALITY_FLAG_MAJORITY_L3_BAND_NAME).getDataType());
+        targetProduct.addBand(TcwvConstants.TCWV_QUALITY_FLAG_MIN_L3_BAND_NAME,
+                              mergeInputProducts[0].getBand(TcwvConstants.TCWV_QUALITY_FLAG_MIN_L3_BAND_NAME).getDataType());
+        targetProduct.addBand(TcwvConstants.TCWV_QUALITY_FLAG_MAX_L3_BAND_NAME,
+                              mergeInputProducts[0].getBand(TcwvConstants.TCWV_QUALITY_FLAG_MAX_L3_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.SURFACE_TYPE_FLAG_L3_BAND_NAME,
                               mergeInputProducts[0].getBand(TcwvConstants.SURFACE_TYPE_FLAG_L3_BAND_NAME).getDataType());
 
@@ -165,9 +195,12 @@ public class L3DailyMergeNirNirOp extends PixelOperator {
             SRC_TCWV_SIGMA[i] = i + 4;
             SRC_TCWV_UNCERTAINTY_MEAN[i] = i + 6;
             SRC_TCWV_UNCERTAINTY_COUNTS[i] = i + 8;
-            SRC_TCWV_SUMS_SUM_SQ[i] = i + 10;
-            SRC_TCWV_QUALITY_FLAGS_MAJORITY[i] = i + 12;
-            SRC_TCWV_SURFACE_TYPE_FLAGS_MAJORITY[i] = i + 14;
+            SRC_TCWV_SUMS_SUM[i] = i + 10;
+            SRC_TCWV_SUMS_SUM_SQ[i] = i + 12;
+            SRC_TCWV_QUALITY_FLAGS_MAJORITY[i] = i + 14;
+            SRC_TCWV_QUALITY_FLAGS_MIN[i] = i + 16;
+            SRC_TCWV_QUALITY_FLAGS_MAX[i] = i + 18;
+            SRC_TCWV_SURFACE_TYPE_FLAGS_MAJORITY[i] = i + 20;
         }
 
         for (int i = 0; i < 2; i++) {
@@ -181,9 +214,15 @@ public class L3DailyMergeNirNirOp extends PixelOperator {
                                       mergeInputProducts[i]);
             configurator.defineSample(SRC_TCWV_UNCERTAINTY_COUNTS[i], TcwvConstants.TCWV_UNCERTAINTY_COUNTS_L3_BAND_NAME,
                                       mergeInputProducts[i]);
+            configurator.defineSample(SRC_TCWV_SUMS_SUM[i], TcwvConstants.TCWV_SUMS_SUM_L3_BAND_NAME,
+                                      mergeInputProducts[i]);
             configurator.defineSample(SRC_TCWV_SUMS_SUM_SQ[i], TcwvConstants.TCWV_SUMS_SUM_SQ_L3_BAND_NAME,
                                       mergeInputProducts[i]);
-            configurator.defineSample(SRC_TCWV_QUALITY_FLAGS_MAJORITY[i], TcwvConstants.TCWV_QUALITY_FLAG_L3_BAND_NAME,
+            configurator.defineSample(SRC_TCWV_QUALITY_FLAGS_MAJORITY[i], TcwvConstants.TCWV_QUALITY_FLAG_MAJORITY_L3_BAND_NAME,
+                                      mergeInputProducts[i]);
+            configurator.defineSample(SRC_TCWV_QUALITY_FLAGS_MIN[i], TcwvConstants.TCWV_QUALITY_FLAG_MIN_L3_BAND_NAME,
+                                      mergeInputProducts[i]);
+            configurator.defineSample(SRC_TCWV_QUALITY_FLAGS_MAX[i], TcwvConstants.TCWV_QUALITY_FLAG_MAX_L3_BAND_NAME,
                                       mergeInputProducts[i]);
             configurator.defineSample(SRC_TCWV_SURFACE_TYPE_FLAGS_MAJORITY[i], TcwvConstants.SURFACE_TYPE_FLAG_L3_BAND_NAME,
                                       mergeInputProducts[i]);
@@ -197,8 +236,11 @@ public class L3DailyMergeNirNirOp extends PixelOperator {
         configurator.defineSample(TRG_TCWV_SIGMA, TcwvConstants.TCWV_SIGMA_L3_BAND_NAME);
         configurator.defineSample(TRG_TCWV_UNCERTAINTY_MEAN, TcwvConstants.TCWV_UNCERTAINTY_L3_BAND_NAME);
         configurator.defineSample(TRG_TCWV_UNCERTAINTY_COUNTS, TcwvConstants.TCWV_UNCERTAINTY_COUNTS_L3_BAND_NAME);
+        configurator.defineSample(TRG_TCWV_SUMS_SUM, TcwvConstants.TCWV_SUMS_SUM_L3_BAND_NAME);
         configurator.defineSample(TRG_TCWV_SUMS_SUM_SQ, TcwvConstants.TCWV_SUMS_SUM_SQ_L3_BAND_NAME);
-        configurator.defineSample(TRG_TCWV_QUALITY_FLAGS_MAJORITY, TcwvConstants.TCWV_QUALITY_FLAG_L3_BAND_NAME);
+        configurator.defineSample(TRG_TCWV_QUALITY_FLAGS_MAJORITY, TcwvConstants.TCWV_QUALITY_FLAG_MAJORITY_L3_BAND_NAME);
+        configurator.defineSample(TRG_TCWV_QUALITY_FLAGS_MIN, TcwvConstants.TCWV_QUALITY_FLAG_MIN_L3_BAND_NAME);
+        configurator.defineSample(TRG_TCWV_QUALITY_FLAGS_MAX, TcwvConstants.TCWV_QUALITY_FLAG_MAX_L3_BAND_NAME);
         configurator.defineSample(TRG_TCWV_SURFACE_TYPE_FLAGS_MAJORITY, TcwvConstants.SURFACE_TYPE_FLAG_L3_BAND_NAME);
     }
 

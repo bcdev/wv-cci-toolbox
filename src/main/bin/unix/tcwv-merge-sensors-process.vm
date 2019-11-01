@@ -12,10 +12,12 @@ set -m
 #     meris-modis_terra-cmsaf_hoaps
 
 # e.g.
-## from MERIS: /calvalus/projects/wvcci/tcwv/meris/l3-daily-final-nc/005/2011/07/07/WV_CCI_L3_tcwv_meris_005deg_2011-07-07.nc
-## copy to local pwd MODIS: /calvalus/projects/wvcci/tcwv/modis_terra/l3-daily-final-nc/005/2011/07/07/WV_CCI_L3_tcwv_modis_terra_005deg_2011-07-07.nc
-# from MERIS: /calvalus/projects/wvcci/tcwv/meris/l3-daily-final-nc/05/2011/07/07/ESACCI-WATERVAPOUR-L3C-TCWV-meris-20110707-05deg-fv1.0.nc
-# copy to local pwd MODIS: /calvalus/projects/wvcci/tcwv/modis_terra/l3-daily-final-nc/05/2011/07/07/ESACCI-WATERVAPOUR-L3C-TCWV-modis_terra-20110113-05deg-fv1.0.nc
+## from MERIS: /calvalus/projects/wvcci/tcwv/meris/l3-daily/005/2011/07/15-L3-1/l3_tcwv_meris_005deg_2011-07-15_2011-07-15.nc
+## copy to local pwd MODIS: /calvalus/projects/wvcci/tcwv/modis_terra/l3-daily/005/2011/07/15-L3-1/l3_tcwv_modis_terra_005deg_2011-07-15_2011-07-15.nc
+
+## from MERIS: /calvalus/projects/wvcci/tcwv/meris/l3-daily/005/2011/07/15-L3-1/l3_tcwv_meris_005deg_2011-07-15_2011-07-15.nc
+## copy to local pwd CMSAF-HOAPS: /calvalus/projects/wvcci/tcwv/l3-daily/005/2011/07/15-L3-1/hoaps-g.r03.d01.wvpa.2011-07-15.nc
+
 function copy_sensor2_from_hdfs {
   local sensor2Path=$1
   result=1
@@ -32,27 +34,28 @@ function copy_sensor2_from_hdfs {
 sensor1HdfsInputDir="$parameters.get('sensor1InputDir')"
 sensor1="$parameters.get('sensor1')"
 sensor2="$parameters.get('sensor2')"
+res="$parameters.get('res')"
+year="$parameters.get('year')"
+month="$parameters.get('month')"
+day="$parameters.get('day')"
 tcwvJarVersion="$parameters.get('tcwvJarVersion')"
 
 #[[
 
 # e.g. 
-# MERIS: /calvalus/projects/wvcci/tcwv/meris/l3-daily-final-nc/005/2011/07/07/WV_CCI_L3_tcwv_meris_005deg_2011-07-07.nc
-# MODIS: /calvalus/projects/wvcci/tcwv/modis_terra/l3-daily-final-nc/005/2011/07/07/WV_CCI_L3_tcwv_modis_terra_005deg_2011-07-07.nc
-# --> Merge: /calvalus/projects/wvcci/tcwv/merge/l3-daily/005/2011/07/07/WV_CCI_L3_tcwv_meris-modis_terra_005deg_2011-07-07.nc
+# MERIS: /calvalus/projects/wvcci/tcwv/meris/l3-daily/005/2011/07/15-L3-1/l3_tcwv_meris_005deg_2011-07-15_2011-07-15.nc
+# MODIS: /calvalus/projects/wvcci/tcwv/modis_terra/l3-daily/005/2011/07/15-L3-1/l3_tcwv_modis_terra_005deg_2011-07-15_2011-07-15.nc
+# CMSAF_HOAPS: /calvalus/projects/wvcci/tcwv/cmsaf_hoaps/l3-daily/005/2011/07/15-L3-1/hoaps-g.r03.d01.wvpa.2011-07-15.nc
+
+# --> Merge: /calvalus/projects/wvcci/tcwv/meris-modis_terra/l3-daily/005/2011/07/15-L3-1/l3_tcwv_meris-modis_terra_005deg_2011-07-15_2011-07-15.nc
+# --> Merge: /calvalus/projects/wvcci/tcwv/meris-cmsaf_hoaps/l3-daily/005/2011/07/15-L3-1/l3_tcwv_meris-cmsaf_hoaps_005deg_2011-07-15_2011-07-15.nc
 
 sensor1_infile=$1
-sensor1_infile_name=`basename ${sensor1_infile} .nc`           # ESACCI-WATERVAPOUR-L3C-TCWV-meris-20110707-05deg-fv1.0
-sensor2_infile_name=${sensor1_infile_name//$sensor1/$sensor2}  # ESACCI-WATERVAPOUR-L3C-TCWV-modis_terra-20110707-05deg-fv1.0 , note: double slash to replace ALL substrings
-if [[ $sensor2 =~ "-" ]]
-then
-   sensor2_infile_name=${sensor2_infile_name//-L3C-/-L3S-}
-else
-   sensor2_infile_name=${sensor2_infile_name//-L3S-/-L3C-}
-fi
+sensor1_infile_name=`basename ${sensor1_infile} .nc`           # l3_tcwv_meris_005deg_2011-07-15_2011-07-15
 
-sensor2HdfsInputDir=${sensor1HdfsInputDir//$sensor1/$sensor2} 
-sensor2_infile=${sensor2HdfsInputDir}/${sensor2_infile_name}.nc # /calvalus/projects/wvcci/tcwv/modis_terra/l3-daily-final-nc/005/2011/07/07/ESACCI-WATERVAPOUR-L3-TCWV-modis_terra-20110707-05deg-fv1.0.nc 
+sensor2HdfsInputDir=${sensor1HdfsInputDir//$sensor1/$sensor2}    # /calvalus/projects/wvcci/tcwv/modis_terra/l3-daily/005/2011/07/15-L3-1
+sensor2_infile=$(hadoop fs -ls -C ${sensor2HdfsInputDir}/*.nc)       # /calvalus/projects/wvcci/tcwv/modis_terra/l3-daily/005/2011/07/15-L3-1/l3_tcwv_modis_terra_005deg_2011-07-15_2011-07-15.nc
+sensor2_infile_name=$(basename `hadoop fs -ls -C ${sensor2HdfsInputDir}/*.nc`)  # l3_tcwv_modis_terra_005deg_2011-07-15_2011-07-15.nc OR hoaps-g.r03.d01.wvpa.2011-07-15.nc
 
 if ! copy_sensor2_from_hdfs ${sensor2_infile}; then
   echo "failed to get sensor2 input file"
@@ -60,17 +63,21 @@ if ! copy_sensor2_from_hdfs ${sensor2_infile}; then
 fi
 
 sensorsMerge="${sensor1}-${sensor2}"
-outfile_name=${sensor1_infile_name//-L3C-/-L3-}
-outfile_name=${outfile_name//-L3S-/-L3-}
-outfile=${outfile_name//$sensor1/$sensorsMerge}
+outfile=${sensor1_infile_name//$sensor1/$sensorsMerge}
 
 echo "`ls -la $(pwd)`"
 
 jars=snap-all.jar:snap-tcwv-${tcwvJarVersion}.jar
 class=org.esa.snap.core.gpf.main.GPT
 
-echo "/usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge -Ssensor1Product=${sensor1_infile} -Ssensor2Product=./${sensor2_infile_name}.nc -f NetCDF4-WVCCI -t ./${outfile}.nc"
-/usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge -Ssensor1Product=${sensor1_infile} -Ssensor2Product=./${sensor2_infile_name}.nc -f NetCDF4-WVCCI -t ./${outfile}.nc
+if [[ $sensor2 =~ "hoaps" ]]
+then
+  echo "/usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Hoaps -SnirProduct=${sensor1_infile} -ShoapsProduct=$(pwd)/${sensor2_infile_name} -f NetCDF4-WVCCI -t ./${outfile}.nc"
+  /usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Hoaps -SnirProduct=${sensor1_infile} -ShoapsProduct=$(pwd)/${sensor2_infile_name} -f NetCDF4-WVCCI -t ./${outfile}.nc
+else
+  echo "/usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Nir -Ssensor1Product=${sensor1_infile} -Ssensor2Product=$(pwd)/${sensor2_infile_name} -f NetCDF4-WVCCI -t ./${outfile}.nc"
+  /usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Nir -Ssensor1Product=${sensor1_infile} -Ssensor2Product=$(pwd)/${sensor2_infile_name} -f NetCDF4-WVCCI -t ./${outfile}.nc
+fi
 
 status=$?
 echo "Status: $status"
