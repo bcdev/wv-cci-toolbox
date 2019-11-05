@@ -3,6 +3,23 @@ set -x
 set -e
 set -m
 
+##########################################################################
+# Calvalus processing script for the final NetCDF and CCI compliance step.
+##########################################################################
+
+function copy_file_from_hdfs {
+  local filePath=$1
+  result=1
+  echo "checking HDFS ${filePath}"
+  local hadoopLsResult=$(hadoop fs -ls ${filePath})
+  if [[ ${hadoopLsResult} ]]; then
+    echo "copy to CWD: ${filePath}"
+    /opt/hadoop/bin/hadoop fs -copyToLocal $filePath ${pwd}
+    result=0
+  fi
+  return $result
+}
+
 sensor="$parameters.get('sensor')"
 res="$parameters.get('res')"
 year="$parameters.get('year')"
@@ -18,11 +35,35 @@ version="$parameters.get('version')"
 nc_infile=`basename $1`
 echo "nc_infile: ${nc_infile}"
 
-echo "`ls -la $(pwd)`"
+# copy landmask file from HDFS to current dir:
+# TODO: DWD mask provides land, water coast. Maybe we should use land and water from LC CCI 0.5deg mask.
+landmaskFilePath="/calvalus/projects/wvcci/auxdata/landmask/kosh/kosh.r30.lmask.nc"
+#landmaskFilePath="/calvalus/projects/wvcci/auxdata/landmask/kosh/$res/$year/$month/$day/kosh.r30.lmask.nc"
+echo "KOSH landmask HDFS file path: '${landmaskFilePath}'"
+if ! copy_file_from_hdfs ${landmaskFilePath}; then
+  echo "failed to get KOSH landmask file '${landmaskFilePath}'"
+  exit 1
+fi
+landmaskFile="kosh.r30.lmask.nc"
 
-/usr/bin/python --version
-echo "/usr/bin/python $(pwd)/process.py ./${nc_infile} ${sensor} ${year} ${month} ${day} ${res} ${version}"
-/usr/bin/python $(pwd)/process.py ./${nc_infile} ${sensor} ${year} ${month} ${day} ${res} ${version}
+# copy seaice file from HDFS to current dir:
+seaiceFilePath="/calvalus/projects/wvcci/auxdata/seaice/${year}/hoaps-g.r30.d01.icec.${year}-${month}.nc"
+echo "Seaice HDFS file path: '${seaiceFilePath}'"
+if ! copy_file_from_hdfs ${seaiceFilePath}; then
+  echo "failed to get seaice file '${seaiceFilePath}' - will do compliance step without seaice info..."
+  echo "Directory listing before processing:"
+  echo "`ls -la $(pwd)`"
+  /usr/bin/python --version
+  echo "/usr/bin/python $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${sensor} ${year} ${month} ${day} ${res} ${version}"
+  /usr/bin/python $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${sensor} ${year} ${month} ${day} ${res} ${version}
+else
+  seaiceFile="hoaps-g.r30.d01.icec.${year}-${month}.nc"
+  echo "Directory listing before processing:"
+  echo "`ls -la $(pwd)`"
+  /usr/bin/python --version
+  echo "/usr/bin/python $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${sensor} ${year} ${month} ${day} ${res} ${version} $(pwd)/${seaiceFile}"
+  /usr/bin/python $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${sensor} ${year} ${month} ${day} ${res} ${version} $(pwd)/${seaiceFile}
+fi
 
 status=$?
 echo "Status: $status"
@@ -40,23 +81,25 @@ then
   # monthly products
   if [[ $sensor == *"-"* ]]; then
     # merged product
-    nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor}-${year}${month}-${res}deg-fv${version}.nc"
+    nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor}-${res}deg-${year}${month}-fv${version}.nc"
   else
     # single sensor
-    nc_outfile="ESACCI-WATERVAPOUR-L3C-TCWV-${sensor}-${year}${month}-${res}deg-fv${version}.nc"
+    nc_outfile="ESACCI-WATERVAPOUR-L3C-TCWV-${sensor}-${res}deg-${year}${month}-fv${version}.nc"
   fi
 else
   # daily products
   if [[ $sensor == *"-"* ]]; then
     # merged product
-    nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor}-${year}${month}${day}-${res}deg-fv${version}.nc"
+    nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor}-${res}deg-${year}${month}${day}-fv${version}.nc"
   else
     # single sensor
-    nc_outfile="ESACCI-WATERVAPOUR-L3C-TCWV-${sensor}-${year}${month}${day}-${res}deg-fv${version}.nc"
+    nc_outfile="ESACCI-WATERVAPOUR-L3C-TCWV-${sensor}-${res}deg-${year}${month}${day}-fv${version}.nc"
   fi
 fi
 
 echo CALVALUS_OUTPUT_PRODUCT ${nc_outfile}
+echo "Directory listing AFTER processing:"
+echo "`ls -la $(pwd)`"
 
 ]]#
 

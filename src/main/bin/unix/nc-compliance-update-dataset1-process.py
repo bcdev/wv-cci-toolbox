@@ -3,6 +3,8 @@ __author__ = 'olafd'
 # Generates final CF- and CCI-compliant TCWV products ready for DATASET 1 delivery.
 # Usage: nc-compliance-update-dataset1-process.py ./${nc_infile} ${sensor} ${year} ${month} ${day} ${resolution}
 
+# SHOULD NOT BE USED FOR LATER DATASETS!
+
 
 import os
 import sys

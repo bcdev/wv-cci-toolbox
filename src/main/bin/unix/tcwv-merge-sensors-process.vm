@@ -5,11 +5,14 @@ set -m
 
 # Calvalus processing script for the merge of two L3 products from two different sensors. 
 # A sensor can also represent a previous merge of sensors.
-# So overall we have as combinations: 
+# So overall we have as valid combinations: 
 #     meris-modis_terra
 #     meris-cmsaf_hoaps
 #     modis_terra-cmsaf_hoaps
 #     meris-modis_terra-cmsaf_hoaps
+#     olci-cmsaf_hoaps
+#     olci-modis_terra
+#     olci-modis_terra-cmsaf_hoaps
 
 # e.g.
 ## from MERIS: /calvalus/projects/wvcci/tcwv/meris/l3-daily/005/2011/07/15-L3-1/l3_tcwv_meris_005deg_2011-07-15_2011-07-15.nc
@@ -18,14 +21,14 @@ set -m
 ## from MERIS: /calvalus/projects/wvcci/tcwv/meris/l3-daily/005/2011/07/15-L3-1/l3_tcwv_meris_005deg_2011-07-15_2011-07-15.nc
 ## copy to local pwd CMSAF-HOAPS: /calvalus/projects/wvcci/tcwv/l3-daily/005/2011/07/15-L3-1/hoaps-g.r03.d01.wvpa.2011-07-15.nc
 
-function copy_sensor2_from_hdfs {
-  local sensor2Path=$1
+function copy_file_from_hdfs {
+  local filePath=$1
   result=1
-  echo "checking HDFS ${sensor2Path}"
-  local hadoopLsResult=$(hadoop fs -ls ${sensor2Path})
+  echo "checking HDFS ${filePath}"
+  local hadoopLsResult=$(hadoop fs -ls ${filePath})
   if [[ ${hadoopLsResult} ]]; then
-    echo "copy to CWD: ${sensor2Path}"
-    /opt/hadoop/bin/hadoop fs -copyToLocal $sensor2Path ${pwd}
+    echo "copy to CWD: ${filePath}"
+    /opt/hadoop/bin/hadoop fs -copyToLocal $filePath ${pwd}
     result=0
   fi
   return $result
@@ -57,7 +60,8 @@ sensor2HdfsInputDir=${sensor1HdfsInputDir//$sensor1/$sensor2}    # /calvalus/pro
 sensor2_infile=$(hadoop fs -ls -C ${sensor2HdfsInputDir}/*.nc)       # /calvalus/projects/wvcci/tcwv/modis_terra/l3-daily/005/2011/07/15-L3-1/l3_tcwv_modis_terra_005deg_2011-07-15_2011-07-15.nc
 sensor2_infile_name=$(basename `hadoop fs -ls -C ${sensor2HdfsInputDir}/*.nc`)  # l3_tcwv_modis_terra_005deg_2011-07-15_2011-07-15.nc OR hoaps-g.r03.d01.wvpa.2011-07-15.nc
 
-if ! copy_sensor2_from_hdfs ${sensor2_infile}; then
+# copy sensor2 file from HDFS to current dir:
+if ! copy_file_from_hdfs ${sensor2_infile}; then
   echo "failed to get sensor2 input file"
   exit 1
 fi

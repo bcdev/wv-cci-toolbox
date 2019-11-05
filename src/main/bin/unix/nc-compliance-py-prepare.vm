@@ -12,32 +12,25 @@ version="$parameters.get('version')"
 
 nc_outdir=$2
 
-#if [ "$day" == "0" ]
-#then
-#  nc_outfile="WV_CCI_L3_tcwv_${sensor}_${res}deg_${year}-${month}.nc"
-#else
-#  nc_outfile="WV_CCI_L3_tcwv_${sensor}_${res}deg_${year}-${month}-${day}.nc"
-#fi
-
 ## filename following CCI standards:
 if [ "$day" == "0" ]
 then
   # monthly products
   if [[ $sensor == *"-"* ]]; then
     # merged product
-    nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor}-${year}${month}-${res}deg-fv${version}.nc"
+    nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor}-${res}deg-${year}${month}-fv${version}.nc"
   else
     # single sensor
-    nc_outfile="ESACCI-WATERVAPOUR-L3C-TCWV-${sensor}-${year}${month}-${res}deg-fv${version}.nc"
+    nc_outfile="ESACCI-WATERVAPOUR-L3C-TCWV-${sensor}-${res}deg-${year}${month}-fv${version}.nc"
   fi
 else
   # daily products
   if [[ $sensor == *"-"* ]]; then
     # merged product
-    nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor}-${year}${month}${day}-${res}deg-fv${version}.nc"
+    nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor}-${res}deg-${year}${month}${day}-fv${version}.nc"
   else
     # single sensor
-    nc_outfile="ESACCI-WATERVAPOUR-L3C-TCWV-${sensor}-${year}${month}${day}-${res}deg-fv${version}.nc"
+    nc_outfile="ESACCI-WATERVAPOUR-L3C-TCWV-${sensor}-${res}deg-${year}${month}${day}-fv${version}.nc"
   fi
 fi
 

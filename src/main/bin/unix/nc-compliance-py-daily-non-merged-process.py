@@ -315,10 +315,15 @@ with Dataset(nc_infile) as src, Dataset(landmask_file) as ds_landmask, Dataset(o
         
     # copy variables with attributes from source product:
     for name, variable in src.variables.iteritems():
-        if name == 'num_obs': 
+        if name == 'num_obs':
+            var_counts = src.variables['tcwv_uncertainty_counts']
+            var_counts_arr = np.array(var_counts).astype(int)
+            #dstvar = dst.createVariable('num_obs', variable.datatype, variable.dimensions, zlib=True)
+            #copyVariableAttributesFromSource(variable, dstvar)
+            #dstvar[:,:] = variable[:,:]
             dstvar = dst.createVariable('num_obs', variable.datatype, variable.dimensions, zlib=True)
             copyVariableAttributesFromSource(variable, dstvar)
-            dstvar[:,:] = variable[:,:]
+            dstvar[:,:] = var_counts[:,:]
         if name == 'tcwv_mean': 
             dstvar = dst.createVariable('tcwv', variable.datatype, variable.dimensions, zlib=True)
             copyVariableAttributesFromSource(variable, dstvar)
@@ -328,12 +333,13 @@ with Dataset(nc_infile) as src, Dataset(landmask_file) as ds_landmask, Dataset(o
             copyVariableAttributesFromSource(variable, dstvar)
             dstvar[:,:] = variable[:,:]
         if name == 'tcwv_uncertainty_mean': 
-            dstvar = dst.createVariable('tcwv_ran', variable.datatype, variable.dimensions, zlib=True)
+            dstvar = dst.createVariable('tcwv_err', variable.datatype, variable.dimensions, zlib=True)
             copyVariableAttributesFromSource(variable, dstvar)
             dstvar[:,:] = variable[:,:]
         if name == 'tcwv_uncertainty_sums_sum_sq': 
-            dstvar = dst.createVariable('tcwv_err', variable.datatype, variable.dimensions, zlib=True)
-            # todo: compute tcwv_err
+            dstvar = dst.createVariable('tcwv_ran', variable.datatype, variable.dimensions, zlib=True)
+            # just set attributes, computation of tcwv_ran below
+            # NOTE: names tcwv_err, tcwv_ran were switched following PSD v2.0 (20191101)
             copyVariableAttributesFromSource(variable, dstvar)            
 
         if name == 'crs': 
@@ -367,10 +373,10 @@ with Dataset(nc_infile) as src, Dataset(landmask_file) as ds_landmask, Dataset(o
         if name == 'stdv':
             setVariableLongNameAndUnitAttributes(variable, 'Standard deviation of Total Column of Water Vapour', 'kg/m2')
 
-        if name == 'tcwv_ran':
+        if name == 'tcwv_err':
             setVariableLongNameAndUnitAttributes(variable, 'Average retrieval uncertainty', 'kg/m2')
                 
-        if name == 'tcwv_err':
+        if name == 'tcwv_ran':
             setVariableLongNameAndUnitAttributes(variable, 'Propagated retrieval uncertainty', 'kg/m2')
 
             #// Stengel et al., eq. (3):
@@ -380,11 +386,17 @@ with Dataset(nc_infile) as src, Dataset(landmask_file) as ds_landmask, Dataset(o
             #  final float sigmaSqrMeanHoaps = (1.0f / numObs) * sigmaSqrMean; // = (1.0/(numObs*numObs)) * tcwvUncertaintySumSq
             #  targetSamples[TRG_TCWV_PROPAGATED_RETRIEVAL_UNCERTAINTY].set(sigmaSqrMeanHoaps);
 
+            # NOTE: names tcwv_err, tcwv_ran were switched following PSD v2.0 (20191101)
+            
             uncert_sum_sqr_arr = np.array(src.variables['tcwv_uncertainty_sums_sum_sq'])
             num_obs_arr = np.array(src.variables['num_obs'])
-            sigma_sqr_mean_hoaps_arr = np.zeros(shape=(height, width))
-            sigma_sqr_mean_hoaps_arr = uncert_sum_sqr_arr / (num_obs_arr*num_obs_arr)
-            variable[:,:] = sigma_sqr_mean_hoaps_arr[:,:]
+            
+            # This is the mean of the squares of the MEASURED L2 uncertainties in the bin cell
+            # --> but WHY do we have to divide tcwv_uncertainty_sums_sum by ALL possible measurements??
+            # --> this is because weightCoeff was set to 1.0 in aggregator config instead of 0.0 !!
+            uncert_sum_sqr_arr_norm = uncert_sum_sqr_arr / num_obs_arr
+            sigma_sqr_mean_hoaps_arr = np.sqrt(uncert_sum_sqr_arr_norm) # PSD v2.0 section 3.1.4
+            variable[:,:] = sigma_sqr_mean_hoaps_arr[:,:]            
 
         if name == 'tcwv_quality_flag':
             setVariableLongNameAndUnitAttributes(variable, 'Quality flag of Total Column of Water Vapour', ' ')
@@ -479,9 +491,10 @@ with Dataset(nc_infile) as src, Dataset(landmask_file) as ds_landmask, Dataset(o
                 tmparr[np.where(seaice_arr_src_day == 11)] = 8 # make hoaps seaice to SEA_ICE
                 #tmparr[np.where(seaice_arr_src_day == 12)] = 64 # make hoaps seaice edge to PARTLY_SEA_ICE
                 # maybe as suggestion: make hoaps seaice < 90% to PARTLY_SEA_ICE, TODO: discuss value of 90%:
-                tmparr[np.where( (seaice_arr_src_day >= 11) & (seaice_frac_arr_src_day > 0) & (seaice_frac_arr_src_day < 90) )] = 64 
+                tmparr[np.where( (seaice_arr_src_day >= 11) & (seaice_frac_arr_src_day > 0) & (seaice_frac_arr_src_day < 100) )] = 64 
 
-            # TODO: get PARTLY_CLOUDY_OVER_LAND from MIN_MAX aggregator
+            # set PARTLY_CLOUDY_OVER_LAND: must be the pixels identified in majority as CLOUD, but have a valid TCWV:
+            tmparr[np.where((np.isfinite(tcwv_arr)) & (tmparr == 4))] = 32
             
             #print 'src.variables[surface_type_flags_majority][0,0]: ' , src.variables['surface_type_flags_majority'][0,0]
             #print('tmparr[396,396]: ' , tmparr[396,396]) # 9
