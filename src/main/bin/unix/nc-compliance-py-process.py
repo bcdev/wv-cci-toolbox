@@ -322,16 +322,10 @@ surface_type_flag_arr = np.zeros(shape=(height, width))
 for name, variable in src.variables.iteritems():
 
     if name == 'num_obs':
-        var_counts = src.variables['tcwv_uncertainty_counts']
-        var_counts_arr = np.array(var_counts).astype(int)
-        #dstvar = dst.createVariable('num_obs', variable.datatype, variable.dimensions, zlib=True)
-        #copyVariableAttributesFromSource(variable, dstvar)
-        #dstvar[:,:] = variable[:,:]
         dstvar = dst.createVariable('num_obs', variable.datatype, variable.dimensions, zlib=True)
         copyVariableAttributesFromSource(variable, dstvar)
         setVariableLongNameAndUnitAttributes(dstvar, 'Number of Total Column of Water Vapour retrievals contributing to L3 grid cell', ' ')
         dstvar.setncattr('coordinates', 'lat lon')
-        dstvar[:,:] = var_counts[:,:]
     if name == 'tcwv_mean': 
         dstvar = dst.createVariable('tcwv', variable.datatype, variable.dimensions, zlib=True)
         copyVariableAttributesFromSource(variable, dstvar)
@@ -436,6 +430,7 @@ tmparr = np.copy(tcwv_quality_flag_maj_arr)
 # (otherwise we may have an INVALID flag together with a valid TCWV value)
 indices = np.where(tcwv_quality_flag_maj_arr > 2)
 tmparr[indices] = tcwv_quality_flag_min_arr_src[indices]
+tmparr[np.where(tmparr < 1)] = 4
 tmparr[np.where(np.isnan(tmparr))] = 4
 tcwv_quality_flag_arr = np.log2(tmparr)
 variable[:,:] = tcwv_quality_flag_arr[:,:]
@@ -502,6 +497,58 @@ if seaice_available:
 tmparr[np.where((np.isfinite(tcwv_arr)) & (tmparr == 4))] = 32
 surface_type_flag_arr = np.log2(tmparr)
 variable[:,:] = surface_type_flag_arr[:,:]
+
+### set num_obs variable.... ###
+var_counts = src.variables['tcwv_uncertainty_counts']
+var_counts_arr = np.array(var_counts).astype(int)
+var_numobs_src = src.variables['num_obs']
+var_numobs_src_arr = np.array(var_numobs_src)
+var_tcwv = dst.variables['tcwv']
+var_tcwv_arr = np.array(var_tcwv)
+var_surface_type = dst.variables['surface_type_flag']
+surface_type_arr = np.array(var_surface_type)
+use_hoaps = np.where((surface_type_arr == 1) & (~np.isnan(var_tcwv_arr)))
+
+dstvar = dst.variables['num_obs']
+tmparr = np.copy(var_counts_arr)
+if sensor.find("hoaps") != -1:
+    # if existing, we have to prioritize the HOAPS num_obs over ocean
+    # Note that the meaning of HOAPS 'num_obs' corresponds to NIR 'tcwv_counts' !!
+    tmparr[use_hoaps] = var_numobs_src_arr[use_hoaps]
+else:
+    tmparr[:,:] = var_counts[:,:]
+tmparr[np.where(np.isnan(var_tcwv_arr))] = 0
+dstvar[:,:] = tmparr[:,:]
+
+### set tcwv_err in case of existing HOAPS... ###
+var_uncert_mean = src.variables['tcwv_uncertainty_mean']
+dstvar = dst.variables['tcwv_err']
+var_uncert_mean_arr = np.array(var_uncert_mean)
+tmparr = np.copy(var_uncert_mean_arr)
+if sensor.find("hoaps") != -1:
+    var_wvpa_err = src.variables['wvpa_err']
+    wvpa_err_arr = np.array(var_wvpa_err)
+    use_hoaps = np.where(((surface_type_arr == 1) | (surface_type_arr == 4) | (surface_type_arr == 6)) & (~np.isnan(var_tcwv_arr)) & (~np.isnan(wvpa_err_arr)))
+    tmparr[use_hoaps] = wvpa_err_arr[use_hoaps]
+else:
+    tmparr[:,:] = var_uncert_mean[:,:]    
+tmparr[np.where(np.isnan(var_tcwv_arr))] = np.nan
+dstvar[:,:] = tmparr[:,:]
+
+### set tcwv_ran in case of existing HOAPS... ###
+dstvar = dst.variables['tcwv_ran']
+tcwv_ran_arr = np.array(dstvar)
+tmparr = np.copy(tcwv_ran_arr)
+if sensor.find("hoaps") != -1:
+    var_wvpa_ran = src.variables['wvpa_ran']
+    wvpa_ran_arr = np.array(var_wvpa_ran)
+    use_hoaps = np.where(((surface_type_arr == 1) | (surface_type_arr == 4) | (surface_type_arr == 6)) & (~np.isnan(var_tcwv_arr)) & (~np.isnan(wvpa_err_arr)))
+    tmparr[use_hoaps] = wvpa_ran_arr[use_hoaps]
+    dstvar[:,:] = tmparr[:,:]
+else:
+    tmparr[:,:] = var_uncert_mean[:,:]    
+tmparr[np.where(np.isnan(var_tcwv_arr))] = np.nan
+dstvar[:,:] = tmparr[:,:]
 
 ### Close files... ###
 

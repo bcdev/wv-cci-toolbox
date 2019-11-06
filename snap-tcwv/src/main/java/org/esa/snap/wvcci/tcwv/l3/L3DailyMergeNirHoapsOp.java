@@ -5,7 +5,9 @@ import org.esa.snap.core.datamodel.Product;
 import org.esa.snap.core.gpf.OperatorException;
 import org.esa.snap.core.gpf.OperatorSpi;
 import org.esa.snap.core.gpf.annotations.OperatorMetadata;
+import org.esa.snap.core.gpf.annotations.Parameter;
 import org.esa.snap.core.gpf.annotations.SourceProduct;
+import org.esa.snap.core.gpf.common.resample.ResamplingOp;
 import org.esa.snap.core.gpf.pointop.*;
 import org.esa.snap.wvcci.tcwv.TcwvConstants;
 import org.esa.snap.wvcci.tcwv.util.TcwvUtils;
@@ -24,12 +26,25 @@ import org.esa.snap.wvcci.tcwv.util.TcwvUtils;
         description = "Operator for merge of TCWV L3 NIR and HOAPS daily products.")
 public class L3DailyMergeNirHoapsOp extends PixelOperator {
 
+    @Parameter(interval = "[1, 31]", defaultValue = "15",
+            description = "Day of month")
+    private int dayOfMonth;
+    
     @SourceProduct(description = "NIR product (MERIS, MODIS or OLCI)")
     private Product nirProduct;
     @SourceProduct(description = "HOAPS product")
     private Product hoapsProduct;
 
+    @SourceProduct(description = "Land/Sea mask product")
+    private Product landmaskProduct;
+
+    @SourceProduct(description = "Seaice product", optional = true)
+    private Product seaiceProduct;
+
     private Product[] mergeInputProducts;
+
+    private Product landMaskProductToUse;
+    private Product seaiceProductToUse;
 
     private int width;
     private int height;
@@ -52,6 +67,9 @@ public class L3DailyMergeNirHoapsOp extends PixelOperator {
     private static final int SRC_HOAPS_TCWV_PROPAG_ERR = 15;
     private static final int SRC_HOAPS_TCWV_RANDOM_ERR = 16;
 
+    private static final int SRC_LANDMASK_MASK = 17;
+    private static final int SRC_SEAICE_MASK = 18;
+
     private static final int TRG_NUM_OBS = 0;
     private static final int TRG_TCWV_MEAN = 1;
     private static final int TRG_TCWV_SIGMA = 2;
@@ -60,7 +78,7 @@ public class L3DailyMergeNirHoapsOp extends PixelOperator {
     private static final int TRG_TCWV_SUMS_SUM = 5;
     private static final int TRG_TCWV_SUMS_SUM_SQ = 6;
     private static final int TRG_TCWV_QUALITY_FLAGS_MAJORITY = 7;
-    private static final int TRG_TCWV_QUALITY_FLAGS_MIN= 8;
+    private static final int TRG_TCWV_QUALITY_FLAGS_MIN = 8;
     private static final int TRG_TCWV_QUALITY_FLAGS_MAX = 9;
     private static final int TRG_TCWV_SURFACE_TYPE_FLAGS_MAJORITY = 10;
     private static final int TRG_TCWV_PROPAG_ERR = 11;
@@ -69,7 +87,7 @@ public class L3DailyMergeNirHoapsOp extends PixelOperator {
 
     @Override
     protected void prepareInputs() throws OperatorException {
-        super.prepareInputs();
+//        super.prepareInputs();
 
         mergeInputProducts = new Product[]{nirProduct, hoapsProduct};
 
@@ -77,6 +95,27 @@ public class L3DailyMergeNirHoapsOp extends PixelOperator {
         height = mergeInputProducts[0].getSceneRasterHeight();
 
         validate();
+
+        if (landmaskProduct.getSceneRasterWidth() != width || landmaskProduct.getSceneRasterHeight() != height) {
+            landMaskProductToUse = getResampledProduct(landmaskProduct);
+        } else {
+            landMaskProductToUse = landmaskProduct;
+        }
+
+        if (seaiceProduct.getSceneRasterWidth() != width || seaiceProduct.getSceneRasterHeight() != height) {
+            seaiceProductToUse = getResampledProduct(seaiceProduct);
+        } else {
+            seaiceProductToUse = seaiceProduct;
+        }
+    }
+
+    private Product getResampledProduct(Product inputProduct) {
+        ResamplingOp resamplingOp = new ResamplingOp();
+        resamplingOp.setSourceProduct(inputProduct);
+        resamplingOp.setParameterDefaultValues();
+        resamplingOp.setParameter("targetWidth", width);
+        resamplingOp.setParameter("targetHeight", height);
+        return resamplingOp.getTargetProduct();
     }
 
     @Override
@@ -106,29 +145,33 @@ public class L3DailyMergeNirHoapsOp extends PixelOperator {
             final double srcHoapsTcwvPropagErrNodata = hoapsProduct.getBand(TcwvConstants.TCWV_PROPAG_ERR_HOAPS_BAND_NAME).getNoDataValue();
             final double srcHoapsTcwvRandomErr = sourceSamples[SRC_HOAPS_TCWV_RANDOM_ERR].getDouble();
             final double srcHoapsTcwvRandomErrNodata = hoapsProduct.getBand(TcwvConstants.TCWV_RANDOM_ERR_HOAPS_BAND_NAME).getNoDataValue();
-            final double tcwvPropagErrMerge = mergeTcwv(Double.NaN, Double.NaN, srcHoapsTcwvPropagErr, srcHoapsTcwvPropagErrNodata);
-            final double tcwvRandomErrMerge = mergeTcwv(Double.NaN, Double.NaN, srcHoapsTcwvRandomErr, srcHoapsTcwvRandomErrNodata);
+            final double tcwvPropagErrMerge = useOriginal(srcHoapsTcwvPropagErr, srcHoapsTcwvPropagErrNodata);
+            final double tcwvRandomErrMerge = useOriginal(srcHoapsTcwvRandomErr, srcHoapsTcwvRandomErrNodata);
             targetSamples[TRG_TCWV_PROPAG_ERR].set(tcwvPropagErrMerge);
             targetSamples[TRG_TCWV_RANDOM_ERR].set(tcwvRandomErrMerge);
         }
 
+        final int srcLandMask = sourceSamples[SRC_LANDMASK_MASK].getInt();
+        final int srcSeaiceMask = seaiceProduct != null ? sourceSamples[SRC_SEAICE_MASK].getInt() : -1;
+
         final int numObsMerge = mergeNumObs(srcNirNumObs, srcHoapsNumObs, srcHoapsNumObsNodata);
         final double tcwvMerge =
-                mergeTcwv(srcNirTcwvMean, srcNirTcwvNodata, srcHoapsTcwv, srcHoapsTcwvNodata);
+                merge(srcNirTcwvMean, srcNirTcwvNodata, srcHoapsTcwv, srcHoapsTcwvNodata,
+                      srcHoapsNumObs, srcHoapsNumObsNodata, srcLandMask, srcSeaiceMask);
         final double tcwvSigmaMerge =
-                mergeTcwv(srcNirTcwvSigma, srcNirTcwvNodata, srcHoapsTcwvSigma, srcHoapsTcwvNodata);
+                merge(srcNirTcwvSigma, srcNirTcwvNodata, srcHoapsTcwvSigma, srcHoapsTcwvNodata,
+                      srcHoapsNumObs, srcHoapsNumObsNodata, srcLandMask, srcSeaiceMask);
         final double tcwvUncertaintyMeanMerge =
-                mergeTcwv(srcNirTcwvUncertaintyMean, srcNirTcwvNodata, Double.NaN, Double.NaN);
+                useOriginal(srcNirTcwvUncertaintyMean, srcNirTcwvNodata);
         final double tcwvUncertaintyCountsMerge =
-                mergeTcwv(srcNirTcwvUncertaintyCounts, srcNirTcwvCountsNodata, Double.NaN, Double.NaN);
+                useOriginal(srcNirTcwvUncertaintyCounts, srcNirTcwvCountsNodata);
         final double tcwvSumsSumMerge =
-                mergeTcwv(srcNirTcwvSumsSum, srcNirTcwvNodata, Double.NaN, Double.NaN);
+                useOriginal(srcNirTcwvSumsSum, srcNirTcwvNodata);
         final double tcwvSumsSumSqMerge =
-                mergeTcwv(srcNirTcwvSumsSumSq, srcNirTcwvNodata, Double.NaN, Double.NaN);
+                useOriginal(srcNirTcwvSumsSumSq, srcNirTcwvNodata);
         final int qualityFlagMajorityMerge = mergeQualityFlag(srcNirQualityMajorityFlag, srcHoapsNumObs, srcHoapsNumObsNodata);
         final int qualityFlagMinMerge = mergeQualityFlag(srcNirQualityMinFlag, srcHoapsNumObs, srcHoapsNumObsNodata);
         final int qualityFlagMaxMerge = mergeQualityFlag(srcNirQualityMaxFlag, srcHoapsNumObs, srcHoapsNumObsNodata);
-
 
         targetSamples[TRG_NUM_OBS].set(numObsMerge);
         targetSamples[TRG_TCWV_MEAN].set(tcwvMerge);
@@ -213,6 +256,8 @@ public class L3DailyMergeNirHoapsOp extends PixelOperator {
             configurator.defineSample(SRC_HOAPS_TCWV_PROPAG_ERR, TcwvConstants.TCWV_PROPAG_ERR_HOAPS_BAND_NAME, hoapsProduct);
             configurator.defineSample(SRC_HOAPS_TCWV_RANDOM_ERR, TcwvConstants.TCWV_RANDOM_ERR_HOAPS_BAND_NAME, hoapsProduct);
         }
+        configurator.defineSample(SRC_LANDMASK_MASK, "mask", landMaskProductToUse);
+        configurator.defineSample(SRC_SEAICE_MASK, "mask_time" + dayOfMonth, seaiceProductToUse);
     }
 
     @Override
@@ -247,13 +292,31 @@ public class L3DailyMergeNirHoapsOp extends PixelOperator {
         }
     }
 
-    private static double mergeTcwv(double srcNirTcwv, double srcNirTcwvNodata,
-                                    double srcHoapsTcwv, double srcHoapsTcwvNodata) {
+    private static double useOriginal(double srcValue, double srcNodataValue) {
+        if (!Double.isNaN(srcValue) && srcValue != srcNodataValue) {
+            return srcValue;
+        } else {
+            return Double.NaN;
+        }
+    }
 
-        if (!Double.isNaN(srcNirTcwv) && srcNirTcwv != srcNirTcwvNodata) {
-            return srcNirTcwv;
-        } else if (!Double.isNaN(srcHoapsTcwv) && srcHoapsTcwv != srcHoapsTcwvNodata) {
-            return srcHoapsTcwv;
+    private static double merge(double srcNir, double srcNirNodata,
+                                double srcHoaps, double srcHoapsNodata,
+                                int srcHoapsNumObs, int srcHoapsNumObsNodata,
+                                int srcLandMask, int srcSeaiceMask) {
+
+        // we want (required by DWD):
+        // if HOAPS available, set HOAPS value (over ocean excl. coast sea ice)
+        // if no HOAPS, set NIR value if land, coastal, sea ice, otherwise set to NaN
+        // if no HOAPS because of coverage gaps (no land nor coastal nor sea ice), set to NaN
+        final boolean nirAvailable = !Double.isNaN(srcNir) && srcNir != srcNirNodata;
+        final boolean hoapsAvailable = srcHoaps != srcHoapsNodata && srcHoapsNumObs > 0 &&
+                srcHoapsNumObs != srcHoapsNumObsNodata;
+        final boolean hoapsNotAvailableNotOcean = srcLandMask > 0 || srcSeaiceMask > 0;
+        if (hoapsAvailable) {
+            return srcHoaps;
+        } else if (hoapsNotAvailableNotOcean && nirAvailable) {
+            return srcNir;
         } else {
             return Double.NaN;
         }
