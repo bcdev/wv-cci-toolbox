@@ -52,6 +52,7 @@ def setOceanWvpaErrors(variable, surface_type_array, tcwv_array, wvpa_err_array)
     tmp_array = np.copy(var_array)
     use_hoaps = np.where(((surface_type_array == 1) | (surface_type_array == 4) | (surface_type_array == 6)) & (~np.isnan(tcwv_array)) & (~np.isnan(wvpa_err_array)))
     tmp_array[use_hoaps] = wvpa_err_array[use_hoaps]
+    tmp_array[np.where(np.isnan(var_tcwv_arr))] = np.nan
     variable[:,:] = tmp_array[:,:]
 
                        
@@ -543,32 +544,6 @@ for name, variable in src.variables.iteritems():
 if has_wvpa_errors:
     setOceanWvpaErrors(dst.variables['tcwv_err'], surface_type_arr, var_tcwv_arr, np.array(src.variables['wvpa_err']))
     setOceanWvpaErrors(dst.variables['tcwv_ran'], surface_type_arr, var_tcwv_arr, np.array(src.variables['wvpa_ran']))
-    
-    #var_uncert_mean = src.variables['tcwv_uncertainty_mean']
-    #dstvar = dst.variables['tcwv_err']
-    #var_uncert_mean_arr = np.array(var_uncert_mean)
-    #tmparr = np.copy(var_uncert_mean_arr)
-    #if sensor.find("hoaps") != -1:
-    #    var_wvpa_err = src.variables['wvpa_err']
-    #    wvpa_err_arr = np.array(var_wvpa_err)
-    #    use_hoaps = np.where(((surface_type_arr == 1) | (surface_type_arr == 4) | (surface_type_arr == 6)) & (~np.isnan(var_tcwv_arr)) & (~np.isnan(wvpa_err_arr)))
-    #    tmparr[use_hoaps] = wvpa_err_arr[use_hoaps]
-        
-    #tmparr[np.where(np.isnan(var_tcwv_arr))] = np.nan
-    #dstvar[:,:] = tmparr[:,:]
-
-    #dstvar = dst.variables['tcwv_ran']
-    #tcwv_ran_arr = np.array(dstvar)
-    #tmparr = np.copy(tcwv_ran_arr)
-    #if sensor.find("hoaps") != -1:
-    #    var_wvpa_ran = src.variables['wvpa_ran']
-    #    wvpa_ran_arr = np.array(var_wvpa_ran)
-    #    use_hoaps = np.where(((surface_type_arr == 1) | (surface_type_arr == 4) | (surface_type_arr == 6)) & (~np.isnan(var_tcwv_arr)) & (~np.isnan(wvpa_ran_arr)))
-    #    tmparr[use_hoaps] = wvpa_ran_arr[use_hoaps]
-    #    dstvar[:,:] = tmparr[:,:]
-
-    #tmparr[np.where(np.isnan(var_tcwv_arr))] = np.nan
-    #dstvar[:,:] = tmparr[:,:]
 
 ### set tcwv_quality_flag in case of existing HOAPS... ###
 dstvar = dst.variables['tcwv_quality_flag']
