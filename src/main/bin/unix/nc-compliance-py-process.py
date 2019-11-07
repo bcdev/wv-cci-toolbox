@@ -41,6 +41,20 @@ def setVariableLongNameAndUnitAttributes(variable, long_name_string, unit_string
     variable.setncattr('long_name', long_name_string)
     variable.setncattr('units', unit_string)
 
+def resetOceanCdr1(variable, surface_type_array, reset_value):    
+    var_array = np.array(variable)
+    tmp_array = np.copy(var_array)
+    tmp_array[np.where(surface_type_array == 1)] = reset_value
+    variable[:,:] = tmp_array[:,:]
+
+def setOceanWvpaErrors(variable, surface_type_array, tcwv_array, wvpa_err_array):
+    var_array = np.array(variable)
+    tmp_array = np.copy(var_array)
+    use_hoaps = np.where(((surface_type_array == 1) | (surface_type_array == 4) | (surface_type_array == 6)) & (~np.isnan(tcwv_array)) & (~np.isnan(wvpa_err_array)))
+    tmp_array[use_hoaps] = wvpa_err_array[use_hoaps]
+    variable[:,:] = tmp_array[:,:]
+
+                       
     
 #############################################################################
             
@@ -520,35 +534,64 @@ else:
 tmparr[np.where(np.isnan(var_tcwv_arr))] = 0
 dstvar[:,:] = tmparr[:,:]
 
-### set tcwv_err in case of existing HOAPS... ###
-var_uncert_mean = src.variables['tcwv_uncertainty_mean']
-dstvar = dst.variables['tcwv_err']
-var_uncert_mean_arr = np.array(var_uncert_mean)
-tmparr = np.copy(var_uncert_mean_arr)
-if sensor.find("hoaps") != -1:
-    var_wvpa_err = src.variables['wvpa_err']
-    wvpa_err_arr = np.array(var_wvpa_err)
-    use_hoaps = np.where(((surface_type_arr == 1) | (surface_type_arr == 4) | (surface_type_arr == 6)) & (~np.isnan(var_tcwv_arr)) & (~np.isnan(wvpa_err_arr)))
-    tmparr[use_hoaps] = wvpa_err_arr[use_hoaps]
-else:
-    tmparr[:,:] = var_uncert_mean[:,:]    
-tmparr[np.where(np.isnan(var_tcwv_arr))] = np.nan
-dstvar[:,:] = tmparr[:,:]
+### set tcwv_err and tcwv_ran in case of existing HOAPS... ###
+has_wvpa_errors = False
+for name, variable in src.variables.iteritems():
+    if name == 'wvpa_err' or name == 'wvpa_ran':
+        has_wvpa_errors = True
 
-### set tcwv_ran in case of existing HOAPS... ###
-dstvar = dst.variables['tcwv_ran']
-tcwv_ran_arr = np.array(dstvar)
-tmparr = np.copy(tcwv_ran_arr)
+if has_wvpa_errors:
+    setOceanWvpaErrors(dst.variables['tcwv_err'], surface_type_arr, var_tcwv_arr, np.array(src.variables['wvpa_err']))
+    setOceanWvpaErrors(dst.variables['tcwv_ran'], surface_type_arr, var_tcwv_arr, np.array(src.variables['wvpa_ran']))
+    
+    #var_uncert_mean = src.variables['tcwv_uncertainty_mean']
+    #dstvar = dst.variables['tcwv_err']
+    #var_uncert_mean_arr = np.array(var_uncert_mean)
+    #tmparr = np.copy(var_uncert_mean_arr)
+    #if sensor.find("hoaps") != -1:
+    #    var_wvpa_err = src.variables['wvpa_err']
+    #    wvpa_err_arr = np.array(var_wvpa_err)
+    #    use_hoaps = np.where(((surface_type_arr == 1) | (surface_type_arr == 4) | (surface_type_arr == 6)) & (~np.isnan(var_tcwv_arr)) & (~np.isnan(wvpa_err_arr)))
+    #    tmparr[use_hoaps] = wvpa_err_arr[use_hoaps]
+        
+    #tmparr[np.where(np.isnan(var_tcwv_arr))] = np.nan
+    #dstvar[:,:] = tmparr[:,:]
+
+    #dstvar = dst.variables['tcwv_ran']
+    #tcwv_ran_arr = np.array(dstvar)
+    #tmparr = np.copy(tcwv_ran_arr)
+    #if sensor.find("hoaps") != -1:
+    #    var_wvpa_ran = src.variables['wvpa_ran']
+    #    wvpa_ran_arr = np.array(var_wvpa_ran)
+    #    use_hoaps = np.where(((surface_type_arr == 1) | (surface_type_arr == 4) | (surface_type_arr == 6)) & (~np.isnan(var_tcwv_arr)) & (~np.isnan(wvpa_ran_arr)))
+    #    tmparr[use_hoaps] = wvpa_ran_arr[use_hoaps]
+    #    dstvar[:,:] = tmparr[:,:]
+
+    #tmparr[np.where(np.isnan(var_tcwv_arr))] = np.nan
+    #dstvar[:,:] = tmparr[:,:]
+
+### set tcwv_quality_flag in case of existing HOAPS... ###
+dstvar = dst.variables['tcwv_quality_flag']
+tcwv_qual_arr = np.array(dstvar).astype(int)
+tmparr = np.copy(tcwv_qual_arr)
 if sensor.find("hoaps") != -1:
-    var_wvpa_ran = src.variables['wvpa_ran']
-    wvpa_ran_arr = np.array(var_wvpa_ran)
-    use_hoaps = np.where(((surface_type_arr == 1) | (surface_type_arr == 4) | (surface_type_arr == 6)) & (~np.isnan(var_tcwv_arr)) & (~np.isnan(wvpa_err_arr)))
-    tmparr[use_hoaps] = wvpa_ran_arr[use_hoaps]
+    use_hoaps_ok = np.where(((surface_type_arr == 1) | (surface_type_arr == 4) | (surface_type_arr == 6)) & (~np.isnan(var_tcwv_arr)))
+    tmparr[use_hoaps_ok] = 0
+    use_hoaps_nok = np.where(((surface_type_arr == 1) | (surface_type_arr == 4) | (surface_type_arr == 6)) & (np.isnan(var_tcwv_arr)))
+    tmparr[use_hoaps_nok] = 2
     dstvar[:,:] = tmparr[:,:]
-else:
-    tmparr[:,:] = var_uncert_mean[:,:]    
-tmparr[np.where(np.isnan(var_tcwv_arr))] = np.nan
-dstvar[:,:] = tmparr[:,:]
+
+### if CDR-1 (land only!), reset everything over ocean:
+if sensor.find("hoaps") == -1:
+    # set num_obs to 0:
+    resetOceanCdr1(dst.variables['num_obs'], surface_type_arr, 0)    
+    # set tcwv, stdv, and error terms to nan:
+    resetOceanCdr1(dst.variables['tcwv'], surface_type_arr, np.nan)    
+    resetOceanCdr1(dst.variables['stdv'], surface_type_arr, np.nan)    
+    resetOceanCdr1(dst.variables['tcwv_err'], surface_type_arr, np.nan)    
+    resetOceanCdr1(dst.variables['tcwv_ran'], surface_type_arr, np.nan)    
+    # set tcwv_quality_flag to 2:
+    resetOceanCdr1(dst.variables['tcwv_quality_flag'], surface_type_arr, 2)    
 
 ### Close files... ###
 

@@ -102,10 +102,12 @@ public class L3DailyMergeNirHoapsOp extends PixelOperator {
             landMaskProductToUse = landmaskProduct;
         }
 
-        if (seaiceProduct.getSceneRasterWidth() != width || seaiceProduct.getSceneRasterHeight() != height) {
-            seaiceProductToUse = getResampledProduct(seaiceProduct);
-        } else {
-            seaiceProductToUse = seaiceProduct;
+        if (seaiceProduct != null) {
+            if (seaiceProduct.getSceneRasterWidth() != width || seaiceProduct.getSceneRasterHeight() != height) {
+                seaiceProductToUse = getResampledProduct(seaiceProduct);
+            } else {
+                seaiceProductToUse = seaiceProduct;
+            }
         }
     }
 
@@ -257,7 +259,9 @@ public class L3DailyMergeNirHoapsOp extends PixelOperator {
             configurator.defineSample(SRC_HOAPS_TCWV_RANDOM_ERR, TcwvConstants.TCWV_RANDOM_ERR_HOAPS_BAND_NAME, hoapsProduct);
         }
         configurator.defineSample(SRC_LANDMASK_MASK, "mask", landMaskProductToUse);
-        configurator.defineSample(SRC_SEAICE_MASK, "mask_time" + dayOfMonth, seaiceProductToUse);
+        if (seaiceProduct != null) {
+            configurator.defineSample(SRC_SEAICE_MASK, "mask_time" + dayOfMonth, seaiceProductToUse);
+        }
     }
 
     @Override

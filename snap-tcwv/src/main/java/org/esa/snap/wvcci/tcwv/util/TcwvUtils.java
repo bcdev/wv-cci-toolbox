@@ -105,15 +105,15 @@ public class TcwvUtils {
                                          Color.GREEN, 0.5f);
         tcwvProduct.getMaskGroup().add(index++, mask);
 
-        mask = Mask.BandMathsType.create("TCWV_HIGH_COST_FUNCTION",
+        mask = Mask.BandMathsType.create("TCWV_COST_FUNCTION_1",
                                          TcwvConstants.TCWV_COST_FUNCTION_1_DESCR_TEXT, w, h,
-                                         flagBandName + ".TCWV_HIGH_COST_FUNCTION",
+                                         flagBandName + ".TCWV_COST_FUNCTION_1",
                                          Color.YELLOW, 0.5f);
         tcwvProduct.getMaskGroup().add(index++, mask);
 
-        mask = Mask.BandMathsType.create("TCWV_VERY_HIGH_COST_FUNCTION",
+        mask = Mask.BandMathsType.create("TCWV_COST_FUNCTION_2",
                                          TcwvConstants.TCWV_COST_FUNCTION_2_DESCR_TEXT, w, h,
-                                         flagBandName + ".TCWV_VERY_HIGH_COST_FUNCTION",
+                                         flagBandName + ".TCWV_COST_FUNCTION_2",
                                          Color.ORANGE, 0.5f);
         tcwvProduct.getMaskGroup().add(index++, mask);
 
