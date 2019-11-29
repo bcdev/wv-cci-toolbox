@@ -52,12 +52,15 @@ public class TcwvAlgorithm {
             mes[i] = input.getRhoToaWin()[i];
         }
         for (int i = 0; i < input.getRhoToaAbs().length; i++) {
-            if (sensor == Sensor.MERIS || sensor == Sensor.OLCI) {
+            if (sensor == Sensor.MERIS || sensor == Sensor.OLCI ||
+                    sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA) {
+                // run this also for MODIS land !! (RP 20190410)
+                // for ocean it makes no difference as a,b are always 0,1
                 mes[input.getRhoToaWin().length + i] = rectifyAndO2Correct(sensor, input.getRhoToaWin(),
                                                                            input.getRhoToaAbs(), null, i,
                                                                            Math.sqrt(input.getAmf()), true);
             } else {
-                // we have no tests for MODIS, leave as it is. TODO: clarify with RP if rectification is needed for MODIS
+                // this is equal to the output of rectifyAndO2Correct in case of a,b = 0,1
                 mes[input.getRhoToaWin().length + i] =
                         -1.0 * Math.log(input.getRhoToaAbs()[i] / input.getRhoToaWin()[input.getRhoToaWin().length - 1]) /
                                 Math.sqrt(input.getAmf());
@@ -113,7 +116,7 @@ public class TcwvAlgorithm {
                                                                            input.getRhoToaAbs(), null, i,
                                                                            Math.sqrt(input.getAmf()), false);
             } else {
-                // we have no tests for MODIS, leave as it is.
+                // this is equal to the output of rectifyAndO2Correct in case of a,b = 0,1. Therefore ok for MODIS.
                 mes[input.getRhoToaWin().length + i] =
                         -1.0 * Math.log(input.getRhoToaAbs()[i] / input.getRhoToaWin()[input.getRhoToaWin().length - 1]) /
                                 Math.sqrt(input.getAmf());
@@ -187,11 +190,11 @@ public class TcwvAlgorithm {
         double resultTcwvUncertainty = 0.0;
         if (result.getSr() != null) {
             resultTcwvUncertainty = result.getSr()[0][0];
-            if (sensor == Sensor.MERIS || sensor == Sensor.OLCI)  {
-                // todo:
-                final double relUncertainty = result.getSr()[0][0] / result.getXn()[0];
-                resultTcwvUncertainty = relUncertainty * resultTcwv;
-            }
+            // this is garbage?! (OD 20191129)  TODO: check changes for Meris, Olci after deactivating this
+//            if (sensor == Sensor.MERIS || sensor == Sensor.OLCI)  {
+//                final double relUncertainty = result.getSr()[0][0] / result.getXn()[0];
+//                resultTcwvUncertainty = relUncertainty * resultTcwv;
+//            }
         }
         final double resultAot1 = result.getXn()[1];
         final double resultAot2 = result.getXn()[2];

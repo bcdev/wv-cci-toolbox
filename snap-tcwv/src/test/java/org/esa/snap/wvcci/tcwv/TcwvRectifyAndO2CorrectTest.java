@@ -84,4 +84,24 @@ public class TcwvRectifyAndO2CorrectTest {
         assertEquals(0.920799, ab_corr_2, 1.E-5);
     }
 
+    @Test
+    public void testRectifyO2Corr_land_modis() {
+        // extracted from TEST_COWA_LAND_1 in functional_tests.py
+        final Sensor sensor = Sensor.MODIS_TERRA;
+        TcwvAlgorithm algorithm = new TcwvAlgorithm();
+
+        final double samf = 1.62919;  // sqrt(amf)
+        double[] rho_wb = new double[]{0.042880710235182445, 0.05806035980596497};
+        double[] rho_ab = new double[]{0.034583598016895215, 0.012255925435128554, 0.0202874049561323};
+        final double[] rectCorrExt = null;
+
+        final double ab_corr_0 = algorithm.rectifyAndO2Correct(sensor, rho_wb, rho_ab, rectCorrExt, 0, samf, true);
+        assertEquals(0.165, ab_corr_0, 1.E-3);
+        final double ab_corr_1 = algorithm.rectifyAndO2Correct(sensor, rho_wb, rho_ab, rectCorrExt, 1, samf, true);
+        assertEquals(0.761, ab_corr_1, 1.E-3);
+        final double ab_corr_2 = algorithm.rectifyAndO2Correct(sensor, rho_wb, rho_ab, rectCorrExt, 2, samf, true);
+        assertEquals(0.488, ab_corr_2, 1.E-3);
+    }
+
+
 }

@@ -377,6 +377,7 @@ public class TcwvOp extends Operator {
                                                        amf, aot865, priorAot, priorAl0, priorAl1,
                                                        t2m, prs, priorWs, priorTcwv);
                     } else {
+                        // TODO: divide MODIS by PI instead, as above !!! (20191129)
                         for (int i = 0; i < oceanWinBandData.length; i++) {
                             oceanWinBandData[i] = oceanWinBandTiles[i].getSampleDouble(x, y) * csza;
                         }

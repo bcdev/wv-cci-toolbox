@@ -212,16 +212,17 @@ public class TcwvCowaForOnePixelTest {
         double vza = 6.7142;
         double vaa = 99.53059;
         double vaaR = vaa*MathUtils.DTOR;
-//        double relAzi = 180. - Math.abs(saa - vaa);
         double relAzi = 180. - Math.acos(Math.cos(saaR)*Math.cos(vaaR) + Math.sin(saaR)*Math.sin(vaaR))*MathUtils.RTOD;
         double amf = 1. / Math.cos(sza * MathUtils.DTOR) + 1. / Math.cos(vza * MathUtils.DTOR);
 
-        double[] rhoToaWin = new double[]{0.00949};  // RefSB_2
-        double[] rhoToaAbs = new double[]{0.00694, 0.0048, 0.00526};   //  RefSB_17, RefSB_18, RefSB_19
-        // todo: check with RP if this needs to be done:
-        rhoToaWin[0] *= Math.cos(sza*MathUtils.DTOR);
+        // the rhoToa must be RefSB_* / Math.PI !!!
+        double[] refSBWin = new double[]{0.00949};  // RefSB_2
+        double[] refSBAbs = new double[]{0.00694, 0.0048, 0.00526};   //  RefSB_17, RefSB_18, RefSB_19
+        double[] rhoToaWin = new double[1];
+        double[] rhoToaAbs = new double[3];
+        rhoToaWin[0] = refSBWin[0]/Math.PI;
         for (int i = 0; i < rhoToaAbs.length; i++) {
-            rhoToaAbs[i] *= Math.cos(sza*MathUtils.DTOR);
+            rhoToaAbs[i] = refSBAbs[i]/Math.PI;
         }
 
         double aot865 = 0.1;
@@ -245,10 +246,50 @@ public class TcwvCowaForOnePixelTest {
         System.out.println("MODIS TERRA OCEAN result.getTcwv() = " + result.getTcwv());
 //        assertEquals(33.86, result.getTcwv(), 0.2);
         assertEquals(22.4, result.getTcwv(), 0.2);  // MODIS update RP, 20190902
-        // Python result: tbd
-        // todo: re-check later with updated LUTs etc. We also need a test for MODIS land
-        assertEquals(3.516, result.getTcwvUncertainty(), 0.001);
+        // Python result: 22.227 (new test_cowa_ocean_4, OD, 20191128)
+        assertEquals(3.582, result.getTcwvUncertainty(), 0.001); // Python: 3.39
     }
 
+    @Test
+    public void testCowaLand_modis_terra() {
+        // test case 'terra_nocal' from email RP, 20190410
+        final Sensor sensor = Sensor.MODIS_TERRA;
+        TcwvAlgorithm algorithm = new TcwvAlgorithm();
+        TcwvLandLut landLut = TcwvIO.readLandLookupTable(auxdataPath, Sensor.MODIS_TERRA);
+        TcwvFunction tcwvFunctionLand = TcwvInterpolation.getForwardFunctionLand(landLut);
+        JacobiFunction jacobiFunctionLand = TcwvInterpolation.getJForwardFunctionLand(landLut);
+
+        double aot865 = 0.1;
+        double relAzi = 53.56640624999997;
+        double priorMslPress = -Math.log(972.3643431194063);
+        double priorAl0 = 0.13471372425556183;
+        double priorAl1 = 0.18240199983119965;
+        double priorTcwv = 22.3887708167446;
+        double sza = 44.02040100097656;
+        double priorT2m = 289.367343379847;
+        double vza = 37.68560028076172;
+
+        double amf = 1. / Math.cos(sza * MathUtils.DTOR) + 1. / Math.cos(vza * MathUtils.DTOR);
+
+        double[] rhoToaWin = new double[]{0.042880710235182445, 0.05806035980596497};
+        double[] rhoToaAbs = new double[]{0.034583598016895215, 0.012255925435128554, 0.0202874049561323};
+
+        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf, aot865,
+                aot865, priorAl0, priorAl1, priorT2m, priorMslPress,
+                Double.NaN, priorTcwv);
+        final TcwvResult result = algorithm.compute(sensor,
+                landLut, null,
+                tcwvFunctionLand, null,
+                jacobiFunctionLand, null,
+                input, true);
+
+        System.out.println("MODIS TERRA LAND result.getTcwv() = " + result.getTcwv());
+        assertEquals(17.63, result.getTcwv(), 0.2);  // MODIS update RP, 20190902
+        // Python result: 17.63 (new test_cowa_land_4, OD, 20191128), Java result: 17.74
+//        assertEquals(0.504, result.getTcwvUncertainty(), 0.001); // with MODIS_LAND_SE from 20190410
+        assertEquals(0.292, result.getTcwvUncertainty(), 0.001); // with MODIS_LAND_SE from 20190902
+//        assertEquals(0.044, result.getCost(), 0.001);  // with MODIS_LAND_SE from 20190410
+        assertEquals(0.046, result.getCost(), 0.001);  // with MODIS_LAND_SE from 20190902
+    }
 
 }
