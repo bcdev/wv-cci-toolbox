@@ -59,7 +59,7 @@ public class TcwvCowaForOnePixelTest {
         // Java: 16.2862 (with new L1 uncertainty estimates)
         // Cowa Python: 16.46472
         assertEquals(16.2862, result.getTcwv(), 0.05);
-        assertEquals(4.54, result.getTcwvUncertainty(), 0.01);
+        assertEquals(1.12, result.getTcwvUncertainty(), 0.01);
     }
 
     @Test
@@ -102,7 +102,7 @@ public class TcwvCowaForOnePixelTest {
         // Java: 19.54744
         // Cowa Python: 19.35311
         assertEquals(19.35311, result.getTcwv(), 0.5);
-        assertEquals(2.657, result.getTcwvUncertainty(), 0.001);
+        assertEquals(0.597, result.getTcwvUncertainty(), 0.001);
     }
 
     @Test
@@ -148,7 +148,7 @@ public class TcwvCowaForOnePixelTest {
          assertEquals(14.012, result.getTcwv(), 0.01);
 //        assertEquals(13.918, result.getTcwv(), 0.01);  // with refl uncertainty estimate of 2% instead of fix SE matrix
         // uncertainty:
-        assertEquals(3.193, result.getTcwvUncertainty(), 0.001);
+        assertEquals(0.853, result.getTcwvUncertainty(), 0.001);
     }
 
     @Test
@@ -193,7 +193,7 @@ public class TcwvCowaForOnePixelTest {
         // Java: 22.13765
         // Cowa Python: 22.18858
         assertEquals(22.18858, result.getTcwv(), 0.1);
-        assertEquals(0.201, result.getTcwvUncertainty(), 0.001);
+        assertEquals(0.042, result.getTcwvUncertainty(), 0.001);
     }
 
     @Test

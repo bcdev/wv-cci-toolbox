@@ -119,6 +119,9 @@ public class TcwvOp extends Operator {
     @Override
     public void initialize() throws OperatorException {
 
+        if (sensor == null) {
+            throw new OperatorException("No sensor selected - TCWV computation aborted.");
+        }
         validateSourceProduct(sensor, sourceProduct);
         if (mod35Product != null && (sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA)) {
             validateMod35Product(mod35Product);
@@ -216,7 +219,6 @@ public class TcwvOp extends Operator {
         final Band tcwvUncertaintyBand = targetProduct.getBand(TcwvConstants.TCWV_UNCERTAINTY_TARGET_BAND_NAME);
         final Band tcwvQualityFlagBand = targetProduct.getBand(TcwvConstants.TCWV_QUALITY_FLAG_BAND_NAME);
         final Band tcwvSurfaceTypeFlagBand = targetProduct.getBand(TcwvConstants.SURFACE_TYPE_FLAG_BAND_NAME);
-        final Band aziDiffBand = targetProduct.getBand("azimuth_difference");
         final Band stateVector1Band = targetProduct.getBand(TcwvConstants.TCWV_STATE_VECTOR1_BAND_NAME);
         final Band stateVector2Band = targetProduct.getBand(TcwvConstants.TCWV_STATE_VECTOR2_BAND_NAME);
 
@@ -354,40 +356,36 @@ public class TcwvOp extends Operator {
                     // - MODIS: refl_for_tcwv = refl_input / PI
                     // - MERIS/OLCI: refl_for_tcwv = radiance / flux = refl_input * cos(sza) because
                     //          refl_input = radiance / (flux * cos(sza)), see RsMathUtils.radianceToReflectance(...)
-                    if (isLand) {
-                        for (int i = 0; i < landWinBandData.length; i++) {
-                            if (sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA) {
-                                // this was wrong before!
-                                landWinBandData[i] = landWinBandTiles[i].getSampleDouble(x, y) / Math.PI;
-                            } else {
-                                // this was already correct before
-                                landWinBandData[i] = landWinBandTiles[i].getSampleDouble(x, y) * csza;
-                            }
+
+                    final Tile[] winBandTiles = isLand ? landWinBandTiles : oceanWinBandTiles;
+                    final Tile[] absBandTiles = isLand ? landAbsBandTiles : oceanAbsBandTiles;
+                    final double[] winBandData = isLand ? landWinBandData : oceanWinBandData;
+                    final double[] absBandData = isLand ? landAbsBandData : oceanAbsBandData;
+                    for (int i = 0; i < winBandData.length; i++) {
+                        if (sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA) {
+                            // this was wrong before!
+                            winBandData[i] = winBandTiles[i].getSampleDouble(x, y) / Math.PI;
+                        } else {
+                            // this was already correct before
+                            winBandData[i] = winBandTiles[i].getSampleDouble(x, y) * csza;
                         }
-                        for (int i = 0; i < landAbsBandData.length; i++) {
-                            if (sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA) {
-                                // this was wrong before!
-                                landAbsBandData[i] = landAbsBandTiles[i].getSampleDouble(x, y) / Math.PI;
-                            } else {
-                                // this was already correct before
-                                landAbsBandData[i] = landAbsBandTiles[i].getSampleDouble(x, y) * csza;
-                            }
+                        if (!isLand) {
                         }
-                        input = new TcwvAlgorithmInput(landWinBandData, landAbsBandData, sza, vza, relAzi,
-                                                       amf, aot865, priorAot, priorAl0, priorAl1,
-                                                       t2m, prs, priorWs, priorTcwv);
-                    } else {
-                        // TODO: divide MODIS by PI instead, as above !!! (20191129)
-                        for (int i = 0; i < oceanWinBandData.length; i++) {
-                            oceanWinBandData[i] = oceanWinBandTiles[i].getSampleDouble(x, y) * csza;
-                        }
-                        for (int i = 0; i < oceanAbsBandData.length; i++) {
-                            oceanAbsBandData[i] = oceanAbsBandTiles[i].getSampleDouble(x, y) * csza;
-                        }
-                        input = new TcwvAlgorithmInput(oceanWinBandData, oceanAbsBandData, sza, vza, relAzi,
-                                                       amf, aot865, priorAot, priorAl0, priorAl1,
-                                                       t2m, prs, priorWs, priorTcwv);
                     }
+                    for (int i = 0; i < absBandData.length; i++) {
+                        if (sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA) {
+                            // this was wrong before!
+                            absBandData[i] = absBandTiles[i].getSampleDouble(x, y) / Math.PI;
+                        } else {
+                            // this was already correct before
+                            absBandData[i] = absBandTiles[i].getSampleDouble(x, y) * csza;
+                        }
+                        if (!isLand) {
+                        }
+                    }
+                    input = new TcwvAlgorithmInput(winBandData, absBandData, sza, vza, relAzi,
+                                                   amf, aot865, priorAot, priorAl0, priorAl1,
+                                                   t2m, prs, priorWs, priorTcwv);
 
                     // 'ocean' parameters are null for land processing!
                     final TcwvResult result = tcwvAlgorithm.compute(sensor, landLut, oceanLut,
