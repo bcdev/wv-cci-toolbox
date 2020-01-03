@@ -11,18 +11,18 @@ __author__ = 'olafd'
 
 sensor = 'MODIS_TERRA'
 
-years = ['2011']    #test  
-#years = ['2012']    #test  
-#years = ['2018']    #test  
+#years = ['2017']
+#years = ['2016']
+years = ['2011']
+#years = ['2011','2016']
+
+allMonths = ['01']
 #allMonths = ['01','02','03']
-#allMonths = ['03','04','05']
-#allMonths = ['06','07','08','09']
 #allMonths = ['04','05','06']
 #allMonths = ['07','08','09']
 #allMonths = ['10','11','12']
-#allMonths = ['01', '07']
-allMonths = ['07']
-##allMonths = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+
+#allMonths = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
 
 #days = ['07', '16', ,'17', '21', '23', '24', '25', '26', '28', '30', '31']
 #days = ['17']
@@ -36,7 +36,6 @@ def getMonth(year):
 
 wvcciRootDir = '/gws/nopw/j04/esacci_wv/odanne/WvcciRoot'
 eraInterimRootDir = wvcciRootDir + '/auxiliary/era-interim-t2m-mslp-tcwv-u10-v10'
-snapDir = '/gws/nopw/j04/esacci_wv/software/snap'
 
 inputs = ['dummy']
 
@@ -49,21 +48,26 @@ m = PMonitor(inputs,
                     ('wvcci-l2-tcwv-modis-step.sh', 256)],
              polling="job_status_callback.sh")
 
-
 for year in years:
     l1bRootDir = wvcciRootDir + '/L1b/' + sensor
     modisLandMaskRootDir = wvcciRootDir + '/ModisLandMask/MOD03'
     modisCloudMaskRootDir = wvcciRootDir + '/ModisCloudMask/MOD35_L2'
+    print('year: ' + year)
 
     for month in getMonth(year):
+        print('month: ' + month)
 
         if os.path.exists(l1bRootDir + '/' + year + '/' + month):
 
             numMonthDays = monthrange(int(year), int(month))[1]
+            print('numMonthDays: ' + str(numMonthDays))
+
             #for day in days:
-            #for iday in range(15, 16):
-            for iday in range(1, numMonthDays+1):
+            #for iday in range(1, 2):
+            for iday in range(2, 6):
+            #for iday in range(1, numMonthDays+1):
                 day = str(iday).zfill(2)
+                print('day: ' + day)
 
                 idepixDir = wvcciRootDir + '/Idepix/' + sensor + '/' + year + '/' + month + '/' + str(day).zfill(2)
                 idepixEraDir = wvcciRootDir + '/Idepix-Erainterim/' + sensor + '/' + year + '/' + month + '/' + str(day).zfill(2)
@@ -99,7 +103,7 @@ for year in years:
                                         m.execute('wvcci-l2-idepix-modis-step.sh', 
                                                    ['dummy'], 
                                                    [idepixFile], 
-                                                   parameters=[l1bPath,modisLandMaskPath,l1bFiles[index],modisLandMaskFiles[0],idepixDir,sensor,year,month,wvcciRootDir,snapDir])
+                                                   parameters=[l1bPath,modisLandMaskPath,l1bFiles[index],modisLandMaskFiles[0],idepixDir,sensor,year,month,wvcciRootDir])
 
                                         idepixPath = idepixDir + '/' + idepixFile
 
@@ -116,7 +120,7 @@ for year in years:
                                         m.execute('wvcci-l2-tcwv-modis-step.sh',
                                                    [idepixFile],
                                                    [idepixEraFile],
-                                                   parameters=[idepixPath,idepixFile,modisCloudMaskPath,year,month,day,hhmm,wvcciRootDir,snapDir])
+                                                   parameters=[idepixPath,idepixFile,modisCloudMaskPath,year,month,day,hhmm,wvcciRootDir])
 
 m.wait_for_completion()
 

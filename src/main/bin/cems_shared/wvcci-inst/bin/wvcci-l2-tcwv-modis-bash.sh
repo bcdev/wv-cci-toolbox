@@ -55,7 +55,6 @@ replace="Tcwv"
 tcwvDir=${idepixDir/$current/$replace}
 mkdir -p $tcwvDir
 
-#eramodis=${eraInterimDir}/${modisstem}_era-interim.nc
 eramodis=${tmpdir}/${modisstem}_era-interim.nc
 echo "eramodis: $eramodis"
 #if [ -f $eramodis ]; then
@@ -80,8 +79,6 @@ echo "$(date +%Y-%m-%dT%H:%M:%S -u) extracting geo information of $idepixName ..
 
 scripfile=$tmpdir/${modisstem}-scrip.nc
 if [ ! -e $scripfile ]; then
-  #if ! $BEAM_HOME/bin/gpt.sh Write -PformatName=SCRIP -Pfile=$scripfile $idepixPath
-  # TODO: replace by SNAP, test:
   if ! $SNAP_HOME/bin/gpt Write -PformatName=SCRIP -Pfile=$scripfile $idepixPath
   then
     cat gpt.out
@@ -119,29 +116,26 @@ echo "$(date +%Y-%m-%dT%H:%M:%S -u) interpolate spatially ..."
 eramodisspatial=$tmpdir/${modisstem}_era-interim_spatial.nc
 cdo -L -f nc4c remapbil,$scripfile $eramodistimeslice $eramodisspatial
 
-# band subset: we only need t2m, msl, tcwv
-$BEAM_HOME/bin/gpt.sh Subset -Ssource=$eramodisspatial -PbandNames=t2m,msl,tcwv -f Netcdf4-BEAM -t $eramodis
-# TODO: replace by SNAP, test:
-#$SNAP_HOME/bin/gpt.sh Subset -Ssource=$eramodisspatial -PbandNames=t2m,msl,tcwv -f Netcdf4-BEAM -t $eramodis
-
+# band subset: we need t2m, msl, tcwv, u10, v10
+$SNAP_HOME/bin/gpt Subset -Ssource=$eramodisspatial -PbandNames=t2m,msl,tcwv,u10,v10 -f Netcdf4-BEAM -t $eramodis
 
 # merge Idepix with EraInterim band subset
 idepixEraInterimMerge=$idepixEraInterimDir/${modisstem}_idepix-era-interim.nc
-$SNAP_HOME/bin/gpt ESACCI.MergeIdepixEraInterim -SidepixProduct=$idepixPath -SeraInterimProduct=$eramodis -Psensor=MODIS_TERRA -f Netcdf4-BEAM -t $idepixEraInterimMerge
-
+$SNAP_HOME/bin/gpt ESACCI.MergeIdepixEraInterim -SidepixProduct=$idepixPath -SeraInterimProduct=$eramodis -Psensor=MODIS_TERRA -PeraInterimBandsToCopy=t2m,msl,tcwv,u10,v10 -f Netcdf4-BEAM -t $idepixEraInterimMerge
 
 ## TCWV
 if [ -f $idepixEraInterimMerge ]; then
     auxdataPath=/gws/nopw/j04/esacci_wv/software/dot_snap/auxdata/wvcci
     tcwv=$tcwvDir/${modisstem}_tcwv.nc
 
-    # if existing, add MOD35_L2 product as optional source product, like: 
+    # If existing, add MOD35_L2 product as optional source product. 
+    # We want to write TCWV with NetCDF4_WVCCI in order NOT to write lat,lon!
     if [ -f $cloudMaskPath ]; then
-      echo "$SNAP_HOME/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixEraInterimMerge -Smod35Product=$cloudMaskPath -PauxdataPath=$auxdataPath -Psensor=MODIS_TERRA -PprocessOcean=true -f NetCDF4-WVCCI -t $tcwv"
-      $SNAP_HOME/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixEraInterimMerge -Smod35Product=$cloudMaskPath -PauxdataPath=$auxdataPath -Psensor=MODIS_TERRA -PprocessOcean=true -f NetCDF4-WVCCI -t $tcwv
+      echo "${SNAP_HOME}/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixEraInterimMerge -Smod35Product=$cloudMaskPath -PauxdataPath=$auxdataPath -Psensor=MODIS_TERRA -PprocessOcean=true -f NetCDF4-WVCCI -t $tcwv"
+      ${SNAP_HOME}/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixEraInterimMerge -Smod35Product=$cloudMaskPath -PauxdataPath=$auxdataPath -Psensor=MODIS_TERRA -PprocessOcean=true -f NetCDF4-WVCCI -t $tcwv
     else
-      echo "$SNAP_HOME/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixEraInterimMerge -PauxdataPath=$auxdataPath -Psensor=MODIS_TERRA -PprocessOcean=true -f NetCDF4-WVCCI -t $tcwv"
-      $SNAP_HOME/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixEraInterimMerge -PauxdataPath=$auxdataPath -Psensor=MODIS_TERRA -PprocessOcean=true -f NetCDF4-WVCCI -t $tcwv
+      echo "${SNAP_HOME}/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixEraInterimMerge -PauxdataPath=$auxdataPath -Psensor=MODIS_TERRA -PprocessOcean=true -f NetCDF4-WVCCI -t $tcwv"
+      ${SNAP_HOME}/bin/gpt ESACCI.Tcwv -e -SsourceProduct=$idepixEraInterimMerge -PauxdataPath=$auxdataPath -Psensor=MODIS_TERRA -PprocessOcean=true -f NetCDF4-WVCCI -t $tcwv
     fi
 
 fi
@@ -154,8 +148,14 @@ rm -f $eramodistimeslice
 rm -f $eramodisspatial
 rm -f $eramodis
 if [ -f $idepixEraInterimMerge ]; then
-  echo "DELETING Idepixproduct : $idepixPath"
+  echo "DELETING Idepix product : $idepixPath"
   rm -f $idepixPath
+  
+  # Idepix products are large. As examples, just keep IdepixEraInterim of Jan 15th and Jul 15th of each year:
+  if [ "$day" != "15" ] || ([ "$month" != "01" ] && [ "$month" != "07" ]); then
+    echo "DELETING IdepixEraInterim merge product : $idepixEraInterimMerge"
+    rm -f $idepixEraInterimMerge
+  fi
 fi
 
 # list results

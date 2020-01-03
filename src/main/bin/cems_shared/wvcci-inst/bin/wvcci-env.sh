@@ -90,8 +90,15 @@ submit_job() {
         # and dump to std_out to be fetched by pmonitor
         job_id=`echo ${line} | awk '{ print substr($2,2,length($2)-2) }'`
         echo "${job_id}_${jobname}"
+
+        # clarify: should look like in old setup?
+        #jobs=`echo ${line} | awk '{ print substr($2,2,length($2)-2) }'`
+        #echo "${WVCCI_LOG}/${jobname}.out/${jobs}" > ${WVCCI_TASKS}/${jobname}.tasks
+        #echo "jobs: $jobs"
+        # --> obviously this is the reason why 'tasks' dir was actually always empty (OD, 20191017)
     else
         echo "`date -u +%Y%m%d-%H%M%S` - submit of ${jobname} failed: ${line}"
+        #echo "`date -u +%Y%m%d-%H%M%S` - tasks for ${jobname} failed. Reason: was not submitted."
         exit 1
     fi
 
