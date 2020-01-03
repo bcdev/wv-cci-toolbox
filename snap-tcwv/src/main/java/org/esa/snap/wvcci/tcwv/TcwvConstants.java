@@ -75,6 +75,7 @@ public class TcwvConstants {
 
     static final String TCWV_STATE_VECTOR1_BAND_NAME = "stateVector_1";
     static final String TCWV_STATE_VECTOR2_BAND_NAME = "stateVector_2";
+    static final String TCWV_COST_FUNCTION_BAND_NAME = "cost_function";
 
     static final String PRIOR_T2M_BAND_NAME = "t2m";
     static final String PRIOR_MSL_BAND_NAME = "msl";

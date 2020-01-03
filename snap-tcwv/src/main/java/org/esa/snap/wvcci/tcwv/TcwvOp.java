@@ -68,6 +68,9 @@ public class TcwvOp extends Operator {
             description = "Write full state vector, not just TCWV (for debugging purpose).")
     private boolean writeFullStateVector;
 
+    @Parameter(defaultValue = "false",
+            description = "Write cost function value (for debugging purpose).")
+    private boolean writeCostFunctionValue;
 
     @SourceProduct(description =
             "Source product (IdePix product merged with MERIS, MODIS or OLCI L1b product)",
@@ -221,6 +224,7 @@ public class TcwvOp extends Operator {
         final Band tcwvSurfaceTypeFlagBand = targetProduct.getBand(TcwvConstants.SURFACE_TYPE_FLAG_BAND_NAME);
         final Band stateVector1Band = targetProduct.getBand(TcwvConstants.TCWV_STATE_VECTOR1_BAND_NAME);
         final Band stateVector2Band = targetProduct.getBand(TcwvConstants.TCWV_STATE_VECTOR2_BAND_NAME);
+        final Band costFunctionBand = targetProduct.getBand(TcwvConstants.TCWV_COST_FUNCTION_BAND_NAME);
 
         Tile[] landWinBandTiles = new Tile[landWinBands.length];
         for (int i = 0; i < landWinBandTiles.length; i++) {
@@ -303,6 +307,9 @@ public class TcwvOp extends Operator {
                     targetTiles.get(tcwvBand).setSample(x, y, Float.NaN);
                     targetTiles.get(tcwvUncertaintyBand).setSample(x, y, Float.NaN);
                     targetTiles.get(tcwvQualityFlagBand).setSample(x, y, TcwvConstants.TCWV_INVALID, true);
+                    if (writeCostFunctionValue) {
+                        targetTiles.get(costFunctionBand).setSample(x, y, Float.NaN);
+                    }
                     if (writeFullStateVector) {
                         targetTiles.get(stateVector1Band).setSample(x, y, Float.NaN);
                         targetTiles.get(stateVector2Band).setSample(x, y, Float.NaN);
@@ -394,7 +401,9 @@ public class TcwvOp extends Operator {
                                                                     input, isLand);
 
                     targetTiles.get(tcwvBand).setSample(x, y, result.getTcwv());
-//                    targetTiles.get(tcwvBand).setSample(x, y, result.getCost());        // test!!
+                    if (writeCostFunctionValue) {
+                        targetTiles.get(costFunctionBand).setSample(x, y, result.getCost());
+                    }
                     if (writeFullStateVector) {
                         targetTiles.get(stateVector1Band).setSample(x, y, result.getStateVector1());
                         targetTiles.get(stateVector2Band).setSample(x, y, result.getStateVector2());
@@ -541,6 +550,14 @@ public class TcwvOp extends Operator {
             stateVector2Band.setDescription("stateVector_1 (aot2 over land, wsp over ocean)");
             stateVector2Band.setNoDataValue(Float.NaN);
             stateVector2Band.setNoDataValueUsed(true);
+        }
+
+        if (writeCostFunctionValue) {
+            final Band costFunctionBand = targetProduct.addBand(TcwvConstants.TCWV_COST_FUNCTION_BAND_NAME,
+                                                                ProductData.TYPE_FLOAT32);
+            costFunctionBand.setDescription("TCWV retrieval cost function value");
+            costFunctionBand.setNoDataValue(Float.NaN);
+            costFunctionBand.setNoDataValueUsed(true);
         }
 
         ProductUtils.copyTiePointGrids(sourceProduct, targetProduct);
