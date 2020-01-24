@@ -142,6 +142,7 @@ public class OptimalEstimation {
         } else {
             xn = firstGuessVector;
         }
+        xn = xa; // test!!
 
         // Do the iteration
         int ii = 0;

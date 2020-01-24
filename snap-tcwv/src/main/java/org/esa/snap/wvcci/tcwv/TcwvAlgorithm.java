@@ -5,6 +5,7 @@ import org.esa.snap.wvcci.tcwv.oe.InversionMethod;
 import org.esa.snap.wvcci.tcwv.oe.OEOutputMode;
 import org.esa.snap.wvcci.tcwv.oe.OptimalEstimation;
 import org.esa.snap.wvcci.tcwv.oe.OptimalEstimationResult;
+import org.esa.snap.wvcci.tcwv.util.TcwvUtils;
 
 /**
  * Implementation of TCWV algorithm follwing SE Python breadboard (CAWA heritage)
@@ -81,11 +82,18 @@ public class TcwvAlgorithm {
         xa[1] = input.getPriorAl0();
         xa[2] = input.getPriorAl1();
 
-        final double[][] se = sensor.getLandSe();
-        // use per-pixel uncertainty of 3% for all sensors instead: todo: clarify with RP
-//        for (int i = 0; i < se.length; i++) {
-//            se[i][i] = 0.02*mes[i];
-//        }
+        double[][] se = sensor.getLandSe();
+        for (int i = 0; i < input.getRhoToaWin().length; i++) {
+            se[i][i] = 1.0/(sensor.getLandSnr()*sensor.getLandSnr());
+        }
+        // introduce per-pixel uncertainty for abs bands as provided by RP Jan 2020:
+        for (int i = 0; i < input.getRhoToaAbs().length; i++) {
+            int j = input.getRhoToaWin().length + i;
+            se[j][j] = TcwvUtils.computePseudoAbsorptionMeasurementVariance(sensor.getLandSnr(),
+                                                                            sensor.getLandInterpolError()[i],
+                                                                            input.getAmf());
+        }
+
         final double[][] sa = TcwvConstants.SA_LAND;
 
         OptimalEstimation oe = new OptimalEstimation(tcwvFunction, a, b, mes, par, jacobiFunction);
@@ -136,10 +144,17 @@ public class TcwvAlgorithm {
         xa[2] = input.getPriorWsp();
 
         final double[][] se = sensor.getOceanSe();
-        // use per-pixel uncertainty of 3% for all sensors instead todo: clarify with RP
-//        for (int i = 0; i < se.length; i++) {
-//            se[i][i] = 0.02*mes[i];
-//        }
+        for (int i = 0; i < input.getRhoToaWin().length; i++) {
+            se[i][i] = 1.0/(sensor.getOceanSnr()*sensor.getOceanSnr());
+        }
+        // introduce per-pixel uncertainty for abs bands as provided by RP Jan 2020:
+        for (int i = 0; i < input.getRhoToaAbs().length; i++) {
+            int j = input.getRhoToaWin().length + i;
+            se[j][j] = TcwvUtils.computePseudoAbsorptionMeasurementVariance(sensor.getOceanSnr(),
+                                                                            sensor.getOceanInterpolError()[i],
+                                                                            input.getAmf());
+        }
+
         final double[][] sa = TcwvConstants.SA_OCEAN;
 
         OptimalEstimation oe = new OptimalEstimation(tcwvFunction, a, b, mes, par, jacobiFunction);
@@ -192,11 +207,6 @@ public class TcwvAlgorithm {
         double resultTcwvUncertainty = 0.0;
         if (result.getSr() != null) {
             resultTcwvUncertainty = result.getSr()[0][0];
-            // this is garbage?! (OD 20191129)  TODO: check changes for Meris, Olci after deactivating this
-//            if (sensor == Sensor.MERIS || sensor == Sensor.OLCI)  {
-//                final double relUncertainty = result.getSr()[0][0] / result.getXn()[0];
-//                resultTcwvUncertainty = relUncertainty * resultTcwv;
-//            }
         }
         final double resultAot1 = result.getXn()[1];
         final double resultAot2 = result.getXn()[2];

@@ -171,5 +171,18 @@ public class TcwvUtils {
 
     }
 
-
+    /**
+     * Returns the pseudo absorption measurement error for given SNR, interpolation error and air mass factor.
+     * See more details in function 'snr_to_pseudo_absoprtion_measurement_variance' in cowa_core.py of software
+     * package 'consolidated_cci_luts' provided by RP, Jan 2020
+     *
+     * @param snr - SNR
+     * @param interpolError - interpolation error
+     * @param amf - air mass factor
+     *
+     * @return - the pseudo absorption measurement error
+     */
+    public static double computePseudoAbsorptionMeasurementVariance(double snr, double interpolError, double amf) {
+       return ((1.0/(snr*snr)) + (1.0/(snr*snr) + interpolError)) / amf;
+    }
 }

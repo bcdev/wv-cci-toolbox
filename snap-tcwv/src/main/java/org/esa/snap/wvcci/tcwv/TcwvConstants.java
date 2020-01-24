@@ -105,21 +105,25 @@ public class TcwvConstants {
             ModisMod35L2Constants.QUALITY_ASSURANCE_QA_DIMENSION_BAND_NAME +  "1"
     };
 
-//    static final String MERIS_LAND_LUT_NC_FILENAME = "land_core_meris.nc4";
-    static final String MERIS_LAND_LUT_NC_FILENAME = "land_core_meris_calib_arm.nc4";
-//    static final String MERIS_OCEAN_LUT_NC_FILENAME = "ocean_core_meris.nc4";
-    static final String MERIS_OCEAN_LUT_NC_FILENAME = "ocean_core_meris_calib.nc4";
-//    static final String MODIS_AQUA_OCEAN_LUT_NC_FILENAME = "ocean_core_modis_aqua.nc4";
-    static final String MODIS_AQUA_OCEAN_LUT_NC_FILENAME = "ocean_core_modis_aqua_calib.nc4";     // delivered by RP 20190902
-//    static final String MODIS_TERRA_OCEAN_LUT_NC_FILENAME = "ocean_core_modis_terra.nc4";
-    static final String MODIS_TERRA_OCEAN_LUT_NC_FILENAME = "ocean_core_modis_aqua_calib.nc4";    // delivered by RP 20190902
-//    static final String MODIS_AQUA_LAND_LUT_NC_FILENAME = "land_core_modis_aqua.nc4";
-    static final String MODIS_AQUA_LAND_LUT_NC_FILENAME = "land_core_modis_aqua_calib_arm.nc4";
-//    static final String MODIS_TERRA_LAND_LUT_NC_FILENAME = "land_core_modis_terra.nc4";
-    static final String MODIS_TERRA_LAND_LUT_NC_FILENAME = "land_core_modis_terra_calib_arm.nc4";
+    // delivered by RP 20190902, used for Dataset 2:
+//    static final String MERIS_LAND_LUT_NC_FILENAME = "land_core_meris_calib_arm.nc4";
+//    static final String MERIS_OCEAN_LUT_NC_FILENAME = "ocean_core_meris_calib.nc4";
+//    static final String MODIS_AQUA_OCEAN_LUT_NC_FILENAME = "ocean_core_modis_aqua_calib.nc4";
+//    static final String MODIS_TERRA_OCEAN_LUT_NC_FILENAME = "ocean_core_modis_aqua_calib.nc4";
+//    static final String MODIS_AQUA_LAND_LUT_NC_FILENAME = "land_core_modis_aqua_calib_arm.nc4";
+//    static final String MODIS_TERRA_LAND_LUT_NC_FILENAME = "land_core_modis_terra_calib_arm.nc4";
+//    static final String OLCI_LAND_LUT_NC_FILENAME = "land_core_olci_calib_arm.nc4";
+//    static final String OLCI_OCEAN_LUT_NC_FILENAME = "ocean_core_olci_calib.nc4";
 
+    // delivered by RP 20200113:
+    static final String MERIS_LAND_LUT_NC_FILENAME = "land_core_meris_calib_final_arm.nc4";
+    static final String MERIS_OCEAN_LUT_NC_FILENAME = "ocean_core_meris_calib_after_aot.nc4";
+    static final String MODIS_AQUA_OCEAN_LUT_NC_FILENAME = "ocean_core_modis_terra_calib_after_aot.nc4";
+    static final String MODIS_TERRA_OCEAN_LUT_NC_FILENAME = "ocean_core_modis_terra_calib_after_aot.nc4";
+    static final String MODIS_AQUA_LAND_LUT_NC_FILENAME = "land_core_modis_terra_calib_arm.nc4";
+    static final String MODIS_TERRA_LAND_LUT_NC_FILENAME = "land_core_modis_terra_calib_arm.nc4";
     static final String OLCI_LAND_LUT_NC_FILENAME = "land_core_olci_calib_arm.nc4";
-    static final String OLCI_OCEAN_LUT_NC_FILENAME = "ocean_core_olci_calib.nc4";
+    static final String OLCI_OCEAN_LUT_NC_FILENAME = "ocean_core_olci_calib_after_aot.nc4";
 
     final static String[] MERIS_REFL_BAND_NAMES = new String[]{
             "reflectance_13", // 864 nm
@@ -153,6 +157,11 @@ public class TcwvConstants {
             "latitude", "longitude"
     };
 
+    final static double MERIS_AOT_FALLBACK_UNCERTAINTY = 1.0;
+    final static double MERIS_TEMPERATURE_UNCERTAINTY = 5.0;
+    final static double MERIS_PRESSURE_UNCERTAINTY = 10.0;
+    final static double MERIS_SPECTRAL_UNCERTAINTY = 0.15;
+
     // Introduce reasonable input reflectance uncertainty:
     // MERIS: radiometric accuracy < 4% 
     // https://earth.esa.int/handbooks/meris/CNTR2-6-2.html (2014)
@@ -169,7 +178,11 @@ public class TcwvConstants {
             {0.0, 0.0, 0.0005}
     };
 
-//    final static double[][] MERIS_OCEAN_SE = {
+    final static double MERIS_LAND_SNR = 300.0;
+    final static double[] MERIS_LAND_INTERPOL_ERROR = {0.01};
+    final static double MERIS_LAND_AOT_FALLBACK = 0.15;
+
+    //    final static double[][] MERIS_OCEAN_SE = {
 //            {0.0001, 0.0, 0.0},
 //            {0.0, 0.0001, 0.0},
 //            {0.0, 0.0, 0.001}
@@ -182,12 +195,15 @@ public class TcwvConstants {
             {0.0, 0.0, 0.002}
     };
 
+    final static double MERIS_OCEAN_SNR = 100.0;
+    final static double[] MERIS_OCEAN_INTERPOL_ERROR = {0.01};
+    final static double MERIS_OCEAN_AOT_FALLBACK = -0.6;    // in log10(0.1+aot) for ocean!!! (RP Jan 2020)
 
     // 'cor' from land_core_meris_calib_arm.nc4, bands 13, 14, 15
     final static double[][] MERIS_LAND_RECT_CORR = {
             {0.0, 1.0},
             {0.0, 1.0},
-            {-0.0015867, 0.9185331}
+            {0.00060347, 0.956954}   // changed Jan 2020!
     };
 
     // 'cor' from ocean_core_meris_calib.nc4, bands 13, 14, 15
@@ -269,6 +285,10 @@ public class TcwvConstants {
             {0.0, 0.0, 0.0, 0.0, 0.012}
     };
 
+    final static double MODIS_LAND_SNR = 200.0;
+    final static double[] MODIS_LAND_INTERPOL_ERROR = {0.01, 0.015, 0.015};
+    final static double MODIS_LAND_AOT_FALLBACK = 0.15;
+
     // RSS total < 3% (https://modis.gsfc.nasa.gov/data/atbd/atbd_mod01.pdf)
     // 3% of 0.05, 0.05, 0.05, 0.05
     // --> gives ~1% TCWV L2 uncertainty
@@ -286,6 +306,10 @@ public class TcwvConstants {
             {0.0, 0.0, 0.0, 0.012}
     };
 
+    final static double MODIS_OCEAN_SNR = 70.0;
+    final static double[] MODIS_OCEAN_INTERPOL_ERROR = {0.03, 0.04, 0.04};
+    final static double MODIS_OCEAN_AOT_FALLBACK = -0.6;    // in log10(0.1+aot) for ocean!!! (RP Jan 2020)
+
     // 'cor' from land_core_modis_terra_calib_arm.nc4, bands 2, 5, 17, 18, 19 in this sequence!
     final static double[][] MODIS_LAND_RECT_CORR = {
             {0.0, 1.0},
@@ -299,18 +323,18 @@ public class TcwvConstants {
     final static double[][] MODIS_OCEAN_RECT_CORR = {
             {0.0, 1.0},
             {0.0, 1.0},
-            {0.0, 1.0},
-            {0.0, 1.0},
-            {0.0, 1.0}
+            {-0.00227, 0.96895},
+            {-0.005911, 0.936108},
+            {-0.002996, 0.892848}
     };
 
     // cwvl for MODIS bands 2, 5, 17, 18, 19 in this sequence, taken from MOD021KM product
     final static double[] MODIS_CWVL_RECT_CORR = {
             858.0,
             1240.0,
-            905.0,
-            936.0,
-            940.0
+            904.0,
+            935.0,
+            936.0
     };
 
     final static String[] OLCI_REFL_BAND_NAMES = new String[]{
@@ -368,6 +392,10 @@ public class TcwvConstants {
             {0.0, 0.0, 0.0, 0.025}
     };
 
+    final static double OLCI_LAND_SNR = 300.0;
+    final static double[] OLCI_LAND_INTERPOL_ERROR = {0.01, 0.015};
+    final static double OLCI_LAND_AOT_FALLBACK = 0.15;
+
     // Introduce reasonable input reflectance uncertainty:
     // see https://sentinel.esa.int/web/sentinel/technical-guides/sentinel-3-olci/olci-instrument/specifications
     // 2% of 0.02 for band 18, 2% of 0.01 for band 19, 5% of 0.01 for band 20 --> gives ~5% TCWV L2 uncertainty
@@ -378,25 +406,27 @@ public class TcwvConstants {
             {0.0, 0.0, 0.0005}
     };
 
-    // 'cor' from land_core_olci_calib_arm.nc4, bands 18, 21, 19, 20 in this sequence!
+    final static double OLCI_OCEAN_SNR = 100.0;
+    final static double[] OLCI_OCEAN_INTERPOL_ERROR = {0.015, 0.015};
+    final static double OLCI_OCEAN_AOT_FALLBACK = -0.6;    // in log10(0.1+aot) for ocean!!! (RP Jan 2020)
+
+    // 'cor' from land_core_olci_calib_arm.nc4, bands 18, 19, 20 in this sequence!
     final static double[][] OLCI_LAND_RECT_CORR = {
             {0.0, 1.0},
-            {0.0, 1.0},
-            {0.00727, 0.94982},
-            {0.002236, 0.8888878}
+            {0.005084, 0.942815},
+            {-0.01986, 0.871491}
     };
 
-    // 'cor' from ocean_core_olci_calib.nc4, bands 18, 21, 19, 20 in this sequence!
+    // 'cor' from ocean_core_olci_calib.nc4, bands 18, 19, 20 in this sequence!
     final static double[][] OLCI_OCEAN_RECT_CORR = {
             {0.0, 1.0},
-            {-2.22494E-4, 0.9156},
-            {-5.7741E-4, 0.9211578}
+            {-2.367607E-4, 0.918008},
+            {-5.630766E-4, 0.924249}
     };
 
-    // 'cwvl' from ocean_core_olci_calib.nc4, bands 18, 21, 19, 20 in this sequence!
+    // 'cwvl' from ocean_core_olci_calib.nc4, bands 18, 19, 20 in this sequence!
     final static double[] OLCI_CWVL_RECT_CORR = {
             884.3246,
-            1015.966,
             899.316,
             939.02
     };
@@ -408,15 +438,15 @@ public class TcwvConstants {
 //    };
     // RP 20100902:
     final static double[][] SA_LAND = {
-            {8.0, 0.0, 0.0},
+            {5.0, 0.0, 0.0},               // todo: 5.0 --> 20.0  if pixel is not coast!!
             {0.0, 1.0, 0.0},
             {0.0, 0.0, 1.0}
     };
 
     final static double[][] SA_OCEAN = {
-            {8.0, 0.0, 0.0},
-            {0.0, 0.1, 0.0},
-            {0.0, 0.0, 25.0}
+            {5.0, 0.0, 0.0},
+            {0.0, 1.0, 0.0},
+            {0.0, 0.0, 25.0}               // todo: different for MODIS, Jan 2020
     };
 
 

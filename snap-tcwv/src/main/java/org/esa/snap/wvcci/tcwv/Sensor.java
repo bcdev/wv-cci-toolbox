@@ -21,6 +21,10 @@ public enum Sensor {
           MERIS_OCEAN_SE,
           MERIS_LAND_RECT_CORR,
           MERIS_OCEAN_RECT_CORR,
+          MERIS_LAND_SNR,
+          MERIS_OCEAN_SNR,
+          MERIS_LAND_INTERPOL_ERROR,
+          MERIS_OCEAN_INTERPOL_ERROR,
           MERIS_CWVL_RECT_CORR),
     MODIS_TERRA("MODIS_TERRA",
 //                MODIS_LAND_REFL_BAND_NAMES,
@@ -37,6 +41,10 @@ public enum Sensor {
                 MODIS_OCEAN_SE,
                 MODIS_LAND_RECT_CORR,
                 MODIS_OCEAN_RECT_CORR,
+                MERIS_LAND_SNR,
+                MERIS_OCEAN_SNR,
+                MERIS_LAND_INTERPOL_ERROR,
+                MERIS_OCEAN_INTERPOL_ERROR,
                 MODIS_CWVL_RECT_CORR),
     MODIS_AQUA("MODIS_AQUA",
 //               MODIS_OCEAN_REFL_BAND_NAMES,
@@ -53,6 +61,10 @@ public enum Sensor {
                MODIS_OCEAN_SE,
                MODIS_LAND_RECT_CORR,
                MODIS_OCEAN_RECT_CORR,
+               MERIS_LAND_SNR,
+               MERIS_OCEAN_SNR,
+               MERIS_LAND_INTERPOL_ERROR,
+               MERIS_OCEAN_INTERPOL_ERROR,
                MODIS_CWVL_RECT_CORR),
     OLCI("OLCI",
          OLCI_REFL_BAND_NAMES,
@@ -67,6 +79,10 @@ public enum Sensor {
          OLCI_OCEAN_SE,
          OLCI_LAND_RECT_CORR,
          OLCI_OCEAN_RECT_CORR,
+         MERIS_LAND_SNR,
+         MERIS_OCEAN_SNR,
+         MERIS_LAND_INTERPOL_ERROR,
+         MERIS_OCEAN_INTERPOL_ERROR,
          OLCI_CWVL_RECT_CORR);
 
     private String name;
@@ -82,6 +98,10 @@ public enum Sensor {
     private double[][] oceanSe;
     private double[][] landRectCorr;
     private double[][] oceanRectCorr;
+    private double landSnr;
+    private double oceanSnr;
+    private double[] landInterpolError;
+    private double[] oceanInterpolError;
     private double[] cwvlRectCorr;
 
     Sensor(String name, String[] reflBandNames,
@@ -89,7 +109,10 @@ public enum Sensor {
            String[] oceanWinBandNames, String[] oceanAbsBandNames,
            String[] tpgNames,
            String oceanLutName, String landLutName, double[][] landSe, double[][] oceanSe,
-           double[][] landRectCorr, double[][] oceanRectCorr, double[] cwvlRectCorr) {
+           double[][] landRectCorr, double[][] oceanRectCorr,
+           double landSnr, double oceanSnr,
+           double[] landInterpolError, double[] oceanInterpolError,
+           double[] cwvlRectCorr) {
         this.name = name;
         this.reflBandNames = reflBandNames;
         this.landWinBandNames = landWinBandNames;
@@ -103,6 +126,10 @@ public enum Sensor {
         this.oceanSe = oceanSe;
         this.landRectCorr = landRectCorr;
         this.oceanRectCorr = oceanRectCorr;
+        this.landSnr = landSnr;
+        this.oceanSnr = oceanSnr;
+        this.landInterpolError = landInterpolError;
+        this.oceanInterpolError = oceanInterpolError;
         this.cwvlRectCorr = cwvlRectCorr;
     }
 
@@ -156,6 +183,22 @@ public enum Sensor {
 
     public double[][] getOceanRectCorr() {
         return oceanRectCorr;
+    }
+
+    public double getLandSnr() {
+        return landSnr;
+    }
+
+    public double getOceanSnr() {
+        return oceanSnr;
+    }
+
+    public double[] getLandInterpolError() {
+        return landInterpolError;
+    }
+
+    public double[] getOceanInterpolError() {
+        return oceanInterpolError;
     }
 
     public double[] getCwvlRectCorr() {

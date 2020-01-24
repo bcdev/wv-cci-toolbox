@@ -301,7 +301,11 @@ public class TcwvOp extends Operator {
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_CLOUD, isCloud);
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_SEA_ICE, isSeaIce);
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_UNDEFINED, !isValid);
-                // todo: determine coastal zone elsewhere, tbd
+                
+                // todo: set to invalid also if
+                //  - any input reflectance is < 0.001
+                //  - any input reflectance for a coastal pixel is < 0.005
+                //  - sza > 75
 
                 if (!isValid || isCloud || (!processOcean && !isLand)) {
                     targetTiles.get(tcwvBand).setSample(x, y, Float.NaN);
