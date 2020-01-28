@@ -13,7 +13,6 @@ class TcwvAlgorithmInput {
     private double vza;
     private double relAzi;
     private double amf;
-    private double aot865;
     private double priorAot;
     private double priorAl0;
     private double priorAl1;
@@ -23,7 +22,7 @@ class TcwvAlgorithmInput {
     private double priorTcwv;
 
     TcwvAlgorithmInput(double[] rhoToaWin, double[] rhoToaAbs, double sza, double vza, double relAzi, double amf,
-                       double aot865, double priorAot, double priorAl0, double priorAl1, double priorT2m,
+                       double priorAot, double priorAl0, double priorAl1, double priorT2m,
                        double priorMslPress, double priorWsp, double priorTcwv) {
         this.rhoToaWin = rhoToaWin;
         this.rhoToaAbs = rhoToaAbs;
@@ -31,7 +30,6 @@ class TcwvAlgorithmInput {
         this.vza = vza;
         this.relAzi = relAzi;
         this.amf = amf;
-        this.aot865 = aot865;
         this.priorAot = priorAot;
         this.priorAl0 = priorAl0;
         this.priorAl1 = priorAl1;
@@ -63,10 +61,6 @@ class TcwvAlgorithmInput {
 
     double getAmf() {
         return amf;
-    }
-
-    double getAot865() {
-        return aot865;
     }
 
     double getPriorAot() {

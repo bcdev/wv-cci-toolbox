@@ -8,7 +8,11 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-
+/**
+ * Test class for pixelwise verification of breadboard implementation for land/water and all sensors.
+ *
+ * @author olafd
+ */
 public class TcwvCowaConsolidatedCciLutsForOnePixelTest {
 
     private String auxdataPath;
@@ -20,7 +24,6 @@ public class TcwvCowaConsolidatedCciLutsForOnePixelTest {
 
     @Test
     public void testCowaConsolidatedCciLuts_meris_land() {
-        // todo: extract MERIS landpixel from RP package 'consolidated_cci_luts', 20200113
         final Sensor sensor = Sensor.MERIS;
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
         TcwvLandLut landLut = TcwvIO.readLandLookupTable(auxdataPath, Sensor.MERIS);
@@ -32,48 +35,29 @@ public class TcwvCowaConsolidatedCciLutsForOnePixelTest {
         final double saa = 185.191369;    // data['geo']['SAA'].flat[99]     , 'sun_azimuth'
         final double vaa = 306.755;       // data['geo']['OAA'].flat[99]     , 'view_azimuth'
 
+        // NOTE: for MERIS and OLCI, these reflectances are radiance / flux = rhoToa(product) * cos(sza)
         final double reflectance_13 = 0.00818;  // data['rad'][13].flat[99]
         final double reflectance_14 = 0.00784;  // data['rad'][14].flat[99]
         final double reflectance_15 = 0.00578;  // data['rad'][15].flat[99]
 
-        // def azi2azid(sa,va):
-        //     return acosd(cosd(sa)*cosd(va)+sind(sa)*sind(va))
-        // out['ADA']=azi2azid(out['SAA'],out['OAA'])
-        // 'azi':   180.-data['geo']['ADA'].flat[i]
         final double relAzi = 180. - Math.acos(Math.cos(saa* MathUtils.DTOR) * Math.cos(vaa* MathUtils.DTOR) +
                                                        Math.sin(saa* MathUtils.DTOR) * Math.sin(vaa* MathUtils.DTOR)) * MathUtils.RTOD;
 
-//        double relAziDeg = 58.436;   // todo: test for getting this value from saa, vaa above
-//        double relAzi = relAziDeg * MathUtils.DTOR;
-//        double relAzi = relAziDeg;
-
         double amf = 1. / Math.cos(sza * MathUtils.DTOR) + 1. / Math.cos(vza * MathUtils.DTOR);
-
-        double priorAot = 0.15;        // todo: implement and test mapping nan --> 0.15, we have no aot for MERIS:
-        // inp['aot'] = ternary(np.isfinite(data['aot'].flat[i]), data['aot'].flat[i],
-        //                      DEMO_CONFIG['PROCESSING']['land_aot_fallback'])
-
-        double aot865 = priorAot;   // todo: do we still need this?
-
-        //// are these ever used in breadboard?? // todo check with Rene
-        double pressUnc = TcwvConstants.MERIS_PRESSURE_UNCERTAINTY;      // DEMO_CONFIG['PROCESSING']['pressure_uncertainty']
-        double priorAotUnc = TcwvConstants.MERIS_AOT_FALLBACK_UNCERTAINTY;
-        double tmpUnc = TcwvConstants.MERIS_TEMPERATURE_UNCERTAINTY;
-        double wvlUnc = TcwvConstants.MERIS_SPECTRAL_UNCERTAINTY;
-        ////
+        double priorAot = TcwvConstants.AOT_FALLBACK_LAND;
 
         double priorAl0 = reflectance_13 * Math.PI;   // data['rad'][13].flat[99]*np.pi
         double priorAl1 = reflectance_14 * Math.PI;   // data['rad'][14].flat[99]*np.pi
-        double priorT2m = 279.78384;    // 't2m' from ERA, data['tem'].flat[99]
+        double priorT2m = 279.78384;    // 't2m' from ERA, data['t2m'].flat[99]
 
         double priorMslPress = -Math.log(998.3356);  // 'msl' from ERA, data['prs'].flat[99]
         double priorWsp = Double.NaN;     // not needed for land
-        double priorTcwv = 15.4964;       // 'tcwv' from ERA, data['tcv'].flat[99]
+        double priorTcwv = 15.4964;       // 'tcwv' from ERA, data['tcw'].flat[99]
 
         double[] rhoToaWin = new double[]{reflectance_13, reflectance_14};  // bands 13, 14
         double[] rhoToaAbs = new double[]{reflectance_15};   // band 15
 
-        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf, aot865,
+        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf,
                                                           priorAot, priorAl0, priorAl1, priorT2m, priorMslPress,
                                                           priorWsp, priorTcwv);
         final TcwvResult result = algorithm.compute(sensor,
@@ -83,41 +67,61 @@ public class TcwvCowaConsolidatedCciLutsForOnePixelTest {
                                                     input, true);
 
         System.out.println("MERIS LAND result.getTcwv() = " + result.getTcwv());
-        // Java: 16.4272978
-        // Java: 16.2862 (with new L1 uncertainty estimates)
-        // Cowa Python: 16.46472
-//        assertEquals(16.2862, result.getTcwv(), 0.05);
-//        assertEquals(1.12, result.getTcwvUncertainty(), 0.01);
+        // TCWV:
+        // Java: 16.47131
+        // Cowa Consolidated LUTs Python: 16.37232
+        assertEquals(16.37232, result.getTcwv(), 0.1);
+        // TCWV uncertainty:
+        // Java: 2.002
+        // Cowa Consolidated LUTs Python: 1.999
+        assertEquals(1.999, result.getTcwvUncertainty(), 0.003);
+        // Cost function:
+        // Java: 0.00503
+        // Cowa Consolidated LUTs Python: 0.00406
+        assertEquals(0.00406, result.getCost(), 0.001);
     }
 
     @Test
     public void testCowaConsolidatedCciLuts_meris_ocean() {
-        // todo: extract MERIS ocean pixel from RP package 'consolidated_cci_luts', 20200113
         final Sensor sensor = Sensor.MERIS;
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
         TcwvOceanLut oceanLut = TcwvIO.readOceanLookupTable(auxdataPath, Sensor.MERIS);
         TcwvFunction tcwvFunctionOcean = TcwvInterpolation.getForwardFunctionOcean(oceanLut);
         JacobiFunction jacobiFunctionOcean = TcwvInterpolation.getJForwardFunctionOcean(oceanLut);
 
-        double sza = 30.0;
-        double vza = 20.0;
-        double relAzi = 10.0;
+        final double sza = 45.3854179;     // data['geo']['SZA'].flat[97]     , 'sun_zenith'
+        final double vza = 31.512769;     // data['geo']['OZA'].flat[97]     , 'view_zenith'
+        final double saa = 184.654147;    // data['geo']['SAA'].flat[97]     , 'sun_azimuth'
+        final double vaa = 306.37474;       // data['geo']['OAA'].flat[97]     , 'view_azimuth'
+
+        // NOTE: for MERIS and OLCI, these reflectances are radiance / flux = rhoToa(product) * cos(sza)
+        final double reflectance_13 = 0.019905;  // data['rad'][13].flat[97]
+        final double reflectance_14 = 0.019788;  // data['rad'][14].flat[97]
+        final double reflectance_15 = 0.016378;  // data['rad'][15].flat[97]
+
+        final double relAzi = 180. - Math.acos(Math.cos(saa* MathUtils.DTOR) * Math.cos(vaa* MathUtils.DTOR) +
+                                                       Math.sin(saa* MathUtils.DTOR) * Math.sin(vaa* MathUtils.DTOR)) * MathUtils.RTOD;
+
         double amf = 1. / Math.cos(sza * MathUtils.DTOR) + 1. / Math.cos(vza * MathUtils.DTOR);
 
-        double aot865 = 0.1;
-        double priorAot = 0.15;
-        double priorAl0 = 0.13;
-        double priorAl1 = 0.13;
-        double priorT2m = 303.0;
+        // aot is in log10(0.1+aot)
+//        double priorAot = -0.6;
+        // inp['aot'] = ternary(np.isfinite(data['aot'].flat[i]), data['aot'].flat[i],
+        //                      DEMO_CONFIG['PROCESSING']['land_aot_fallback'])
+        double priorAot = TcwvConstants.AOT_FALLBACK_OCEAN;
 
-        double priorMslPress = 1013.25;  // not needed for water
-        double priorWsp = 8.0;
-        double priorTcwv = 25.0;
+        double priorAl0 = reflectance_13 * Math.PI;   // data['rad'][13].flat[97]*np.pi
+        double priorAl1 = reflectance_14 * Math.PI;   // data['rad'][14].flat[97]*np.pi
+        double priorT2m = 279.34308;                  // 't2m' from ERA, data['t2m'].flat[97]
 
-        double[] rhoToaWin = new double[]{0.0317360866889, 0.0313907463};  // bands 13, 14
-        double[] rhoToaAbs = new double[]{0.021355692};   // band 15
+        double priorMslPress = -Math.log(998.3356);  // 'msl' from ERA, data['prs'].flat[97]
+        double priorWsp = 9.45422;                   // 'wsp' from ERA, data['wsp'].flat[97]
+        double priorTcwv = 15.4964;                  // 'tcwv' from ERA, data['tcw'].flat[97]
 
-        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf, aot865,
+        double[] rhoToaWin = new double[]{reflectance_13, reflectance_14};  // bands 13, 14
+        double[] rhoToaAbs = new double[]{reflectance_15};   // band 15
+
+        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf,
                                                           priorAot, priorAl0, priorAl1, priorT2m, priorMslPress,
                                                           priorWsp, priorTcwv);
         final TcwvResult result = algorithm.compute(sensor,
@@ -127,40 +131,58 @@ public class TcwvCowaConsolidatedCciLutsForOnePixelTest {
                                                     input, false);
 
         System.out.println("MERIS OCEAN result.getTcwv() = " + result.getTcwv());
-        // Java: 19.54744
-        // Cowa Python: 19.35311
-//        assertEquals(19.35311, result.getTcwv(), 0.5);
-//        assertEquals(0.597, result.getTcwvUncertainty(), 0.001);
+        // TCWV:
+        // Java: 9.9043
+        // Cowa Consolidated LUTs Python: 9.9277
+        assertEquals(9.9277, result.getTcwv(), 0.025);
+        // TCWV uncertainty:
+        // Java: 1.29847
+        // Cowa Consolidated LUTs Python: 1.29911
+        assertEquals(1.29911, result.getTcwvUncertainty(), 0.001);
+        // Cost function:
+        // Java: 0.514326
+        // Cowa Consolidated LUTs Python: 0.519088
+        assertEquals(0.519088, result.getCost(), 0.005);
     }
 
     @Test
     public void testCowaConsolidatedCciLuts_olci_land() {
-        // todo: extract OLCI land pixel from RP package 'consolidated_cci_luts', 20200113
         final Sensor sensor = Sensor.OLCI;
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
         TcwvLandLut landLut = TcwvIO.readLandLookupTable(auxdataPath, Sensor.OLCI);
         TcwvFunction tcwvFunctionLand = TcwvInterpolation.getForwardFunctionLand(landLut);
         JacobiFunction jacobiFunctionland = TcwvInterpolation.getJForwardFunctionLand(landLut);
 
-        double sza = 30.;
-        double vza = 20.0;
-        double relAzi = 170.0;
+        final double sza = 43.8862;     // data['geo']['SZA'].flat[89]     , 'SZA'
+        final double vza = 27.92696;     // data['geo']['OZA'].flat[89]     , 'OZA'
+        final double saa = 142.82275;    // data['geo']['SAA'].flat[89]     , 'SAA'
+        final double vaa = 102.0784;       // data['geo']['OAA'].flat[89]     , 'OAA'
+
+        // NOTE: for MERIS and OLCI, these reflectances are radiance / flux = rhoToa(product) * cos(sza)
+        final double reflectance_18 = 0.0811478;  // data['rad'][18].flat[89]
+        final double reflectance_19 = 0.05119;  // data['rad'][19].flat[89]
+        final double reflectance_20 = 0.014369;  // data['rad'][20].flat[89]
+        final double reflectance_21 = 0.084;  // data['rad'][21].flat[89]
+
+        final double relAzi = 180. - Math.acos(Math.cos(saa* MathUtils.DTOR) * Math.cos(vaa* MathUtils.DTOR) +
+                                                       Math.sin(saa* MathUtils.DTOR) * Math.sin(vaa* MathUtils.DTOR)) * MathUtils.RTOD;
+
         double amf = 1. / Math.cos(sza * MathUtils.DTOR) + 1. / Math.cos(vza * MathUtils.DTOR);
+//        double priorAot = TcwvConstants.AOT_FALLBACK_LAND;
+        double priorAot = TcwvConstants.AOT_FALLBACK_OCEAN;  // we have this in the breadboard land test pixel
 
-        double aot865 = 0.1;
-        double priorAot = 0.15;
-        double priorAl0 = 0.13;
-        double priorAl1 = 0.13;
-        double priorT2m = 280.0;
+        double priorAl0 = reflectance_18 * Math.PI;   // data['rad'][18].flat[89]*np.pi
+        double priorAl1 = reflectance_21 * Math.PI;   // data['rad'][21].flat[89]*np.pi
+        double priorT2m = 291.066;    // 't2m' from ERA, data['t2m'].flat[89]
 
-        double priorMslPress = -Math.log(1005.0);
+        double priorMslPress = -Math.log(1006.531756);  // 'msl' from ERA, data['prs'].flat[89]
         double priorWsp = Double.NaN;     // not needed for land
-        double priorTcwv = 15.0;
+        double priorTcwv = 30.965088;       // 'tcwv' from ERA, data['tcw'].flat[89]
 
-        double[] rhoToaWin = new double[]{0.042, 0.042};  // bands 18, 21
-        double[] rhoToaAbs = new double[]{0.031, 0.013};   // bands 19, 20
+        double[] rhoToaWin = new double[]{reflectance_18, reflectance_21};  // bands 18, 21
+        double[] rhoToaAbs = new double[]{reflectance_19, reflectance_20};  // bands 19, 20
 
-        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf, aot865,
+        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf,
                                                           priorAot, priorAl0, priorAl1, priorT2m, priorMslPress,
                                                           priorWsp, priorTcwv);
         final TcwvResult result = algorithm.compute(sensor,
@@ -170,43 +192,63 @@ public class TcwvCowaConsolidatedCciLutsForOnePixelTest {
                                                     input, true);
 
         System.out.println("OLCI LAND result.getTcwv() = " + result.getTcwv());
-        // Java: 13.7652
-        // Java: 14.012 (with new L1 uncertainty estimates)
-        // Cowa Python: 13.7686
-//         assertEquals(14.012, result.getTcwv(), 0.01);
-//        assertEquals(13.918, result.getTcwv(), 0.01);  // with refl uncertainty estimate of 2% instead of fix SE matrix
-        // uncertainty:
-//        assertEquals(0.853, result.getTcwvUncertainty(), 0.001);
+        // TCWV:
+        // Java: 23.4505
+        // Cowa Consolidated LUTs Python: 23.3301
+        assertEquals(23.3301, result.getTcwv(), 0.15);
+        // TCWV uncertainty:
+        // Java: 0.1091
+        // Cowa Consolidated LUTs Python: 0.1099
+        assertEquals(0.1099, result.getTcwvUncertainty(), 1.E-3);
+        // Cost function:
+        // Java: 0.25055
+        // Cowa Consolidated LUTs Python: 0.17089
+        assertEquals(0.17089, result.getCost(), 0.1);
     }
 
     @Test
     public void testCowaConsolidatedCciLuts_olci_ocean() {
-        // todo: extract OLCI ocean pixel from RP package 'consolidated_cci_luts', 20200113
         final Sensor sensor = Sensor.OLCI;
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
         TcwvOceanLut oceanLut = TcwvIO.readOceanLookupTable(auxdataPath, Sensor.OLCI);
         TcwvFunction tcwvFunctionOcean = TcwvInterpolation.getForwardFunctionOcean(oceanLut);
         JacobiFunction jacobiFunctionOcean = TcwvInterpolation.getJForwardFunctionOcean(oceanLut);
 
-        double sza = 30.0;
-        double vza = 20.0;
-        double relAzi = 10.0;
+        final double sza = 45.8830608099;     // data['geo']['SZA'].flat[46]     , 'sun_zenith'
+        final double vza = 44.1543763885;     // data['geo']['OZA'].flat[46]     , 'view_zenith'
+        final double saa = 137.861009193;    // data['geo']['SAA'].flat[46]     , 'sun_azimuth'
+        final double vaa = 98.7936597873;       // data['geo']['OAA'].flat[46]     , 'view_azimuth'
+
+        // NOTE: for MERIS and OLCI, these reflectances are radiance / flux = rhoToa(product) * cos(sza)
+        final double reflectance_18 = 0.00979678;  // data['rad'][18].flat[46]
+        final double reflectance_19 = 0.00668448;  // data['rad'][19].flat[46]
+        final double reflectance_20 = 0.00309227;  // data['rad'][20].flat[46]
+        final double reflectance_21 = 0.00841409;  // data['rad'][21].flat[46]
+
+        final double relAzi = 180. - Math.acos(Math.cos(saa * MathUtils.DTOR) * Math.cos(vaa * MathUtils.DTOR) +
+                                                       Math.sin(saa * MathUtils.DTOR) * Math.sin(vaa * MathUtils.DTOR)) * MathUtils.RTOD;
+
         double amf = 1. / Math.cos(sza * MathUtils.DTOR) + 1. / Math.cos(vza * MathUtils.DTOR);
 
-        double aot865 = 0.1;
-        double priorAot = 0.15;
-        double priorAl0 = 0.13;
-        double priorAl1 = 0.13;
-        double priorT2m = 303.0;
+        // aot is in log10(0.1+aot)
+//        double priorAot = -0.6;
+        // inp['aot'] = ternary(np.isfinite(data['aot'].flat[i]), data['aot'].flat[i],
+        //                      DEMO_CONFIG['PROCESSING']['land_aot_fallback'])
+//        double priorAot = TcwvConstants.AOT_FALLBACK_OCEAN;
+        double priorAot = -0.453496;  // we have real data for the test pixel
 
-        double priorMslPress = 1013.25;  // not needed for water
-        double priorWsp = 8.0;
-        double priorTcwv = 25.0;
+        double priorAl0 = reflectance_18 * Math.PI;   // data['rad'][18].flat[46]*np.pi
+        double priorAl1 = reflectance_21 * Math.PI;   // data['rad'][21].flat[46]*np.pi
+        double priorT2m = 289.71222;                  // 't2m' from ERA, data['t2m'].flat[46]
 
-        double[] rhoToaWin = new double[]{0.031};  // band 18 only!!
-        double[] rhoToaAbs = new double[]{0.021, 0.007};   // bands 19, 20
+        double priorMslPress = -Math.log(1007.6075);  // 'msl' from ERA, data['prs'].flat[46]
+        double priorWsp = 7.07632727295;                   // 'wsp' from ERA, data['wsp'].flat[46]
+        double priorTcwv = 29.4140321667;                  // 'tcwv' from ERA, data['tcw'].flat[46]
 
-        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf, aot865,
+        double[] rhoToaWin = new double[]{reflectance_18};  // bands 18 only
+        double[] rhoToaAbs = new double[]{reflectance_19, reflectance_20};  // bands 19, 20
+
+        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf,
                                                           priorAot, priorAl0, priorAl1, priorT2m, priorMslPress,
                                                           priorWsp, priorTcwv);
 
@@ -217,39 +259,60 @@ public class TcwvCowaConsolidatedCciLutsForOnePixelTest {
                                                     input, false);
 
         System.out.println("OLCI OCEAN result.getTcwv() = " + result.getTcwv());
-        // Java: 22.13765
-        // Cowa Python: 22.18858
-//        assertEquals(22.18858, result.getTcwv(), 0.1);
-//        assertEquals(0.042, result.getTcwvUncertainty(), 0.001);
+        // TCWV:
+        // Java: 35.4657
+        // Cowa Consolidated LUTs Python: 34.8929
+        assertEquals(34.8929, result.getTcwv(), 0.75);
+        // TCWV uncertainty:
+        // Java: 1.63641
+        // Cowa Consolidated LUTs Python: 2.26387
+        assertEquals(2.26387, result.getTcwvUncertainty(), 0.75);
+        // Cost function:
+        // Java: 0.09092
+        // Cowa Consolidated LUTs Python: 0.08944
+        assertEquals(0.08944, result.getCost(), 0.01);
     }
 
     @Test
     public void testCowaConsolidatedCciLuts_modis_land() {
-        // todo: extract MODIS land pixel from RP package 'consolidated_cci_luts', 20200113
         final Sensor sensor = Sensor.MODIS_TERRA;
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
         TcwvLandLut landLut = TcwvIO.readLandLookupTable(auxdataPath, Sensor.MODIS_TERRA);
         TcwvFunction tcwvFunctionLand = TcwvInterpolation.getForwardFunctionLand(landLut);
         JacobiFunction jacobiFunctionLand = TcwvInterpolation.getJForwardFunctionLand(landLut);
 
-        double aot865 = 0.1;
-        double relAzi = 53.56640624999997;
-        double priorMslPress = -Math.log(972.3643431194063);
-        double priorAl0 = 0.13471372425556183;
-        double priorAl1 = 0.18240199983119965;
-        double priorTcwv = 22.3887708167446;
-        double sza = 44.02040100097656;
-        double priorT2m = 289.367343379847;
-        double vza = 37.68560028076172;
+        final double sza = 35.82124176;     // data['suz'].flat[1555]     , 'suz'
+        final double vza = 31.8066267;     // data['vie'].flat[1555]     , 'vie'
+        final double saa = 169.765588;    // data['saa'].flat[1555]     , 'saa'
+        final double vaa = 288.8215473;       // data['vaa'].flat[1555]     , 'vaa'
+
+        // NOTE: for MODIS, these reflectances are RefSB_* / Math.PI !!!
+        final double reflectance_2 = 0.0781532;  // data['rad'][2].flat[1555]
+        final double reflectance_5 = 0.0752486;  // data['rad'][5].flat[1555]
+        final double reflectance_17 = 0.060047332;  // data['rad'][17].flat1555]
+        final double reflectance_18 = 0.0188901;  // data['rad'][18].flat[1555]
+        final double reflectance_19 = 0.0320663;  // data['rad'][19].flat[1555]
+
+        final double relAzi = 180. - Math.acos(Math.cos(saa* MathUtils.DTOR) * Math.cos(vaa* MathUtils.DTOR) +
+                                                       Math.sin(saa* MathUtils.DTOR) * Math.sin(vaa* MathUtils.DTOR)) * MathUtils.RTOD;
 
         double amf = 1. / Math.cos(sza * MathUtils.DTOR) + 1. / Math.cos(vza * MathUtils.DTOR);
+        double priorAot = TcwvConstants.AOT_FALLBACK_LAND;     // data['aot'][1555].flat[1555]
 
-        double[] rhoToaWin = new double[]{0.042880710235182445, 0.05806035980596497};
-        double[] rhoToaAbs = new double[]{0.034583598016895215, 0.012255925435128554, 0.0202874049561323};
+        double priorAl0 = reflectance_2 * Math.PI;   // data['rad'][18].flat[1555]*np.pi
+        double priorAl1 = reflectance_5 * Math.PI;   // data['rad'][21].flat[1555]*np.pi
+        double priorT2m = 294.632;    // 't2m' from ERA, data['t2m'].flat[1555]
 
-        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf, aot865,
-                                                          aot865, priorAl0, priorAl1, priorT2m, priorMslPress,
-                                                          Double.NaN, priorTcwv);
+        double priorMslPress = -Math.log(1012.983728);  // 'msl' from ERA, data['prs'].flat[1555]
+        double priorWsp = Double.NaN;     // not needed for land
+        double priorTcwv = 22.7019;       // 'tcwv' from ERA, data['tcwv'].flat[1555]
+
+        double[] rhoToaWin = new double[]{reflectance_2, reflectance_5};  // bands 2, 5
+        double[] rhoToaAbs = new double[]{reflectance_17, reflectance_18, reflectance_19};  // bands 17, 18, 19
+
+        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf,
+                                                          priorAot, priorAl0, priorAl1, priorT2m, priorMslPress,
+                                                          priorWsp, priorTcwv);
         final TcwvResult result = algorithm.compute(sensor,
                                                     landLut, null,
                                                     tcwvFunctionLand, null,
@@ -257,50 +320,59 @@ public class TcwvCowaConsolidatedCciLutsForOnePixelTest {
                                                     input, true);
 
         System.out.println("MODIS TERRA LAND result.getTcwv() = " + result.getTcwv());
-//        assertEquals(17.63, result.getTcwv(), 0.2);  // MODIS update RP, 20190902
-        // Python result: 17.63 (new test_cowa_land_4, OD, 20191128), Java result: 17.74
-//        assertEquals(0.292, result.getTcwvUncertainty(), 0.001); // with MODIS_LAND_SE from 20190902
-//        assertEquals(0.046, result.getCost(), 0.001);  // with MODIS_LAND_SE from 20190902
+        // TCWV:
+        // Java: 19.8539
+        // Cowa Consolidated LUTs Python: 19.8067
+        assertEquals(19.8067, result.getTcwv(), 0.05);
+        // TCWV uncertainty:
+        // Java: 0.10812
+        // Cowa Consolidated LUTs Python: 0.10234
+        assertEquals(0.10234, result.getTcwvUncertainty(), 0.01);
+        // Cost function:
+        // Java: 0.063818
+        // Cowa Consolidated LUTs Python: 0.004964
+        assertEquals(0.004964, result.getCost(), 0.1);
     }
 
     @Test
     public void testCowaConsolidatedCciLuts_modis_ocean() {
-        // todo: extract MODIS ocean pixel from RP package 'consolidated_cci_luts', 20200113
         final Sensor sensor = Sensor.MODIS_TERRA;
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
         TcwvOceanLut oceanLut = TcwvIO.readOceanLookupTable(auxdataPath, Sensor.MODIS_TERRA);
         TcwvFunction tcwvFunctionOcean = TcwvInterpolation.getForwardFunctionOcean(oceanLut);
         JacobiFunction jacobiFunctionOcean = TcwvInterpolation.getJForwardFunctionOcean(oceanLut);
 
-        double sza = 50.97;
-        double saa = 34.2362;
-        double saaR = saa*MathUtils.DTOR;
-        double vza = 6.7142;
-        double vaa = 99.53059;
-        double vaaR = vaa*MathUtils.DTOR;
-        double relAzi = 180. - Math.acos(Math.cos(saaR)*Math.cos(vaaR) + Math.sin(saaR)*Math.sin(vaaR))*MathUtils.RTOD;
-        double amf = 1. / Math.cos(sza * MathUtils.DTOR) + 1. / Math.cos(vza * MathUtils.DTOR);   // should be 2.610949
+        final double sza = 38.774347;     // data['suz'].flat[99]     , 'suz'
+        final double vza = 16.44048;     // data['vie'].flat[99]     , 'vie'
+        final double saa = 157.055894;    // data['saa'].flat[99]     , 'saa'
+        final double vaa = 103.73871;       // data['vaa'].flat[99]     , 'vaa'
 
-        // the rhoToa must be RefSB_* / Math.PI !!!
-        double[] refSBWin = new double[]{0.00949};  // RefSB_2
-        double[] refSBAbs = new double[]{0.00694, 0.0048, 0.00526};   //  RefSB_17, RefSB_18, RefSB_19
-        double[] rhoToaWin = new double[1];
-        double[] rhoToaAbs = new double[3];
-        rhoToaWin[0] = refSBWin[0]/Math.PI;
-        for (int i = 0; i < rhoToaAbs.length; i++) {
-            rhoToaAbs[i] = refSBAbs[i]/Math.PI;
-        }
+        // NOTE: for MODIS, these reflectances are RefSB_* / Math.PI !!!
+        final double reflectance_2 = 0.00342512;  // data['rad'][2].flat[99]
+        final double reflectance_5 = 0.0013736;  // data['rad'][5].flat[99]
+        final double reflectance_17 = 0.002566;  // data['rad'][17].flat[99]
+        final double reflectance_18 = 0.00150349;  // data['rad'][18].flat[99]
+        final double reflectance_19 = 0.00177489;  // data['rad'][19].flat[99]
 
-        double aot865 = 0.1;
-        double priorAot = 0.15;
-        double priorAl0 = 0.13;
-        double priorAl1 = 0.13;
-        double priorT2m = 293.9698;
+        final double relAzi = 180. - Math.acos(Math.cos(saa* MathUtils.DTOR) * Math.cos(vaa* MathUtils.DTOR) +
+                                                       Math.sin(saa* MathUtils.DTOR) * Math.sin(vaa* MathUtils.DTOR)) * MathUtils.RTOD;
 
-        double priorMslPress = 1013.25;  // not needed for water
-        double priorWsp = 7.5;
-        double priorTcwv = 18.0153;
-        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf, aot865,
+        double amf = 1. / Math.cos(sza * MathUtils.DTOR) + 1. / Math.cos(vza * MathUtils.DTOR);
+//        double priorAot = TcwvConstants.AOT_FALLBACK_LAND;     // data['aot'].flat[99]
+        double priorAot = TcwvConstants.AOT_FALLBACK_OCEAN;     // we have this in the breadboard land test pixel
+
+        double priorAl0 = reflectance_2 * Math.PI;   // data['rad'][2].flat[99]*np.pi
+        double priorAl1 = reflectance_5 * Math.PI;   // data['rad'][5].flat[99]*np.pi
+        double priorT2m = 289.003;    // 't2m' from ERA, data['t2m'].flat[99]
+
+        double priorMslPress = -Math.log(1013.0);  // 'msl' from ERA, data['prs'].flat[99]
+        double priorWsp = 5.0;     // 'wsp' from ERA, data['wsp'].flat[99]
+        double priorTcwv = 20.7825;       // 'tcwv' from ERA, data['tcwv'].flat[99]
+
+        double[] rhoToaWin = new double[]{reflectance_2};  // bands 2
+        double[] rhoToaAbs = new double[]{reflectance_17, reflectance_18, reflectance_19};  // bands 17, 18, 19
+
+        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf,
                                                           priorAot, priorAl0, priorAl1, priorT2m, priorMslPress,
                                                           priorWsp, priorTcwv);
         final TcwvResult result = algorithm.compute(sensor,
@@ -310,10 +382,18 @@ public class TcwvCowaConsolidatedCciLutsForOnePixelTest {
                                                     input, false);
 
         System.out.println("MODIS TERRA OCEAN result.getTcwv() = " + result.getTcwv());
-//        assertEquals(33.86, result.getTcwv(), 0.2);
-//        assertEquals(22.4, result.getTcwv(), 0.2);  // MODIS update RP, 20190902
-        // Python result: 22.227 (new test_cowa_ocean_4, OD, 20191128)
-//        assertEquals(3.582, result.getTcwvUncertainty(), 0.001); // Python: 3.39
+        // TCWV:
+        // Java: 25.474
+        // Cowa Consolidated LUTs Python: 25.4244
+        assertEquals(25.4244, result.getTcwv(), 0.05);
+        // TCWV uncertainty:
+        // Java: 2.53112
+        // Cowa Consolidated LUTs Python: 2.54177
+        assertEquals(2.54177, result.getTcwvUncertainty(), 0.02);
+        // Cost function:
+        // Java: 0.14349
+        // Cowa Consolidated LUTs Python: 0.14383
+        assertEquals(0.14383, result.getCost(), 0.001);
     }
 
 }

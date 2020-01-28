@@ -53,10 +53,6 @@ public class TcwvOp extends Operator {
             description = "MSL pressure constant to be used if no Prior is available.")
     private double mslPressure;
 
-    @Parameter(defaultValue = "0.1",
-            description = "Prior AOT at 865 nm.")
-    private double aot865;
-
     @Parameter(description = "If auxdata are already installed, their path can be provided here.")
     private String auxdataPath;
 
@@ -226,25 +222,10 @@ public class TcwvOp extends Operator {
         final Band stateVector2Band = targetProduct.getBand(TcwvConstants.TCWV_STATE_VECTOR2_BAND_NAME);
         final Band costFunctionBand = targetProduct.getBand(TcwvConstants.TCWV_COST_FUNCTION_BAND_NAME);
 
-        Tile[] landWinBandTiles = new Tile[landWinBands.length];
-        for (int i = 0; i < landWinBandTiles.length; i++) {
-            landWinBandTiles[i] = getSourceTile(landWinBands[i], targetRectangle);
-        }
-
-        Tile[] landAbsBandTiles = new Tile[landAbsBands.length];
-        for (int i = 0; i < landAbsBandTiles.length; i++) {
-            landAbsBandTiles[i] = getSourceTile(landAbsBands[i], targetRectangle);
-        }
-
-        Tile[] oceanWinBandTiles = new Tile[oceanWinBands.length];
-        for (int i = 0; i < oceanWinBandTiles.length; i++) {
-            oceanWinBandTiles[i] = getSourceTile(oceanWinBands[i], targetRectangle);
-        }
-
-        Tile[] oceanAbsBandTiles = new Tile[oceanAbsBands.length];
-        for (int i = 0; i < oceanAbsBandTiles.length; i++) {
-            oceanAbsBandTiles[i] = getSourceTile(oceanAbsBands[i], targetRectangle);
-        }
+        Tile[] landWinBandTiles = getSourceTiles(landWinBands, targetRectangle);
+        Tile[] landAbsBandTiles = getSourceTiles(landAbsBands, targetRectangle);
+        Tile[] oceanWinBandTiles = getSourceTiles(oceanWinBands, targetRectangle);
+        Tile[] oceanAbsBandTiles = getSourceTiles(oceanAbsBands, targetRectangle);
 
         Tile szaTile = getSourceTile(szaBand, targetRectangle);
         Tile vzaTile = getSourceTile(vzaBand, targetRectangle);
@@ -254,30 +235,11 @@ public class TcwvOp extends Operator {
         Tile pixelClassifTile = getSourceTile(pixelClassifBand, targetRectangle);
         Tile idepixClassifTile = getSourceTile(idepixClassifBand, targetRectangle);
 
-        Tile priorT2mTile = null;
-        if (priorT2mBand != null) {
-            priorT2mTile = getSourceTile(priorT2mBand, targetRectangle);
-        }
-
-        Tile priorMslTile = null;
-        if (priorMslBand != null) {
-            priorMslTile = getSourceTile(priorMslBand, targetRectangle);
-        }
-
-        Tile priorTcwvTile = null;
-        if (priorTcwvBand != null) {
-            priorTcwvTile = getSourceTile(priorTcwvBand, targetRectangle);
-        }
-
-        Tile priorU10Tile = null;
-        if (priorU10Band != null) {
-            priorU10Tile = getSourceTile(priorU10Band, targetRectangle);
-        }
-
-        Tile priorV10Tile = null;
-        if (priorV10Band != null) {
-            priorV10Tile = getSourceTile(priorV10Band, targetRectangle);
-        }
+        Tile priorT2mTile = getTcwvInputTile(priorT2mBand, targetRectangle);
+        Tile priorMslTile = getTcwvInputTile(priorMslBand, targetRectangle);
+        Tile priorTcwvTile = getTcwvInputTile(priorTcwvBand, targetRectangle);
+        Tile priorU10Tile = getTcwvInputTile(priorU10Band, targetRectangle);
+        Tile priorV10Tile = getTcwvInputTile(priorV10Band, targetRectangle);
 
         double[] landWinBandData = new double[landWinBandTiles.length];
         double[] landAbsBandData = new double[landAbsBandTiles.length];
@@ -320,16 +282,12 @@ public class TcwvOp extends Operator {
                     }
                 } else {
                     // Preparing input data...
-                    final double sza = szaTile.getSampleDouble(x, y);
-                    final double szaR = sza * MathUtils.DTOR;
-                    final double vza = vzaTile.getSampleDouble(x, y);
-                    final double vzaR = vza * MathUtils.DTOR;
-                    final double saa = saaTile.getSampleDouble(x, y);
-                    final double saaR = saa * MathUtils.DTOR;
-                    final double vaa = vaaTile.getSampleDouble(x, y);
-                    final double vaaR = vaa * MathUtils.DTOR;
-//                    final double relAzi = 180. - Math.abs(saa - vaa);
-                    final double relAzi = 180. - Math.acos(Math.cos(saaR) * Math.cos(vaaR) + Math.sin(saaR) * Math.sin(vaaR)) * MathUtils.RTOD;
+                    final double szaR = szaTile.getSampleDouble(x, y) * MathUtils.DTOR;
+                    final double vzaR = vzaTile.getSampleDouble(x, y) * MathUtils.DTOR;
+                    final double saaR = saaTile.getSampleDouble(x, y) * MathUtils.DTOR;
+                    final double vaaR = vaaTile.getSampleDouble(x, y) * MathUtils.DTOR;
+                    final double relAzi = 180. - Math.acos(Math.cos(saaR) * Math.cos(vaaR) +
+                                                                   Math.sin(saaR) * Math.sin(vaaR)) * MathUtils.RTOD;
                     final double csza = Math.cos(szaR);
                     final double amf = 1. / csza + 1. / Math.cos(vzaR);
 
@@ -355,48 +313,24 @@ public class TcwvOp extends Operator {
                         priorWs = Math.sqrt(u10 * u10 + v10 * v10);
                     }
 
-                    final double priorAot = TcwvConstants.AOT865_INIT_VALUE;
+//                    final double priorAot = TcwvConstants.AOT865_INIT_VALUE;
+                    // RP 20200113:
+                    final double priorAot = isLand ? TcwvConstants.AOT_FALLBACK_LAND : TcwvConstants.AOT_FALLBACK_OCEAN;
+
                     final double priorAl0 = TcwvConstants.AL0_INIT_VALUE;
                     final double priorAl1 = TcwvConstants.AL1_INIT_VALUE;
                     final double priorTcwv =
                             priorTcwvTile != null ? priorTcwvTile.getSampleDouble(x, y) : TcwvConstants.TCWV_INIT_VALUE;
 
-                    TcwvAlgorithmInput input;
-
-                    // clarification of correct normalisation of input reflectances (email RP, 20190903):
-                    // - MODIS: refl_for_tcwv = refl_input / PI
-                    // - MERIS/OLCI: refl_for_tcwv = radiance / flux = refl_input * cos(sza) because
-                    //          refl_input = radiance / (flux * cos(sza)), see RsMathUtils.radianceToReflectance(...)
-
                     final Tile[] winBandTiles = isLand ? landWinBandTiles : oceanWinBandTiles;
                     final Tile[] absBandTiles = isLand ? landAbsBandTiles : oceanAbsBandTiles;
                     final double[] winBandData = isLand ? landWinBandData : oceanWinBandData;
                     final double[] absBandData = isLand ? landAbsBandData : oceanAbsBandData;
-                    for (int i = 0; i < winBandData.length; i++) {
-                        if (sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA) {
-                            // this was wrong before!
-                            winBandData[i] = winBandTiles[i].getSampleDouble(x, y) / Math.PI;
-                        } else {
-                            // this was already correct before
-                            winBandData[i] = winBandTiles[i].getSampleDouble(x, y) * csza;
-                        }
-                        if (!isLand) {
-                        }
-                    }
-                    for (int i = 0; i < absBandData.length; i++) {
-                        if (sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA) {
-                            // this was wrong before!
-                            absBandData[i] = absBandTiles[i].getSampleDouble(x, y) / Math.PI;
-                        } else {
-                            // this was already correct before
-                            absBandData[i] = absBandTiles[i].getSampleDouble(x, y) * csza;
-                        }
-                        if (!isLand) {
-                        }
-                    }
-                    input = new TcwvAlgorithmInput(winBandData, absBandData, sza, vza, relAzi,
-                                                   amf, aot865, priorAot, priorAl0, priorAl1,
-                                                   t2m, prs, priorWs, priorTcwv);
+                    normalizeSpectralInputBands(y, x, csza, winBandTiles, winBandData);
+                    normalizeSpectralInputBands(y, x, csza, absBandTiles, absBandData);
+                    TcwvAlgorithmInput input = new TcwvAlgorithmInput(winBandData, absBandData, szaTile.getSampleDouble(x, y), vzaTile.getSampleDouble(x, y), relAzi,
+                                                                      amf, priorAot, priorAl0, priorAl1,
+                                                                      t2m, prs, priorWs, priorTcwv);
 
                     // 'ocean' parameters are null for land processing!
                     final TcwvResult result = tcwvAlgorithm.compute(sensor, landLut, oceanLut,
@@ -422,6 +356,38 @@ public class TcwvOp extends Operator {
                         targetTiles.get(tcwvQualityFlagBand).setSample(x, y, TcwvConstants.TCWV_OK, true);
                     }
                 }
+            }
+        }
+    }
+
+    private Tile[] getSourceTiles(Band[] sourceBands, Rectangle rectangle) {
+        Tile[] sourceTiles = new Tile[sourceBands.length];
+        for (int i = 0; i < sourceBands.length; i++) {
+            sourceTiles[i] = getSourceTile(sourceBands[i], rectangle);
+        }
+        return sourceTiles;
+    }
+
+    private Tile getTcwvInputTile(Band sourceBand, Rectangle rectangle) {
+        if (sourceBand != null) {
+            return getSourceTile(sourceBand, rectangle);
+        } else {
+            return null;
+        }
+    }
+
+    private void normalizeSpectralInputBands(int y, int x, double csza, Tile[] winBandTiles, double[] winBandData) {
+        // clarification of correct normalisation of input reflectances (email RP, 20190903):
+        // - MODIS: refl_for_tcwv = refl_input / PI
+        // - MERIS/OLCI: refl_for_tcwv = radiance / flux = refl_input * cos(sza) because
+        //          refl_input = radiance / (flux * cos(sza)), see RsMathUtils.radianceToReflectance(...)
+        for (int i = 0; i < winBandData.length; i++) {
+            if (sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA) {
+                // this was wrong before!
+                winBandData[i] = winBandTiles[i].getSampleDouble(x, y) / Math.PI;
+            } else {
+                // this was already correct before
+                winBandData[i] = winBandTiles[i].getSampleDouble(x, y) * csza;
             }
         }
     }

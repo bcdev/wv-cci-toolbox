@@ -90,6 +90,9 @@ public class TcwvConstants {
     static final double TCWV_INIT_VALUE = 30.0;    // TCWV initial value for algorithm if we have no prior
     static final double WS_INIT_VALUE = 7.5;       // Windspeed initial value for algorithm if we have no prior
 
+    static final double AOT_FALLBACK_LAND = 0.15;    // RP 20200113
+    static final double AOT_FALLBACK_OCEAN = -0.6;   // RP 20200113, given in log10(0.1+aot)
+
     static final int IDEPIX_INVALID_BIT = 0;
     static final int IDEPIX_CLOUD_AMBIGUOUS_BIT = 2;
     static final int IDEPIX_CLOUD_SURE_BIT = 3;
@@ -199,17 +202,13 @@ public class TcwvConstants {
     final static double[] MERIS_OCEAN_INTERPOL_ERROR = {0.01};
     final static double MERIS_OCEAN_AOT_FALLBACK = -0.6;    // in log10(0.1+aot) for ocean!!! (RP Jan 2020)
 
-    // 'cor' from land_core_meris_calib_arm.nc4, bands 13, 14, 15
+    // 'cor' from land_core_meris_calib_arm.nc4, abs band 15
     final static double[][] MERIS_LAND_RECT_CORR = {
-            {0.0, 1.0},
-            {0.0, 1.0},
             {0.00060347, 0.956954}   // changed Jan 2020!
     };
 
-    // 'cor' from ocean_core_meris_calib.nc4, bands 13, 14, 15
+    // 'cor' from ocean_core_meris_calib.nc4, abs band 15
     final static double[][] MERIS_OCEAN_RECT_CORR = {
-            {0.0, 1.0},
-            {0.0, 1.0},
             {-0.0342265, 0.7524297}
     };
 
@@ -310,19 +309,15 @@ public class TcwvConstants {
     final static double[] MODIS_OCEAN_INTERPOL_ERROR = {0.03, 0.04, 0.04};
     final static double MODIS_OCEAN_AOT_FALLBACK = -0.6;    // in log10(0.1+aot) for ocean!!! (RP Jan 2020)
 
-    // 'cor' from land_core_modis_terra_calib_arm.nc4, bands 2, 5, 17, 18, 19 in this sequence!
+    // 'cor' from land_core_modis_terra_calib_arm.nc4, abs bands 17, 18, 19
     final static double[][] MODIS_LAND_RECT_CORR = {
-            {0.0, 1.0},
-            {0.0, 1.0},
             {-0.0034669, 1.0203956},
             {0.00041882, 0.9378},
             {-0.0115824, 0.94457}
     };
 
-    // 'cor' from ocean_core_modis_terra.nc4, bands 2, 5, 17, 18, 19 in this sequence!
+    // 'cor' from ocean_core_modis_terra.nc4, abs bands 17, 18, 19
     final static double[][] MODIS_OCEAN_RECT_CORR = {
-            {0.0, 1.0},
-            {0.0, 1.0},
             {-0.00227, 0.96895},
             {-0.005911, 0.936108},
             {-0.002996, 0.892848}
@@ -410,23 +405,22 @@ public class TcwvConstants {
     final static double[] OLCI_OCEAN_INTERPOL_ERROR = {0.015, 0.015};
     final static double OLCI_OCEAN_AOT_FALLBACK = -0.6;    // in log10(0.1+aot) for ocean!!! (RP Jan 2020)
 
-    // 'cor' from land_core_olci_calib_arm.nc4, bands 18, 19, 20 in this sequence!
+    // 'cor' from land_core_olci_calib_arm.nc4, abs bands 19, 20
     final static double[][] OLCI_LAND_RECT_CORR = {
-            {0.0, 1.0},
             {0.005084, 0.942815},
             {-0.01986, 0.871491}
     };
 
-    // 'cor' from ocean_core_olci_calib.nc4, bands 18, 19, 20 in this sequence!
+    // 'cor' from ocean_core_olci_calib.nc4, abs bands 19, 20
     final static double[][] OLCI_OCEAN_RECT_CORR = {
-            {0.0, 1.0},
             {-2.367607E-4, 0.918008},
             {-5.630766E-4, 0.924249}
     };
 
-    // 'cwvl' from ocean_core_olci_calib.nc4, bands 18, 19, 20 in this sequence!
+    // 'cwvl' from ocean_core_olci_calib.nc4, bands 18, 21, 19, 20 in this sequence!
     final static double[] OLCI_CWVL_RECT_CORR = {
             884.3246,
+            1015.966,
             899.316,
             939.02
     };
@@ -446,8 +440,8 @@ public class TcwvConstants {
     final static double[][] SA_OCEAN = {
             {5.0, 0.0, 0.0},
             {0.0, 1.0, 0.0},
-            {0.0, 0.0, 25.0}               // todo: different for MODIS, Jan 2020
+            {0.0, 0.0, 25.0}               // todo: different for MODIS, Jan 2020: sa[2][2] = 10.0
     };
 
-
+    final static double SA_OCEAN_2_2_MODIS = 10.0;
 }

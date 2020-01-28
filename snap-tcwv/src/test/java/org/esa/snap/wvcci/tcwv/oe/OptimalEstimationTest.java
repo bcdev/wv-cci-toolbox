@@ -115,7 +115,7 @@ public class OptimalEstimationTest {
         assertNotNull(result.getKk());
         assertNull(result.getSr());
         assertNull(result.getDiagnoseResult());
-        assertEquals(5, result.getIi());
+        assertEquals(4, result.getIi());
         assertEquals(2, result.getXn().length);
         assertEquals(3.5, result.getXn()[0], 1.E-4);
         assertEquals(6.5, result.getXn()[1], 1.E-4);
@@ -242,7 +242,7 @@ public class OptimalEstimationTest {
         assertNotNull(result.getKk());
         assertNull(result.getSr());
         assertNull(result.getDiagnoseResult());
-        assertEquals(5, result.getIi());
+        assertEquals(3, result.getIi());
         assertEquals(2, result.getXn().length);
         assertEquals(3.5, result.getXn()[0], 1.E-6);
         assertEquals(6.5, result.getXn()[1], 1.E-6);
@@ -261,7 +261,7 @@ public class OptimalEstimationTest {
         maxiter = 20;
         result = oe.invert(InversionMethod.NEWTON_SE, y, se, sa, xa, OEOutputMode.EXTENDED, maxiter);
         assertNotNull(result);
-        assertEquals(4, result.getIi());
+        assertEquals(3, result.getIi());
         assertEquals(2, result.getXn().length);
         assertEquals(3.569013, result.getXn()[0], 1.E-6);
         assertEquals(6.375022, result.getXn()[1], 1.E-6);

@@ -227,15 +227,15 @@ public class TcwvModisLandLutTest {
 
             // compare some values against LUT being read in Python CAWA code...
             assertEquals(0.002241, lutArray[0][0][0][0][0][0][0][0][0][0], 1.E-5);
-            assertEquals(0.208947, lutArray[3][3][2][0][2][0][2][2][1][2], 1.E-6);
-            assertEquals(0.087145, lutArray[2][4][3][3][2][0][1][2][1][1], 1.E-6);
-            assertEquals(0.289169, lutArray[4][2][1][4][1][0][2][1][1][2], 1.E-6);
+            assertEquals(0.207087, lutArray[3][3][2][0][2][0][2][2][1][2], 1.E-6);
+            assertEquals(0.087121, lutArray[2][4][3][3][2][0][1][2][1][1], 1.E-6);
+            assertEquals(0.287050, lutArray[4][2][1][4][1][0][2][1][1][2], 1.E-6);
             assertEquals(0.006085, lutArray[1][1][4][1][1][0][0][3][2][0], 1.E-6);
-            assertEquals(0.011516, lutArray[0][1][0][2][1][0][0][3][3][0], 1.E-6);
-            assertEquals(0.177335, lutArray[2][4][1][3][1][0][2][3][1][2], 1.E-6);
-            assertEquals(0.072851, lutArray[1][1][2][2][0][0][2][0][3][2], 1.E-6);
-            assertEquals(0.073428, lutArray[3][0][3][1][1][0][1][4][2][1], 1.E-6);
-            assertEquals(0.397999, lutArray[4][4][4][4][2][0][5][4][4][4], 1.E-6);   // last value
+            assertEquals(0.011518, lutArray[0][1][0][2][1][0][0][3][3][0], 1.E-6);
+            assertEquals(0.176192, lutArray[2][4][1][3][1][0][2][3][1][2], 1.E-6);
+            assertEquals(0.072583, lutArray[1][1][2][2][0][0][2][0][3][2], 1.E-6);
+            assertEquals(0.073495, lutArray[3][0][3][1][1][0][1][4][2][1], 1.E-6);
+            assertEquals(0.398919, lutArray[4][4][4][4][2][0][5][4][4][4], 1.E-6);   // last value
 
             final double[][][][][][][][][][] jlutArray = TcwvInterpolationUtils.getDouble10DArrayFromNetcdfVariable(variables.get(11));
             // 6 * 5 * 5 * 6 * 4 * 3 * 6 * 5 * 5 * 45
@@ -254,10 +254,10 @@ public class TcwvModisLandLutTest {
             // compare some values against LUT being read in Python CAWA code...
             assertEquals(-7.79E-6, jlutArray[0][0][0][0][0][0][0][0][0][0], 1.E-6);
             assertEquals(9.34E-7, jlutArray[2][4][3][3][2][0][1][2][1][6], 1.E-6);
-            assertEquals(-4.47E-5, jlutArray[4][2][1][4][1][0][2][1][1][9], 1.E-6);
+            assertEquals(-4.22E-5, jlutArray[4][2][1][4][1][0][2][1][1][9], 1.E-6);
             assertEquals(-2.97E-5, jlutArray[0][1][0][2][1][0][0][3][3][15], 1.E-6);
-            assertEquals(-0.005732, jlutArray[1][1][2][2][0][0][2][0][3][21], 1.E-6);
-            assertEquals(-0.00939, jlutArray[4][4][4][4][2][0][5][4][4][44], 1.E-6);   // last value
+            assertEquals(-0.006082, jlutArray[1][1][2][2][0][0][2][0][3][21], 1.E-6);
+            assertEquals(-0.009421, jlutArray[4][4][4][4][2][0][5][4][4][44], 1.E-6);   // last value
         } catch (IOException e) {
             e.printStackTrace();
             fail();

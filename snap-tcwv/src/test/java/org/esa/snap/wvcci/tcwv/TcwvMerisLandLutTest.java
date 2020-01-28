@@ -45,7 +45,7 @@ public class TcwvMerisLandLutTest {
     private void testTcwvLutMetadata_land(List<Attribute> globalAttributes, List<Dimension> dimensions, List<Variable> variables) {
         // sequence slightly changed with LUT update in April 2019
         assertNotNull(globalAttributes);
-        assertEquals(15, globalAttributes.size());
+        assertEquals(16, globalAttributes.size());
         assertEquals("instrument", globalAttributes.get(0).getFullName());
         assertEquals("meris", globalAttributes.get(0).getValue(0));
         assertEquals("win_bnd", globalAttributes.get(1).getFullName());
@@ -54,12 +54,12 @@ public class TcwvMerisLandLutTest {
         assertEquals("15", globalAttributes.get(3).getValue(0));
         assertEquals("axes", globalAttributes.get(4).getFullName());
         assertEquals("wvc,al0,al1,aot,prs,tmp,azi,vie,suz", globalAttributes.get(4).getValue(0));
-        assertEquals("cha_14_bwvl", globalAttributes.get(13).getFullName());
-        assertEquals(5.901877, (Double) globalAttributes.get(13).getValue(0), 1.E-6);
-        assertEquals("cha_14_cwvl", globalAttributes.get(14).getFullName());
-        assertEquals(884.676627, (Double) globalAttributes.get(14).getValue(0), 1.E-6);
-        assertEquals("cha_14_nominal", globalAttributes.get(12).getFullName());
-        assertEquals(885.0, globalAttributes.get(12).getValue(0));
+        assertEquals("cha_14_nominal", globalAttributes.get(13).getFullName());
+        assertEquals(885.0, (Double) globalAttributes.get(13).getValue(0), 1.E-6);
+        assertEquals("cha_14_bwvl", globalAttributes.get(14).getFullName());
+        assertEquals(5.90187766, (Double) globalAttributes.get(14).getValue(0), 1.E-6);
+        assertEquals("cha_15_cwvl", globalAttributes.get(12).getFullName());
+        assertEquals(899.721, (Double) globalAttributes.get(12).getValue(0), 1.E-3);
 
         assertNotNull(dimensions);
         assertEquals(13, dimensions.size());

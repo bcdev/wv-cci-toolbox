@@ -45,21 +45,21 @@ public class TcwvModisOceanLutTest {
 
     private void testTcwvLutMetadata_ocean(List<Attribute> globalAttributes, List<Dimension> dimensions, List<Variable> variables) {
         assertNotNull(globalAttributes);
-        assertEquals(18, globalAttributes.size());
-        assertEquals("instrument", globalAttributes.get(1).getFullName());
-        assertEquals("modis_aqua", globalAttributes.get(1).getValue(0));
-        assertEquals("win_bnd", globalAttributes.get(2).getFullName());
-        assertEquals("2", globalAttributes.get(2).getValue(0));
-        assertEquals("abs_bnd", globalAttributes.get(4).getFullName());
-        assertEquals("17,18,19", globalAttributes.get(4).getValue(0));
-        assertEquals("axes", globalAttributes.get(5).getFullName());
-        assertEquals("wvc,aot,wsp,azi,vie,suz", globalAttributes.get(5).getValue(0));
-        assertEquals("cha_18_nominal", globalAttributes.get(12).getFullName());
-        assertEquals(936.0, globalAttributes.get(12).getValue(0));
-        assertEquals("cha_18_bwvl", globalAttributes.get(13).getFullName());
-        assertEquals(9.62338094897492, globalAttributes.get(13).getValue(0));
-        assertEquals("cha_18_cwvl", globalAttributes.get(14).getFullName());
-        assertEquals(936.3970512077088, globalAttributes.get(14).getValue(0));
+        assertEquals(19, globalAttributes.size());
+        assertEquals("instrument", globalAttributes.get(0).getFullName());
+        assertEquals("modis_terra", globalAttributes.get(0).getValue(0));
+        assertEquals("win_bnd", globalAttributes.get(1).getFullName());
+        assertEquals("2", globalAttributes.get(1).getValue(0));
+        assertEquals("abs_bnd", globalAttributes.get(3).getFullName());
+        assertEquals("17,18,19", globalAttributes.get(3).getValue(0));
+        assertEquals("axes", globalAttributes.get(4).getFullName());
+        assertEquals("wvc,aot,wsp,azi,vie,suz", globalAttributes.get(4).getValue(0));
+        assertEquals("cha_18_nominal", globalAttributes.get(13).getFullName());
+        assertEquals(936.0, globalAttributes.get(13).getValue(0));
+        assertEquals("cha_18_bwvl", globalAttributes.get(14).getFullName());
+        assertEquals(9.503882971929052, globalAttributes.get(14).getValue(0));
+        assertEquals("cha_18_cwvl", globalAttributes.get(15).getFullName());
+        assertEquals(935.6916504509932, globalAttributes.get(15).getValue(0));
 
         assertNotNull(dimensions);
         assertEquals(10, dimensions.size());
@@ -136,9 +136,9 @@ public class TcwvModisOceanLutTest {
             final double[] aotArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(variables.get(1));
             assertNotNull(aotArray);
             assertEquals(6, aotArray.length);
-            assertEquals(0.0, aotArray[0], 1.E-6);
-            assertEquals(0.08, aotArray[2], 1.E-2);
-            assertEquals(0.96, aotArray[5], 1.E-2);
+            assertEquals(-2.0, aotArray[0], 1.E-6);
+            assertEquals(-1.04, aotArray[2], 1.E-2);
+            assertEquals(-0.0099, aotArray[5], 1.E-2);
 
             final double[] wspArray = TcwvInterpolationUtils.getDouble1DArrayFromNetcdfVariable(variables.get(2));
             assertNotNull(wspArray);
@@ -187,15 +187,15 @@ public class TcwvModisOceanLutTest {
 
             // compare some values against LUT being read in Python CAWA code...
             assertEquals(0.1203, lutArray[0][0][0][0][0][0][0], 1.E-4);
-            assertEquals(0.645117, lutArray[3][3][8][0][8][1][2], 1.E-6);
-            assertEquals(0.181013, lutArray[2][4][6][3][2][7][1], 1.E-6);
-            assertEquals(0.588674, lutArray[4][2][5][4][1][7][2], 1.E-6);
-            assertEquals(0.015003, lutArray[1][5][4][5][3][6][0], 1.E-6);
-            assertEquals(0.021188, lutArray[0][5][0][8][6][3][0], 1.E-6);
-            assertEquals(0.571708, lutArray[2][4][1][8][8][1][2], 1.E-6);
-            assertEquals(0.506375, lutArray[5][1][2][7][0][8][2], 1.E-6);
-            assertEquals(0.106222, lutArray[3][0][3][6][7][2][1], 1.E-6);
-            assertEquals(0.518144, lutArray[5][5][10][10][8][8][2], 1.E-6);   // last value
+            assertEquals(0.633589, lutArray[3][3][8][0][8][1][2], 1.E-6);
+            assertEquals(0.1803, lutArray[2][4][6][3][2][7][1], 1.E-6);
+            assertEquals(0.579594, lutArray[4][2][5][4][1][7][2], 1.E-6);
+            assertEquals(0.015008, lutArray[1][5][4][5][3][6][0], 1.E-6);
+            assertEquals(0.021198, lutArray[0][5][0][8][6][3][0], 1.E-6);
+            assertEquals(0.560888, lutArray[2][4][1][8][8][1][2], 1.E-6);
+            assertEquals(0.499643, lutArray[5][1][2][7][0][8][2], 1.E-6);
+            assertEquals(0.105830, lutArray[3][0][3][6][7][2][1], 1.E-6);
+            assertEquals(0.508843, lutArray[5][5][10][10][8][8][2], 1.E-6);   // last value
 
             final double[][][][][][][] jlutArray = TcwvInterpolationUtils.getDouble7DArrayFromNetcdfVariable(variables.get(8));
             // 6*6*11*11*9*9*18
@@ -209,16 +209,16 @@ public class TcwvModisOceanLutTest {
             assertEquals(24, jlutArray[0][0][0][0][0][0].length);
 
             // compare some values against LUT being read in Python CAWA code...
-            assertEquals(-0.000193, jlutArray[0][0][0][0][0][0][0], 1.E-6);
+            assertEquals(-0.0002007, jlutArray[0][0][0][0][0][0][0], 1.E-6);
             assertEquals(0.000119, jlutArray[3][3][8][0][8][1][2], 1.E-6);
-            assertEquals(0.01349, jlutArray[2][4][6][3][2][7][1], 1.E-6);
+            assertEquals(0.017494, jlutArray[2][4][6][3][2][7][1], 1.E-6);
             assertEquals(1.506136E-5, jlutArray[4][2][5][4][1][7][2], 1.E-6);
             assertEquals(-1.000103E-5, jlutArray[1][5][4][5][3][6][0], 1.E-6);
             assertEquals(-1.15138E-5, jlutArray[0][5][0][8][6][3][0], 1.E-6);
             assertEquals(-0.000108, jlutArray[2][4][1][8][8][1][2], 1.E-6);
             assertEquals(-1.400131E-5, jlutArray[5][1][2][7][0][8][2], 1.E-6);
-            assertEquals(0.024271, jlutArray[3][0][3][6][7][2][1], 1.E-6);
-            assertEquals(-0.008688, jlutArray[5][5][10][10][8][8][17], 1.E-6);   // last value
+            assertEquals(0.001394, jlutArray[3][0][3][6][7][2][1], 1.E-6);
+            assertEquals(-0.008511, jlutArray[5][5][10][10][8][8][17], 1.E-6);   // last value
         } catch (IOException e) {
             e.printStackTrace();
             fail();

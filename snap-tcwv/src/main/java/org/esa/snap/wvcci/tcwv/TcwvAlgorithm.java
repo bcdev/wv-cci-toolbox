@@ -58,7 +58,7 @@ public class TcwvAlgorithm {
                 // run this also for MODIS land !! (RP 20190410)
                 // for ocean it makes no difference as a,b are always 0,1
                 mes[input.getRhoToaWin().length + i] = rectifyAndO2Correct(sensor, input.getRhoToaWin(),
-                                                                           input.getRhoToaAbs(), null, i,
+                                                                           input.getRhoToaAbs(), i,
                                                                            Math.sqrt(input.getAmf()), true);
             } else {
                 // this is equal to the output of rectifyAndO2Correct in case of a,b = 0,1
@@ -70,7 +70,7 @@ public class TcwvAlgorithm {
         }
 
         double[] par = new double[6];
-        par[0] = input.getAot865();
+        par[0] = input.getPriorAot();
         par[1] = input.getPriorMslPress();
         par[2] = input.getPriorT2m();
         par[3] = input.getRelAzi();
@@ -119,7 +119,7 @@ public class TcwvAlgorithm {
                     sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA) {
 //                if (sensor == Sensor.MERIS || sensor == Sensor.OLCI) {
                 mes[input.getRhoToaWin().length + i] = rectifyAndO2Correct(sensor, input.getRhoToaWin(),
-                                                                           input.getRhoToaAbs(), null, i,
+                                                                           input.getRhoToaAbs(), i,
                                                                            Math.sqrt(input.getAmf()), false);
             } else {
                 // this is equal to the output of rectifyAndO2Correct in case of a,b = 0,1. Therefore ok for MODIS.
@@ -156,47 +156,38 @@ public class TcwvAlgorithm {
         }
 
         final double[][] sa = TcwvConstants.SA_OCEAN;
+        if (sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA) {
+            sa[2][2] = TcwvConstants.SA_OCEAN_2_2_MODIS;   // differs from default
+            se[1][1] = 100.0; // switching off 17 over ocean (too much noise), see demo_modis_processor.py l.312
+        }
 
         OptimalEstimation oe = new OptimalEstimation(tcwvFunction, a, b, mes, par, jacobiFunction);
 
         return getTcwvResult(a, xa, se, sa, oe, sensor);
     }
 
-    double rectifyAndO2Correct(Sensor sensor, double[] rhoWb, double[] rhoAb,
-                                      double[] rectCorrExt, int abIndex,
+    double rectifyAndO2Correct(Sensor sensor, double[] rhoWb, double[] rhoAb, int absBandIndex,
                                       double samf, boolean isLand) {
 
         double[][] rectCorr = isLand ? sensor.getLandRectCorr() : sensor.getOceanRectCorr();    // a, b
-        double a;
-        double b;
-        if (rectCorrExt != null && rectCorrExt.length == 2) {
-            a = rectCorrExt[0];
-            b = rectCorrExt[1];
-        } else {
-            final int rectCorrIndex = rhoWb.length + abIndex;
-//            if (rectCorrIndex >= rectCorr.length) {
-//                System.out.println("rectCorrIndex = " + rectCorrIndex);
-//            }
-            a = rectCorr[rectCorrIndex][0];
-            b = rectCorr[rhoWb.length + abIndex][1];
-        }
-        double[] cwvl = sensor.getCwvlRectCorr();
+
+        final double a = rectCorr[absBandIndex][0];
+        final double b = rectCorr[absBandIndex][1];
+        double[] cwvl = sensor.getCwvlRectCorr();       // first win bands, then abs bands
 
         double ref;
-
         if (rhoWb.length == 1) {
             ref = rhoWb[0];
         } else {
             final double dwvl = cwvl[1] - cwvl[0];
             final double drho = rhoWb[1] - rhoWb[0];
             if (Math.abs(dwvl) > 1.E-5) {
-                ref = rhoWb[0] + drho * (cwvl[rhoWb.length + abIndex] - cwvl[0]) / dwvl;
+                ref = rhoWb[0] + drho * (cwvl[rhoWb.length + absBandIndex] - cwvl[0]) / dwvl;
             } else {
                 ref = rhoWb[0];
             }
         }
-
-        return - (a + b * Math.log(rhoAb[abIndex] / ref) / samf);
+        return - (a + b * Math.log(rhoAb[absBandIndex] / ref) / samf);
     }
 
     private TcwvResult getTcwvResult(double[] a, double[] xa, double[][] se, double[][] sa,

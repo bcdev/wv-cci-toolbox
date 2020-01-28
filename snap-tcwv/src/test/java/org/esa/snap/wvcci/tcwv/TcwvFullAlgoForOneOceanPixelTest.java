@@ -50,7 +50,6 @@ public class TcwvFullAlgoForOneOceanPixelTest {
             // inversion of line 56-58, TcwvAlgorithm
             rhoToaAbs[i] = rhoToaWin[1] * Math.exp(-mes[2+i] * Math.sqrt(amf));
         }
-        double aot865 = 0.1;
         double priorAot = 0.15;
         double priorAl0 = 0.13;
         double priorAl1 = 0.13;
@@ -59,7 +58,7 @@ public class TcwvFullAlgoForOneOceanPixelTest {
         double priorMslPress = 1013.25;  // not needed for water
         double priorWsp = 7.5;
         double priorTcwv = 30.0;
-        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf, aot865,
+        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf,
                                                           priorAot, priorAl0, priorAl1, priorT2m, priorMslPress,
                                                           priorWsp, priorTcwv);
         final TcwvResult result = algorithm.compute(sensor,
@@ -73,9 +72,11 @@ public class TcwvFullAlgoForOneOceanPixelTest {
     }
 
     @Test
+    @Ignore
     public void testOptimalEstimation_ocean_modis_terra() {
         // make sure you have the right LUT, otherwise ignore this test!
         // remember that MODIS land uses 5 input bands, MODIS ocean only 4 !!
+        // ignored after consolidation, Jan 2020
         final Sensor sensor = Sensor.MODIS_TERRA;
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
         TcwvOceanLut oceanLut = TcwvIO.readOceanLookupTable(auxdataPath, Sensor.MODIS_TERRA);
@@ -98,7 +99,6 @@ public class TcwvFullAlgoForOneOceanPixelTest {
         for (int i = 0; i < rhoToaAbs.length; i++) {
             rhoToaAbs[i] = rhoToaWin[0] * Math.exp(-mes[1+i] * Math.sqrt(amf));
         }
-        double aot865 = 0.1;
         double priorAot = 0.15;
         double priorAl0 = 0.13;
         double priorAl1 = 0.13;
@@ -107,7 +107,7 @@ public class TcwvFullAlgoForOneOceanPixelTest {
         double priorMslPress = 1013.25;  // not needed for water
         double priorWsp = 7.5;
         double priorTcwv = 30.0;
-        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf, aot865,
+        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf,
                                                           priorAot, priorAl0, priorAl1, priorT2m, priorMslPress,
                                                           priorWsp, priorTcwv);
         final TcwvResult result = algorithm.compute(sensor,
@@ -125,9 +125,11 @@ public class TcwvFullAlgoForOneOceanPixelTest {
     }
 
     @Test
+    @Ignore
     public void testOptimalEstimation_ocean_modis_terra_2() {
         // make sure you have the right LUT, otherwise ignore this test!
         // remember that MODIS land uses 5 input bands, MODIS ocean only 4 !!
+        // ignored after consolidation, Jan 2020
         final Sensor sensor = Sensor.MODIS_TERRA;
         TcwvAlgorithm algorithm = new TcwvAlgorithm();
         TcwvOceanLut oceanLut = TcwvIO.readOceanLookupTable(auxdataPath, Sensor.MODIS_TERRA);
@@ -158,7 +160,6 @@ public class TcwvFullAlgoForOneOceanPixelTest {
 //            rhoToaAbs[i] = mes[i+1]*Math.cos(sza*MathUtils.DTOR)/Math.PI;
 //            rhoToaAbs[i] = mes[i+1]/Math.PI;
         }
-        double aot865 = 0.1;
         double priorAot = 0.15;
         double priorAl0 = 0.13;
         double priorAl1 = 0.13;
@@ -167,7 +168,7 @@ public class TcwvFullAlgoForOneOceanPixelTest {
         double priorMslPress = 1013.25;  // not needed for water
         double priorWsp = 7.5;
         double priorTcwv = 30.0;
-        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf, aot865,
+        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf,
                                                           priorAot, priorAl0, priorAl1, priorT2m, priorMslPress,
                                                           priorWsp, priorTcwv);
         final TcwvResult result = algorithm.compute(sensor,

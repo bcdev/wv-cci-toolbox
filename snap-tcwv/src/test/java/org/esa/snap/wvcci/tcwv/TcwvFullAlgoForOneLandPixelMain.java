@@ -47,7 +47,6 @@ public class TcwvFullAlgoForOneLandPixelMain {
             // inversion of line 56-58, TcwvAlgorithm
             rhoToaAbs[i] = rhoToaWin[1] * Math.exp(-mes[2+i] * Math.sqrt(amf));
         }
-        double aot865 = 0.1;
         double priorAot = 0.15;
         double priorAl0 = 0.13;
         double priorAl1 = 0.13;
@@ -56,7 +55,7 @@ public class TcwvFullAlgoForOneLandPixelMain {
         double priorMslPress = -1013./100.;  // todo: to be fixed by RP
         double priorWsp = Double.NaN;     // not needed for land
         double priorTcwv = 30.0;
-        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf, aot865,
+        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf,
                                                           priorAot, priorAl0, priorAl1, priorT2m, priorMslPress,
                                                           priorWsp, priorTcwv);
         final TcwvResult result = algorithm.compute(sensor,
@@ -96,7 +95,6 @@ public class TcwvFullAlgoForOneLandPixelMain {
         for (int i = 0; i < rhoToaAbs.length; i++) {
             rhoToaAbs[i] = rhoToaWin[1] * Math.exp(-mes[2+i] * Math.sqrt(amf));
         }
-        double aot865 = 0.1;
         double priorAot = 0.15;
         double priorAl0 = 0.13;
         double priorAl1 = 0.13;
@@ -105,7 +103,7 @@ public class TcwvFullAlgoForOneLandPixelMain {
         double priorMslPress = 1003./100.;  // todo: to be fixed by RP
         double priorWsp = Double.NaN;     // not needed for land
         double priorTcwv = 30.0;
-        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf, aot865,
+        TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf,
                                                           priorAot, priorAl0, priorAl1, priorT2m, priorMslPress,
                                                           priorWsp, priorTcwv);
         final TcwvResult result = algorithm.compute(sensor,
