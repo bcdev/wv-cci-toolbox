@@ -8,7 +8,7 @@
     <name>wv-cci-toolbox</name>
     <groupId>org.esa.cci.wv</groupId>
     <artifactId>wv-cci-parent</artifactId>
-    <version>1.7-SNAPSHOT</version>
+    <version>1.8-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <description>Water Wapour CCI Parent project</description>
