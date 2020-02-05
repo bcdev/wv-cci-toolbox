@@ -1,16 +1,10 @@
 __author__ = 'olafd'
 
-# Generates final CF- and CCI-compliant TCWV L3 daily non-merged products ready for delivery.
-# Usage: python nc-compliance-py-process.py ./${nc_infile} ${sensor} ${year} ${month} ${day} ${resolution} ${version}
-# Example: python nc-compliance-py-daily-non-merged-process.py l3_tcwv_olci_005deg_2018-07-25_2018-07-25.nc olci 2018 07 25 005 2.0
-
-# NOTE: now we directly use the originally generated L3, rename bands where necessary, and provide the required uncertainty terms here.
-# This will save the L3 --> L3 uncertainties step
+# Generates final CF- and CCI-compliant TCWV L3 MONTHLY products ready for delivery.
+# Usage: python nc-compliance-monthly-py-process.py ./${nc_infile} ${sensor} ${year} ${month} ${resolution} ${version}
+# Example: python nc-compliance-monthly-py-process.py l3_tcwv_olci_005deg_2018-07-01_2018-07-31.nc olci 2018 07 005 2.0
 #
-# TODO: provide similar versions for NIR non-merged products, NIR monthly merged/non-merged products.
-# TODO: In merging, use HOAPS original (adjust MergeOp) to save also HOAPS compliance step (HOAPS unmerged is not published)
-
-# OD, 20190906
+# OD, 20191111
 
 import os
 import sys
@@ -47,10 +41,10 @@ def resetOceanCdr1(variable, surface_type_array, reset_value):
     tmp_array[np.where(surface_type_array == 1)] = reset_value
     variable[:,:] = tmp_array[:,:]
 
-def setOceanWvpaErrors(variable, surface_type_array, tcwv_array, wvpa_err_array, has_wvpa_errors):
+def setOceanWvpaErrors(variable, surface_type_array, tcwv_array, wvpa_err_array):
     var_array = np.array(variable)
     tmp_array = np.copy(var_array)
-    if has_wvpa_errors:
+    if wvpa_err_array:
         use_hoaps = np.where(((surface_type_array == 1) | (surface_type_array == 4) | (surface_type_array == 6)) & (~np.isnan(tcwv_array)) & (~np.isnan(wvpa_err_array)))
         tmp_array[use_hoaps] = wvpa_err_array[use_hoaps]
     else:
@@ -66,10 +60,10 @@ def setOceanWvpaErrors(variable, surface_type_array, tcwv_array, wvpa_err_array,
             
 ########## initialize input parameters ######################
 
-print >> sys.stderr, "STARTING nc-compliance-py-process.py"
+print >> sys.stderr, "STARTING nc-compliance-monthlypy-process.py"
 
-if len(sys.argv) != 9 and len(sys.argv) != 10:
-    print ('Usage:  python nc-compliance-py-process.py <nc_infile> <landmask_file> <sensor> <year> <month> <day> <resolution> < product version> [<seaice_mask_file>] ')
+if len(sys.argv) != 8 and len(sys.argv) != 9:
+    print ('Usage:  python nc-compliance-py-process.py <nc_infile> <landmask_file> <sensor> <year> <month> <resolution> < product version> [<seaice_mask_file>] ')
     sys.exit(-1)
 
 nc_infile = sys.argv[1]
@@ -77,13 +71,12 @@ landmask_file = sys.argv[2]
 sensor = sys.argv[3]
 year = sys.argv[4]
 month = sys.argv[5]
-day = sys.argv[6]
-res = sys.argv[7]
-version = sys.argv[8]
+res = sys.argv[6]
+version = sys.argv[7]
 
 seaice_available = False
-if len(sys.argv) == 10:
-    seaice_mask_file = sys.argv[9]
+if len(sys.argv) == 9:
+    seaice_mask_file = sys.argv[8]
     seaice_available = True
 
 print 'nc_infile: ', nc_infile
@@ -93,29 +86,19 @@ if seaice_available:
 print 'sensor: ', sensor
 print 'year: ', year
 print 'month: ', month
-print 'day: ', day
 print 'res: ', res
 print 'version: ', version
 
 nc_infile_root_index = nc_infile.find(year)
 
-if int(day) == 0:
-    # monthly products:
-    datestring = year + month
+# we have MONTHLY products:
+datestring = year + month
 
-    # use days since 1970-01-01 as time base value, and the 15th of given month at 00:00 as reference time:
-    num_days_in_month = calendar.monthrange(int(year), int(month))[1]
-    timeval = (datetime.datetime(int(year),int(month),15)  - datetime.datetime(1970,1,1)).days
-    time_bnds_0 = timeval - 15 
-    time_bnds_1 = time_bnds_0 + num_days_in_month 
-else:
-    # daily products:
-    datestring = year + month + day
-
-    # use days since 1970-01-01 as time value, and the given day at 12:00 as reference time:
-    timeval = (datetime.datetime(int(year),int(month),int(day))  - datetime.datetime(1970,1,1)).days
-    time_bnds_0 = timeval 
-    time_bnds_1 = timeval + 1
+# use days since 1970-01-01 as time base value, and the 15th of given month at 00:00 as reference time:
+num_days_in_month = calendar.monthrange(int(year), int(month))[1]
+timeval = (datetime.datetime(int(year),int(month),15)  - datetime.datetime(1970,1,1)).days
+time_bnds_0 = timeval - 15 
+time_bnds_1 = time_bnds_0 + num_days_in_month 
     
 if sensor.find("-") != -1:
     l3_suffix = 'S'
@@ -181,17 +164,12 @@ dst.setncattr('geospatial_lon_min', '-180.0')
 dst.setncattr('geospatial_lon_max', '180.0')
 dst.setncattr('geospatial_vertical_min', '0.0')
 dst.setncattr('geospatial_vertical_max', '0.0')
-if int(day) == 0:
-    num_days_in_month = calendar.monthrange(int(year), int(month))[1]
-    starttime = datestring + '-01 00:00:00 UTC'
-    endtime = datestring + '-' + str(num_days_in_month) +  ' 23:59:59 UTC'
-    dst.setncattr('time_coverage_duration', 'P1M')
-    dst.setncattr('time_coverage_resolution', 'P1M')
-else:
-    starttime = datestring + ' 00:00:00 UTC'
-    endtime = datestring + ' 23:59:59 UTC'
-    dst.setncattr('time_coverage_duration', 'P1D')
-    dst.setncattr('time_coverage_resolution', 'P1D')
+
+num_days_in_month = calendar.monthrange(int(year), int(month))[1]
+starttime = datestring + '-01 00:00:00 UTC'
+endtime = datestring + '-' + str(num_days_in_month) +  ' 23:59:59 UTC'
+dst.setncattr('time_coverage_duration', 'P1M')
+dst.setncattr('time_coverage_resolution', 'P1M')
 
 dst.setncattr('time_coverage_start', starttime)
 dst.setncattr('time_coverage_end', endtime)
@@ -285,7 +263,6 @@ time_bnds = dst.createVariable('time_bnds', 'i4', ('time','nv'), zlib=True)
 time_bnds[:,0] = time_bnds_arr[0]
 time_bnds[:,1] = time_bnds_arr[1]
 time_bnds.setncattr('long_name', 'Time cell boundaries')
-#time_bnds.setncattr('units', 'days since 1970-01-01')
 time_bnds.setncattr('comment', 'Contains the start and end times for the time period the data represent.')
     
 # create 'lat_bnds' and 'lon_bnds' variables:
@@ -318,34 +295,34 @@ lat_bnds[:,:] = lat_bnds_arr
 lon_bnds[:,:] = lon_bnds_arr
 
 # Create final flag bands:
-tcwv_quality_flag = dst.createVariable('tcwv_quality_flag', 'b', (dst.dimensions['lat'].name,dst.dimensions['lon'].name), zlib=True)
-tcwv_quality_flag_arr = np.zeros(shape=(height, width))
+# no quality flag in monthlies, see below
+#tcwv_quality_flag = dst.createVariable('tcwv_quality_flag', 'b', (dst.dimensions['lat'].name,dst.dimensions['lon'].name), zlib=True)
+#tcwv_quality_flag_arr = np.zeros(shape=(height, width))
 
 surface_type_flag = dst.createVariable('surface_type_flag', 'b', (dst.dimensions['lat'].name,dst.dimensions['lon'].name), zlib=True)
 surface_type_flag_arr = np.zeros(shape=(height, width))
         
-    # TODO: for daily non-merged we need to
-    #       - copy 'tcwv_mean' into 'tcwv'
-    #       - copy 'num_obs' into 'num_obs'
-    #       - copy 'tcwv_sigma' into 'stdv'
-    #       - copy 'tcwv_uncertainty_mean' into 'tcwv_ran'
-    #       - compute and write 'tcwv_err' from 'tcwv_uncertainty_sums_sum_sq'
-    #       - compute and write 'tcwv_quality_flags' from 'tcwv_quality_flags_majority'
-    #       - compute and write 'surface_type_flags_majority' from 'surface_type_flags_majority'
-    # TODO: for daily merged we need to do the same, but no renaming
-    # TODO: for cmsaf we need to do the same, but specific renaming
-    # TODO: monthly: separate script
-
+    # for MONTHLY we just need to
+    #       - copy 'num_obs_sum' into 'num_obs', set attributes
+    #       - copy 'tcwv_mean' into 'tcwv', set attributes
+    #       - copy 'stdv_mean' into 'stdv', set attributes
+    #       - copy 'tcwv_err_mean' into 'tcwv_err', set attributes
+    #       - copy 'tcwv_err_ran' into 'tcwv_ran', set attributes
+    #       - copy 'tcwv_quality_flag_majority' to 'tcwv_quality_flag', set attributes
+    #       - copy 'surface_type_flag_majority' to 'surface_type_flag', set attributes, make cloud_over_land to partly_cloudy_over_land where we have tcwv!
     
 #### Copy variables from source product, set attributes and data:   ###
 
 for name, variable in src.variables.iteritems():
 
-    if name == 'num_obs':
-        dstvar = dst.createVariable('num_obs', variable.datatype, variable.dimensions, zlib=True)
-        copyVariableAttributesFromSource(variable, dstvar)
+    if name == 'num_obs_sum':
+        dstvar = dst.createVariable('num_obs', 'i4', variable.dimensions, zlib=True)
         setVariableLongNameAndUnitAttributes(dstvar, 'Number of Total Column of Water Vapour retrievals contributing to L3 grid cell', ' ')
+        fill_value = -1
+        dstvar.setncattr('_FillValue',  np.array([fill_value], 'i4'))
         dstvar.setncattr('coordinates', 'lat lon')
+        dstvar.setncattr('units', ' ')
+        dstvar[:,:] = variable[:,:]
     if name == 'tcwv_mean': 
         dstvar = dst.createVariable('tcwv', variable.datatype, variable.dimensions, zlib=True)
         copyVariableAttributesFromSource(variable, dstvar)
@@ -361,41 +338,21 @@ for name, variable in src.variables.iteritems():
         dstvar.setncattr('valid_range', np.array([tcwv_min_valid, tcwv_max_valid], 'f4'))
         dstvar.setncattr('ancillary_variables', 'stdv num_obs')
         dstvar[:,:] = variable[:,:]
-    if name == 'tcwv_sigma': 
+    if name == 'stdv_mean': 
         dstvar = dst.createVariable('stdv', variable.datatype, variable.dimensions, zlib=True)
         copyVariableAttributesFromSource(variable, dstvar)
         setVariableLongNameAndUnitAttributes(dstvar, 'Standard deviation of Total Column of Water Vapour', 'kg/m2')
         dstvar[:,:] = variable[:,:]
-    if name == 'tcwv_uncertainty_mean': 
+    if name == 'tcwv_err_mean': 
         dstvar = dst.createVariable('tcwv_err', variable.datatype, variable.dimensions, zlib=True)
         copyVariableAttributesFromSource(variable, dstvar)
         setVariableLongNameAndUnitAttributes(dstvar, 'Average retrieval uncertainty', 'kg/m2')
         dstvar[:,:] = variable[:,:]
-    if name == 'tcwv_uncertainty_sums_sum_sq': 
+    if name == 'tcwv_ran_mean':
         dstvar = dst.createVariable('tcwv_ran', variable.datatype, variable.dimensions, zlib=True)
-        # just set attributes, computation of tcwv_ran below
-        # NOTE: names tcwv_err, tcwv_ran were switched following PSD v2.0 (20191101)
         copyVariableAttributesFromSource(variable, dstvar)
-        setVariableLongNameAndUnitAttributes(dstvar, 'Propagated retrieval uncertainty', 'kg/m2')
-        #// Stengel et al., eq. (3):
-            #  final float tcwvUncertaintySumSq = sourceSamples[SRC_TCWV_UNCERTAINTY_SUM_SQ].getFloat();   // for eq. (3)
-            #  final float sigmaSqrMean = tcwvUncertaintySumSq / numObs;
-            #// DWD wants this term stored instead, as this is what is written into HOAPS products (MS, 20190826):
-            #  final float sigmaSqrMeanHoaps = (1.0f / numObs) * sigmaSqrMean; // = (1.0/(numObs*numObs)) * tcwvUncertaintySumSq
-            #  targetSamples[TRG_TCWV_PROPAGATED_RETRIEVAL_UNCERTAINTY].set(sigmaSqrMeanHoaps);
-
-            # NOTE: names tcwv_err, tcwv_ran were switched following PSD v2.0 (20191101)
-            
-        uncert_sum_sqr_arr = np.array(src.variables['tcwv_uncertainty_sums_sum_sq'])
-        num_obs_arr = np.array(src.variables['num_obs'])
-            
-            # This is the mean of the squares of the MEASURED L2 uncertainties in the bin cell
-            # --> but WHY do we have to divide tcwv_uncertainty_sums_sum by ALL possible measurements??
-            # --> this is because weightCoeff was set to 1.0 in aggregator config instead of 0.0 !!
-        uncert_sum_sqr_arr_norm = uncert_sum_sqr_arr / num_obs_arr
-        sigma_sqr_mean_hoaps_arr = np.sqrt(uncert_sum_sqr_arr_norm) # PSD v2.0 section 3.1.4
-        dstvar[:,:] = sigma_sqr_mean_hoaps_arr[:,:]
-
+        setVariableLongNameAndUnitAttributes(dstvar, 'Random retrieval uncertainty', 'kg/m2')
+        dstvar[:,:] = variable[:,:]
     if name == 'crs': 
         dstvar = dst.createVariable(name, variable.datatype, variable.dimensions, zlib=True)
         copyVariableAttributesFromSource(variable, dstvar)
@@ -423,37 +380,21 @@ for name, variable in src.variables.iteritems():
             dstvar.setncattr('bounds', 'lon_bnds')
             dstvar[:] = variable[:]
 
-### Set TCWV quality flag... ###
             
-variable = dst.variables['tcwv_quality_flag']
-setVariableLongNameAndUnitAttributes(variable, 'Quality flag of Total Column of Water Vapour', ' ')
-variable.setncattr('standard_name', 'status_flag ')
-fill_value = -128
-variable.setncattr('_FillValue', np.array([fill_value], 'b'))
-min_valid = 0
-max_valid = 2 # TODO: adapt to 0..3 after 'Dataset 2' (second flag for cost function value intervals)
-variable.setncattr('valid_range', np.array([min_valid, max_valid], 'b'))
-variable.setncattr('flag_values', np.array([0, 1, 2], 'b'))
-variable.setncattr('flag_meanings', 'TCWV_OK HIGH_COST_FUNCTION TCWV_INVALID')
-
-# set the quality flag values here:
-# flag = 0 for TCWV_OK, flag = 1 for TCWV_HIGH_COST_FUNCTION, flag = 2 for TCWV_INVALID (all NaN pixels)
-
-tcwv_quality_flag_maj_arr_src = np.array(src.variables['tcwv_quality_flags_majority'])
-tcwv_quality_flag_min_arr_src = np.array(src.variables['tcwv_quality_flags_min'])
-tcwv_quality_flag_maj_arr = np.copy(tcwv_quality_flag_maj_arr_src)
-tcwv_quality_flag_min_arr = np.copy(tcwv_quality_flag_min_arr_src)
-tcwv_quality_flag_maj_arr[np.where(np.isnan(tcwv_quality_flag_maj_arr))] = 4
-tcwv_quality_flag_min_arr[np.where(np.isnan(tcwv_quality_flag_min_arr))] = 4
-tmparr = np.copy(tcwv_quality_flag_maj_arr)
-# if the majority is INVALID, we need to take the minimum of the existing samples
-# (otherwise we may have an INVALID flag together with a valid TCWV value)
-indices = np.where(tcwv_quality_flag_maj_arr > 2)
-tmparr[indices] = tcwv_quality_flag_min_arr_src[indices]
-tmparr[np.where(tmparr < 1)] = 4
-tmparr[np.where(np.isnan(tmparr))] = 4
-tcwv_quality_flag_arr = np.log2(tmparr)
-variable[:,:] = tcwv_quality_flag_arr[:,:]
+### Set TCWV quality flag... ###
+# --> DO NOT include in monthly product! (MS, 20190926)
+            
+#variable = dst.variables['tcwv_quality_flag']
+#setVariableLongNameAndUnitAttributes(variable, 'Quality flag of Total Column of Water Vapour', ' ')
+#variable.setncattr('standard_name', 'status_flag ')
+#fill_value = -128
+#variable.setncattr('_FillValue', np.array([fill_value], 'b'))
+#min_valid = 0
+#max_valid = 2 # TODO: adapt to 0..3 after 'Dataset 2' (second flag for cost function value intervals)
+#variable.setncattr('valid_range', np.array([min_valid, max_valid], 'b'))
+#variable.setncattr('flag_values', np.array([0, 1, 2], 'b'))
+#variable.setncattr('flag_meanings', 'TCWV_OK HIGH_COST_FUNCTION TCWV_INVALID')
+#variable[:,:] = src.variables['tcwv_quality_flag_majority'][:,:]
 
 ### Set surface type flag.... ###
 
@@ -468,114 +409,36 @@ variable.setncattr('valid_range', np.array([min_valid, max_valid], 'b'))
 variable.setncattr('flag_values', np.array([0, 1, 2, 3, 4, 5, 6], 'b'))
 variable.setncattr('flag_meanings', 'LAND OCEAN CLOUD_OVER_LAND SEA_ICE COAST PARTLY_CLOUDY_OVER_LAND PARTLY_SEA_ICE')
 
-# in original L3 we can have LAND (1), OCEAN (2), SEAICE (4), LAND+CLOUD (9), OCEAN+CLOUD (10), SEAICE+CLOUD (12):
-# but we want LAND (0), OCEAN (1), CLOUD_OVER_LAND (2), SEA_ICE (3), COAST (4), PARTLY_CLOUDY_OVER_LAND (5), PARTLY_SEA_ICE (6)
-# (invalid is i.e. outside any swaths in daily L3)
-            
-surface_type_flag_arr_src = np.array(src.variables['surface_type_flags_majority'])
-hoaps_surface_type_flag_arr_src = np.array(ds_landmask.variables['mask'])
-tcwv_quality_flag_min_arr_src = np.array(src.variables['tcwv_quality_flags_min'])
+# a) CLOUDY_OVER_LAND (2) in daily products: the pixels identified purely as CLOUD (all L2 samples), no valid TCWV
+# b) PARTLY_CLOUDY_OVER_LAND (5) in daily products: the pixels identified in majority as CLOUD, but have a valid TCWV
+# c) CLOUDY_OVER_LAND (2) in monthly products: all daily aggregates are CLOUDY_OVER_LAND, no valid TCWV (usually very few pixels)
+# d) PARTLY_CLOUDY_OVER_LAND (5) in monthly products: at least 1 , but not all daily aggregates are CLOUDY_OVER_LAND, valid TCWV
+# -->
+# 1. make cloud_over_land to partly_cloudy_over_land (2 to 5) where we have tcwv (refers to b))
+# (we only have cloud_over_land (2, no tcwv) if surface_type = 2 for MIN, MAX and MAJORITY)
+# 2. make cloud over land (2) if surface_type = 2 for MIN, MAX and MAJORITY, and no tcwv (refers to c))
+# 3. make cloud over land (2) if surface_type = 0 or 5 (clear or partly cloudy), and no tcwv (refers to c))
+# 4. make partly_cloudy_over_land (5) if surface_type_MAX = 2  but surface_type_MIN < 2 (cloudy on at least one day but not all days, refers to b))
+
 tcwv_arr_src = np.array(src.variables['tcwv_mean'])
-            
-tmparr = np.copy(surface_type_flag_arr_src)
-tmparr[np.where(np.isnan(tmparr))] = -128  # make NaN to INVALID
-            
-tcwv_arr = np.copy(tcwv_arr_src)
-            
-tcwv_quality_flag_min_arr = np.copy(tcwv_quality_flag_min_arr_src)
-tcwv_quality_flag_min_arr[np.where(np.isnan(tcwv_quality_flag_min_arr))] = -128  # make NaN to INVALID
-            
-hoaps_surface_type_flag_arr = np.copy(hoaps_surface_type_flag_arr_src[0])
-if res == '005':
-    hoaps_surface_type_flag_arr = scipy.ndimage.zoom(hoaps_surface_type_flag_arr, 10, order=0)
-    hoaps_surface_type_flag_arr[np.where(np.isnan(hoaps_surface_type_flag_arr))] = 0  # make NaN to water
-                
-# make ocean + tcwv_quality_flag.TCWV_INVALID + tcwv = NaN to INVALID (fix of originally L2 bug)):
-tmparr[np.where((tmparr > 1) & (tmparr < 3) & (tcwv_quality_flag_min_arr > 2) & (np.isnan(tcwv_arr)))] = -128
-tmparr[np.where(tmparr == 9)] = 4  # make land+cloud to CLOUD OVER LAND
-tmparr[np.where(tmparr == 10)] = 2 # make ocean + cloud to OCEAN
-tmparr[np.where(tmparr == 12)] = 4 # make seaice+cloud to SEA_ICE
-tmparr[np.where(hoaps_surface_type_flag_arr < 1)] = 2  # make hoaps water to OCEAN
-tmparr[np.where(hoaps_surface_type_flag_arr > 1)] = 16 # make hoaps coast to COAST
-tmparr[np.where((hoaps_surface_type_flag_arr == 1) & (tmparr != 4))] = 1 # make hoaps land to LAND if not cloudy
-if seaice_available:
-    seaice_arr_src = np.array(ds_seaice.variables['mask'])
-    seaice_frac_arr_src = np.array(ds_seaice.variables['icec'])
-    day_index = int(day.zfill(1)) - 1
-    seaice_arr_src_day = seaice_arr_src[day_index]
-    seaice_frac_arr_src_day = seaice_frac_arr_src[day_index]
-    if res == '005':
-        seaice_arr_src_day = scipy.ndimage.zoom(seaice_arr_src_day, 10, order=0)
-        seaice_frac_arr_src_day = scipy.ndimage.zoom(seaice_frac_arr_src_day, 10, order=0)
-    seaice_frac_arr_src_day[np.where(np.isnan(seaice_frac_arr_src_day))] = 0  # make NaN to 0
-    tmparr[np.where(seaice_arr_src_day == 11)] = 8 # make hoaps seaice to SEA_ICE
-    #tmparr[np.where(seaice_arr_src_day == 12)] = 64 # make hoaps seaice edge to PARTLY_SEA_ICE
-    # requested by DWD instead: make hoaps seaice > 0% and < 100% to PARTLY_SEA_ICE
-    tmparr[np.where( (seaice_arr_src_day >= 11) & (seaice_frac_arr_src_day > 0) & (seaice_frac_arr_src_day < 100) )] = 64 
+surface_type_flag_arr_maj = np.array(src.variables['surface_type_flag_majority'])
+surface_type_flag_arr_min = np.array(src.variables['surface_type_flag_min'])
+surface_type_flag_arr_max = np.array(src.variables['surface_type_flag_max'])
+tmparr = np.copy(surface_type_flag_arr_maj)
 
-# set PARTLY_CLOUDY_OVER_LAND: must be the pixels identified in majority as CLOUD, but have a valid TCWV:
-tmparr[np.where((np.isfinite(tcwv_arr)) & (tmparr == 4))] = 32
-surface_type_flag_arr = np.log2(tmparr)
-variable[:,:] = surface_type_flag_arr[:,:]
+# set to cloudy if partly cloudy but no valid TCWV:
+tmparr[np.where((surface_type_flag_arr_maj == 5) & (~np.isfinite(tcwv_arr_src)))] = 2
+# set to partly cloudy  if cloudy but valid TCWV: 
+tmparr[np.where((surface_type_flag_arr_maj == 2) & (np.isfinite(tcwv_arr_src)))] = 5
+# set to partly cloudy  if at least one daily sample is partly cloudy, and not already cloudy: 
+tmparr[np.where((surface_type_flag_arr_max == 5) & (tmparr != 2))] = 5
 
-### set num_obs variable.... ###
-var_counts = src.variables['tcwv_uncertainty_counts']
-var_counts_arr = np.array(var_counts).astype(int)
-var_numobs_src = src.variables['num_obs']
-var_numobs_src_arr = np.array(var_numobs_src)
-var_tcwv = dst.variables['tcwv']
-var_tcwv_arr = np.array(var_tcwv)
-var_surface_type = dst.variables['surface_type_flag']
-surface_type_arr = np.array(var_surface_type)
-use_hoaps = np.where((surface_type_arr == 1) & (~np.isnan(var_tcwv_arr)))
 
-dstvar = dst.variables['num_obs']
-tmparr = np.copy(var_counts_arr)
-if sensor.find("hoaps") != -1:
-    # if existing, we have to prioritize the HOAPS num_obs over ocean
-    # Note that the meaning of HOAPS 'num_obs' corresponds to NIR 'tcwv_counts' !!
-    tmparr[use_hoaps] = var_numobs_src_arr[use_hoaps]
-else:
-    tmparr[:,:] = var_counts[:,:]
-tmparr[np.where(np.isnan(var_tcwv_arr))] = 0
-dstvar[:,:] = tmparr[:,:]
-
-### set tcwv_err and tcwv_ran in case of existing HOAPS... ###
-has_wvpa_errors = False
-for name, variable in src.variables.iteritems():
-    if name == 'wvpa_err' or name == 'wvpa_ran':
-        has_wvpa_errors = True
-
-if has_wvpa_errors:
-    setOceanWvpaErrors(dst.variables['tcwv_err'], surface_type_arr, var_tcwv_arr, np.array(src.variables['wvpa_err']), has_wvpa_errors)
-    setOceanWvpaErrors(dst.variables['tcwv_ran'], surface_type_arr, var_tcwv_arr, np.array(src.variables['wvpa_ran']), has_wvpa_errors)
-else:
-    # if no HOAPS, set wvpa errors to NaN over ocean
-    setOceanWvpaErrors(dst.variables['tcwv_err'], surface_type_arr, var_tcwv_arr, None, has_wvpa_errors)
-    setOceanWvpaErrors(dst.variables['tcwv_ran'], surface_type_arr, var_tcwv_arr, None, has_wvpa_errors)
-
-### set tcwv_quality_flag in case of existing HOAPS... ###
-dstvar = dst.variables['tcwv_quality_flag']
-tcwv_qual_arr = np.array(dstvar).astype(int)
-tmparr = np.copy(tcwv_qual_arr)
-if sensor.find("hoaps") != -1:
-    use_hoaps_ok = np.where(((surface_type_arr == 1) | (surface_type_arr == 4) | (surface_type_arr == 6)) & (~np.isnan(var_tcwv_arr)))
-    tmparr[use_hoaps_ok] = 0
-    use_hoaps_nok = np.where(((surface_type_arr == 1) | (surface_type_arr == 4) | (surface_type_arr == 6)) & (np.isnan(var_tcwv_arr)))
-    tmparr[use_hoaps_nok] = 2
-    dstvar[:,:] = tmparr[:,:]
-
-### if CDR-1 (land only!), reset everything over ocean:
-if sensor.find("hoaps") == -1:
-    # set num_obs to 0:
-    resetOceanCdr1(dst.variables['num_obs'], surface_type_arr, 0)    
-    # set tcwv, stdv, and error terms to nan:
-    resetOceanCdr1(dst.variables['tcwv'], surface_type_arr, np.nan)    
-    resetOceanCdr1(dst.variables['stdv'], surface_type_arr, np.nan)    
-    resetOceanCdr1(dst.variables['tcwv_err'], surface_type_arr, np.nan)    
-    resetOceanCdr1(dst.variables['tcwv_ran'], surface_type_arr, np.nan)    
-    # set tcwv_quality_flag to 2:
-    resetOceanCdr1(dst.variables['tcwv_quality_flag'], surface_type_arr, 2)    
+#tmparr[np.where((tmparr == 2) & (np.isfinite(tcwv_arr_src)))] = 5  # (b)
+#tmparr[np.where((surface_type_flag_arr_max == 2) & (surface_type_flag_arr_min < 2))] = 5 # (b)
+#tmparr[np.where((surface_type_flag_arr_max == 2) & (surface_type_flag_arr_min == 2) & (tmparr == 2))] = 2 # (c)
+#tmparr[np.where(((tmparr == 0) | (tmparr == 5)) & (surface_type_flag_arr_maj != 3)  & (surface_type_flag_arr_maj != 6) & (~np.isfinite(tcwv_arr_src)))] = 2 # (c)
+variable[:,:] = tmparr[:,:]
 
 ### Close files... ###
 

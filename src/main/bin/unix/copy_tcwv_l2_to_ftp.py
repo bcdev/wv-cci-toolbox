@@ -17,14 +17,12 @@ from calendar import monthrange, isleap
 ##########################################################################
 
 def getMonths(year, sensor):
-    if year == '2002':
-        months  = [ '04', '05', '06', '07', '08', '09', '10', '11', '12' ]
-    elif year == '2012':
-        months  = [ '01', '02', '03', '04' ]
-    else:
-        months  = [ '01' ]
-        #months  = [ '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12' ]
-
+    #months  = [ '01', '04', '07', '10' ]
+    #months  = [ '02', '05', '08', '11' ]
+    #months  = [ '03', '06', '09', '12' ]
+    #months  = [ '08', '09', '11', '12' ]
+    #months  = [ '08', '09' ]
+    months  = [ '12' ]
     return months
 
 ##########################################################################
@@ -42,36 +40,26 @@ def getMinMaxDate(year, month):
 
 ##########################################################################
 
-sensor = 'modis_terra'
+#sensor = 'modis_terra'
+sensor = 'olci'
 #sensor = 'meris'
-years = ['2011']
+years = ['2017']
 
-if sensor == 'meris':
-    srcBaseDir = '/mnt/hdfs/calvalus/projects/wvcci/tcwv/' + sensor + '/l2/nc/'
-else:
-    srcBaseDir = '/mnt/hdfs/calvalus/projects/wvcci/tcwv/' + sensor + '/l2/'
+srcBaseDir = '/mnt/hdfs/calvalus/projects/wvcci/tcwv/' + sensor + '/l2/nc-final/'
+#if sensor == 'meris':
+#    srcBaseDir = '/mnt/hdfs/calvalus/projects/wvcci/tcwv/' + sensor + '/l2/nc/'
+#else:
+#    srcBaseDir = '/mnt/hdfs/calvalus/projects/wvcci/tcwv/' + sensor + '/l2/'
 
-dstBaseDir = '/data/ftp/cciwv/data/tcwv/' + sensor + '/l2/'
+#dstBaseDir = '/data/ftp/cciwv/data/tcwv/' + sensor + '/l2/'
+dstBaseDir = '/data/ftp/cciwv/data/tcwv/for_tim/l2/dataset2/' + sensor + '/'
 
 excludes = ['_temporary', '_SUCCESS', '_processing_metadata', 'part-r-00000']
 #excludes = []
+excludes = ['product-sets.csv', '_temporary', '_SUCCESS']
 exclStr = ''
 for e in excludes:
     exclStr += ' --exclude=' + e + ' '
-
-#for year in years:
-#    for month in getMonths(year, sensor):
-#        for iday in range(1, getNumDaysInMonth(year, month)+1):
-#            day = str(iday).zfill(2)
-#            srcTcwvDir = srcBaseDir + year + '/' + month + '/' + day + '/' 
-#            dstTcwvDir = dstBaseDir + year + '/' + month + '/' + day + '/' 
-#            if exists(srcTcwvDir):
-#                cmd = "rsync -avOP " + exclStr + srcTcwvDir + " olafd@bcserver8:" + dstTcwvDir
-#                #print("cmd: ", cmd)
-#                print(cmd)
-#                system(cmd)
-#            else:
-#                print(srcTcwvDir, " does not exist!")
 
 # keep number of rsync calls smaller (i.e. per month), as these calls ask for pwd every time
 for year in years:

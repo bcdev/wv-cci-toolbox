@@ -76,8 +76,34 @@ class=org.esa.snap.core.gpf.main.GPT
 
 if [[ $sensor2 =~ "hoaps" ]]
 then
-  echo "/usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Hoaps -SnirProduct=${sensor1_infile} -ShoapsProduct=$(pwd)/${sensor2_infile_name} -f NetCDF4-WVCCI -t ./${outfile}.nc"
-  /usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Hoaps -SnirProduct=${sensor1_infile} -ShoapsProduct=$(pwd)/${sensor2_infile_name} -f NetCDF4-WVCCI -t ./${outfile}.nc
+  # in case of HOAPS we need landmask and seaice mask...
+  iday=$((10#$day))
+
+  # copy landmask file from HDFS to current dir:
+  landmaskFilePath="/calvalus/projects/wvcci/auxdata/landmask/kosh/kosh.r30.lmask.nc"
+  echo "KOSH landmask HDFS file path: '${landmaskFilePath}'"
+  if ! copy_file_from_hdfs ${landmaskFilePath}; then
+    echo "failed to get KOSH landmask file '${landmaskFilePath}'"
+    exit 1
+  fi
+  landmaskFile="kosh.r30.lmask.nc"
+
+  # copy seaice file from HDFS to current dir:
+  seaiceFilePath="/calvalus/projects/wvcci/auxdata/seaice/${year}/hoaps-g.r30.d01.icec.${year}-${month}.nc"
+  echo "Seaice HDFS file path: '${seaiceFilePath}'"
+  if ! copy_file_from_hdfs ${seaiceFilePath}; then
+    echo "failed to get seaice file '${seaiceFilePath}' - will do compliance step without seaice info..."
+    echo "Directory listing before processing:"
+    echo "`ls -la $(pwd)`"
+    echo "/usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Hoaps -SnirProduct=${sensor1_infile} -ShoapsProduct=$(pwd)/${sensor2_infile_name} -SlandmaskProduct=$(pwd)/${landmaskFile} -PdayOfMonth=$iday -f NetCDF4-WVCCI -t ./${outfile}.nc"
+    /usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Hoaps -SnirProduct=${sensor1_infile} -ShoapsProduct=$(pwd)/${sensor2_infile_name} -SlandmaskProduct=$(pwd)/${landmaskFile} -PdayOfMonth=$iday -f NetCDF4-WVCCI -t ./${outfile}.nc
+  else
+    seaiceFile="hoaps-g.r30.d01.icec.${year}-${month}.nc"
+    echo "Directory listing before processing:"
+    echo "`ls -la $(pwd)`"
+    echo "/usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Hoaps -SnirProduct=${sensor1_infile} -ShoapsProduct=$(pwd)/${sensor2_infile_name} -SlandmaskProduct=$(pwd)/${landmaskFile} -SseaiceProduct=$(pwd)/${seaiceFile} -PdayOfMonth=$iday -f NetCDF4-WVCCI -t ./${outfile}.nc"
+    /usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Hoaps -SnirProduct=${sensor1_infile} -ShoapsProduct=$(pwd)/${sensor2_infile_name} -SlandmaskProduct=$(pwd)/${landmaskFile} -SseaiceProduct=$(pwd)/${seaiceFile} -PdayOfMonth=$iday -f NetCDF4-WVCCI -t ./${outfile}.nc
+  fi
 else
   echo "/usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Nir -Ssensor1Product=${sensor1_infile} -Ssensor2Product=$(pwd)/${sensor2_infile_name} -f NetCDF4-WVCCI -t ./${outfile}.nc"
   /usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Nir -Ssensor1Product=${sensor1_infile} -Ssensor2Product=$(pwd)/${sensor2_infile_name} -f NetCDF4-WVCCI -t ./${outfile}.nc
