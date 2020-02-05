@@ -265,9 +265,13 @@ public class TcwvOp extends Operator {
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_UNDEFINED, !isValid);
                 
                 // todo: set to invalid also if
-                //  - any input reflectance is < 0.001
-                //  - any input reflectance for a coastal pixel is < 0.005
-                //  - sza > 75
+                //  - sza > 75  (all sensors)
+                //  - any input reflectance is < 0.001 (all sensors), but be careful:
+                //      --> in Python it is:
+                //              # data['rad'][wvl],
+                //          which is in Java:
+                //              # RefSB_* / Math.PI (MODIS)
+                //              # rhoToa * cos(sza) (MERIS, OLCI)
 
                 if (!isValid || isCloud || (!processOcean && !isLand)) {
                     targetTiles.get(tcwvBand).setSample(x, y, Float.NaN);
