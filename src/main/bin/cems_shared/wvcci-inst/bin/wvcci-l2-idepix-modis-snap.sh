@@ -31,6 +31,10 @@ if [ "$sensor" == "MODIS_TERRA" ]
 then
     echo "time ${SNAP_HOME}/bin/gpt Idepix.Modis -e -SsourceProduct=$l1bPath -SmodisWaterMask=$landMaskPath -PreflBandsToCopy=EV_250_Aggr1km_RefSB_2,EV_500_Aggr1km_RefSB_5,EV_1KM_RefSB_17,EV_1KM_RefSB_18,EV_1KM_RefSB_19 -f NetCDF4-IDEPIX-MODIS -t $idepixFile"
     time ${SNAP_HOME}/bin/gpt Idepix.Modis -e -SsourceProduct=$l1bPath -SmodisWaterMask=$landMaskPath -PreflBandsToCopy=EV_250_Aggr1km_RefSB_2,EV_500_Aggr1km_RefSB_5,EV_1KM_RefSB_17,EV_1KM_RefSB_18,EV_1KM_RefSB_19 -f NetCDF4-IDEPIX-MODIS -t $idepixFile
+    
+    # why gpt_idepix?? 20200222
+    #echo "time ${SNAP_HOME}/bin/gpt_idepix Idepix.Modis -q 2 -e -SsourceProduct=$l1bPath -SmodisWaterMask=$landMaskPath -PreflBandsToCopy=EV_250_Aggr1km_RefSB_2,EV_500_Aggr1km_RefSB_5,EV_1KM_RefSB_17,EV_1KM_RefSB_18,EV_1KM_RefSB_19 -f NetCDF4-IDEPIX-MODIS -t $idepixFile"
+    #time ${SNAP_HOME}/bin/gpt_idepix Idepix.Modis -q 2 -e -SsourceProduct=$l1bPath -SmodisWaterMask=$landMaskPath -PreflBandsToCopy=EV_250_Aggr1km_RefSB_2,EV_500_Aggr1km_RefSB_5,EV_1KM_RefSB_17,EV_1KM_RefSB_18,EV_1KM_RefSB_19 -f NetCDF4-IDEPIX-MODIS -t $idepixFile
 else
     echo "Invalid sensor $sensor - no Idepix processing started."
 fi

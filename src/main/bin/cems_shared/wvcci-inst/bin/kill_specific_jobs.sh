@@ -4,3 +4,4 @@ echo "Killing specific jobs containing '$KILLME'..."
 KILLJOBS=`ps -ef | grep odanne |grep $KILLME | awk -F" " '{print $2}'`
 echo $KILLJOBS
 kill $KILLJOBS
+kill -9 $KILLJOBS

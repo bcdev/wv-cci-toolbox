@@ -15,7 +15,7 @@ wvcciRootDir=$8
 
 task="wvcci-l2-tcwv-modis"
 jobname="${task}-${year}-${month}-${day}-${hhmm}"
-command0="./bin/${task}-bash.sh"
+command0="./bin/${task}-bash_OLD.sh"
 command="${command0} ${idepixPath} ${idepixFile} ${cloudMaskPath} ${year} ${month} ${day} ${wvcciRootDir}"
 
 echo "jobname: $jobname"
@@ -28,10 +28,8 @@ echo "calling read_task_jobs()..."
 read_task_jobs ${jobname}
 
 if [ -z ${jobs} ]; then
-    #timelim=180
-    #memlim=16000
-    timelim=120
-    memlim=8000
+    timelim=180
+    memlim=16000
     echo "submit_job ${jobname} ${command} ${timelim} ${memlim}"
     submit_job ${jobname} "${command}" ${timelim} ${memlim}
 fi

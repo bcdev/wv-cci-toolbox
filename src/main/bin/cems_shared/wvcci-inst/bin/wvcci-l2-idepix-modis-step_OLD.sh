@@ -12,14 +12,15 @@ sensor=$6
 year=$7
 month=$8
 wvcciRootDir=$9
+snapDir=${10}
 
 l1bBaseName=`basename $l1bFile .hdf`
 echo "l1bBaseName: $l1bBaseName"
 
 task="wvcci-l2-idepix-modis"
 jobname="${task}-${sensor}-${year}-${month}-${l1bBaseName}"
-command0="./bin/${task}-snap.sh"
-command="${command0} ${l1bPath} ${landMaskPath} ${l1bFile} ${idepixL2Dir} ${sensor} ${year} ${month} ${wvcciRootDir}"
+command0="./bin/${task}-snap_OLD.sh"
+command="${command0} ${l1bPath} ${landMaskPath} ${l1bFile} ${idepixL2Dir} ${sensor} ${year} ${month} ${wvcciRootDir} ${snapDir}"
 
 echo "jobname: $jobname"
 echo "command0: $command0"
@@ -34,10 +35,4 @@ if [ -z ${jobs} ]; then
     # use default parameters for time and memory limits in bsub call
     echo "submit_job ${jobname} ${command} 60 8000"
     submit_job ${jobname} "${command}" 60 8000
-
-    #timelim=120
-    #memlim=16000
-    #echo "submit_job ${jobname} ${command} ${timelim} ${memlim}"
-    #submit_job ${jobname} "${command}" ${timelim} ${memlim}
-
 fi

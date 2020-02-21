@@ -13,10 +13,10 @@ sensor = 'MODIS_TERRA'
 
 #years = ['2017']
 #years = ['2016']
-#years = ['2011']
-years = ['2011','2016']
+years = ['2016']
+#years = ['2011','2016']
 
-allMonths = ['07']
+allMonths = ['09']
 #allMonths = ['01','02','03']
 #allMonths = ['04','05','06']
 #allMonths = ['07','08','09']
@@ -36,16 +36,19 @@ def getMonth(year):
 
 wvcciRootDir = '/gws/nopw/j04/esacci_wv/odanne/WvcciRoot'
 eraInterimRootDir = wvcciRootDir + '/auxiliary/era-interim-t2m-mslp-tcwv-u10-v10'
+snapDir = '/gws/nopw/j04/esacci_wv/software/snap'
+#snapDir = '/gws/nopw/j04/esacci_wv/software/snap/release_6.0'
+#snapDir = '/gws/nopw/j04/esacci_wv/software/snap/release_7.0'  # todo: always use SNAP_HOME instead
 
 inputs = ['dummy']
 
 # NEW PMonitor version, MB/TB Nov 2018:
 m = PMonitor(inputs,
-             request='wvcci-l2-tcwv-modis-chain',
+             request='wvcci-l2-tcwv-modis-chain_OLD',
              logdir='log',
-             hosts=[('localhost',256)],
-             types=[('wvcci-l2-idepix-modis-step.sh',64),
-                    ('wvcci-l2-tcwv-modis-step.sh', 128)],
+             hosts=[('localhost',384)],
+             types=[('wvcci-l2-idepix-modis-step_OLD.sh',128),
+                    ('wvcci-l2-tcwv-modis-step_OLD.sh', 256)],
              polling="job_status_callback.sh")
 
 for year in years:
@@ -99,10 +102,10 @@ for year in years:
 
                                         # Idepix:
                                         idepixFile = l1bFileBase + '_idepix.nc'
-                                        m.execute('wvcci-l2-idepix-modis-step.sh', 
+                                        m.execute('wvcci-l2-idepix-modis-step_OLD.sh', 
                                                    ['dummy'], 
                                                    [idepixFile], 
-                                                   parameters=[l1bPath,modisLandMaskPath,l1bFiles[index],modisLandMaskFiles[0],idepixDir,sensor,year,month,wvcciRootDir])
+                                                   parameters=[l1bPath,modisLandMaskPath,l1bFiles[index],modisLandMaskFiles[0],idepixDir,sensor,year,month,wvcciRootDir,snapDir])
 
                                         idepixPath = idepixDir + '/' + idepixFile
 
@@ -116,10 +119,10 @@ for year in years:
                                         # should be OK?! (20190716)
 
                                         idepixEraFile = l1bFileBase + '_idepix-era-interim.nc'
-                                        m.execute('wvcci-l2-tcwv-modis-step.sh',
+                                        m.execute('wvcci-l2-tcwv-modis-step_OLD.sh',
                                                    [idepixFile],
                                                    [idepixEraFile],
-                                                   parameters=[idepixPath,idepixFile,modisCloudMaskPath,year,month,day,hhmm,wvcciRootDir])
+                                                   parameters=[idepixPath,idepixFile,modisCloudMaskPath,year,month,day,hhmm,wvcciRootDir,snapDir])
 
 m.wait_for_completion()
 
