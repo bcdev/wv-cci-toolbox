@@ -249,7 +249,7 @@ public class TcwvOp extends Operator {
         for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; y++) {
             checkForCancellation();
             for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
-                final boolean isValid = mod35Used ||
+                boolean isValid = mod35Used ||
                         !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_INVALID_BIT);
                 final boolean isLand = isValid && (mod35Used ? isMod35Land(x, y, pixelClassifTile) :
                         isIdepixLand(x, y, pixelClassifTile));
@@ -258,20 +258,24 @@ public class TcwvOp extends Operator {
                 final boolean isCloud = isValid && (mod35Used ? isMod35Cloud(x, y, pixelClassifTile) :
                         isIdepixCloud(x, y, pixelClassifTile));
 
+                // set to invalid if SZA > 75deg (RP, Jan 2020)
+                final double sza = szaTile.getSampleDouble(x, y);
+                isValid = isValid && sza <= 75.0;
+
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_LAND, isLand);
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_OCEAN, isOcean);
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_CLOUD, isCloud);
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_SEA_ICE, isSeaIce);
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_UNDEFINED, !isValid);
-                
+
                 // todo: set to invalid also if
-                //  - sza > 75  (all sensors)
                 //  - any input reflectance is < 0.001 (all sensors), but be careful:
                 //      --> in Python it is:
                 //              # data['rad'][wvl],
                 //          which is in Java:
                 //              # RefSB_* / Math.PI (MODIS)
                 //              # rhoToa * cos(sza) (MERIS, OLCI)
+
 
                 if (!isValid || isCloud || (!processOcean && !isLand)) {
                     targetTiles.get(tcwvBand).setSample(x, y, Float.NaN);
@@ -286,7 +290,7 @@ public class TcwvOp extends Operator {
                     }
                 } else {
                     // Preparing input data...
-                    final double szaR = szaTile.getSampleDouble(x, y) * MathUtils.DTOR;
+                    final double szaR = sza * MathUtils.DTOR;
                     final double vzaR = vzaTile.getSampleDouble(x, y) * MathUtils.DTOR;
                     final double saaR = saaTile.getSampleDouble(x, y) * MathUtils.DTOR;
                     final double vaaR = vaaTile.getSampleDouble(x, y) * MathUtils.DTOR;
@@ -332,7 +336,7 @@ public class TcwvOp extends Operator {
                     final double[] absBandData = isLand ? landAbsBandData : oceanAbsBandData;
                     normalizeSpectralInputBands(y, x, csza, winBandTiles, winBandData);
                     normalizeSpectralInputBands(y, x, csza, absBandTiles, absBandData);
-                    TcwvAlgorithmInput input = new TcwvAlgorithmInput(winBandData, absBandData, szaTile.getSampleDouble(x, y), vzaTile.getSampleDouble(x, y), relAzi,
+                    TcwvAlgorithmInput input = new TcwvAlgorithmInput(winBandData, absBandData, sza, vzaTile.getSampleDouble(x, y), relAzi,
                                                                       amf, priorAot, priorAl0, priorAl1,
                                                                       t2m, prs, priorWs, priorTcwv);
 
