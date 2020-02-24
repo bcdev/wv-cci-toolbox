@@ -125,7 +125,7 @@ public class TcwvOp extends Operator {
         if (mod35Product != null && (sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA)) {
             validateMod35Product(mod35Product);
             pixelClassifBand = mod35Product.getBand(TcwvConstants.PIXEL_CLASSIF_BAND_NAME);
-            idepixClassifBand = sourceProduct.getBand(TcwvConstants.PIXEL_CLASSIF_BAND_NAME);
+//            idepixClassifBand = sourceProduct.getBand(TcwvConstants.PIXEL_CLASSIF_BAND_NAME);
             mod35Used = true;
         } else {
             pixelClassifBand = sourceProduct.getBand(TcwvConstants.PIXEL_CLASSIF_BAND_NAME);
@@ -233,7 +233,10 @@ public class TcwvOp extends Operator {
         Tile vaaTile = getSourceTile(vaaBand, targetRectangle);
 
         Tile pixelClassifTile = getSourceTile(pixelClassifBand, targetRectangle);
-        Tile idepixClassifTile = getSourceTile(idepixClassifBand, targetRectangle);
+        Tile idepixClassifTile = null;
+        if (sensor != Sensor.MODIS_TERRA && sensor != Sensor.MODIS_AQUA) {
+            idepixClassifTile = getSourceTile(idepixClassifBand, targetRectangle);
+        }
 
         Tile priorT2mTile = getTcwvInputTile(priorT2mBand, targetRectangle);
         Tile priorMslTile = getTcwvInputTile(priorMslBand, targetRectangle);
@@ -253,7 +256,10 @@ public class TcwvOp extends Operator {
                         !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_INVALID_BIT);
                 final boolean isLand = isValid && (mod35Used ? isMod35Land(x, y, pixelClassifTile) :
                         isIdepixLand(x, y, pixelClassifTile));
-                final boolean isSeaIce = isValid && isIdepixSeaIce(x, y, idepixClassifTile);
+                boolean isSeaIce = false;
+                if (sensor != Sensor.MODIS_TERRA && sensor != Sensor.MODIS_AQUA) {
+                    isSeaIce = isValid && isIdepixSeaIce(x, y, idepixClassifTile);
+                }
                 final boolean isOcean = isValid && !isLand && !isSeaIce;
                 final boolean isCloud = isValid && (mod35Used ? isMod35Cloud(x, y, pixelClassifTile) :
                         isIdepixCloud(x, y, pixelClassifTile));
@@ -460,10 +466,12 @@ public class TcwvOp extends Operator {
     }
 
     private static void validateSourceProduct(Sensor sensor, Product sourceProduct) {
-        if (!sourceProduct.containsBand(TcwvConstants.PIXEL_CLASSIF_BAND_NAME)) {
-            throw new OperatorException("Source product is not valid, as it does not contain " +
-                                                "pixel classification flag band '" +
-                                                TcwvConstants.PIXEL_CLASSIF_BAND_NAME + "'.");
+        if (sensor != Sensor.MODIS_TERRA && sensor != Sensor.MODIS_AQUA) {
+            if (!sourceProduct.containsBand(TcwvConstants.PIXEL_CLASSIF_BAND_NAME)) {
+                throw new OperatorException("Source product is not valid, as it does not contain " +
+                                                    "pixel classification flag band '" +
+                                                    TcwvConstants.PIXEL_CLASSIF_BAND_NAME + "'.");
+            }
         }
 
         for (String bandName : sensor.getReflBandNames()) {

@@ -1,9 +1,7 @@
 package org.esa.snap.wvcci.tcwv.util;
 
-import org.esa.snap.core.datamodel.Band;
-import org.esa.snap.core.datamodel.FlagCoding;
-import org.esa.snap.core.datamodel.Mask;
-import org.esa.snap.core.datamodel.Product;
+import org.esa.snap.core.datamodel.*;
+import org.esa.snap.core.gpf.OperatorException;
 import org.esa.snap.core.util.BitSetter;
 import org.esa.snap.wvcci.tcwv.TcwvConstants;
 
@@ -185,4 +183,15 @@ public class TcwvUtils {
     public static double computePseudoAbsorptionMeasurementVariance(double snr, double interpolError, double amf) {
        return ((1.0/(snr*snr)) + (1.0/(snr*snr) + interpolError)) / amf;
     }
+
+    public static void checkIfMod021KMDayProduct(Product product) {
+        final MetadataAttribute dayNightAttr = product.getMetadataRoot().getElement("Global_Attributes").
+                getAttribute("DayNightFlag");
+
+        if (dayNightAttr != null && !dayNightAttr.getData().getElemString().equals("Day")) {
+            throw new OperatorException("Product '" + product.getName() +
+                                                "' does not seem to be a MODIS L1b Day product - will exit IdePix.");
+        }
+    }
+
 }
