@@ -30,10 +30,14 @@ public class MergeModisL1bEraInterimOp extends Operator {
     private String[] eraInterimBandsToCopy = {"t2m","msl","tcwv"};
 
     @Parameter(defaultValue = "true",
+            label = " If set, check L1b product for correct input")
+    private boolean validateL1b;
+
+    @Parameter(defaultValue = "true",
             label = " Process only products with DayNightFlag = 'Day'")
     private boolean processDayProductsOnly;
 
-    
+
     @SourceProduct(description = "IdePix product")
     private Product l1bProduct;
 
@@ -48,7 +52,9 @@ public class MergeModisL1bEraInterimOp extends Operator {
             TcwvUtils.checkIfMod021KMDayProduct(l1bProduct);
         }
 
-        validateL1bProduct();
+        if (validateL1b) {
+            validateL1bProduct();
+        }
         ProductUtils.copyGeoCoding(l1bProduct, eraInterimProduct);
         ProductUtils.copyGeoCoding(l1bProduct, eraInterimProduct);
 
@@ -56,22 +62,24 @@ public class MergeModisL1bEraInterimOp extends Operator {
         mergeOp.setSourceProducts(eraInterimProduct);
         mergeOp.setSourceProduct("masterProduct", l1bProduct);
 
-        final MergeOp.NodeDescriptor inclModL1bDescriptor = new MergeOp.NodeDescriptor();
-        inclModL1bDescriptor.setNamePattern(".*");
-        inclModL1bDescriptor.setProductId("masterProduct");
+        final String[] reflBandNames = Sensor.MODIS_TERRA.getReflBandNames();
+        final int numReflBands = reflBandNames.length;
+        final MergeOp.NodeDescriptor[] includeDescriptor =
+                new MergeOp.NodeDescriptor[numReflBands + eraInterimBandsToCopy.length];
 
-        final MergeOp.NodeDescriptor[] includeEraInterimDescriptor =
-                new MergeOp.NodeDescriptor[eraInterimBandsToCopy.length+1];
-        includeEraInterimDescriptor[0] = new MergeOp.NodeDescriptor();
-        includeEraInterimDescriptor[0].setProductId("masterProduct");
-        includeEraInterimDescriptor[0].setNamePattern(".*");
-        for (int i = 1; i < includeEraInterimDescriptor.length; i++) {
-            includeEraInterimDescriptor[i] = new MergeOp.NodeDescriptor();
-            includeEraInterimDescriptor[i].setProductId("sourceProduct.1");
-            includeEraInterimDescriptor[i].setNamePattern(eraInterimBandsToCopy[i-1]);
+        for (int i=0; i<numReflBands; i++) {
+            includeDescriptor[i] = new MergeOp.NodeDescriptor();
+            includeDescriptor[i].setProductId("masterProduct");
+            includeDescriptor[i].setName(reflBandNames[i]);
+        }
+
+        for (int i = numReflBands; i < includeDescriptor.length; i++) {
+            includeDescriptor[i] = new MergeOp.NodeDescriptor();
+            includeDescriptor[i].setProductId("sourceProduct.1");
+            includeDescriptor[i].setNamePattern(eraInterimBandsToCopy[i-numReflBands]);
         }
         mergeOp.setParameterDefaultValues();
-        mergeOp.setParameter("includes", includeEraInterimDescriptor);
+        mergeOp.setParameter("includes", includeDescriptor);
 
         setTargetProduct(mergeOp.getTargetProduct());
     }
