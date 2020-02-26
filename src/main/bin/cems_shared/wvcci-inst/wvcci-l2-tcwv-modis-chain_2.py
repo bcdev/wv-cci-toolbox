@@ -13,10 +13,10 @@ sensor = 'MODIS_TERRA'
 
 #years = ['2017']
 #years = ['2016']
-#years = ['2016']
-years = ['2011','2016']
+years = ['2011']
+#years = ['2011','2016']
 
-allMonths = ['01']
+allMonths = ['10']
 #allMonths = ['01','02','03']
 #allMonths = ['04','05','06']
 #allMonths = ['07','08','09']
@@ -36,19 +36,15 @@ def getMonth(year):
 
 wvcciRootDir = '/gws/nopw/j04/esacci_wv/odanne/WvcciRoot'
 eraInterimRootDir = wvcciRootDir + '/auxiliary/era-interim-t2m-mslp-tcwv-u10-v10'
-snapDir = '/gws/nopw/j04/esacci_wv/software/snap'
-#snapDir = '/gws/nopw/j04/esacci_wv/software/snap/release_6.0'
-#snapDir = '/gws/nopw/j04/esacci_wv/software/snap/release_7.0'  # todo: always use SNAP_HOME instead
 
 inputs = ['dummy']
 
 # NEW PMonitor version, MB/TB Nov 2018:
 m = PMonitor(inputs,
-             request='wvcci-l2-tcwv-modis-chain_OLD',
+             request='wvcci-l2-tcwv-modis-chain_2',
              logdir='log',
-             hosts=[('localhost',384)],
-             types=[('wvcci-l2-idepix-modis-step_OLD.sh',128),
-                    ('wvcci-l2-tcwv-modis-step_OLD.sh', 256)],
+             hosts=[('localhost',256)],
+             types=[('wvcci-l2-tcwv-modis-step_2.sh', 256)],
              polling="job_status_callback.sh")
 
 for year in years:
@@ -66,13 +62,11 @@ for year in years:
             print('numMonthDays: ' + str(numMonthDays))
 
             #for day in days:
-            #for iday in range(4, 5):
+            #for iday in range(23, 24):
             for iday in range(1, numMonthDays+1):
                 day = str(iday).zfill(2)
                 print('day: ' + day)
 
-                idepixDir = wvcciRootDir + '/Idepix/' + sensor + '/' + year + '/' + month + '/' + str(day).zfill(2)
-                idepixEraDir = wvcciRootDir + '/Idepix-Erainterim/' + sensor + '/' + year + '/' + month + '/' + str(day).zfill(2)
                 tcwvDir = wvcciRootDir + '/Tcwv/' + sensor + '/' + year + '/' + month + '/' + str(day).zfill(2)
 
                 if os.path.exists(l1bRootDir + '/' + year + '/' + month + '/' + str(day).zfill(2)):
@@ -98,31 +92,17 @@ for year in years:
                                     if os.path.exists(modisLandMaskPath):
                                         l1bFileBase = os.path.splitext(l1bFiles[index])[0]
 
-                                        # =============== Idepix  =======================
-
-                                        # Idepix:
-                                        idepixFile = l1bFileBase + '_idepix.nc'
-                                        m.execute('wvcci-l2-idepix-modis-step_OLD.sh', 
-                                                   ['dummy'], 
-                                                   [idepixFile], 
-                                                   parameters=[l1bPath,modisLandMaskPath,l1bFiles[index],modisLandMaskFiles[0],idepixDir,sensor,year,month,wvcciRootDir,snapDir])
-
-                                        idepixPath = idepixDir + '/' + idepixFile
-
                                         # cloud product e.g. MOD35_L2.A2015196.1855.061.2017321064215.hdf
                                         modisCloudMaskFiles = fnmatch.filter(os.listdir(modisCloudMaskRootDir + '/' + year + '/' + month + '/' + str(day).zfill(2)), fileFilter)
                                         modisCloudMaskPath = modisCloudMaskRootDir + '/' + year + '/' + month + '/' + str(day).zfill(2) + '/' + modisCloudMaskFiles[0]
 
-                                        # =============== Merge Idepix with ERA-INTERIM, then TCWV from Idepix-ERA-INTERIM merge product  =======================
+                                        # =============== Merge MODIS L1b with ERA-INTERIM, then TCWV from Idepix-ERA-INTERIM merge product  =======================
 
-                                        # !!! TODO: make sure that l1bFiles[index], modisLandMaskFiles[index] and modisCloudMaskFiles[0] refer to the same swath/time !!!
-                                        # should be OK?! (20190716)
-
-                                        idepixEraFile = l1bFileBase + '_idepix-era-interim.nc'
-                                        m.execute('wvcci-l2-tcwv-modis-step_OLD.sh',
-                                                   [idepixFile],
-                                                   [idepixEraFile],
-                                                   parameters=[idepixPath,idepixFile,modisCloudMaskPath,year,month,day,hhmm,wvcciRootDir,snapDir])
+                                        l1bEraFile = l1bFileBase + '_l1b-era-interim.nc'
+                                        m.execute('wvcci-l2-tcwv-modis-step_2.sh',
+                                                   ['dummy'],
+                                                   [l1bEraFile],
+                                                   parameters=[l1bPath,l1bFiles[index],modisCloudMaskPath,year,month,day,hhmm,wvcciRootDir])
 
 m.wait_for_completion()
 

@@ -16,7 +16,7 @@ sensor = 'MODIS_TERRA'
 #years = ['2011']
 years = ['2011','2016']
 
-allMonths = ['07']
+allMonths = ['01']
 #allMonths = ['01','02','03']
 #allMonths = ['04','05','06']
 #allMonths = ['07','08','09']
