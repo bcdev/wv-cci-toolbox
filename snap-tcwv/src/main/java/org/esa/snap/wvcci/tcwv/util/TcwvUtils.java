@@ -184,14 +184,20 @@ public class TcwvUtils {
        return ((1.0/(snr*snr)) + (1.0/(snr*snr) + interpolError)) / amf;
     }
 
-    public static void checkIfMod021KMDayProduct(Product product) {
+//    public static void checkIfMod021KMDayProduct(Product product) {
+//        final MetadataAttribute dayNightAttr = product.getMetadataRoot().getElement("Global_Attributes").
+//                getAttribute("DayNightFlag");
+//
+//        if (dayNightAttr != null && !dayNightAttr.getData().getElemString().equals("Day")) {
+//            throw new OperatorException("Product '" + product.getName() +
+//                                                "' does not seem to be a MODIS L1b Day product - will exit IdePix.");
+//        }
+//    }
+
+    public static boolean isMod021KMDayProduct(Product product) {
         final MetadataAttribute dayNightAttr = product.getMetadataRoot().getElement("Global_Attributes").
                 getAttribute("DayNightFlag");
-
-        if (dayNightAttr != null && !dayNightAttr.getData().getElemString().equals("Day")) {
-            throw new OperatorException("Product '" + product.getName() +
-                                                "' does not seem to be a MODIS L1b Day product - will exit IdePix.");
-        }
+        return (dayNightAttr != null && !dayNightAttr.getData().getElemString().equals("Day"));
     }
 
 }

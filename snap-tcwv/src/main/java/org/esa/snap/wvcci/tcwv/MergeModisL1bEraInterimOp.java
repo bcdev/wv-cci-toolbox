@@ -48,8 +48,10 @@ public class MergeModisL1bEraInterimOp extends Operator {
     @Override
     public void initialize() throws OperatorException {
 
-        if (processDayProductsOnly) {
-            TcwvUtils.checkIfMod021KMDayProduct(l1bProduct);
+        if (processDayProductsOnly && !TcwvUtils.isMod021KMDayProduct(l1bProduct)) {
+            // no action, set a dummy target product
+            setTargetProduct(new Product("dummy", "dummy", 1, 1));
+            return;
         }
 
         if (validateL1b) {
