@@ -197,7 +197,7 @@ public class TcwvUtils {
     public static boolean isMod021KMDayProduct(Product product) {
         final MetadataAttribute dayNightAttr = product.getMetadataRoot().getElement("Global_Attributes").
                 getAttribute("DayNightFlag");
-        return (dayNightAttr != null && !dayNightAttr.getData().getElemString().equals("Day"));
+        return (dayNightAttr != null && dayNightAttr.getData().getElemString().equals("Day"));
     }
 
 }
