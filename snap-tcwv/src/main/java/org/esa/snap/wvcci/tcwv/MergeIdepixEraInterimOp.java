@@ -28,8 +28,8 @@ public class MergeIdepixEraInterimOp extends Operator {
     private Sensor sensor;
 
     @Parameter(description = "The list of EraInterim bands to copy to target product.",
-            defaultValue = "t2m,msl,tcwv")
-    private String[] eraInterimBandsToCopy = {"t2m","msl","tcwv"};
+            defaultValue = "t2m,msl,tcwv,u10,v10")
+    private String[] eraInterimBandsToCopy = {"t2m","msl","tcwv","u10","v10"};
 
     
     @SourceProduct(description = "IdePix product")

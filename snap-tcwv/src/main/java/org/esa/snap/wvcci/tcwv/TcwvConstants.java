@@ -82,7 +82,7 @@ public class TcwvConstants {
     static final String PRIOR_TCWV_BAND_NAME = "tcwv";
     static final String PRIOR_U10_BAND_NAME = "u10";
     static final String PRIOR_V10_BAND_NAME = "v10";
-//    static final String PRIOR_WS_BAND_NAME = "ws";
+    static final String PRIOR_WSP_BAND_NAME = "wsp";
 
     static final double AOT865_INIT_VALUE = 0.15;  // AOT 865nm initial value for algorithm
     static final double AL0_INIT_VALUE = 0.13;     // AL0 865nm initial value for algorithm
@@ -128,6 +128,12 @@ public class TcwvConstants {
     static final String OLCI_LAND_LUT_NC_FILENAME = "land_core_olci_calib_arm.nc4";
     static final String OLCI_OCEAN_LUT_NC_FILENAME = "ocean_core_olci_calib_after_aot.nc4";
 
+    final static float[] MERIS_SOLAR_FLUXES_DEFAULT = new float[]{
+            955.07043F, // 864 nm
+            914.18945F, // 884 nm
+            882.8275F   // 900 nm
+    };
+
     final static String[] MERIS_REFL_BAND_NAMES = new String[]{
             "reflectance_13", // 864 nm
             "reflectance_14", // 884 nm
@@ -157,7 +163,8 @@ public class TcwvConstants {
             "view_zenith",
             "sun_azimuth",
             "view_azimuth",
-            "latitude", "longitude"
+            "latitude", "longitude",
+            "dem_alt", "atm_press"
     };
 
     final static double MERIS_AOT_FALLBACK_UNCERTAINTY = 1.0;
@@ -175,11 +182,20 @@ public class TcwvConstants {
 //            {0.0, 0.0001, 0.0},
 //            {0.0, 0.0, 0.001}
 //    };
+    // used for Dataset 2.1:
+//    final static double[][] MERIS_LAND_SE = {
+//            {0.001, 0.0, 0.0},
+//            {0.0, 0.001, 0.0},
+//            {0.0, 0.0, 0.0005}
+//    };
+
+    // RP 20200316 (see debug_meris_breadboard). Only used for initialisation, then reset with SNR (see code):
     final static double[][] MERIS_LAND_SE = {
-            {0.001, 0.0, 0.0},
-            {0.0, 0.001, 0.0},
-            {0.0, 0.0, 0.0005}
+            {1.11111111e-05, 0.0, 0.0},
+            {0.0, 1.11111111e-05, 0.0},
+            {0.0, 0.0, 4.25299710e-03}
     };
+
 
     final static double MERIS_LAND_SNR = 300.0;
     final static double[] MERIS_LAND_INTERPOL_ERROR = {0.01};
@@ -332,10 +348,17 @@ public class TcwvConstants {
             936.0
     };
 
+    final static float[] OLCI_SOLAR_FLUXES_DEFAULT = new float[]{
+            882.8275F,   // 884 nm
+            882.8275F,   // 899 nm
+            882.8275F,   // 939 nm
+            882.8275F    // 1015 nm
+    };
+
     final static String[] OLCI_REFL_BAND_NAMES = new String[]{
             "Oa18_reflectance",  // 884 nm
             "Oa19_reflectance",  // 899 nm
-            "Oa20_reflectance",   // 939 nm
+            "Oa20_reflectance",  // 939 nm
             "Oa21_reflectance"   // 1015 nm
     };
 
@@ -431,8 +454,13 @@ public class TcwvConstants {
 //            {0.0, 0.0, 1.0}
 //    };
     // RP 20100902:
+//    final static double[][] SA_LAND = {
+//            {5.0, 0.0, 0.0},               // todo: 5.0 --> 20.0  if pixel is not coast!!
+//            {0.0, 1.0, 0.0},
+//            {0.0, 0.0, 1.0}
+//    };
     final static double[][] SA_LAND = {
-            {5.0, 0.0, 0.0},               // todo: 5.0 --> 20.0  if pixel is not coast!!
+            {20.0, 0.0, 0.0},               // todo: 5.0 --> 20.0  if pixel is not coast!!
             {0.0, 1.0, 0.0},
             {0.0, 0.0, 1.0}
     };

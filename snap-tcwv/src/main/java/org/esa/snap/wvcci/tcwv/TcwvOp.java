@@ -88,6 +88,8 @@ public class TcwvOp extends Operator {
     private RasterDataNode vzaBand;
     private RasterDataNode saaBand;
     private RasterDataNode vaaBand;
+    private RasterDataNode altitudeBand;
+    private RasterDataNode seaLevelPressBand;
 
     private Band pixelClassifBand;
     private Band idepixClassifBand;
@@ -97,6 +99,7 @@ public class TcwvOp extends Operator {
     private Band priorTcwvBand;
     private Band priorU10Band;
     private Band priorV10Band;
+    private Band priorWspBand;
 
     private Band[] landWinBands;
     private Band[] landAbsBands;
@@ -179,6 +182,7 @@ public class TcwvOp extends Operator {
         priorTcwvBand = null;
         priorU10Band = null;
         priorV10Band = null;
+        priorWspBand = null;
         if (sourceProduct.containsBand(TcwvConstants.PRIOR_T2M_BAND_NAME)) {
             priorT2mBand = sourceProduct.getBand(TcwvConstants.PRIOR_T2M_BAND_NAME);
         }
@@ -194,11 +198,19 @@ public class TcwvOp extends Operator {
         if (sourceProduct.containsBand(TcwvConstants.PRIOR_V10_BAND_NAME)) {
             priorU10Band = sourceProduct.getBand(TcwvConstants.PRIOR_V10_BAND_NAME);
         }
+        if (sourceProduct.containsBand(TcwvConstants.PRIOR_WSP_BAND_NAME)) {
+            priorWspBand = sourceProduct.getBand(TcwvConstants.PRIOR_WSP_BAND_NAME);
+        }
 
         szaBand = sourceProduct.getRasterDataNode(sensor.getTpgNames()[0]);
         vzaBand = sourceProduct.getRasterDataNode(sensor.getTpgNames()[1]);
         saaBand = sourceProduct.getRasterDataNode(sensor.getTpgNames()[2]);
         vaaBand = sourceProduct.getRasterDataNode(sensor.getTpgNames()[3]);
+
+        if (sensor == Sensor.MERIS) {
+            altitudeBand = sourceProduct.getRasterDataNode(sensor.getTpgNames()[6]);
+            seaLevelPressBand = sourceProduct.getRasterDataNode(sensor.getTpgNames()[7]);
+        }
 
         tcwvAlgorithm = new TcwvAlgorithm();
 
@@ -232,6 +244,13 @@ public class TcwvOp extends Operator {
         Tile saaTile = getSourceTile(saaBand, targetRectangle);
         Tile vaaTile = getSourceTile(vaaBand, targetRectangle);
 
+        Tile altitudeTile = null;
+        Tile seaLevelPressTile = null;
+        if (sensor == Sensor.MERIS) {
+            altitudeTile = getSourceTile(altitudeBand, targetRectangle);
+            seaLevelPressTile = getSourceTile(seaLevelPressBand, targetRectangle);
+        }
+
         Tile pixelClassifTile = getSourceTile(pixelClassifBand, targetRectangle);
         Tile idepixClassifTile = null;
         if (sensor != Sensor.MODIS_TERRA && sensor != Sensor.MODIS_AQUA) {
@@ -243,6 +262,7 @@ public class TcwvOp extends Operator {
         Tile priorTcwvTile = getTcwvInputTile(priorTcwvBand, targetRectangle);
         Tile priorU10Tile = getTcwvInputTile(priorU10Band, targetRectangle);
         Tile priorV10Tile = getTcwvInputTile(priorV10Band, targetRectangle);
+        Tile priorWspTile = getTcwvInputTile(priorWspBand, targetRectangle);
 
         double[] landWinBandData = new double[landWinBandTiles.length];
         double[] landAbsBandData = new double[landAbsBandTiles.length];
@@ -252,6 +272,10 @@ public class TcwvOp extends Operator {
         for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; y++) {
             checkForCancellation();
             for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
+                if (x == 250 && y == 1050) {
+                    System.out.println("x = " + x);
+                }
+
                 boolean isValid = mod35Used ||
                         !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_INVALID_BIT);
                 final boolean isLand = isValid && (mod35Used ? isMod35Land(x, y, pixelClassifTile) :
@@ -310,10 +334,17 @@ public class TcwvOp extends Operator {
                     // no ERAInterim: hPa --> multiply by -1 to get negative hPa
                     double prs;
                     // the new LUTs (20190607) all have log(prs) in descending order, so we need to convert like this:
-                    if (priorMslTile != null) {
-                        prs = priorMslTile.getSampleDouble(x, y) / 100.0;
+                    if (sensor == Sensor.MERIS) {
+                        final double altitude = altitudeTile.getSampleDouble(x, y);
+                        final double slp = seaLevelPressTile.getSampleDouble(x, y);
+                        prs = TcwvUtils.getAtmosphericPressure(slp, altitude);
                     } else {
-                        prs = mslPressure;
+                        // todo: check for OLCI
+                        if (priorMslTile != null) {
+                            prs = priorMslTile.getSampleDouble(x, y) / 100.0;
+                        } else {
+                            prs = mslPressure;
+                        }
                     }
                     prs = -Math.log(prs);
 
@@ -325,14 +356,14 @@ public class TcwvOp extends Operator {
                         final double u10 = priorU10Tile.getSampleDouble(x, y);
                         final double v10 = priorV10Tile.getSampleDouble(x, y);
                         priorWs = Math.sqrt(u10 * u10 + v10 * v10);
+                    } else if (priorWspTile != null) {
+                        priorWs = priorWspTile.getSampleDouble(x, y);
                     }
 
 //                    final double priorAot = TcwvConstants.AOT865_INIT_VALUE;
                     // RP 20200113:
                     final double priorAot = isLand ? TcwvConstants.AOT_FALLBACK_LAND : TcwvConstants.AOT_FALLBACK_OCEAN;
 
-                    final double priorAl0 = TcwvConstants.AL0_INIT_VALUE;
-                    final double priorAl1 = TcwvConstants.AL1_INIT_VALUE;
                     final double priorTcwv =
                             priorTcwvTile != null ? priorTcwvTile.getSampleDouble(x, y) : TcwvConstants.TCWV_INIT_VALUE;
 
@@ -342,6 +373,16 @@ public class TcwvOp extends Operator {
                     final double[] absBandData = isLand ? landAbsBandData : oceanAbsBandData;
                     normalizeSpectralInputBands(y, x, csza, winBandTiles, winBandData);
                     normalizeSpectralInputBands(y, x, csza, absBandTiles, absBandData);
+
+                    double priorAl0 = TcwvConstants.AL0_INIT_VALUE;
+                    double priorAl1 = TcwvConstants.AL1_INIT_VALUE;
+                    if (sensor == Sensor.MERIS) {
+                        // for MERIS, set to rad * PI / csza = refl_input*flux (RP 20200316):
+                        priorAl0 = winBandData[0] * Math.PI/csza;
+                        priorAl1 = winBandData[1] * Math.PI/csza;
+                    }
+                    // todo: check OLCI, MODIS
+
                     TcwvAlgorithmInput input = new TcwvAlgorithmInput(winBandData, absBandData, sza, vzaTile.getSampleDouble(x, y), relAzi,
                                                                       amf, priorAot, priorAl0, priorAl1,
                                                                       t2m, prs, priorWs, priorTcwv);
@@ -393,15 +434,16 @@ public class TcwvOp extends Operator {
     private void normalizeSpectralInputBands(int y, int x, double csza, Tile[] winBandTiles, double[] winBandData) {
         // clarification of correct normalisation of input reflectances (email RP, 20190903):
         // - MODIS: refl_for_tcwv = refl_input / PI
-        // - MERIS/OLCI: refl_for_tcwv = radiance / flux = refl_input * cos(sza) because
-        //          refl_input = radiance / (flux * cos(sza)), see RsMathUtils.radianceToReflectance(...)
+        // - MERIS/OLCI: refl_for_tcwv = radiance / flux = refl_input * cos(sza) / PI , because
+        //          refl_input = radiance * PI / (flux * cos(sza)), see RsMathUtils.radianceToReflectance(...)
         for (int i = 0; i < winBandData.length; i++) {
             if (sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA) {
                 // this was wrong before!
                 winBandData[i] = winBandTiles[i].getSampleDouble(x, y) / Math.PI;
             } else {
                 // this was already correct before
-                winBandData[i] = winBandTiles[i].getSampleDouble(x, y) * csza;
+//                winBandData[i] = winBandTiles[i].getSampleDouble(x, y) * csza;
+                winBandData[i] = winBandTiles[i].getSampleDouble(x, y) * csza / Math.PI;  // PI was missing!! (OD, 20200318)
             }
         }
     }

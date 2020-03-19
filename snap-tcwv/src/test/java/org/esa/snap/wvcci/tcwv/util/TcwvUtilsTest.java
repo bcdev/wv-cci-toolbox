@@ -17,4 +17,12 @@ public class TcwvUtilsTest {
         final double variance = TcwvUtils.computePseudoAbsorptionMeasurementVariance(snr, interpolError, amf);
         assertEquals(0.003838, variance,1.E-4);
     }
+
+    @Test
+    public void testGetAtmosphericPressure() {
+        double height = 179.9375;
+        double slp = 1012.3078;
+        final double atmosphericPressure = TcwvUtils.getAtmosphericPressure(slp, height);
+        assertEquals(990.899, atmosphericPressure, 1.E-3);
+    }
 }
