@@ -201,7 +201,7 @@ public class TcwvUtils {
     }
 
     public static double getAtmosphericPressure(double seaLevelPress, double height) {
-        return Math.pow(1.-(height*0.0065/288.15), 5.2555) * seaLevelPress;
+        return height < 0.0 ? seaLevelPress : Math.pow(1.-(height*0.0065/288.15), 5.2555) * seaLevelPress;
     }
 
 }

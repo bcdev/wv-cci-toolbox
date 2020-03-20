@@ -196,7 +196,7 @@ public class TcwvOp extends Operator {
             priorU10Band = sourceProduct.getBand(TcwvConstants.PRIOR_U10_BAND_NAME);
         }
         if (sourceProduct.containsBand(TcwvConstants.PRIOR_V10_BAND_NAME)) {
-            priorU10Band = sourceProduct.getBand(TcwvConstants.PRIOR_V10_BAND_NAME);
+            priorV10Band = sourceProduct.getBand(TcwvConstants.PRIOR_V10_BAND_NAME);
         }
         if (sourceProduct.containsBand(TcwvConstants.PRIOR_WSP_BAND_NAME)) {
             priorWspBand = sourceProduct.getBand(TcwvConstants.PRIOR_WSP_BAND_NAME);
@@ -272,7 +272,7 @@ public class TcwvOp extends Operator {
         for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; y++) {
             checkForCancellation();
             for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
-                if (x == 250 && y == 1050) {
+                if (x == 568 && y == 306) {
                     System.out.println("x = " + x);
                 }
 
