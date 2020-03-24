@@ -272,13 +272,13 @@ public class TcwvOp extends Operator {
         for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; y++) {
             checkForCancellation();
             for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
-                if (x == 568 && y == 306) {
+                if (x == 254 && y == 1101) {
                     System.out.println("x = " + x);
                 }
 
                 boolean isValid = mod35Used ||
                         !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_INVALID_BIT);
-                final boolean isLand = isValid && (mod35Used ? isMod35Land(x, y, pixelClassifTile) :
+                boolean isLand = isValid && (mod35Used ? isMod35Land(x, y, pixelClassifTile) :
                         isIdepixLand(x, y, pixelClassifTile));
                 boolean isSeaIce = false;
                 if (sensor != Sensor.MODIS_TERRA && sensor != Sensor.MODIS_AQUA) {
@@ -288,11 +288,13 @@ public class TcwvOp extends Operator {
                 final boolean isCloud = isValid && (mod35Used ? isMod35Cloud(x, y, pixelClassifTile) :
                         isIdepixCloud(x, y, pixelClassifTile));
 
+                final boolean isCoastline = isValid && (mod35Used ? isMod35Coastline(x, y, pixelClassifTile) :
+                        isIdepixCoastline(x, y, pixelClassifTile));
+
                 // set to invalid if SZA > 75deg (RP, Jan 2020)
                 final double sza = szaTile.getSampleDouble(x, y);
-                isValid = isValid && sza <= 75.0;
+                isValid = isValid && sza <= TcwvConstants.SZA_MAX_VALUE;
 
-                targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_LAND, isLand);
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_OCEAN, isOcean);
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_CLOUD, isCloud);
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_SEA_ICE, isSeaIce);
@@ -325,7 +327,7 @@ public class TcwvOp extends Operator {
                     final double saaR = saaTile.getSampleDouble(x, y) * MathUtils.DTOR;
                     final double vaaR = vaaTile.getSampleDouble(x, y) * MathUtils.DTOR;
                     final double relAzi = 180. - Math.acos(Math.cos(saaR) * Math.cos(vaaR) +
-                                                                   Math.sin(saaR) * Math.sin(vaaR)) * MathUtils.RTOD;
+                            Math.sin(saaR) * Math.sin(vaaR)) * MathUtils.RTOD;
                     final double csza = Math.cos(szaR);
                     final double amf = 1. / csza + 1. / Math.cos(vzaR);
 
@@ -367,10 +369,17 @@ public class TcwvOp extends Operator {
                     final double priorTcwv =
                             priorTcwvTile != null ? priorTcwvTile.getSampleDouble(x, y) : TcwvConstants.TCWV_INIT_VALUE;
 
+                    // declare as land also coastline pixels and pixels for which the reference reflectance (sensor dependent)
+                    // exceeds certain threshold:
+                    // todo: further check this first, looks wrong for MERIS
+                    // isLand = isLand || (isCoastline && applyLandForCoastlinesAndRivers(y, x, csza, targetRectangle));
+                    targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_LAND, isLand);
+
                     final Tile[] winBandTiles = isLand ? landWinBandTiles : oceanWinBandTiles;
                     final Tile[] absBandTiles = isLand ? landAbsBandTiles : oceanAbsBandTiles;
                     final double[] winBandData = isLand ? landWinBandData : oceanWinBandData;
                     final double[] absBandData = isLand ? landAbsBandData : oceanAbsBandData;
+
                     normalizeSpectralInputBands(y, x, csza, winBandTiles, winBandData);
                     normalizeSpectralInputBands(y, x, csza, absBandTiles, absBandData);
 
@@ -378,20 +387,20 @@ public class TcwvOp extends Operator {
                     double priorAl1 = TcwvConstants.AL1_INIT_VALUE;
                     if (sensor == Sensor.MERIS) {
                         // for MERIS, set to rad * PI / csza = refl_input*flux (RP 20200316):
-                        priorAl0 = winBandData[0] * Math.PI/csza;
-                        priorAl1 = winBandData[1] * Math.PI/csza;
+                        priorAl0 = winBandData[0] * Math.PI / csza;
+                        priorAl1 = winBandData[1] * Math.PI / csza;
                     }
                     // todo: check OLCI, MODIS
 
                     TcwvAlgorithmInput input = new TcwvAlgorithmInput(winBandData, absBandData, sza, vzaTile.getSampleDouble(x, y), relAzi,
-                                                                      amf, priorAot, priorAl0, priorAl1,
-                                                                      t2m, prs, priorWs, priorTcwv);
+                            amf, priorAot, priorAl0, priorAl1,
+                            t2m, prs, priorWs, priorTcwv);
 
                     // 'ocean' parameters are null for land processing!
                     final TcwvResult result = tcwvAlgorithm.compute(sensor, landLut, oceanLut,
-                                                                    tcwvFunctionLand, tcwvFunctionOcean,
-                                                                    jacobiFunctionland, jacobiFunctionOcean,
-                                                                    input, isLand);
+                            tcwvFunctionLand, tcwvFunctionOcean,
+                            jacobiFunctionland, jacobiFunctionOcean,
+                            input, isLand);
 
                     targetTiles.get(tcwvBand).setSample(x, y, result.getTcwv());
                     if (writeCostFunctionValue) {
@@ -415,6 +424,14 @@ public class TcwvOp extends Operator {
         }
     }
 
+    private boolean applyLandForCoastlinesAndRivers(int y, int x, double csza, Rectangle targetRectangle) {
+        final Tile minCoastNormRadTile =
+                getSourceTile(sourceProduct.getBand(sensor.getMinCoastNormRadBandName()), targetRectangle);
+        final double normalizedMinCoastNormRadValue = normalizeSpectralInputBand(y, x, csza, minCoastNormRadTile);
+
+        return normalizedMinCoastNormRadValue > sensor.getMinCoastNormRadValue();
+    }
+
     private Tile[] getSourceTiles(Band[] sourceBands, Rectangle rectangle) {
         Tile[] sourceTiles = new Tile[sourceBands.length];
         for (int i = 0; i < sourceBands.length; i++) {
@@ -431,22 +448,27 @@ public class TcwvOp extends Operator {
         }
     }
 
-    private void normalizeSpectralInputBands(int y, int x, double csza, Tile[] winBandTiles, double[] winBandData) {
+    private void normalizeSpectralInputBands(int y, int x, double csza, Tile[] spectralBandTiles, double[] spectralBandData) {
+        for (int i = 0; i < spectralBandData.length; i++) {
+            spectralBandData[i] = normalizeSpectralInputBand(y, x, csza, spectralBandTiles[i]);
+        }
+    }
+
+    private double normalizeSpectralInputBand(int y, int x, double csza, Tile spectralBandTile) {
         // clarification of correct normalisation of input reflectances (email RP, 20190903):
         // - MODIS: refl_for_tcwv = refl_input / PI
         // - MERIS/OLCI: refl_for_tcwv = radiance / flux = refl_input * cos(sza) / PI , because
         //          refl_input = radiance * PI / (flux * cos(sza)), see RsMathUtils.radianceToReflectance(...)
-        for (int i = 0; i < winBandData.length; i++) {
-            if (sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA) {
-                // this was wrong before!
-                winBandData[i] = winBandTiles[i].getSampleDouble(x, y) / Math.PI;
-            } else {
-                // this was already correct before
+        if (sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA) {
+            // this was wrong before!
+            return spectralBandTile.getSampleDouble(x, y) / Math.PI;
+        } else {
+            // this was already correct before
 //                winBandData[i] = winBandTiles[i].getSampleDouble(x, y) * csza;
-                winBandData[i] = winBandTiles[i].getSampleDouble(x, y) * csza / Math.PI;  // PI was missing!! (OD, 20200318)
-            }
+            return spectralBandTile.getSampleDouble(x, y) * csza / Math.PI;  // PI was missing!! (OD, 20200318)
         }
     }
+
 
     private boolean isIdepixCloud(int x, int y, Tile pixelClassifTile) {
 
@@ -484,6 +506,10 @@ public class TcwvOp extends Operator {
         return pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_LAND_BIT);
     }
 
+    private boolean isIdepixCoastline(int x, int y, Tile pixelClassifTile) {
+        return pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_COASTLINE);
+    }
+
     private boolean isIdepixSeaIce(int x, int y, Tile pixelClassifTile) {
         return !(isIdepixLand(x, y, pixelClassifTile)) &&
                 pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_SNOW_ICE_BIT);
@@ -507,19 +533,23 @@ public class TcwvOp extends Operator {
                 pixelClassifTile.getSampleBit(x, y, ModisMod35L2Constants.LAND_BIT_INDEX);
     }
 
+    private boolean isMod35Coastline(int x, int y, Tile pixelClassifTile) {
+        return pixelClassifTile.getSampleBit(x, y, ModisMod35L2Constants.COASTAL_BIT_INDEX);
+    }
+
     private static void validateSourceProduct(Sensor sensor, Product sourceProduct) {
         if (sensor != Sensor.MODIS_TERRA && sensor != Sensor.MODIS_AQUA) {
             if (!sourceProduct.containsBand(TcwvConstants.PIXEL_CLASSIF_BAND_NAME)) {
                 throw new OperatorException("Source product is not valid, as it does not contain " +
-                                                    "pixel classification flag band '" +
-                                                    TcwvConstants.PIXEL_CLASSIF_BAND_NAME + "'.");
+                        "pixel classification flag band '" +
+                        TcwvConstants.PIXEL_CLASSIF_BAND_NAME + "'.");
             }
         }
 
         for (String bandName : sensor.getReflBandNames()) {
             if (!sourceProduct.containsBand(bandName)) {
                 throw new OperatorException("Source product is not valid, as it does not contain " +
-                                                    "mandatory band '" + bandName + "'.");
+                        "mandatory band '" + bandName + "'.");
             }
         }
     }
@@ -528,7 +558,7 @@ public class TcwvOp extends Operator {
         for (String bandName : TcwvConstants.MOD35_BAND_NAMES) {
             if (!mod35Product.containsBand(bandName)) {
                 throw new OperatorException("MOD35 product is not valid, as it does not contain " +
-                                                    "mandatory band '" + bandName + "'.");
+                        "mandatory band '" + bandName + "'.");
             }
         }
     }
@@ -582,7 +612,7 @@ public class TcwvOp extends Operator {
 
         if (writeCostFunctionValue) {
             final Band costFunctionBand = targetProduct.addBand(TcwvConstants.TCWV_COST_FUNCTION_BAND_NAME,
-                                                                ProductData.TYPE_FLOAT32);
+                    ProductData.TYPE_FLOAT32);
             costFunctionBand.setDescription("TCWV retrieval cost function value");
             costFunctionBand.setNoDataValue(Float.NaN);
             costFunctionBand.setNoDataValueUsed(true);

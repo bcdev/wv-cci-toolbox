@@ -84,7 +84,6 @@ public class TcwvConstants {
     static final String PRIOR_V10_BAND_NAME = "v10";
     static final String PRIOR_WSP_BAND_NAME = "wsp";
 
-    static final double AOT865_INIT_VALUE = 0.15;  // AOT 865nm initial value for algorithm
     static final double AL0_INIT_VALUE = 0.13;     // AL0 865nm initial value for algorithm
     static final double AL1_INIT_VALUE = 0.13;     // AL1 865nm initial value for algorithm
     static final double TCWV_INIT_VALUE = 30.0;    // TCWV initial value for algorithm if we have no prior
@@ -98,10 +97,13 @@ public class TcwvConstants {
     static final int IDEPIX_CLOUD_SURE_BIT = 3;
     static final int IDEPIX_CLOUD_BUFFER_BIT = 4;
     static final int IDEPIX_SNOW_ICE_BIT = 6;
+    static final int IDEPIX_COASTLINE = 9;
     static final int IDEPIX_LAND_BIT = 10;
 
     static final double TCWV_RETRIEVAL_COST_1 = 1.0;
     static final double TCWV_RETRIEVAL_COST_2 = 2.0;
+
+    static final double SZA_MAX_VALUE = 75.0;  // sensor independent
 
     static final String[] MOD35_BAND_NAMES = {
             ModisMod35L2Constants.CLOUD_MASK_BYTE_TARGET_BAND_NAME +  "1",
@@ -128,12 +130,6 @@ public class TcwvConstants {
     static final String OLCI_LAND_LUT_NC_FILENAME = "land_core_olci_calib_arm.nc4";
     static final String OLCI_OCEAN_LUT_NC_FILENAME = "ocean_core_olci_calib_after_aot.nc4";
 
-    final static float[] MERIS_SOLAR_FLUXES_DEFAULT = new float[]{
-            955.07043F, // 864 nm
-            914.18945F, // 884 nm
-            882.8275F   // 900 nm
-    };
-
     final static String[] MERIS_REFL_BAND_NAMES = new String[]{
             "reflectance_13", // 864 nm
             "reflectance_14", // 884 nm
@@ -158,6 +154,9 @@ public class TcwvConstants {
             "reflectance_15"  // 900 nm
     };
 
+    final static String MERIS_MIN_COAST_NORM_RAD_BAND_NAME = "reflectance_14";
+    final static double MERIS_MIN_COAST_NORM_RAD_VALUE = 0.005;
+
     final static String[] MERIS_TPG_NAMES = new String[]{
             "sun_zenith",
             "view_zenith",
@@ -166,11 +165,6 @@ public class TcwvConstants {
             "latitude", "longitude",
             "dem_alt", "atm_press"
     };
-
-    final static double MERIS_AOT_FALLBACK_UNCERTAINTY = 1.0;
-    final static double MERIS_TEMPERATURE_UNCERTAINTY = 5.0;
-    final static double MERIS_PRESSURE_UNCERTAINTY = 10.0;
-    final static double MERIS_SPECTRAL_UNCERTAINTY = 0.15;
 
     // Introduce reasonable input reflectance uncertainty:
     // MERIS: radiometric accuracy < 4% 
@@ -199,7 +193,6 @@ public class TcwvConstants {
 
     final static double MERIS_LAND_SNR = 300.0;
     final static double[] MERIS_LAND_INTERPOL_ERROR = {0.01};
-    final static double MERIS_LAND_AOT_FALLBACK = 0.15;
 
     //    final static double[][] MERIS_OCEAN_SE = {
 //            {0.0001, 0.0, 0.0},
@@ -216,7 +209,6 @@ public class TcwvConstants {
 
     final static double MERIS_OCEAN_SNR = 100.0;
     final static double[] MERIS_OCEAN_INTERPOL_ERROR = {0.01};
-    final static double MERIS_OCEAN_AOT_FALLBACK = -0.6;    // in log10(0.1+aot) for ocean!!! (RP Jan 2020)
 
     // 'cor' from land_core_meris_calib_arm.nc4, abs band 15
     final static double[][] MERIS_LAND_RECT_CORR = {
@@ -265,6 +257,9 @@ public class TcwvConstants {
             "EV_1KM_RefSB_19"           // 940 nm
     };
 
+    final static String MODIS_MIN_COAST_NORM_RAD_BAND_NAME = "EV_250_Aggr1km_RefSB_2";
+    final static double MODIS_MIN_COAST_NORM_RAD_VALUE = 0.001;
+
     final static String[] MODIS_TPG_NAMES = new String[]{
             "SolarZenith",
             "SensorZenith",
@@ -302,7 +297,6 @@ public class TcwvConstants {
 
     final static double MODIS_LAND_SNR = 200.0;
     final static double[] MODIS_LAND_INTERPOL_ERROR = {0.01, 0.015, 0.015};
-    final static double MODIS_LAND_AOT_FALLBACK = 0.15;
 
     // RSS total < 3% (https://modis.gsfc.nasa.gov/data/atbd/atbd_mod01.pdf)
     // 3% of 0.05, 0.05, 0.05, 0.05
@@ -323,7 +317,6 @@ public class TcwvConstants {
 
     final static double MODIS_OCEAN_SNR = 70.0;
     final static double[] MODIS_OCEAN_INTERPOL_ERROR = {0.03, 0.04, 0.04};
-    final static double MODIS_OCEAN_AOT_FALLBACK = -0.6;    // in log10(0.1+aot) for ocean!!! (RP Jan 2020)
 
     // 'cor' from land_core_modis_terra_calib_arm.nc4, abs bands 17, 18, 19
     final static double[][] MODIS_LAND_RECT_CORR = {
@@ -346,13 +339,6 @@ public class TcwvConstants {
             904.0,
             935.0,
             936.0
-    };
-
-    final static float[] OLCI_SOLAR_FLUXES_DEFAULT = new float[]{
-            882.8275F,   // 884 nm
-            882.8275F,   // 899 nm
-            882.8275F,   // 939 nm
-            882.8275F    // 1015 nm
     };
 
     final static String[] OLCI_REFL_BAND_NAMES = new String[]{
@@ -381,6 +367,8 @@ public class TcwvConstants {
             "Oa20_reflectance"    // 939.02 nm
     };
 
+    final static String OLCI_MIN_COAST_NORM_RAD_BAND_NAME = "Oa21_reflectance";
+    final static double OLCI_MIN_COAST_NORM_RAD_VALUE = 0.007;
 
     final static String[] OLCI_TPG_NAMES = new String[]{
             "SZA", "OZA", "SAA", "OAA", "TP_latitude", "TP_longitude"
@@ -412,7 +400,6 @@ public class TcwvConstants {
 
     final static double OLCI_LAND_SNR = 300.0;
     final static double[] OLCI_LAND_INTERPOL_ERROR = {0.01, 0.015};
-    final static double OLCI_LAND_AOT_FALLBACK = 0.15;
 
     // Introduce reasonable input reflectance uncertainty:
     // see https://sentinel.esa.int/web/sentinel/technical-guides/sentinel-3-olci/olci-instrument/specifications
@@ -426,7 +413,6 @@ public class TcwvConstants {
 
     final static double OLCI_OCEAN_SNR = 100.0;
     final static double[] OLCI_OCEAN_INTERPOL_ERROR = {0.015, 0.015};
-    final static double OLCI_OCEAN_AOT_FALLBACK = -0.6;    // in log10(0.1+aot) for ocean!!! (RP Jan 2020)
 
     // 'cor' from land_core_olci_calib_arm.nc4, abs bands 19, 20
     final static double[][] OLCI_LAND_RECT_CORR = {

@@ -12,20 +12,20 @@ public class ModisMod35L2Constants {
     public static final String CLOUD_MASK_BYTE_TARGET_BAND_NAME = "Cloud_Mask_Byte_Segment";
     public static final String QUALITY_ASSURANCE_QA_DIMENSION_BAND_NAME = "Quality_Assurance_QA_Dimension";
 
-    public static final int CLOUD_DETERMINED_BIT_INDEX = 0;
-    public static final int CLOUD_CERTAIN_BIT_INDEX = 1;
-    public static final int CLOUD_UNCERTAIN_BIT_INDEX = 2;
     public static final int CLEAR_CERTAIN_BIT_INDEX = 4;
     public static final int SNOW_ICE_BIT_INDEX = 7;
+    public static final int COASTAL_BIT_INDEX = 9;
     public static final int DESERT_BIT_INDEX = 10;
     public static final int LAND_BIT_INDEX = 11;
 
+    static final int CLOUD_DETERMINED_BIT_INDEX = 0;
+    static final int CLOUD_CERTAIN_BIT_INDEX = 1;
+    static final int CLOUD_UNCERTAIN_BIT_INDEX = 2;
     static final int CLOUD_PROBABLY_CLEAR_BIT_INDEX = 3;
     static final int CLOUD_CONFIDENT_CLEAR_BIT_INDEX = 4;
     static final int DAYTIME_BIT_INDEX = 5;
     static final int GLINT_BIT_INDEX = 6;
     static final int WATER_BIT_INDEX = 8;
-    static final int COASTAL_BIT_INDEX = 9;
 
     static final String CLOUD_MASK_BAND_NAME = "Cloud_Mask";
     static final String QUALITY_ASSURANCE_BAND_NAME = "Quality_Assurance";
