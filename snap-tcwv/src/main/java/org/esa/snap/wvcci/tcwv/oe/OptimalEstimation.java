@@ -13,6 +13,9 @@ import org.esa.snap.wvcci.tcwv.interpolation.NumericalJacobiFunction;
  */
 public class OptimalEstimation {
 
+    private static final double EPSY = 0.001;   // default eps criteria to stop OE, see ini files in Python
+    private static final int MAXITER = 6;   // maximum number of iterations, see ini files in Python
+
     private ClippedDifferenceFunction clippedDiffFunc;
     private JacobiFunction jfunc;
     private double[] a;
@@ -50,6 +53,7 @@ public class OptimalEstimation {
      * @param se     - measurement error covariance
      * @param sa     - prior error covariance
      * @param xa     - prior knowledge
+     * @param outputMode     - output mode
      * @return - double[] the inverse function
      */
     public OptimalEstimationResult invert(InversionMethod method,
@@ -57,8 +61,28 @@ public class OptimalEstimation {
                                           double[][] se,
                                           double[][] sa,
                                           double[] xa,
-                                          OEOutputMode outputMode,
-                                          int maxiter) {
+                                          OEOutputMode outputMode) {
+
+        return invert(method, y, se, sa, xa, outputMode, MAXITER);
+    }
+
+    /**
+     * Provides the inverse of a function.
+     *
+     * @param method - inversion method
+     * @param se     - measurement error covariance
+     * @param sa     - prior error covariance
+     * @param xa     - prior knowledge
+     * @param outputMode - output mode
+     * @param maxiter     - maximum number of iterations
+     * @return - double[] the inverse function
+     */
+    OptimalEstimationResult invert(InversionMethod method,
+                                          double[] y,
+                                          double[][] se,
+                                          double[][] sa,
+                                          double[] xa,
+                                          OEOutputMode outputMode, int maxiter) {
 
         double[][] sei;
         double[][] sai;
@@ -157,7 +181,6 @@ public class OptimalEstimation {
 
             result = operator.result(a, b, xn, yn, kk, sei, sai, xa);
             xn = result.getCnx();
-            double EPSY = 0.000001;
             if (method == InversionMethod.NEWTON) {
                 if (OptimalEstimationUtils.norm(yn) < EPSY) {
                     convergence = true;
@@ -165,8 +188,9 @@ public class OptimalEstimation {
                 }
             } else {
                 final double[][] sri = result.getRetErrCovI();
-                final double normErrorWeighted = OptimalEstimationUtils.normErrorWeighted(result.getIncrX(), sri);
-                if (normErrorWeighted < EPSY) {
+                final double[] incrX = result.getIncrX();
+                final double normErrorWeighted = OptimalEstimationUtils.normErrorWeighted(incrX, sri);
+                if (normErrorWeighted < EPSY * incrX.length) {
                     convergence = true;
                     break;
                 }

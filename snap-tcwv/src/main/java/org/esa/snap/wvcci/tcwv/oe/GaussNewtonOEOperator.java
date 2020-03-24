@@ -56,11 +56,15 @@ public class GaussNewtonOEOperator implements OEOperator {
 
         final Matrix incrXMinus = xMatrix.minus(incrXMatrix);
         final double[] incrX0 = incrXMinus.transpose().getArray()[0];
-        final double[] cnx = OptimalEstimationUtils.clip1D(a, b, incrX0);
-
-        return new OeOperatorResult(cnx, incrXMatrixArr,
-                                    jacoTransDotJacoMatrix.getArray(),
-                                    errCovMatrixInverse.getArray());
+//        final double[] cnx = OptimalEstimationUtils.clip1D(a, b, incrX0);
+//        return new OeOperatorResult(cnx, incrXMatrixArr,
+//                                    jacoTransDotJacoMatrix.getArray(),
+//                                    errCovMatrixInverse.getArray());
+        // do not clip?! (see March 2020 breadboard, 20200323)
+        return new OeOperatorResult(incrX0, incrXMatrixArr,
+//                jacoTransDotJacoMatrix.getArray(),
+                errCovMatrix.getArray(),
+                errCovMatrixInverse.getArray());
     }
 
 }

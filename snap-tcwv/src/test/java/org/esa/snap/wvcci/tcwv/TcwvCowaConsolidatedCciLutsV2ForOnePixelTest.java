@@ -147,7 +147,7 @@ public class TcwvCowaConsolidatedCciLutsV2ForOnePixelTest {
         // TCWV:
         // Java: 44.535
         // Cowa Consolidated LUTs v2 Python: 44.834054807581836
-        assertEquals(44.834, result.getTcwv(), 0.3);
+        assertEquals(44.834, result.getTcwv(), 0.4);
         // TCWV uncertainty:
         // Java: 1.334
         // Cowa Consolidated LUTs v2 Python: 1.326
@@ -180,9 +180,9 @@ public class TcwvCowaConsolidatedCciLutsV2ForOnePixelTest {
 
         double priorAl0 = 0.3435968769616401 ;  //reflectance_13 * Math.PI;   // data['rad'][13].flat[99]*np.pi
         double priorAl1 = 0.3420229777811804;  //reflectance_14 * Math.PI;   // data['rad'][14].flat[99]*np.pi
-        double priorT2m = 295.3106630925399;    // 't2m' from ERA, data['t2m'].flat[99]
+        double priorT2m = 298.416715;    // 't2m' from ERA, data['t2m'].flat[99]
 
-        double priorMslPress = -Math.log(1028.475);  // 'msl' from ERA, data['prs'].flat[99]
+        double priorMslPress = -Math.log(1012.4751356);  // 'msl' from ERA, data['prs'].flat[99]
 
         double priorWsp = 1.91074;
         double priorTcwv = 50.78113;

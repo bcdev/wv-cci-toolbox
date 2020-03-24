@@ -1,10 +1,7 @@
 package org.esa.snap.wvcci.tcwv;
 
 import org.esa.snap.wvcci.tcwv.interpolation.JacobiFunction;
-import org.esa.snap.wvcci.tcwv.oe.InversionMethod;
-import org.esa.snap.wvcci.tcwv.oe.OEOutputMode;
-import org.esa.snap.wvcci.tcwv.oe.OptimalEstimation;
-import org.esa.snap.wvcci.tcwv.oe.OptimalEstimationResult;
+import org.esa.snap.wvcci.tcwv.oe.*;
 import org.esa.snap.wvcci.tcwv.util.TcwvUtils;
 
 /**
@@ -58,8 +55,8 @@ public class TcwvAlgorithm {
                 // run this also for MODIS land !! (RP 20190410)
                 // for ocean it makes no difference as a,b are always 0,1
                 mes[input.getRhoToaWin().length + i] = rectifyAndO2Correct(sensor, input.getRhoToaWin(),
-                                                                           input.getRhoToaAbs(), i,
-                                                                           Math.sqrt(input.getAmf()), true);
+                        input.getRhoToaAbs(), i,
+                        Math.sqrt(input.getAmf()), true);
             } else {
                 // this is equal to the output of rectifyAndO2Correct in case of a,b = 0,1
                 mes[input.getRhoToaWin().length + i] =
@@ -77,21 +74,23 @@ public class TcwvAlgorithm {
         par[4] = input.getVza();
         par[5] = input.getSza();
 
-        final double[] xa = new double[3];
+        double[] xa = new double[3];
         xa[0] = Math.sqrt(input.getPriorTcwv());
         xa[1] = input.getPriorAl0();
         xa[2] = input.getPriorAl1();
+        // finally clip (see cowa_core.py, prepare_data):
+        xa = OptimalEstimationUtils.clip1D(a, b, xa);
 
         double[][] se = sensor.getLandSe();
         for (int i = 0; i < input.getRhoToaWin().length; i++) {
-            se[i][i] = 1.0/(sensor.getLandSnr()*sensor.getLandSnr());
+            se[i][i] = 1.0 / (sensor.getLandSnr() * sensor.getLandSnr());
         }
         // introduce per-pixel uncertainty for abs bands as provided by RP Jan 2020:
         for (int i = 0; i < input.getRhoToaAbs().length; i++) {
             int j = input.getRhoToaWin().length + i;
             se[j][j] = TcwvUtils.computePseudoAbsorptionMeasurementVariance(sensor.getLandSnr(),
-                                                                            sensor.getLandInterpolError()[i],
-                                                                            input.getAmf());
+                    sensor.getLandInterpolError()[i],
+                    input.getAmf());
         }
 
         final double[][] sa = TcwvConstants.SA_LAND;
@@ -115,12 +114,12 @@ public class TcwvAlgorithm {
             mes[i] = input.getRhoToaWin()[i];
         }
         for (int i = 0; i < input.getRhoToaAbs().length; i++) {
-            if (sensor == Sensor.MERIS || sensor == Sensor.OLCI  ||
+            if (sensor == Sensor.MERIS || sensor == Sensor.OLCI ||
                     sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA) {
 //                if (sensor == Sensor.MERIS || sensor == Sensor.OLCI) {
                 mes[input.getRhoToaWin().length + i] = rectifyAndO2Correct(sensor, input.getRhoToaWin(),
-                                                                           input.getRhoToaAbs(), i,
-                                                                           Math.sqrt(input.getAmf()), false);
+                        input.getRhoToaAbs(), i,
+                        Math.sqrt(input.getAmf()), false);
             } else {
                 // this is equal to the output of rectifyAndO2Correct in case of a,b = 0,1. Therefore ok for MODIS.
                 // Python:
@@ -138,21 +137,23 @@ public class TcwvAlgorithm {
         par[1] = input.getVza();
         par[2] = input.getSza();
 
-        final double[] xa = new double[3];
+        double[] xa = new double[3];
         xa[0] = Math.sqrt(input.getPriorTcwv());
         xa[1] = input.getPriorAot();
         xa[2] = input.getPriorWsp();
+        // finally clip (see cowa_core.py, prepare_data):
+        xa = OptimalEstimationUtils.clip1D(a, b, xa);
 
         final double[][] se = sensor.getOceanSe();
         for (int i = 0; i < input.getRhoToaWin().length; i++) {
-            se[i][i] = 1.0/(sensor.getOceanSnr()*sensor.getOceanSnr());
+            se[i][i] = 1.0 / (sensor.getOceanSnr() * sensor.getOceanSnr());
         }
         // introduce per-pixel uncertainty for abs bands as provided by RP Jan 2020:
         for (int i = 0; i < input.getRhoToaAbs().length; i++) {
             int j = input.getRhoToaWin().length + i;
             se[j][j] = TcwvUtils.computePseudoAbsorptionMeasurementVariance(sensor.getOceanSnr(),
-                                                                            sensor.getOceanInterpolError()[i],
-                                                                            input.getAmf());
+                    sensor.getOceanInterpolError()[i],
+                    input.getAmf());
         }
 
         final double[][] sa = TcwvConstants.SA_OCEAN;
@@ -167,7 +168,7 @@ public class TcwvAlgorithm {
     }
 
     double rectifyAndO2Correct(Sensor sensor, double[] rhoWb, double[] rhoAb, int absBandIndex,
-                                      double samf, boolean isLand) {
+                               double samf, boolean isLand) {
 
         double[][] rectCorr = isLand ? sensor.getLandRectCorr() : sensor.getOceanRectCorr();    // a, b
 
@@ -187,13 +188,13 @@ public class TcwvAlgorithm {
                 ref = rhoWb[0];
             }
         }
-        return - (a + b * Math.log(rhoAb[absBandIndex] / ref) / samf);
+        return -(a + b * Math.log(rhoAb[absBandIndex] / ref) / samf);
     }
 
     private TcwvResult getTcwvResult(double[] a, double[] xa, double[][] se, double[][] sa,
                                      OptimalEstimation oe, Sensor sensor) {
         // now includes uncertainty
-        OptimalEstimationResult result = oe.invert(InversionMethod.OE, a, se, sa, xa, OEOutputMode.FULL, 3);
+        OptimalEstimationResult result = oe.invert(InversionMethod.OE, a, se, sa, xa, OEOutputMode.FULL);
         final double resultTcwv = Math.pow(result.getXn()[0], 2.0);
         double resultTcwvUncertainty = 0.0;
         if (result.getSr() != null) {

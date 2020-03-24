@@ -64,7 +64,7 @@ public class MergeIdepixEraInterimOpTest {
         assertFalse(mergedProduct.containsBand("lat_bnds_nv_44"));
         assertFalse(mergedProduct.containsBand("lat"));
         assertFalse(mergedProduct.containsBand("lon"));
-        assertFalse(mergedProduct.containsBand("u10"));
-        assertFalse(mergedProduct.containsBand("v10"));
+        assertTrue(mergedProduct.containsBand("u10"));
+        assertTrue(mergedProduct.containsBand("v10"));
     }
 }

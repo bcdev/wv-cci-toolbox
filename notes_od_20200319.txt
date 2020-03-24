@@ -1,0 +1,11 @@
+WVCCI: MERIS differences RP <--> OD
+
+- unit tests: TCWV Land ok within 2.E-3 for fix input vector --> inplementation correct. 
+- unit tests: TCWV Ocean has differences. Check!!
+
+- OD: factor PI was missing in normalizeSpectralInputBands for MERIS AND OLCI. Huge differences! TODO: check for OLCI as well.
+- RP: solar fluxes from band (constant) <--> OD: Rad2Refl auxdata 'sun_spectral_flux_rr.dat', per detector index. Significant differences, leads to different input reflecs.
+- RP: prior pressure: from simple height2press formula <--> OD: msl from ERA-interim. Significant differences (test pixel: 992 vs 1011 hPa). msl is wrong! Take RP formula!
+- ERA interim differences for prior tcwv, prior t2m. (test pixel: 47.82/50.37 , 296.7/295.3). Reason unclear.
+- landSea mask: L2 lsm different to Idepix Land near coasts (lsm has more land at coastlines)
+- OD: ocean: c+p bug while reading windspeed from ERA --> const 7.5m/s was used. Huge differences in glint.
