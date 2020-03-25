@@ -269,17 +269,35 @@ public class TcwvOp extends Operator {
         double[] oceanWinBandData = new double[oceanWinBandTiles.length];
         double[] oceanAbsBandData = new double[oceanAbsBandTiles.length];
 
+        Tile[] winBandTiles;
+        Tile[] absBandTiles;
+        double[] winBandData;
+        double[] absBandData;
+
         for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; y++) {
             checkForCancellation();
             for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
-                if (x == 254 && y == 1101) {
-                    System.out.println("x = " + x);
-                }
+//                if (x == 752 && y == 1561) {
+//                    System.out.println("x = " + x);
+//                }
 
-                boolean isValid = mod35Used ||
-                        !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_INVALID_BIT);
-                boolean isLand = isValid && (mod35Used ? isMod35Land(x, y, pixelClassifTile) :
-                        isIdepixLand(x, y, pixelClassifTile));
+                // set to invalid if SZA > 75deg (RP, Jan 2020)
+                final double sza = szaTile.getSampleDouble(x, y);
+                final double szaR = sza * MathUtils.DTOR;
+                final double csza = Math.cos(szaR);
+
+                boolean isLand = mod35Used ? isMod35Land(x, y, pixelClassifTile) :
+                        isIdepixLand(x, y, pixelClassifTile);
+
+                winBandTiles = isLand ? landWinBandTiles : oceanWinBandTiles;
+                absBandTiles = isLand ? landAbsBandTiles : oceanAbsBandTiles;
+                winBandData = isLand ? landWinBandData : oceanWinBandData;
+                absBandData = isLand ? landAbsBandData : oceanAbsBandData;
+
+                boolean isValid = isValidNormalizedReflectances(x, y, csza, winBandTiles, absBandTiles) &&
+                        sza <= TcwvConstants.SZA_MAX_VALUE &&
+                        (mod35Used || !pixelClassifTile.getSampleBit(x, y, TcwvConstants.IDEPIX_INVALID_BIT));
+                isLand = isLand && isValid;
                 boolean isSeaIce = false;
                 if (sensor != Sensor.MODIS_TERRA && sensor != Sensor.MODIS_AQUA) {
                     isSeaIce = isValid && isIdepixSeaIce(x, y, idepixClassifTile);
@@ -291,14 +309,15 @@ public class TcwvOp extends Operator {
                 final boolean isCoastline = isValid && (mod35Used ? isMod35Coastline(x, y, pixelClassifTile) :
                         isIdepixCoastline(x, y, pixelClassifTile));
 
-                // set to invalid if SZA > 75deg (RP, Jan 2020)
-                final double sza = szaTile.getSampleDouble(x, y);
-                isValid = isValid && sza <= TcwvConstants.SZA_MAX_VALUE;
-
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_OCEAN, isOcean);
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_CLOUD, isCloud);
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_SEA_ICE, isSeaIce);
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_UNDEFINED, !isValid);
+
+                // declare as land also coastline pixels and pixels for which the reference reflectance (sensor dependent)
+                // exceeds certain threshold:
+                isLand = isLand || (isCoastline && applyLandForCoastlinesAndRivers(y, x, csza, targetRectangle));
+                targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_LAND, isLand);
 
                 // todo: set to invalid also if
                 //  - any input reflectance is < 0.001 (all sensors), but be careful:
@@ -322,13 +341,11 @@ public class TcwvOp extends Operator {
                     }
                 } else {
                     // Preparing input data...
-                    final double szaR = sza * MathUtils.DTOR;
                     final double vzaR = vzaTile.getSampleDouble(x, y) * MathUtils.DTOR;
                     final double saaR = saaTile.getSampleDouble(x, y) * MathUtils.DTOR;
                     final double vaaR = vaaTile.getSampleDouble(x, y) * MathUtils.DTOR;
                     final double relAzi = 180. - Math.acos(Math.cos(saaR) * Math.cos(vaaR) +
                             Math.sin(saaR) * Math.sin(vaaR)) * MathUtils.RTOD;
-                    final double csza = Math.cos(szaR);
                     final double amf = 1. / csza + 1. / Math.cos(vzaR);
 
                     // we have as pressure:
@@ -348,8 +365,7 @@ public class TcwvOp extends Operator {
                             prs = mslPressure;
                         }
                     }
-                    prs = -Math.log(prs);
-
+                    // prs = -Math.log(prs);  // do this in TcwvAlgorithm, only needed for land!
 
                     final double t2m =
                             priorT2mTile != null ? priorT2mTile.getSampleDouble(x, y) : temperature;
@@ -362,23 +378,10 @@ public class TcwvOp extends Operator {
                         priorWs = priorWspTile.getSampleDouble(x, y);
                     }
 
-//                    final double priorAot = TcwvConstants.AOT865_INIT_VALUE;
-                    // RP 20200113:
                     final double priorAot = isLand ? TcwvConstants.AOT_FALLBACK_LAND : TcwvConstants.AOT_FALLBACK_OCEAN;
 
                     final double priorTcwv =
                             priorTcwvTile != null ? priorTcwvTile.getSampleDouble(x, y) : TcwvConstants.TCWV_INIT_VALUE;
-
-                    // declare as land also coastline pixels and pixels for which the reference reflectance (sensor dependent)
-                    // exceeds certain threshold:
-                    // todo: further check this first, looks wrong for MERIS
-                    // isLand = isLand || (isCoastline && applyLandForCoastlinesAndRivers(y, x, csza, targetRectangle));
-                    targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_LAND, isLand);
-
-                    final Tile[] winBandTiles = isLand ? landWinBandTiles : oceanWinBandTiles;
-                    final Tile[] absBandTiles = isLand ? landAbsBandTiles : oceanAbsBandTiles;
-                    final double[] winBandData = isLand ? landWinBandData : oceanWinBandData;
-                    final double[] absBandData = isLand ? landAbsBandData : oceanAbsBandData;
 
                     normalizeSpectralInputBands(y, x, csza, winBandTiles, winBandData);
                     normalizeSpectralInputBands(y, x, csza, absBandTiles, absBandData);
@@ -424,12 +427,28 @@ public class TcwvOp extends Operator {
         }
     }
 
+    private boolean isValidNormalizedReflectances(int x, int y, double csza, Tile[] winBandTiles, Tile[] absBandTiles) {
+        for (Tile winBandTile : winBandTiles) {
+            final double normalizedSpectralValue = normalizeSpectralInputBand(y, x, csza, winBandTile);
+            if (normalizedSpectralValue < TcwvConstants.MIN_NORM_RAD_VALUE) {
+                return false;
+            }
+        }
+        for (Tile absBandTile : absBandTiles) {
+            final double normalizedSpectralValue = normalizeSpectralInputBand(y, x, csza, absBandTile);
+            if (normalizedSpectralValue < TcwvConstants.MIN_NORM_RAD_VALUE) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private boolean applyLandForCoastlinesAndRivers(int y, int x, double csza, Rectangle targetRectangle) {
         final Tile minCoastNormRadTile =
                 getSourceTile(sourceProduct.getBand(sensor.getMinCoastNormRadBandName()), targetRectangle);
-        final double normalizedMinCoastNormRadValue = normalizeSpectralInputBand(y, x, csza, minCoastNormRadTile);
+        final double minCoastNormRadValue = normalizeSpectralInputBand(y, x, csza, minCoastNormRadTile);
 
-        return normalizedMinCoastNormRadValue > sensor.getMinCoastNormRadValue();
+        return minCoastNormRadValue > sensor.getMinCoastNormRadValue();
     }
 
     private Tile[] getSourceTiles(Band[] sourceBands, Rectangle rectangle) {
@@ -629,7 +648,13 @@ public class TcwvOp extends Operator {
             // MODIS
             final Band latBand = sourceProduct.getBand(sensor.getTpgNames()[4]);
             final Band lonBand = sourceProduct.getBand(sensor.getTpgNames()[5]);
-            targetProduct.setSceneGeoCoding(new PixelGeoCoding(latBand, lonBand, null, 5));
+            if (latBand != null && lonBand != null &&
+                    latBand.getProduct().getSceneRasterWidth() >= 2 &&
+                    latBand.getProduct().getSceneRasterHeight() >= 2 &&
+                    lonBand.getProduct().getSceneRasterWidth() >= 2 &&
+                    lonBand.getProduct().getSceneRasterHeight() >= 2) {
+                targetProduct.setSceneGeoCoding(new PixelGeoCoding(latBand, lonBand, null, 5));
+            }
         }
 
         setTargetProduct(targetProduct);

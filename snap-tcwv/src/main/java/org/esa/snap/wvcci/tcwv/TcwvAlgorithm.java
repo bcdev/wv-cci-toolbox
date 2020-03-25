@@ -68,7 +68,7 @@ public class TcwvAlgorithm {
 
         double[] par = new double[6];
         par[0] = input.getPriorAot();
-        par[1] = input.getPriorMslPress();
+        par[1] = -Math.log(input.getPriorMslPress());
         par[2] = input.getPriorT2m();
         par[3] = input.getRelAzi();
         par[4] = input.getVza();

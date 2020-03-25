@@ -105,6 +105,8 @@ public class TcwvConstants {
 
     static final double SZA_MAX_VALUE = 75.0;  // sensor independent
 
+    static final double MIN_NORM_RAD_VALUE = 0.001;
+
     static final String[] MOD35_BAND_NAMES = {
             ModisMod35L2Constants.CLOUD_MASK_BYTE_TARGET_BAND_NAME +  "1",
             ModisMod35L2Constants.QUALITY_ASSURANCE_QA_DIMENSION_BAND_NAME +  "1"

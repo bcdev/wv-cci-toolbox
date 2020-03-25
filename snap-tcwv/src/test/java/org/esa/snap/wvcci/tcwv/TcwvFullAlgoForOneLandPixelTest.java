@@ -107,7 +107,6 @@ public class TcwvFullAlgoForOneLandPixelTest {
         double priorT2m = 303.0;
 
         double priorMslPress = 1003./100.;  // todo: to be fixed by RP
-        priorMslPress = -Math.log(priorMslPress);
         double priorWsp = Double.NaN;     // not needed for land
         double priorTcwv = 30.0;
         TcwvAlgorithmInput input = new TcwvAlgorithmInput(rhoToaWin, rhoToaAbs, sza, vza, relAzi, amf,

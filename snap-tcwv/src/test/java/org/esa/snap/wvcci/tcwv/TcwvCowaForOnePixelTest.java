@@ -40,7 +40,7 @@ public class TcwvCowaForOnePixelTest {
         double priorAl1 = 0.13;
         double priorT2m = 280.0;
 
-        double priorMslPress = -Math.log(1005.0);
+        double priorMslPress = 1005.0;
         double priorWsp = Double.NaN;     // not needed for land
         double priorTcwv = 15.0;
 
@@ -129,7 +129,7 @@ public class TcwvCowaForOnePixelTest {
         double priorAl1 = 0.13;
         double priorT2m = 280.0;
 
-        double priorMslPress = -Math.log(1005.0);
+        double priorMslPress = 1005.0;
         double priorWsp = Double.NaN;     // not needed for land
         double priorTcwv = 15.0;
 
@@ -268,7 +268,7 @@ public class TcwvCowaForOnePixelTest {
 
         double aot865 = 0.1;
         double relAzi = 53.56640624999997;
-        double priorMslPress = -Math.log(972.3643431194063);
+        double priorMslPress = 972.3643431194063;
         double priorAl0 = 0.13471372425556183;
         double priorAl1 = 0.18240199983119965;
         double priorTcwv = 22.3887708167446;
