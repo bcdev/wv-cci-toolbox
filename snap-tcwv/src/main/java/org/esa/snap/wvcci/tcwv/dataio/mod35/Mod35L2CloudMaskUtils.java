@@ -13,9 +13,7 @@ import java.awt.*;
  *
  * @author olafd
  */
-class Mod35L2CloudMaskUtils {
-
-
+public class Mod35L2CloudMaskUtils {
 
     /**
      * Attaches pixel classification flag band to original MOD35 L2 product
@@ -24,60 +22,10 @@ class Mod35L2CloudMaskUtils {
      *
      */
     static void attachPixelClassificationFlagBand(Product mod35L2Product) {
-        FlagCoding mod35L2FlagCoding = new FlagCoding(PIXEL_CLASSIF_FLAG_BAND_NAME);
-
-        mod35L2FlagCoding.addFlag(CLOUD_DETERMINED_FLAG_NAME, BitSetter.setFlag(0, ModisMod35L2Constants.CLOUD_DETERMINED_BIT_INDEX),
-                CLOUD_DETERMINED_FLAG_DESCR);
-        mod35L2FlagCoding.addFlag(CLOUD_CERTAIN_FLAG_NAME, BitSetter.setFlag(0, CLOUD_CERTAIN_BIT_INDEX),
-                CLOUD_CERTAIN_FLAG_DESCR);
-        mod35L2FlagCoding.addFlag(CLOUD_UNCERTAIN_FLAG_NAME, BitSetter.setFlag(0, CLOUD_UNCERTAIN_BIT_INDEX),
-                CLOUD_UNCERTAIN_FLAG_DESCR);
-        mod35L2FlagCoding.addFlag(PROBABLY_CLEAR_FLAG_NAME, BitSetter.setFlag(0, CLOUD_PROBABLY_CLEAR_BIT_INDEX),
-                PROBABLY_CLEAR_FLAG_DESCR);
-        mod35L2FlagCoding.addFlag(CONFIDENT_CLEAR_FLAG_NAME, BitSetter.setFlag(0, CLOUD_CONFIDENT_CLEAR_BIT_INDEX),
-                CERTAINLY_CLEAR_FLAG_DESCR);
-        mod35L2FlagCoding.addFlag(DAYTIME_FLAG_NAME, BitSetter.setFlag(0, DAYTIME_BIT_INDEX),
-                DAYTIME_FLAG_DESCR);
-        mod35L2FlagCoding.addFlag(GLINT_FLAG_NAME, BitSetter.setFlag(0, GLINT_BIT_INDEX),
-                GLINT_FLAG_DESCR);
-        mod35L2FlagCoding.addFlag(SNOW_ICE_FLAG_NAME, BitSetter.setFlag(0, SNOW_ICE_BIT_INDEX),
-                SNOW_ICE_FLAG_DESCR);
-        mod35L2FlagCoding.addFlag(WATER_FLAG_NAME, BitSetter.setFlag(0, WATER_BIT_INDEX),
-                WATER_FLAG_DESCR);
-        mod35L2FlagCoding.addFlag(COASTAL_FLAG_NAME, BitSetter.setFlag(0, COASTAL_BIT_INDEX),
-                COASTAL_FLAG_DESCR);
-        mod35L2FlagCoding.addFlag(DESERT_FLAG_NAME, BitSetter.setFlag(0, DESERT_BIT_INDEX),
-                DESERT_FLAG_DESCR);
-        mod35L2FlagCoding.addFlag(LAND_FLAG_NAME, BitSetter.setFlag(0, LAND_BIT_INDEX),
-                LAND_FLAG_DESCR);
+        FlagCoding mod35L2FlagCoding = createMod35L2FlagCoding();
 
         ProductNodeGroup<Mask> maskGroup = mod35L2Product.getMaskGroup();
-
-        int colorIndex = 0;
-        addMask(mod35L2Product, maskGroup, PIXEL_CLASSIF_FLAG_BAND_NAME, CLOUD_DETERMINED_FLAG_NAME,
-                CLOUD_DETERMINED_FLAG_DESCR, PIXEL_CLASSIF_COLORS[colorIndex++]);
-        addMask(mod35L2Product, maskGroup, PIXEL_CLASSIF_FLAG_BAND_NAME, CLOUD_CERTAIN_FLAG_NAME,
-                CLOUD_CERTAIN_FLAG_DESCR, PIXEL_CLASSIF_COLORS[colorIndex++]);
-        addMask(mod35L2Product, maskGroup, PIXEL_CLASSIF_FLAG_BAND_NAME, CLOUD_UNCERTAIN_FLAG_NAME,
-                CLOUD_UNCERTAIN_FLAG_DESCR, PIXEL_CLASSIF_COLORS[colorIndex++]);
-        addMask(mod35L2Product, maskGroup, PIXEL_CLASSIF_FLAG_BAND_NAME, PROBABLY_CLEAR_FLAG_NAME,
-                PROBABLY_CLEAR_FLAG_DESCR, PIXEL_CLASSIF_COLORS[colorIndex++]);
-        addMask(mod35L2Product, maskGroup, PIXEL_CLASSIF_FLAG_BAND_NAME, CONFIDENT_CLEAR_FLAG_NAME,
-                CERTAINLY_CLEAR_FLAG_DESCR, PIXEL_CLASSIF_COLORS[colorIndex++]);
-        addMask(mod35L2Product, maskGroup, PIXEL_CLASSIF_FLAG_BAND_NAME, DAYTIME_FLAG_NAME,
-                DAYTIME_FLAG_DESCR, PIXEL_CLASSIF_COLORS[colorIndex++]);
-        addMask(mod35L2Product, maskGroup, PIXEL_CLASSIF_FLAG_BAND_NAME, GLINT_FLAG_NAME,
-                GLINT_FLAG_DESCR, PIXEL_CLASSIF_COLORS[colorIndex++]);
-        addMask(mod35L2Product, maskGroup, PIXEL_CLASSIF_FLAG_BAND_NAME, SNOW_ICE_FLAG_NAME,
-                SNOW_ICE_FLAG_DESCR, PIXEL_CLASSIF_COLORS[colorIndex++]);
-        addMask(mod35L2Product, maskGroup, PIXEL_CLASSIF_FLAG_BAND_NAME, WATER_FLAG_NAME,
-                WATER_FLAG_DESCR, PIXEL_CLASSIF_COLORS[colorIndex++]);
-        addMask(mod35L2Product, maskGroup, PIXEL_CLASSIF_FLAG_BAND_NAME, COASTAL_FLAG_NAME,
-                COASTAL_FLAG_DESCR, PIXEL_CLASSIF_COLORS[colorIndex++]);
-        addMask(mod35L2Product, maskGroup, PIXEL_CLASSIF_FLAG_BAND_NAME, DESERT_FLAG_NAME,
-                DESERT_FLAG_DESCR, PIXEL_CLASSIF_COLORS[colorIndex++]);
-        addMask(mod35L2Product, maskGroup, PIXEL_CLASSIF_FLAG_BAND_NAME, LAND_FLAG_NAME,
-                LAND_FLAG_DESCR, PIXEL_CLASSIF_COLORS[colorIndex]);
+        addMod35L2Masks(mod35L2Product, maskGroup);
 
         mod35L2Product.getFlagCodingGroup().add(mod35L2FlagCoding);
         final Band pixelClassifBand = mod35L2Product.addBand(PIXEL_CLASSIF_FLAG_BAND_NAME, ProductData.TYPE_INT16);
@@ -132,6 +80,64 @@ class Mod35L2CloudMaskUtils {
         bitMaskOp.setParameter("trgBandName", QA_FLAG_BAND_NAME);
         Product bitMaskProduct = bitMaskOp.getTargetProduct();
         qaBand.setSourceImage(bitMaskProduct.getBand(QA_FLAG_BAND_NAME).getSourceImage());
+    }
+
+    private static void addMod35L2Masks(Product mod35L2Product, ProductNodeGroup<Mask> maskGroup) {
+        int colorIndex = 0;
+        addMask(mod35L2Product, maskGroup, PIXEL_CLASSIF_FLAG_BAND_NAME, CLOUD_DETERMINED_FLAG_NAME,
+                CLOUD_DETERMINED_FLAG_DESCR, PIXEL_CLASSIF_COLORS[colorIndex++]);
+        addMask(mod35L2Product, maskGroup, PIXEL_CLASSIF_FLAG_BAND_NAME, CLOUD_CERTAIN_FLAG_NAME,
+                CLOUD_CERTAIN_FLAG_DESCR, PIXEL_CLASSIF_COLORS[colorIndex++]);
+        addMask(mod35L2Product, maskGroup, PIXEL_CLASSIF_FLAG_BAND_NAME, CLOUD_UNCERTAIN_FLAG_NAME,
+                CLOUD_UNCERTAIN_FLAG_DESCR, PIXEL_CLASSIF_COLORS[colorIndex++]);
+        addMask(mod35L2Product, maskGroup, PIXEL_CLASSIF_FLAG_BAND_NAME, PROBABLY_CLEAR_FLAG_NAME,
+                PROBABLY_CLEAR_FLAG_DESCR, PIXEL_CLASSIF_COLORS[colorIndex++]);
+        addMask(mod35L2Product, maskGroup, PIXEL_CLASSIF_FLAG_BAND_NAME, CONFIDENT_CLEAR_FLAG_NAME,
+                CERTAINLY_CLEAR_FLAG_DESCR, PIXEL_CLASSIF_COLORS[colorIndex++]);
+        addMask(mod35L2Product, maskGroup, PIXEL_CLASSIF_FLAG_BAND_NAME, DAYTIME_FLAG_NAME,
+                DAYTIME_FLAG_DESCR, PIXEL_CLASSIF_COLORS[colorIndex++]);
+        addMask(mod35L2Product, maskGroup, PIXEL_CLASSIF_FLAG_BAND_NAME, GLINT_FLAG_NAME,
+                GLINT_FLAG_DESCR, PIXEL_CLASSIF_COLORS[colorIndex++]);
+        addMask(mod35L2Product, maskGroup, PIXEL_CLASSIF_FLAG_BAND_NAME, SNOW_ICE_FLAG_NAME,
+                SNOW_ICE_FLAG_DESCR, PIXEL_CLASSIF_COLORS[colorIndex++]);
+        addMask(mod35L2Product, maskGroup, PIXEL_CLASSIF_FLAG_BAND_NAME, WATER_FLAG_NAME,
+                WATER_FLAG_DESCR, PIXEL_CLASSIF_COLORS[colorIndex++]);
+        addMask(mod35L2Product, maskGroup, PIXEL_CLASSIF_FLAG_BAND_NAME, COASTAL_FLAG_NAME,
+                COASTAL_FLAG_DESCR, PIXEL_CLASSIF_COLORS[colorIndex++]);
+        addMask(mod35L2Product, maskGroup, PIXEL_CLASSIF_FLAG_BAND_NAME, DESERT_FLAG_NAME,
+                DESERT_FLAG_DESCR, PIXEL_CLASSIF_COLORS[colorIndex++]);
+        addMask(mod35L2Product, maskGroup, PIXEL_CLASSIF_FLAG_BAND_NAME, LAND_FLAG_NAME,
+                LAND_FLAG_DESCR, PIXEL_CLASSIF_COLORS[colorIndex]);
+    }
+
+    private static FlagCoding createMod35L2FlagCoding() {
+        FlagCoding mod35L2FlagCoding = new FlagCoding(PIXEL_CLASSIF_FLAG_BAND_NAME);
+
+        mod35L2FlagCoding.addFlag(CLOUD_DETERMINED_FLAG_NAME, BitSetter.setFlag(0, ModisMod35L2Constants.CLOUD_DETERMINED_BIT_INDEX),
+                CLOUD_DETERMINED_FLAG_DESCR);
+        mod35L2FlagCoding.addFlag(CLOUD_CERTAIN_FLAG_NAME, BitSetter.setFlag(0, CLOUD_CERTAIN_BIT_INDEX),
+                CLOUD_CERTAIN_FLAG_DESCR);
+        mod35L2FlagCoding.addFlag(CLOUD_UNCERTAIN_FLAG_NAME, BitSetter.setFlag(0, CLOUD_UNCERTAIN_BIT_INDEX),
+                CLOUD_UNCERTAIN_FLAG_DESCR);
+        mod35L2FlagCoding.addFlag(PROBABLY_CLEAR_FLAG_NAME, BitSetter.setFlag(0, CLOUD_PROBABLY_CLEAR_BIT_INDEX),
+                PROBABLY_CLEAR_FLAG_DESCR);
+        mod35L2FlagCoding.addFlag(CONFIDENT_CLEAR_FLAG_NAME, BitSetter.setFlag(0, CLOUD_CONFIDENT_CLEAR_BIT_INDEX),
+                CERTAINLY_CLEAR_FLAG_DESCR);
+        mod35L2FlagCoding.addFlag(DAYTIME_FLAG_NAME, BitSetter.setFlag(0, DAYTIME_BIT_INDEX),
+                DAYTIME_FLAG_DESCR);
+        mod35L2FlagCoding.addFlag(GLINT_FLAG_NAME, BitSetter.setFlag(0, GLINT_BIT_INDEX),
+                GLINT_FLAG_DESCR);
+        mod35L2FlagCoding.addFlag(SNOW_ICE_FLAG_NAME, BitSetter.setFlag(0, SNOW_ICE_BIT_INDEX),
+                SNOW_ICE_FLAG_DESCR);
+        mod35L2FlagCoding.addFlag(WATER_FLAG_NAME, BitSetter.setFlag(0, WATER_BIT_INDEX),
+                WATER_FLAG_DESCR);
+        mod35L2FlagCoding.addFlag(COASTAL_FLAG_NAME, BitSetter.setFlag(0, COASTAL_BIT_INDEX),
+                COASTAL_FLAG_DESCR);
+        mod35L2FlagCoding.addFlag(DESERT_FLAG_NAME, BitSetter.setFlag(0, DESERT_BIT_INDEX),
+                DESERT_FLAG_DESCR);
+        mod35L2FlagCoding.addFlag(LAND_FLAG_NAME, BitSetter.setFlag(0, LAND_BIT_INDEX),
+                LAND_FLAG_DESCR);
+        return mod35L2FlagCoding;
     }
 
     private static void addMask(Product mod35Product, ProductNodeGroup<Mask> maskGroup,

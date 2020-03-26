@@ -207,9 +207,9 @@ public class TcwvOp extends Operator {
         saaBand = sourceProduct.getRasterDataNode(sensor.getTpgNames()[2]);
         vaaBand = sourceProduct.getRasterDataNode(sensor.getTpgNames()[3]);
 
-        if (sensor == Sensor.MERIS) {
-            altitudeBand = sourceProduct.getRasterDataNode(sensor.getTpgNames()[6]);
-            seaLevelPressBand = sourceProduct.getRasterDataNode(sensor.getTpgNames()[7]);
+        altitudeBand = sourceProduct.getRasterDataNode(sensor.getAltitudeBandName());
+        if (sensor.getSlpBandName() != null) {
+            seaLevelPressBand = sourceProduct.getRasterDataNode(sensor.getSlpBandName());
         }
 
         tcwvAlgorithm = new TcwvAlgorithm();
@@ -244,10 +244,9 @@ public class TcwvOp extends Operator {
         Tile saaTile = getSourceTile(saaBand, targetRectangle);
         Tile vaaTile = getSourceTile(vaaBand, targetRectangle);
 
-        Tile altitudeTile = null;
+        Tile altitudeTile = getSourceTile(altitudeBand, targetRectangle);
         Tile seaLevelPressTile = null;
-        if (sensor == Sensor.MERIS) {
-            altitudeTile = getSourceTile(altitudeBand, targetRectangle);
+        if (seaLevelPressBand != null) {
             seaLevelPressTile = getSourceTile(seaLevelPressBand, targetRectangle);
         }
 
@@ -291,8 +290,6 @@ public class TcwvOp extends Operator {
 
                 winBandTiles = isLand ? landWinBandTiles : oceanWinBandTiles;
                 absBandTiles = isLand ? landAbsBandTiles : oceanAbsBandTiles;
-                winBandData = isLand ? landWinBandData : oceanWinBandData;
-                absBandData = isLand ? landAbsBandData : oceanAbsBandData;
 
                 boolean isValid = isValidNormalizedReflectances(x, y, csza, winBandTiles, absBandTiles) &&
                         sza <= TcwvConstants.SZA_MAX_VALUE &&
@@ -319,14 +316,11 @@ public class TcwvOp extends Operator {
                 isLand = isLand || (isCoastline && applyLandForCoastlinesAndRivers(y, x, csza, targetRectangle));
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_LAND, isLand);
 
-                // todo: set to invalid also if
-                //  - any input reflectance is < 0.001 (all sensors), but be careful:
-                //      --> in Python it is:
-                //              # data['rad'][wvl],
-                //          which is in Java:
-                //              # RefSB_* / Math.PI (MODIS)
-                //              # rhoToa * cos(sza) (MERIS, OLCI)
-
+                // update win/abs bands according to possible change of isLand (important for MODIS!):
+                winBandTiles = isLand ? landWinBandTiles : oceanWinBandTiles;
+                absBandTiles = isLand ? landAbsBandTiles : oceanAbsBandTiles;
+                winBandData = isLand ? landWinBandData : oceanWinBandData;
+                absBandData = isLand ? landAbsBandData : oceanAbsBandData;
 
                 if (!isValid || isCloud || (!processOcean && !isLand)) {
                     targetTiles.get(tcwvBand).setSample(x, y, Float.NaN);
@@ -348,34 +342,33 @@ public class TcwvOp extends Operator {
                             Math.sin(saaR) * Math.sin(vaaR)) * MathUtils.RTOD;
                     final double amf = 1. / csza + 1. / Math.cos(vzaR);
 
-                    // we have as pressure:
-                    // ERA Interim: Pa, e.g. 100500  --> divide by -100 to get negative hPa for current LUTs
-                    // no ERAInterim: hPa --> multiply by -1 to get negative hPa
-                    double prs;
-                    // the new LUTs (20190607) all have log(prs) in descending order, so we need to convert like this:
-                    if (sensor == Sensor.MERIS) {
-                        final double altitude = altitudeTile.getSampleDouble(x, y);
-                        final double slp = seaLevelPressTile.getSampleDouble(x, y);
-                        prs = TcwvUtils.getAtmosphericPressure(slp, altitude);
-                    } else {
-                        // todo: check for OLCI
-                        if (priorMslTile != null) {
-                            prs = priorMslTile.getSampleDouble(x, y) / 100.0;
-                        } else {
-                            prs = mslPressure;
-                        }
-                    }
-                    // prs = -Math.log(prs);  // do this in TcwvAlgorithm, only needed for land!
-
-                    final double t2m =
-                            priorT2mTile != null ? priorT2mTile.getSampleDouble(x, y) : temperature;
+                    // prior atmospheric pressure:
+                    double atmPress = mslPressure;
+                    double t2m = temperature;
                     double priorWs = TcwvConstants.WS_INIT_VALUE;
-                    if (priorU10Tile != null && priorV10Tile != null) {
-                        final double u10 = priorU10Tile.getSampleDouble(x, y);
-                        final double v10 = priorV10Tile.getSampleDouble(x, y);
-                        priorWs = Math.sqrt(u10 * u10 + v10 * v10);
-                    } else if (priorWspTile != null) {
-                        priorWs = priorWspTile.getSampleDouble(x, y);
+                    if (isLand) {
+                        final double altitude = altitudeTile.getSampleDouble(x, y);
+                        double slp;
+                        if (seaLevelPressTile != null) {
+                            slp = seaLevelPressTile.getSampleDouble(x, y);
+                        } else {
+                            if (priorMslTile != null) {
+                                // ERA Interim: Pa, e.g. 100500  --> divide by -100 to get negative hPa for current LUTs
+                                slp = priorMslTile.getSampleDouble(x, y) / 100.0;
+                            } else {
+                                slp = mslPressure;
+                            }
+                        }
+                        atmPress = TcwvUtils.getAtmosphericPressure(slp, altitude);
+                        t2m = priorT2mTile != null ? priorT2mTile.getSampleDouble(x, y) : temperature;
+                    } else {
+                        if (priorU10Tile != null && priorV10Tile != null) {
+                            final double u10 = priorU10Tile.getSampleDouble(x, y);
+                            final double v10 = priorV10Tile.getSampleDouble(x, y);
+                            priorWs = Math.sqrt(u10 * u10 + v10 * v10);
+                        } else if (priorWspTile != null) {
+                            priorWs = priorWspTile.getSampleDouble(x, y);
+                        }
                     }
 
                     final double priorAot = isLand ? TcwvConstants.AOT_FALLBACK_LAND : TcwvConstants.AOT_FALLBACK_OCEAN;
@@ -388,16 +381,21 @@ public class TcwvOp extends Operator {
 
                     double priorAl0 = TcwvConstants.AL0_INIT_VALUE;
                     double priorAl1 = TcwvConstants.AL1_INIT_VALUE;
-                    if (sensor == Sensor.MERIS) {
-                        // for MERIS, set to rad * PI / csza = refl_input*flux (RP 20200316):
-                        priorAl0 = winBandData[0] * Math.PI / csza;
-                        priorAl1 = winBandData[1] * Math.PI / csza;
+                    if (isLand) {
+                        if (sensor == Sensor.MERIS || sensor == Sensor.OLCI) {
+                            // for MERIS, set to rad * PI / csza = refl_input*flux (RP 20200316):
+                            priorAl0 = winBandData[0] * Math.PI / csza;
+                            priorAl1 = winBandData[1] * Math.PI / csza;
+                        } else if (sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA) {
+                            // for MERIS, set to rad * PI / csza = refl_input*flux (RP 20200316):
+                            priorAl0 = winBandData[0] * Math.PI;
+                            priorAl1 = winBandData[1] * Math.PI;
+                        }
                     }
-                    // todo: check OLCI, MODIS
 
                     TcwvAlgorithmInput input = new TcwvAlgorithmInput(winBandData, absBandData, sza, vzaTile.getSampleDouble(x, y), relAzi,
                             amf, priorAot, priorAl0, priorAl1,
-                            t2m, prs, priorWs, priorTcwv);
+                            t2m, atmPress, priorWs, priorTcwv);
 
                     // 'ocean' parameters are null for land processing!
                     final TcwvResult result = tcwvAlgorithm.compute(sensor, landLut, oceanLut,

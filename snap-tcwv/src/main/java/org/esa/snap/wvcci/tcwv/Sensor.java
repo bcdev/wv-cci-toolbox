@@ -14,6 +14,8 @@ public enum Sensor {
             MERIS_LAND_REFL_ABS_BAND_NAMES,
             MERIS_OCEAN_REFL_WIN_BAND_NAMES,
             MERIS_OCEAN_REFL_ABS_BAND_NAMES,
+            MERIS_ALTITUDE_BAND_NAME,
+            MERIS_SLP_BAND_NAME,
             MERIS_MIN_COAST_NORM_RAD_BAND_NAME,
             MERIS_MIN_COAST_NORM_RAD_VALUE,
             MERIS_TPG_NAMES,
@@ -34,6 +36,8 @@ public enum Sensor {
             MODIS_LAND_REFL_ABS_BAND_NAMES,
             MODIS_OCEAN_REFL_WIN_BAND_NAMES,
             MODIS_OCEAN_REFL_ABS_BAND_NAMES,
+            MODIS_ALTITUDE_BAND_NAME,
+            null,
             MODIS_MIN_COAST_NORM_RAD_BAND_NAME,
             MODIS_MIN_COAST_NORM_RAD_VALUE,
             MODIS_TPG_NAMES,
@@ -54,6 +58,8 @@ public enum Sensor {
             MODIS_LAND_REFL_ABS_BAND_NAMES,
             MODIS_OCEAN_REFL_WIN_BAND_NAMES,
             MODIS_OCEAN_REFL_ABS_BAND_NAMES,
+            MODIS_ALTITUDE_BAND_NAME,
+            null,
             MODIS_MIN_COAST_NORM_RAD_BAND_NAME,
             MODIS_MIN_COAST_NORM_RAD_VALUE,
             MODIS_TPG_NAMES,
@@ -74,6 +80,8 @@ public enum Sensor {
             OLCI_LAND_REFL_ABS_BAND_NAMES,
             OLCI_OCEAN_REFL_WIN_BAND_NAMES,
             OLCI_OCEAN_REFL_ABS_BAND_NAMES,
+            OLCI_ALTITUDE_BAND_NAME,
+            OLCI_SLP_BAND_NAME,
             OLCI_MIN_COAST_NORM_RAD_BAND_NAME,
             OLCI_MIN_COAST_NORM_RAD_VALUE,
             OLCI_TPG_NAMES,
@@ -95,6 +103,8 @@ public enum Sensor {
     private String[] landAbsBandNames;
     private String[] oceanWinBandNames;
     private String[] oceanAbsBandNames;
+    private String altitudeBandName;
+    private String slpBandName;
     private String minCoastNormRadBandName;
     private double minCoastNormRadValue;
     private String[] tpgNames;
@@ -113,6 +123,8 @@ public enum Sensor {
     Sensor(String name, String[] reflBandNames,
            String[] landWinBandNames, String[] landAbsBandNames,
            String[] oceanWinBandNames, String[] oceanAbsBandNames,
+           String altitudeBandName,
+           String slpBandName,
            String minCoastNormRadBandName,
            double minCoastNormRadValue,
            String[] tpgNames,
@@ -127,6 +139,8 @@ public enum Sensor {
         this.landAbsBandNames = landAbsBandNames;
         this.oceanWinBandNames = oceanWinBandNames;
         this.oceanAbsBandNames = oceanAbsBandNames;
+        this.altitudeBandName = altitudeBandName;
+        this.slpBandName = slpBandName;
         this.minCoastNormRadBandName = minCoastNormRadBandName;
         this.minCoastNormRadValue = minCoastNormRadValue;
         this.tpgNames = tpgNames;
@@ -165,6 +179,14 @@ public enum Sensor {
 
     public String[] getOceanAbsBandNames() {
         return oceanAbsBandNames;
+    }
+
+    public String getAltitudeBandName() {
+        return altitudeBandName;
+    }
+
+    public String getSlpBandName() {
+        return slpBandName;
     }
 
     public String getMinCoastNormRadBandName() {

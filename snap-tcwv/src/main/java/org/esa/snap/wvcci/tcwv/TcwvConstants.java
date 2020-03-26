@@ -156,6 +156,9 @@ public class TcwvConstants {
             "reflectance_15"  // 900 nm
     };
 
+    final static String MERIS_ALTITUDE_BAND_NAME = "dem_alt";
+    final static String MERIS_SLP_BAND_NAME = "atm_press";
+
     final static String MERIS_MIN_COAST_NORM_RAD_BAND_NAME = "reflectance_14";
     final static double MERIS_MIN_COAST_NORM_RAD_VALUE = 0.005;
 
@@ -164,8 +167,7 @@ public class TcwvConstants {
             "view_zenith",
             "sun_azimuth",
             "view_azimuth",
-            "latitude", "longitude",
-            "dem_alt", "atm_press"
+            "latitude", "longitude"
     };
 
     // Introduce reasonable input reflectance uncertainty:
@@ -259,6 +261,8 @@ public class TcwvConstants {
             "EV_1KM_RefSB_19"           // 940 nm
     };
 
+    final static String MODIS_ALTITUDE_BAND_NAME = "Height";
+
     final static String MODIS_MIN_COAST_NORM_RAD_BAND_NAME = "EV_250_Aggr1km_RefSB_2";
     final static double MODIS_MIN_COAST_NORM_RAD_VALUE = 0.001;
 
@@ -267,7 +271,7 @@ public class TcwvConstants {
             "SensorZenith",
             "SolarAzimuth",
             "SensorAzimuth",
-             "latitude", "longitude"
+            "latitude", "longitude"
     };
 
     // RSS total < 3% (https://modis.gsfc.nasa.gov/data/atbd/atbd_mod01.pdf)
@@ -368,6 +372,9 @@ public class TcwvConstants {
             "Oa19_reflectance",   // 899.316 nm
             "Oa20_reflectance"    // 939.02 nm
     };
+
+    final static String OLCI_ALTITUDE_BAND_NAME = "altitude";
+    final static String OLCI_SLP_BAND_NAME = "sea_level_pressure";
 
     final static String OLCI_MIN_COAST_NORM_RAD_BAND_NAME = "Oa21_reflectance";
     final static double OLCI_MIN_COAST_NORM_RAD_VALUE = 0.007;

@@ -5,6 +5,7 @@ import org.esa.snap.core.datamodel.FlagCoding;
 import org.esa.snap.core.datamodel.Product;
 import org.esa.snap.core.datamodel.ProductData;
 import org.esa.snap.core.util.BitSetter;
+import org.esa.snap.wvcci.tcwv.dataio.mod35.Mod35L2CloudMaskUtils;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -18,7 +19,7 @@ import static org.junit.Assert.assertNotNull;
  *
  * @author olafd
  */
-public class TcwvCowaConsolidatedCciLutsV2ForOnePixelWithOperatorTest {
+public class TcwvCowaConsolidatedCciLutsV2ForOneMerisPixelWithOperatorTest {
 
     // test product: subset_of_L2_of_MER_RR__1PRACR20110702_140801_000026343104_00111_48832_0000_era-interim.dim
 
@@ -157,7 +158,6 @@ public class TcwvCowaConsolidatedCciLutsV2ForOnePixelWithOperatorTest {
 
         return product;
     }
-
 
     private static void addBand(Product product, String bandName, double value) {
         Band a = new Band(bandName, ProductData.TYPE_FLOAT64, 1, 1);
