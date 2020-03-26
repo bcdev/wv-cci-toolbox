@@ -31,12 +31,37 @@ public class TcwvAlgorithm {
                               JacobiFunction jacobiFunctionLand, JacobiFunction jacobiFunctionOcean,
                               TcwvAlgorithmInput input, boolean isLand) {
 
-        return isLand ? computeTcwvLand(sensor, input, landLut, tcwvFunctionLand, jacobiFunctionLand) :
+        return compute(sensor, landLut, oceanLut, tcwvFunctionLand, tcwvFunctionOcean,
+                jacobiFunctionLand, jacobiFunctionOcean, input, isLand, false);
+    }
+
+    /**
+     * Provides computation of final TCWV from given input
+     *
+     * @param sensor              - the sensor (MERIS, MODIS, or OLCI)
+     * @param landLut             - lookup table for land pixels for given sensor
+     * @param oceanLut            - lookup table for ocean pixels for given sensor
+     * @param tcwvFunctionLand    - TCWB function object for land pixels
+     * @param tcwvFunctionOcean   - TCWB function object for ocean pixels
+     * @param jacobiFunctionLand  - Jacobi function object for land pixels
+     * @param jacobiFunctionOcean - Jacobi function object for ocean pixels
+     * @param input               - object with all required input variables
+     * @param isLand              - land/water flag
+     * @param isCoastline         - coastline flag
+     * @return {@link TcwvResult}: TCWV, and possibly additional information
+     */
+    public TcwvResult compute(Sensor sensor,
+                              TcwvLandLut landLut, TcwvOceanLut oceanLut,
+                              TcwvFunction tcwvFunctionLand, TcwvFunction tcwvFunctionOcean,
+                              JacobiFunction jacobiFunctionLand, JacobiFunction jacobiFunctionOcean,
+                              TcwvAlgorithmInput input, boolean isLand, boolean isCoastline) {
+
+        return isLand ? computeTcwvLand(sensor, input, landLut, tcwvFunctionLand, jacobiFunctionLand, isCoastline) :
                 computeTcwvOcean(sensor, input, oceanLut, tcwvFunctionOcean, jacobiFunctionOcean);
     }
 
     private TcwvResult computeTcwvLand(Sensor sensor, TcwvAlgorithmInput input, TcwvLandLut landLut,
-                                       TcwvFunction tcwvFunction, JacobiFunction jacobiFunction) {
+                                       TcwvFunction tcwvFunction, JacobiFunction jacobiFunction, boolean isCoastline) {
 
         final double[] wvc = landLut.getWvc();
         final double[] al0 = landLut.getAl0();
@@ -93,7 +118,11 @@ public class TcwvAlgorithm {
                     input.getAmf());
         }
 
-        final double[][] sa = TcwvConstants.SA_LAND;
+        double[][] sa = TcwvConstants.SA_LAND;
+        // RP March 2020:
+        if (isCoastline) {
+            sa[0][0] = TcwvConstants.SA_OCEAN[0][0];
+        }
 
         OptimalEstimation oe = new OptimalEstimation(tcwvFunction, a, b, mes, par, jacobiFunction);
 

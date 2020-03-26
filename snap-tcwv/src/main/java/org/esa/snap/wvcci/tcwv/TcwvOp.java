@@ -403,7 +403,7 @@ public class TcwvOp extends Operator {
                     final TcwvResult result = tcwvAlgorithm.compute(sensor, landLut, oceanLut,
                             tcwvFunctionLand, tcwvFunctionOcean,
                             jacobiFunctionland, jacobiFunctionOcean,
-                            input, isLand);
+                            input, isLand, isCoastline);
 
                     targetTiles.get(tcwvBand).setSample(x, y, result.getTcwv());
                     if (writeCostFunctionValue) {
