@@ -13,7 +13,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 /**
- * Test class for pixelwise verification of breadboard implementation for land/water and all sensors.
+ * Test class for pixelwise verification of breadboard implementation for MERIS.
  * These tests make full use of the TcwvOp operator to ensure that a reference input product is
  * correctly read and all numbers correctly passed into the TCWV retrieval.
  *

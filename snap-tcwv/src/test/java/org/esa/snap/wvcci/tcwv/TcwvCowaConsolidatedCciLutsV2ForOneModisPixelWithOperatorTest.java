@@ -13,7 +13,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 /**
- * Test class for pixelwise verification of breadboard implementation for land/water and all sensors.
+ * Test class for pixelwise verification of breadboard implementation for MODIS.
  * These tests make full use of the TcwvOp operator to ensure that a reference input product is
  * correctly read and all numbers correctly passed into the TCWV retrieval.
  *
@@ -21,7 +21,7 @@ import static org.junit.Assert.assertNotNull;
  */
 public class TcwvCowaConsolidatedCciLutsV2ForOneModisPixelWithOperatorTest {
 
-    // test product: subset_of_L2_of_MER_RR__1PRACR20110702_140801_000026343104_00111_48832_0000_era-interim.dim
+    // test product: MOD021KM.A2010209.1050.061.2017251234617.hdf
 
     @Before
     public void setUp() {
