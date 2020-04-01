@@ -425,8 +425,11 @@ public class TcwvConstants {
 
     // 'cor' from land_core_olci_calib_arm.nc4, abs bands 19, 20
     final static double[][] OLCI_LAND_RECT_CORR = {
-            {0.005084, 0.942815},
-            {-0.01986, 0.871491}
+//            {0.005084, 0.942815},
+//            {-0.01986, 0.871491}
+            // fixed, 20200401:
+            {0.00727, 0.94982},
+            {0.0022359, 0.88888}
     };
 
     // 'cor' from ocean_core_olci_calib.nc4, abs bands 19, 20

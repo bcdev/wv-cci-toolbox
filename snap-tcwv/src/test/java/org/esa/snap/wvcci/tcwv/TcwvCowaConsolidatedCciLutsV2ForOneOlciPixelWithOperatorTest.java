@@ -28,32 +28,34 @@ public class TcwvCowaConsolidatedCciLutsV2ForOneOlciPixelWithOperatorTest {
     public void setUp() {
     }
 
-//    @Test
-//    public void testCowaConsolidatedCciLuts_olci_land_from_operator() {
-//
-//        TcwvOp tcwvOp = new TcwvOp();
-//        tcwvOp.setParameterDefaultValues();
-//        tcwvOp.setSourceProduct("sourceProduct", createOlciLandTestProduct());
-//        tcwvOp.setParameter("sensor", "OLCI");
-//        tcwvOp.setParameter("writeCostFunctionValue", "true");
-//        Product tcwvProd = tcwvOp.getTargetProduct();
-//
-//        final Band tcwvBand = tcwvProd.getBand("tcwv");
-//        assertNotNull(tcwvBand);
-//        System.out.println("OLCI LAND tcwvBand.getSampleFloat(0, 0) = " + tcwvBand.getSampleFloat(0, 0));
-//        final double tcwv_py = 44.834;
-//        assertEquals(tcwv_py, tcwvBand.getSampleFloat(0, 0), 0.75);  // Java: 44.19
-//
-//        final Band tcwvUncBand = tcwvProd.getBand("tcwv_uncertainty");
-//        assertNotNull(tcwvUncBand);
-//        final double tcwvUnc_py = 1.326;
-//        assertEquals(tcwvUnc_py, tcwvUncBand.getSampleFloat(0, 0), 1.E-2);  // Java: 1.317
-//
-//        final Band costBand = tcwvProd.getBand("cost_function");
-//        assertNotNull(costBand);
-//        final double costFunction_py = 0.008817;
-//        assertEquals(costFunction_py, costBand.getSampleFloat(0, 0), 0.005);  // Java: 0.004
-//    }
+    @Test
+    public void testCowaConsolidatedCciLuts_olci_land_from_operator() {
+
+        TcwvOp tcwvOp = new TcwvOp();
+        tcwvOp.setParameterDefaultValues();
+        tcwvOp.setSourceProduct("sourceProduct", createOlciLandTestProduct());
+        tcwvOp.setParameter("sensor", "OLCI");
+        tcwvOp.setParameter("writeCostFunctionValue", "true");
+        Product tcwvProd = tcwvOp.getTargetProduct();
+
+        final Band tcwvBand = tcwvProd.getBand("tcwv");
+        assertNotNull(tcwvBand);
+        System.out.println("OLCI LAND tcwvBand.getSampleFloat(0, 0) = " + tcwvBand.getSampleFloat(0, 0));
+        final double tcwv_py = 23.50386;
+        assertEquals(tcwv_py, tcwvBand.getSampleFloat(0, 0), 0.005);  // Java: 23.5
+
+        final Band tcwvUncBand = tcwvProd.getBand("tcwv_uncertainty");
+        assertNotNull(tcwvUncBand);
+        System.out.println("OLCI LAND tcwvUncBand.getSampleFloat(0, 0) = " + tcwvUncBand.getSampleFloat(0, 0));
+        final double tcwvUnc_py = 0.116628;
+        assertEquals(tcwvUnc_py, tcwvUncBand.getSampleFloat(0, 0), 1.E-3);  // Java: 0.116
+
+        final Band costBand = tcwvProd.getBand("cost_function");
+        assertNotNull(costBand);
+        System.out.println("OLCI LAND costBand.getSampleFloat(0, 0) = " + costBand.getSampleFloat(0, 0));
+        final double costFunction_py = 0.1135;
+        assertEquals(costFunction_py, costBand.getSampleFloat(0, 0), 0.001);  // Java: 0.113569
+    }
 
     @Test
     public void testCowaConsolidatedCciLuts_olci_ocean_from_operator() {
@@ -94,18 +96,20 @@ public class TcwvCowaConsolidatedCciLutsV2ForOneOlciPixelWithOperatorTest {
 
         Product product = new Product("dummy", "dummy", 1, 1);
         product.setProductType("idepix_era");
-        addBand(product, "Oa18_reflectance", 0.3324);  // original reflectances, not normalized
-        addBand(product, "Oa19_reflectance", 0.3324);  // original reflectances, not normalized
-        addBand(product, "Oa20_reflectance", 0.3324);  // original reflectances, not normalized
-        addBand(product, "Oa21_reflectance", 0.3324);  // original reflectances, not normalized
-        addBand(product, "t2m", 295.3106630925399);  // ERA value from breadboard
-        addBand(product, "tcwv", 50.368421936278565);  // ERA value from breadboard
-        addBand(product, "SZA", 36.832975);
-        addBand(product, "SAA", 54.86207);
-        addBand(product, "OZA", 25.411228);
-        addBand(product, "OAA", 102.27069);
-        addBand(product, "altitude", 160.78125);
-        addBand(product, "sea_level_pressure", 1012.3);
+        final double sza = 43.886208378211705;
+        final double csza = Math.cos(sza* MathUtils.DTOR);
+        addBand(product, "Oa18_reflectance", 0.08114775 * Math.PI / csza);  // original reflectances, not normalized
+        addBand(product, "Oa19_reflectance", 0.051190317 * Math.PI / csza);  // original reflectances, not normalized
+        addBand(product, "Oa20_reflectance", 0.014368968 * Math.PI / csza);  // original reflectances, not normalized
+        addBand(product, "Oa21_reflectance", 0.08399769 * Math.PI / csza);  // original reflectances, not normalized
+        addBand(product, "t2m", 291.06589984011674);  // ERA value from breadboard
+        addBand(product, "tcwv", 30.96508819250751);  // ERA value from breadboard
+        addBand(product, "SZA", sza);
+        addBand(product, "SAA", 142.82275263617674);
+        addBand(product, "OZA", 27.926958039054462);
+        addBand(product, "OAA", 102.07838529290852);
+        addBand(product, "altitude", 0.0);
+        addBand(product, "sea_level_pressure", 1006.53175615848);
         final Band pixelClassifFlagBand = new Band("pixel_classif_flags", ProductData.TYPE_INT16, 1, 1);
         final short[] v = {1024}; // only land flag raised
         pixelClassifFlagBand.setRasterData(ProductData.createInstance(v));
