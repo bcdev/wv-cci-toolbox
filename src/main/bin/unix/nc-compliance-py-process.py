@@ -431,27 +431,33 @@ variable.setncattr('standard_name', 'status_flag ')
 fill_value = -128
 variable.setncattr('_FillValue', np.array([fill_value], 'b'))
 min_valid = 0
-max_valid = 2 # TODO: adapt to 0..3 after 'Dataset 2' (second flag for cost function value intervals)
+max_valid = 3 # TODO: adapt to 0..3 after 'Dataset 2' (second flag for cost function value intervals)
 variable.setncattr('valid_range', np.array([min_valid, max_valid], 'b'))
-variable.setncattr('flag_values', np.array([0, 1, 2], 'b'))
-variable.setncattr('flag_meanings', 'TCWV_OK HIGH_COST_FUNCTION TCWV_INVALID')
+variable.setncattr('flag_values', np.array([0, 1, 2, 3], 'b'))
+variable.setncattr('flag_meanings', 'TCWV_OK HIGH_COST_FUNCTION_1 HIGH_COST_FUNCTION_2 TCWV_INVALID')
 
 # set the quality flag values here:
 # flag = 0 for TCWV_OK, flag = 1 for TCWV_HIGH_COST_FUNCTION, flag = 2 for TCWV_INVALID (all NaN pixels)
+# NEW: flag = 0 for TCWV_OK, flag = 1 for TCWV_HIGH_COST_FUNCTION_1, flag = 2 for TCWV_HIGH_COST_FUNCTION_2, flag = 3 for TCWV_INVALID (all NaN pixels)
 
 tcwv_quality_flag_maj_arr_src = np.array(src.variables['tcwv_quality_flags_majority'])
 tcwv_quality_flag_min_arr_src = np.array(src.variables['tcwv_quality_flags_min'])
 tcwv_quality_flag_maj_arr = np.copy(tcwv_quality_flag_maj_arr_src)
 tcwv_quality_flag_min_arr = np.copy(tcwv_quality_flag_min_arr_src)
-tcwv_quality_flag_maj_arr[np.where(np.isnan(tcwv_quality_flag_maj_arr))] = 4
-tcwv_quality_flag_min_arr[np.where(np.isnan(tcwv_quality_flag_min_arr))] = 4
+#tcwv_quality_flag_maj_arr[np.where(np.isnan(tcwv_quality_flag_maj_arr))] = 4
+tcwv_quality_flag_maj_arr[np.where(np.isnan(tcwv_quality_flag_maj_arr_src))] = 8
+#tcwv_quality_flag_min_arr[np.where(np.isnan(tcwv_quality_flag_min_arr))] = 4
+tcwv_quality_flag_min_arr[np.where(np.isnan(tcwv_quality_flag_min_arr_src))] = 8
 tmparr = np.copy(tcwv_quality_flag_maj_arr)
 # if the majority is INVALID, we need to take the minimum of the existing samples
 # (otherwise we may have an INVALID flag together with a valid TCWV value)
-indices = np.where(tcwv_quality_flag_maj_arr > 2)
+#indices = np.where(tcwv_quality_flag_maj_arr > 2)
+indices = np.where(tcwv_quality_flag_maj_arr > 4)
 tmparr[indices] = tcwv_quality_flag_min_arr_src[indices]
-tmparr[np.where(tmparr < 1)] = 4
-tmparr[np.where(np.isnan(tmparr))] = 4
+#tmparr[np.where(tmparr < 1)] = 4
+#tmparr[np.where(np.isnan(tmparr))] = 4
+tmparr[np.where((tcwv_quality_flag_maj_arr < 1) & (tcwv_quality_flag_min_arr < 1))] = 8
+tmparr[np.where(np.isnan(tmparr))] = 8
 tcwv_quality_flag_arr = np.log2(tmparr)
 variable[:,:] = tcwv_quality_flag_arr[:,:]
 
@@ -575,7 +581,9 @@ if sensor.find("hoaps") == -1:
     resetOceanCdr1(dst.variables['tcwv_err'], surface_type_arr, np.nan)    
     resetOceanCdr1(dst.variables['tcwv_ran'], surface_type_arr, np.nan)    
     # set tcwv_quality_flag to 2:
-    resetOceanCdr1(dst.variables['tcwv_quality_flag'], surface_type_arr, 2)    
+    #resetOceanCdr1(dst.variables['tcwv_quality_flag'], surface_type_arr, 2)    
+    # dataset 2.x: reset to 3
+    resetOceanCdr1(dst.variables['tcwv_quality_flag'], surface_type_arr, 3)    
 
 ### Close files... ###
 
