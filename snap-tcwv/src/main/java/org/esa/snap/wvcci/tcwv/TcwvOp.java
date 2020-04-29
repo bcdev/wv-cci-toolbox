@@ -299,22 +299,23 @@ public class TcwvOp extends Operator {
                 if (sensor != Sensor.MODIS_TERRA && sensor != Sensor.MODIS_AQUA) {
                     isSeaIce = isValid && isIdepixSeaIce(x, y, idepixClassifTile);
                 }
-                final boolean isOcean = isValid && !isLand && !isSeaIce;
+
                 final boolean isCloud = isValid && (mod35Used ? isMod35Cloud(x, y, pixelClassifTile) :
                         isIdepixCloud(x, y, pixelClassifTile));
 
                 final boolean isCoastline = isValid && (mod35Used ? isMod35Coastline(x, y, pixelClassifTile) :
                         isIdepixCoastline(x, y, pixelClassifTile));
 
-                targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_OCEAN, isOcean);
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_CLOUD, isCloud);
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_SEA_ICE, isSeaIce);
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_UNDEFINED, !isValid);
 
                 // declare as land also coastline pixels and pixels for which the reference reflectance (sensor dependent)
-                // exceeds certain threshold:
+                // exceeds certain threshold. Then make sure that finally land/ocean/seaice are complementary!
                 isLand = isLand || (isCoastline && applyLandForCoastlinesAndRivers(y, x, csza, targetRectangle));
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_LAND, isLand);
+                final boolean isOcean = isValid && !isLand && !isSeaIce;
+                targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_OCEAN, isOcean);
 
                 // update win/abs bands according to possible change of isLand (important for MODIS!):
                 winBandTiles = isLand ? landWinBandTiles : oceanWinBandTiles;

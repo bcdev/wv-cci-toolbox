@@ -38,7 +38,7 @@ public class MergeModisL1bEraInterimOp extends Operator {
     private boolean processDayProductsOnly;
 
 
-    @SourceProduct(description = "IdePix product")
+    @SourceProduct(description = "MODIS L1b product")
     private Product l1bProduct;
 
     @SourceProduct(description = "EraInterim product")
