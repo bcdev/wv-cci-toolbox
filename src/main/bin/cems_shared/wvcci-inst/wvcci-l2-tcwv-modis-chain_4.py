@@ -7,6 +7,8 @@ import fnmatch
 from calendar import monthrange
 from pmonitor import PMonitor
 
+from pyhdf.SD import SD, SDC
+
 __author__ = 'olafd'
 
 sensor = 'MODIS_TERRA'
@@ -14,13 +16,18 @@ sensor = 'MODIS_TERRA'
 #years = ['2017']
 #years = ['2016']
 #years = ['2011']
-years = ['2011','2016']
+#years = ['2011','2016']
+years = ['2012','2015']
 
-allMonths = ['07']
+#allMonths = ['03']
+#allMonths = ['12']
 #allMonths = ['01','02','03']
 #allMonths = ['04','05','06']
 #allMonths = ['07','08','09']
-#allMonths = ['10','11','12']
+allMonths = ['10','11','12']
+#allMonths = ['08','09']
+#allMonths = ['10']
+#allMonths = ['11','12']
 
 #allMonths = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
 
@@ -32,6 +39,26 @@ allMonths = ['07']
 def getMonth(year):
     return allMonths
 
+def is_daily_product(hdf_filename):
+
+    hdf_file = SD(hdf_filename, SDC.READ)
+
+    # get CoreMetadata.0 attribute (which is a very long string) and just extract and analyze the substring
+    # with the DAYNIGHT info:
+    core_metadata0_string = hdf_file.attributes()['CoreMetadata.0']
+    daynight_start_index = core_metadata0_string.find('DAYNIGHT')
+
+    if daynight_start_index != -1:
+        #print('test: |' + core_metadata0_string[daynight_start_index:daynight_start_index+120] + '|')
+        daynight_info_block = core_metadata0_string[daynight_start_index:daynight_start_index+120]
+
+        is_daily = (daynight_info_block.find('\"Day\"') != -1)
+        #print(is_daily)
+        return is_daily
+    else:
+        return false
+
+
 ######################## L1b --> Idepix --> IdepixEraInterim --> TCWV: ###########################
 
 wvcciRootDir = '/gws/nopw/j04/esacci_wv/odanne/WvcciRoot'
@@ -41,11 +68,10 @@ inputs = ['dummy']
 
 # NEW PMonitor version, MB/TB Nov 2018:
 m = PMonitor(inputs,
-             request='wvcci-l2-tcwv-modis-chain',
+             request='wvcci-l2-tcwv-modis-chain_4',
              logdir='log',
              hosts=[('localhost',256)],
-             types=[('wvcci-l2-idepix-modis-step.sh',64),
-                    ('wvcci-l2-tcwv-modis-step.sh', 128)],
+             types=[('wvcci-l2-tcwv-modis-step_4.sh', 256)],
              polling="job_status_callback.sh")
 
 for year in years:
@@ -63,13 +89,12 @@ for year in years:
             print('numMonthDays: ' + str(numMonthDays))
 
             #for day in days:
-            #for iday in range(4, 5):
+            #for iday in range(15, 16):
+            #for iday in range(2, 3):
             for iday in range(1, numMonthDays+1):
                 day = str(iday).zfill(2)
                 print('day: ' + day)
 
-                idepixDir = wvcciRootDir + '/Idepix/' + sensor + '/' + year + '/' + month + '/' + str(day).zfill(2)
-                idepixEraDir = wvcciRootDir + '/Idepix-Erainterim/' + sensor + '/' + year + '/' + month + '/' + str(day).zfill(2)
                 tcwvDir = wvcciRootDir + '/Tcwv/' + sensor + '/' + year + '/' + month + '/' + str(day).zfill(2)
 
                 if os.path.exists(l1bRootDir + '/' + year + '/' + month + '/' + str(day).zfill(2)):
@@ -95,31 +120,20 @@ for year in years:
                                     if os.path.exists(modisLandMaskPath):
                                         l1bFileBase = os.path.splitext(l1bFiles[index])[0]
 
-                                        # =============== Idepix  =======================
-
-                                        # Idepix:
-                                        idepixFile = l1bFileBase + '_idepix.nc'
-                                        m.execute('wvcci-l2-idepix-modis-step.sh', 
-                                                   ['dummy'], 
-                                                   [idepixFile], 
-                                                   parameters=[l1bPath,modisLandMaskPath,l1bFiles[index],modisLandMaskFiles[0],idepixDir,sensor,year,month,wvcciRootDir])
-
-                                        idepixPath = idepixDir + '/' + idepixFile
-
                                         # cloud product e.g. MOD35_L2.A2015196.1855.061.2017321064215.hdf
                                         modisCloudMaskFiles = fnmatch.filter(os.listdir(modisCloudMaskRootDir + '/' + year + '/' + month + '/' + str(day).zfill(2)), fileFilter)
                                         modisCloudMaskPath = modisCloudMaskRootDir + '/' + year + '/' + month + '/' + str(day).zfill(2) + '/' + modisCloudMaskFiles[0]
 
-                                        # =============== Merge Idepix with ERA-INTERIM, then TCWV from Idepix-ERA-INTERIM merge product  =======================
+                                        if os.path.exists(modisCloudMaskPath):
+                                            #print( 'Daily product: ' + str(is_daily_product(modisCloudMaskPath)) + ' --> ' + modisCloudMaskPath)
 
-                                        # !!! TODO: make sure that l1bFiles[index], modisLandMaskFiles[index] and modisCloudMaskFiles[0] refer to the same swath/time !!!
-                                        # should be OK?! (20190716)
+                                            # =============== Merge MODIS L1b with ERA-INTERIM, then TCWV from Idepix-ERA-INTERIM merge product  =======================
 
-                                        idepixEraFile = l1bFileBase + '_idepix-era-interim.nc'
-                                        m.execute('wvcci-l2-tcwv-modis-step.sh',
-                                                   [idepixFile],
-                                                   [idepixEraFile],
-                                                   parameters=[idepixPath,idepixFile,modisCloudMaskPath,year,month,day,hhmm,wvcciRootDir])
+                                            l1bEraFile = l1bFileBase + '_l1b-era-interim.nc'
+                                            m.execute('wvcci-l2-tcwv-modis-step_4.sh',
+                                                       ['dummy'],
+                                                       [l1bEraFile],
+                                                       parameters=[l1bPath,l1bFiles[index],modisCloudMaskPath,year,month,day,hhmm,wvcciRootDir])
 
 m.wait_for_completion()
 

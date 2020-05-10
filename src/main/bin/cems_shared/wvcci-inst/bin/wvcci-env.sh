@@ -74,7 +74,10 @@ submit_job() {
     # L2 TCWV MODIS:
     #bsubmit="bsub -q short-serial -W 120 -R rusage[mem=16000] -M 16000 -P ga_qa4ecv -cwd ${WVCCI_INST} -oo ${WVCCI_LOG}/${jobname}.out -eo ${WVCCI_LOG}/${jobname}.err -J ${jobname} ${WVCCI_INST}/${command} ${@:3}"
     #bsubmit="bsub -q short-serial ${timelim} ${memlim} -P ga_qa4ecv -cwd ${WVCCI_INST} -oo ${WVCCI_LOG}/${jobname}.out -eo ${WVCCI_LOG}/${jobname}.err -J ${jobname} ${WVCCI_INST}/${command} ${@:3}"
-    bsubmit="bsub -q short-serial ${timelim} ${memlim} -P ga_qa4ecv -cwd ${WVCCI_INST} -oo ${WVCCI_LOG}/${jobname}.out -eo ${WVCCI_LOG}/${jobname}.err -J ${jobname} ${WVCCI_INST}/${command} ${@:3:${mynumargs}}"
+    
+    #bsubmit="bsub -q short-serial ${timelim} ${memlim} -P ga_qa4ecv -cwd ${WVCCI_INST} -oo ${WVCCI_LOG}/${jobname}.out -eo ${WVCCI_LOG}/${jobname}.err -J ${jobname} ${WVCCI_INST}/${command} ${@:3:${mynumargs}}"
+    # test as suggested by Fatima, 20200323:
+    bsubmit="bsub -q short-serial -We 2:00 -W 4:00 ${memlim} -P ga_qa4ecv -cwd ${WVCCI_INST} -oo ${WVCCI_LOG}/${jobname}.out -eo ${WVCCI_LOG}/${jobname}.err -J ${jobname} ${WVCCI_INST}/${command} ${@:3:${mynumargs}}"
 
     # test par-single queue
     #bsubmit="bsub -q par-single -n 8 ${timelim} ${memlim} -P WV_cci -cwd ${WVCCI_INST} -oo ${WVCCI_LOG}/${jobname}.out -eo ${WVCCI_LOG}/${jobname}.err -J ${jobname} ${WVCCI_INST}/${command} ${@:3:${mynumargs}}"

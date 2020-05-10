@@ -8,7 +8,8 @@ export WVCCI_LOG=$WVCCI_INST/log
 export SNAP_VERSION=snap
 
 export PM_LOG_DIR=${WVCCI_LOG}
-export PM_PYTHON_EXEC='/gws/nopw/j04/esacci_wv/software/miniconda3/envs/wvcci/bin/python'
+#export PM_PYTHON_EXEC='/gws/nopw/j04/esacci_wv/software/miniconda3/envs/wvcci/bin/python'
+export PM_PYTHON_EXEC='/home/users/odanne/anaconda3/bin/python'
 
 export PYTHONPATH=$WVCCI_INST:$WVCCI_INST/src:$PYTHONPATH
 export PATH=$WVCCI_INST:$WVCCI_INST/bin:$PATH

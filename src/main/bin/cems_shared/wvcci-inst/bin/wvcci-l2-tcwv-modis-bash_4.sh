@@ -24,6 +24,15 @@ month=$5
 day=$6
 wvcciRootDir=$7
 
+# Exit already here if L1b product is not in daily mode: (note the syntax: no [] brackets!!)
+if ! `python $WVCCI_INST/bin/check_if_modis_daily_product.py $l1bPath`; then
+  echo "SKIP nightly product $l1bPath ..."
+  exit 0
+else
+  echo "DAILY product: $l1bPath ..."
+  echo "START processing - wallclock time is: `date`"
+fi
+
 tmpdir=$wvcciRootDir/tmp
 mkdir -p $tmpdir
 

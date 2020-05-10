@@ -8,8 +8,8 @@ do
   echo "rm -f $WVCCI_INST/core.*"
   rm -f $WVCCI_INST/core.*
 
-  echo "mv $WVCCI_INST/hs_err* $WVCCI_INST/hserr"
-  mv $WVCCI_INST/hs_err* $WVCCI_INST/hserr
+  echo "rm $WVCCI_INST/hs_err*"
+  rm -f $WVCCI_INST/hs_err*
 
   sleep 300
 done

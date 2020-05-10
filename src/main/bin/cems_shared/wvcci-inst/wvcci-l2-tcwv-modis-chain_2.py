@@ -13,14 +13,17 @@ sensor = 'MODIS_TERRA'
 
 #years = ['2017']
 #years = ['2016']
-years = ['2011']
-#years = ['2011','2016']
+#years = ['2011']
+years = ['2011','2016']
 
-allMonths = ['10']
+allMonths = ['01']
+#allMonths = ['02','03']
 #allMonths = ['01','02','03']
 #allMonths = ['04','05','06']
 #allMonths = ['07','08','09']
-#allMonths = ['10','11','12']
+#allMonths = ['08','09','10']
+#allMonths = ['08','09']
+#allMonths = ['11','12']
 
 #allMonths = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
 
@@ -62,7 +65,7 @@ for year in years:
             print('numMonthDays: ' + str(numMonthDays))
 
             #for day in days:
-            #for iday in range(23, 24):
+            #for iday in range(15, 16):
             for iday in range(1, numMonthDays+1):
                 day = str(iday).zfill(2)
                 print('day: ' + day)

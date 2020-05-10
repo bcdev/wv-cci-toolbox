@@ -98,7 +98,7 @@ class PMonitor:
         _LOST = '_LOST'
 
     class Args:        
-        def __init__(self, call, task_id, parameters, inputs, outputs, host, log_prefix, asynchronous, external_id=None, priority=1):
+        def __init__(self, call, task_id, parameters, inputs, outputs, host, log_prefix, async, external_id=None, priority=1):
             self.call = call
             self.task_id = task_id
             self.parameters = parameters
@@ -106,7 +106,7 @@ class PMonitor:
             self.outputs = outputs
             self.host = host
             self.log_prefix = log_prefix
-            self.asynchronous = asynchronous
+            self.async = async
             self.external_id = external_id
             self.priority = priority
 
@@ -140,9 +140,9 @@ class PMonitor:
         @staticmethod
         def set_log_prefix(args, value): args[6] = value
         @staticmethod
-        def get_asynchronous(args): return args[7]
+        def get_async(args): return args[7]
         @staticmethod
-        def set_asynchronous(args, value): args[7] = value
+        def set_async(args, value): args[7] = value
         @staticmethod
         def get_external_id(args): return args[8]
         @staticmethod
@@ -153,7 +153,7 @@ class PMonitor:
         def set_priority(args, value): args[9] = value
 
                      
-    def __init__(self, inputs, request='', hosts=[('localhost',4)], types=[], weights=[], swd=None, cache=None, logdir='.', simulation=False, delay=None, fair=True, script=None, polling=None, period=5, asynchronous=None):
+    def __init__(self, inputs, request='', hosts=[('localhost',4)], types=[], weights=[], swd=None, cache=None, logdir='.', simulation=False, delay=None, fair=True, script=None, polling=None, period=5, async=None):
         """
         Initiates monitor, marks inputs, reads report, creates thread pool
         inputs: the apriori conditions
@@ -170,7 +170,7 @@ class PMonitor:
         script: generic step execution script to be used as prefix of each command line, defaults to None for the different steps being executable scripts themselves
         polling: generic status polling script called with a list of external request identifiers to inquire the status in form of CSV <id>,<state>[,<msg>]\n
         period: number of seconds between polling calls for asynchronous steps
-        asynchronous: default value for steps, whether start shall be synchronous or asynchronous, defaults to True if polling is set, False else
+        async: default value for steps, whether start shall be synchronous or asynchronous, defaults to True if polling is set, False else
         """
         self._mutex = threading.RLock()
         #print '... mutex 1 acquiring'
@@ -199,7 +199,7 @@ class PMonitor:
             self._script = script
             self._polling = polling
             self._period = period
-            self._asynchronous = asynchronous
+            self._async = async
             self._mark_inputs(inputs)
             concurrency = sum([host[1] for host in hosts])
             self._pool = threadpool.ThreadPool(concurrency, poll_timeout=period)
@@ -212,12 +212,12 @@ class PMonitor:
                 self._maybe_read_status(request + '.status')
         #print '... mutex 1 released'
 
-    def execute(self, call, inputs, outputs, parameters=[], priority=1, collating=True, asynchronous=None, logprefix=None):
+    def execute(self, call, inputs, outputs, parameters=[], priority=1, collating=True, async=None, logprefix=None):
         """
         Schedules task `call parameters inputs outputs`, either a single collating call or one call per input
         """
-        if asynchronous == None:
-            asynchronous = self._asynchronous if self._asynchronous != None else self._polling != None
+        if async == None:
+            async = self._async if self._async != None else self._polling != None
         #print '... mutex 2 acquiring'
         with self._mutex:
             #print '... mutex 2 acquired'
@@ -226,7 +226,7 @@ class PMonitor:
                 if logprefix.endswith('.sh') or logprefix.endswith('.py'):
                     logprefix = logprefix[:-3]
             self._created += 1
-            args = [ call, self._created, parameters, None, outputs, None, logprefix, asynchronous ]
+            args = [ call, self._created, parameters, None, outputs, None, logprefix, async ]
             request = threadpool.WorkRequest(None, args, priority=priority, requestID=self._created)
             for o in outputs:
                 if o in self._counts:
@@ -249,7 +249,7 @@ class PMonitor:
                             PMonitor.Args.set_inputs(request.args, input_paths[0:1])
                         else:
                             self._created += 1
-                            args = [ call, self._created, parameters, input_paths[i:i+1], outputs, None, logprefix, asynchronous ]
+                            args = [ call, self._created, parameters, input_paths[i:i+1], outputs, None, logprefix, async ]
                             request = threadpool.WorkRequest(self._process_step, args,
                                                              priority=priority, requestID=self._created)
                             for o in outputs:
@@ -413,7 +413,7 @@ class PMonitor:
         """
         raise NotImplementedError('must never be called')
 
-    def _process_step(self, call, task_id, parameters, inputs, outputs, host, log_prefix, asynchronous):
+    def _process_step(self, call, task_id, parameters, inputs, outputs, host, log_prefix, async):
         """
         Callable for tasks, marker for simple or collating tasks.
         looks up call in commands from report, maybe skips execution
@@ -429,19 +429,19 @@ class PMonitor:
                 self._skip_step(call, command, outputs, host)
                 self._observe_step(call, inputs, outputs, parameters, 0)
             elif command in self._running and isinstance(self._running[command], str) and not self._simulation:
-                self._running[command] = PMonitor.Args(call, task_id, parameters, inputs, outputs, host, log_prefix, asynchronous, external_id=self._running[command])
+                self._running[command] = PMonitor.Args(call, task_id, parameters, inputs, outputs, host, log_prefix, async, external_id=self._running[command])
                 sys.__stdout__.write('reconsidering {0}\n'.format(command))
             else:
                 self._prepare_step(command)
                 output_paths = []
                 if not self._simulation:
-                    code = self._run_step(task_id, host, command, output_paths, log_prefix, asynchronous)
+                    code = self._run_step(task_id, host, command, output_paths, log_prefix, async)
                 else:
                     code = 0
-                if asynchronous and code == 0 and not self._simulation:
-                    self._running[command] = PMonitor.Args(call, task_id, parameters, inputs, outputs, host, log_prefix, asynchronous, external_id=output_paths[0])
-                elif asynchronous:
-                    self._running[command] = PMonitor.Args(call, task_id, parameters, inputs, outputs, host, log_prefix, asynchronous, external_id='pending')
+                if async and code == 0 and not self._simulation:
+                    self._running[command] = PMonitor.Args(call, task_id, parameters, inputs, outputs, host, log_prefix, async, external_id=output_paths[0])
+                elif async:
+                    self._running[command] = PMonitor.Args(call, task_id, parameters, inputs, outputs, host, log_prefix, async, external_id='pending')
                 else:
                     self._finalise_step(call, code, command, host, output_paths, outputs)
                     self._observe_step(call, inputs, outputs, parameters, code)
@@ -479,16 +479,16 @@ class PMonitor:
             self._write_status()
         #print '... mutex 5 released'
 
-    def _run_step(self, task_id, host, command, output_paths, log_prefix, asynchronous):
+    def _run_step(self, task_id, host, command, output_paths, log_prefix, async):
         """
         Executes command on host, collects output paths if any, returns exit code
         """
         wd = self._prepare_working_dir(task_id)
         process = PMonitor._start_processor(command, host, wd)
-        self._trace_processor_output(output_paths, process, task_id, wd, log_prefix, asynchronous)
+        self._trace_processor_output(output_paths, process, task_id, wd, log_prefix, async)
         process.stdout.close()
         code = process.wait()
-        if code == 0 and not asynchronous and not self._cache is None and 'cache' in wd:
+        if code == 0 and not async and not self._cache is None and 'cache' in wd:
             subprocess.call(['rm', '-rf', wd])
         return code
 
@@ -598,10 +598,10 @@ class PMonitor:
         process = subprocess.Popen(cmd, shell=True, bufsize=1, cwd=wd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         return process
 
-    def _trace_processor_output(self, output_paths, process, task_id, wd, log_prefix, asynchronous):
+    def _trace_processor_output(self, output_paths, process, task_id, wd, log_prefix, async):
         """
         traces processor output, recognises 'output=' lines, writes all lines to trace file in working dir.
-        for asynchronous calls reads external ID from stdout.
+        for async calls reads external ID from stdout.
         """
         if self._cache is None or self._logdir != '.':
             trace = open('{0}/{1}-{2:04d}.out'.format(self._logdir, log_prefix, task_id), 'w')
@@ -615,7 +615,7 @@ class PMonitor:
             trace.write(line)
             trace.flush()
         trace.close()
-        if asynchronous and line:
+        if async and line:
             # assumption that last line contains external ID, with stderr mixed with stdout
             output_paths[:] = []
             output_paths.append(line.strip())
@@ -653,7 +653,7 @@ class PMonitor:
                                 self._created += 1
                                 args = [ PMonitor.Args.get_call(task.args), self._created, PMonitor.Args.get_parameters(task.args),
                                          input_paths[i:i+1], PMonitor.Args.get_outputs(task.args),
-                                         None, PMonitor.Args.get_log_prefix(task.args), PMonitor.Args.get_asynchronous(task.args) ]
+                                         None, PMonitor.Args.get_log_prefix(task.args), PMonitor.Args.get_async(task.args) ]
                                 task = threadpool.WorkRequest(self._process_step, args,
                                                               priority=task.priority, requestID=self._created)
                                 self._counts[PMonitor.Args.get_outputs(task.args)[0]] += 1

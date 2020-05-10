@@ -15,7 +15,7 @@ wvcciRootDir=$8
 
 task="wvcci-l2-tcwv-modis"
 jobname="${task}-${year}-${month}-${day}-${hhmm}"
-command0="./bin/${task}-bash_2.sh"
+command0="./bin/${task}-bash_4.sh"
 command="${command0} ${l1bPath} ${l1bFile} ${cloudMaskPath} ${year} ${month} ${day} ${wvcciRootDir}"
 
 echo "jobname: $jobname"
