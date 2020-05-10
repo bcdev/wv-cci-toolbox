@@ -102,6 +102,9 @@ public class TcwvConstants {
 
     static final double TCWV_RETRIEVAL_COST_1 = 1.0;
     static final double TCWV_RETRIEVAL_COST_2 = 2.0;
+    static final double TCWV_RETRIEVAL_COST_UPPER_LIMIT = 10.0; // todo: clarify with RP
+    static final double TCWV_RETRIEVAL_TCWV_LOWER_LIMIT = 0.0;
+    static final double TCWV_RETRIEVAL_TCWV_UPPER_LIMIT = 80.0;
 
     static final double SZA_MAX_VALUE = 75.0;  // sensor independent
 

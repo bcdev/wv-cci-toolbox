@@ -117,6 +117,12 @@ public class TcwvOp extends Operator {
     private JacobiFunction jacobiFunctionOcean;
 
     private boolean mod35Used;
+    private Band tcwvBand;
+    private Band tcwvUncertaintyBand;
+    private Band tcwvQualityFlagBand;
+    private Band costFunctionBand;
+    private Band stateVector1Band;
+    private Band stateVector2Band;
 
     @Override
     public void initialize() throws OperatorException {
@@ -125,7 +131,7 @@ public class TcwvOp extends Operator {
             throw new OperatorException("No sensor selected - TCWV computation aborted.");
         }
         validateSourceProduct(sensor, sourceProduct);
-        if (mod35Product != null && (sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA)) {
+        if (sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA) {
             validateMod35Product(mod35Product);
             pixelClassifBand = mod35Product.getBand(TcwvConstants.PIXEL_CLASSIF_BAND_NAME);
 //            idepixClassifBand = sourceProduct.getBand(TcwvConstants.PIXEL_CLASSIF_BAND_NAME);
@@ -226,13 +232,13 @@ public class TcwvOp extends Operator {
     @Override
     public void computeTileStack(Map<Band, Tile> targetTiles, Rectangle targetRectangle, ProgressMonitor pm) throws OperatorException {
 
-        final Band tcwvBand = targetProduct.getBand(TcwvConstants.TCWV_TARGET_BAND_NAME);
-        final Band tcwvUncertaintyBand = targetProduct.getBand(TcwvConstants.TCWV_UNCERTAINTY_TARGET_BAND_NAME);
-        final Band tcwvQualityFlagBand = targetProduct.getBand(TcwvConstants.TCWV_QUALITY_FLAG_BAND_NAME);
+        tcwvBand = targetProduct.getBand(TcwvConstants.TCWV_TARGET_BAND_NAME);
+        tcwvUncertaintyBand = targetProduct.getBand(TcwvConstants.TCWV_UNCERTAINTY_TARGET_BAND_NAME);
+        tcwvQualityFlagBand = targetProduct.getBand(TcwvConstants.TCWV_QUALITY_FLAG_BAND_NAME);
         final Band tcwvSurfaceTypeFlagBand = targetProduct.getBand(TcwvConstants.SURFACE_TYPE_FLAG_BAND_NAME);
-        final Band stateVector1Band = targetProduct.getBand(TcwvConstants.TCWV_STATE_VECTOR1_BAND_NAME);
-        final Band stateVector2Band = targetProduct.getBand(TcwvConstants.TCWV_STATE_VECTOR2_BAND_NAME);
-        final Band costFunctionBand = targetProduct.getBand(TcwvConstants.TCWV_COST_FUNCTION_BAND_NAME);
+        stateVector1Band = targetProduct.getBand(TcwvConstants.TCWV_STATE_VECTOR1_BAND_NAME);
+        stateVector2Band = targetProduct.getBand(TcwvConstants.TCWV_STATE_VECTOR2_BAND_NAME);
+        costFunctionBand = targetProduct.getBand(TcwvConstants.TCWV_COST_FUNCTION_BAND_NAME);
 
         Tile[] landWinBandTiles = getSourceTiles(landWinBands, targetRectangle);
         Tile[] landAbsBandTiles = getSourceTiles(landAbsBands, targetRectangle);
@@ -324,16 +330,7 @@ public class TcwvOp extends Operator {
                 absBandData = isLand ? landAbsBandData : oceanAbsBandData;
 
                 if (!isValid || isCloud || (!processOcean && !isLand)) {
-                    targetTiles.get(tcwvBand).setSample(x, y, Float.NaN);
-                    targetTiles.get(tcwvUncertaintyBand).setSample(x, y, Float.NaN);
-                    targetTiles.get(tcwvQualityFlagBand).setSample(x, y, TcwvConstants.TCWV_INVALID, true);
-                    if (writeCostFunctionValue) {
-                        targetTiles.get(costFunctionBand).setSample(x, y, Float.NaN);
-                    }
-                    if (writeFullStateVector) {
-                        targetTiles.get(stateVector1Band).setSample(x, y, Float.NaN);
-                        targetTiles.get(stateVector2Band).setSample(x, y, Float.NaN);
-                    }
+                    setTcwvResultInvalid(x, y, targetTiles);
                 } else {
                     // Preparing input data...
                     final double vzaR = vzaTile.getSampleDouble(x, y) * MathUtils.DTOR;
@@ -414,15 +411,35 @@ public class TcwvOp extends Operator {
                     }
                     targetTiles.get(tcwvUncertaintyBand).setSample(x, y, result.getTcwvUncertainty());
 
-                    if (result.getCost() > TcwvConstants.TCWV_RETRIEVAL_COST_2) {
-                        targetTiles.get(tcwvQualityFlagBand).setSample(x, y, TcwvConstants.TCWV_COST_FUNCTION_2, true);
-                    } else if (result.getCost() > TcwvConstants.TCWV_RETRIEVAL_COST_1) {
-                        targetTiles.get(tcwvQualityFlagBand).setSample(x, y, TcwvConstants.TCWV_COST_FUNCTION_1, true);
+                    if (result.getTcwv() < TcwvConstants.TCWV_RETRIEVAL_TCWV_LOWER_LIMIT ||
+                            result.getTcwv() > TcwvConstants.TCWV_RETRIEVAL_TCWV_UPPER_LIMIT ||
+                            result.getCost() > TcwvConstants.TCWV_RETRIEVAL_COST_UPPER_LIMIT) {
+                        setTcwvResultInvalid(x, y, targetTiles);
+
                     } else {
-                        targetTiles.get(tcwvQualityFlagBand).setSample(x, y, TcwvConstants.TCWV_OK, true);
+                        if (result.getCost() > TcwvConstants.TCWV_RETRIEVAL_COST_2) {
+                            targetTiles.get(tcwvQualityFlagBand).setSample(x, y, TcwvConstants.TCWV_COST_FUNCTION_2, true);
+                        } else if (result.getCost() > TcwvConstants.TCWV_RETRIEVAL_COST_1) {
+                            targetTiles.get(tcwvQualityFlagBand).setSample(x, y, TcwvConstants.TCWV_COST_FUNCTION_1, true);
+                        } else {
+                            targetTiles.get(tcwvQualityFlagBand).setSample(x, y, TcwvConstants.TCWV_OK, true);
+                        }
                     }
                 }
             }
+        }
+    }
+
+    private void setTcwvResultInvalid(int x, int y, Map<Band, Tile> targetTiles) {
+        targetTiles.get(tcwvBand).setSample(x, y, Float.NaN);
+        targetTiles.get(tcwvUncertaintyBand).setSample(x, y, Float.NaN);
+        targetTiles.get(tcwvQualityFlagBand).setSample(x, y, TcwvConstants.TCWV_INVALID, true);
+        if (writeCostFunctionValue) {
+            targetTiles.get(costFunctionBand).setSample(x, y, Float.NaN);
+        }
+        if (writeFullStateVector) {
+            targetTiles.get(stateVector1Band).setSample(x, y, Float.NaN);
+            targetTiles.get(stateVector2Band).setSample(x, y, Float.NaN);
         }
     }
 
@@ -573,6 +590,9 @@ public class TcwvOp extends Operator {
     }
 
     private static void validateMod35Product(Product mod35Product) {
+        if (mod35Product == null) {
+            throw new OperatorException("MOD35 product missing - mandatory for TCWV retrieval from MODIS Terra/Aqua");
+        }
         for (String bandName : TcwvConstants.MOD35_BAND_NAMES) {
             if (!mod35Product.containsBand(bandName)) {
                 throw new OperatorException("MOD35 product is not valid, as it does not contain " +
