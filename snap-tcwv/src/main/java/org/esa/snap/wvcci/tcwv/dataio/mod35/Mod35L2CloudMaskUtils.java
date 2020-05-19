@@ -16,9 +16,9 @@ import java.awt.*;
 public class Mod35L2CloudMaskUtils {
 
     /**
-     * Attaches pixel classification flag band to original MOD35 L2 product
+     * Attaches pixel classification flag band to original MOD35 or MYD35 L2 product
      *
-     * @param mod35L2Product - the MOD35 L2 product
+     * @param mod35L2Product - the MOD35 or MYD35 L2 product
      *
      */
     static void attachPixelClassificationFlagBand(Product mod35L2Product) {
@@ -43,9 +43,9 @@ public class Mod35L2CloudMaskUtils {
     }
 
     /**
-     * Attaches quality assurance flag band to original MOD35 L2 product
+     * Attaches quality assurance flag band to original MOD35 or MYD35 L2 product
      *
-     * @param mod35L2Product - the MOD35 L2 product
+     * @param mod35L2Product - the MOD35 or MYD35 L2 product
      *
      */
     static void attachQualityAssuranceFlagBand(Product mod35L2Product) {

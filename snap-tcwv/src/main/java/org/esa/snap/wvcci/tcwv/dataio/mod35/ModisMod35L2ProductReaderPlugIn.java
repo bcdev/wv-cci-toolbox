@@ -9,7 +9,7 @@ import java.io.File;
 import java.util.Locale;
 
 /**
- * PlugIn class which provides a MODIS MOD35 L2 cloud mask HDF product reader to the framework.
+ * PlugIn class which provides a MODIS MOD35 or MYD35 L2 cloud mask HDF product reader to the framework.
  *
  * @author Olaf Danne
  */
@@ -85,8 +85,9 @@ public class ModisMod35L2ProductReaderPlugIn implements ProductReaderPlugIn {
     private boolean isInputHdfFileNameValid(String fileName) {
         // e.g.
 //        MOD35_L2.A2005180.1455.006.2012278173052.hdf
-//        MOD35_L2.A2014157.0910.005.2014157192917.hdf
-        return (fileName.matches("MOD35_L2.A[0-9]{7}.[0-9]{4}.[0-9]{3}.[0-9]{13}.(?i)(hdf)"));
+//        MYD35_L2.A2014157.0910.005.2014157192917.hdf
+        return (fileName.matches("MOD35_L2.A[0-9]{7}.[0-9]{4}.[0-9]{3}.[0-9]{13}.(?i)(hdf)") ||
+                fileName.matches("MYD35_L2.A[0-9]{7}.[0-9]{4}.[0-9]{3}.[0-9]{13}.(?i)(hdf)"));
     }
 
 }

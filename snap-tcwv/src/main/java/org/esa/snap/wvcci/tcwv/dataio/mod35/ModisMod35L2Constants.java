@@ -3,7 +3,7 @@ package org.esa.snap.wvcci.tcwv.dataio.mod35;
 import java.awt.*;
 
 /**
- * Constants for reading MODIS MOD35 L2 products
+ * Constants for reading MODIS MOD35 or MYD35 L2 products
  *
  * @author olafd
  */

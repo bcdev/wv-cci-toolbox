@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.logging.Level;
 
 /**
- * Product reader responsible for reading MODIS MOD35 L2 cloud mask HDF products.
+ * Product reader responsible for reading MODIS MOD35 or MYD35 L2 cloud mask HDF products.
  * Example: MOD35_L2.A2011196.1055.061.2017325012717.hdf
  * See https://modis.gsfc.nasa.gov/data/dataprod/mod35.php
  *
@@ -48,7 +48,6 @@ public class ModisMod35L2ProductReader extends AbstractProductReader {
     private int tpWidth;
     private int tpHeight;
 
-    private int byteSegmentSize;
     private int qualityAssuranceDim;
 
     private FileFormat h4File;
@@ -125,7 +124,7 @@ public class ModisMod35L2ProductReader extends AbstractProductReader {
 
 //////////// private methods //////////////////
 
-    private static Band createTargetBand(Product product, List<Attribute> metadata, String bandName, int dataType) throws Exception {
+    private static Band createTargetBand(Product product, List<Attribute> metadata, String bandName, int dataType) {
         final double scaleFactorAttr = ModisMod35L2Utils.getDoubleAttributeValue(metadata, "SCALE");
         final double scaleFactor = Double.isNaN(scaleFactorAttr) ? 1.0f : scaleFactorAttr;
         final double scaleOffsetAttr = ModisMod35L2Utils.getDoubleAttributeValue(metadata, "OFFSET");
@@ -193,8 +192,6 @@ public class ModisMod35L2ProductReader extends AbstractProductReader {
                 ModisMod35L2Constants.CELL_ACROSS_SWATH_5KM_DIM_NAME);
         tpHeight = ModisMod35L2Utils.getDimensionSizeFromMetadata(structMetadata0String,
                 ModisMod35L2Constants.CELL_ALONG_SWATH_5KM_DIM_NAME);
-        byteSegmentSize = ModisMod35L2Utils.getDimensionSizeFromMetadata(structMetadata0String,
-                ModisMod35L2Constants.BYTE_SEGMENT_DIM_NAME);
         qualityAssuranceDim = ModisMod35L2Utils.getDimensionSizeFromMetadata(structMetadata0String, ModisMod35L2Constants.QA_DIM_NAME);
     }
 

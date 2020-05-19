@@ -74,9 +74,9 @@ public class TcwvOp extends Operator {
     private Product sourceProduct;
 
     @SourceProduct(description =
-            "MOD35 L2 cloud product (optional, used for MODIS processing only)",
+            "MOD35 or MYD35 L2 cloud product (optional, used for MODIS processing only)",
             optional = true,
-            label = "MOD35 L2 product")
+            label = "MOD35 or MYD35 L2 product")
     private Product mod35Product;
 
     private Product targetProduct;
@@ -132,7 +132,7 @@ public class TcwvOp extends Operator {
         }
         validateSourceProduct(sensor, sourceProduct);
         if (sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA) {
-            validateMod35Product(mod35Product);
+            validateMod35Product();
             pixelClassifBand = mod35Product.getBand(TcwvConstants.PIXEL_CLASSIF_BAND_NAME);
 //            idepixClassifBand = sourceProduct.getBand(TcwvConstants.PIXEL_CLASSIF_BAND_NAME);
             mod35Used = true;
@@ -589,13 +589,21 @@ public class TcwvOp extends Operator {
         }
     }
 
-    private static void validateMod35Product(Product mod35Product) {
+    private void validateMod35Product() {
+        if (mod35Product.getName().startsWith("MOD") && sensor == Sensor.MODIS_AQUA) {
+            throw new OperatorException("Sensor is MODIS AQUA - does not fit to MODIS TERRA MOD35_L2 cloud product.");
+        }
+
+        if (mod35Product.getName().startsWith("MYD") && sensor == Sensor.MODIS_TERRA) {
+            throw new OperatorException("Sensor is MODIS TERRA - does not fit to MODIS AQUA MYD35_L2 cloud product.");
+        }
+
         if (mod35Product == null) {
-            throw new OperatorException("MOD35 product missing - mandatory for TCWV retrieval from MODIS Terra/Aqua");
+            throw new OperatorException("MOD35 or MYD35 product missing - mandatory for TCWV retrieval from MODIS Terra/Aqua");
         }
         for (String bandName : TcwvConstants.MOD35_BAND_NAMES) {
             if (!mod35Product.containsBand(bandName)) {
-                throw new OperatorException("MOD35 product is not valid, as it does not contain " +
+                throw new OperatorException("MOD35 or MYD35 product is not valid, as it does not contain " +
                         "mandatory band '" + bandName + "'.");
             }
         }
