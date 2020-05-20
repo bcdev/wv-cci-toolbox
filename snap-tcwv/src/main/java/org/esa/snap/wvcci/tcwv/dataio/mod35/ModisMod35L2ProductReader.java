@@ -26,6 +26,7 @@ import org.esa.snap.core.dataio.AbstractProductReader;
 import org.esa.snap.core.dataio.ProductReaderPlugIn;
 import org.esa.snap.core.datamodel.*;
 import org.esa.snap.core.util.SystemUtils;
+import org.esa.snap.raster.gpf.FlipOp;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
@@ -180,7 +181,18 @@ public class ModisMod35L2ProductReader extends AbstractProductReader {
         Mod35L2CloudMaskUtils.attachPixelClassificationFlagBand(targetProduct);
         Mod35L2CloudMaskUtils.attachQualityAssuranceFlagBand(targetProduct);
 
-        return targetProduct;
+        // MYD35_L2 products are flipped, but MOD35_L2 are not...
+        if (inputFile.getName().startsWith("MYD")) {
+            FlipOp flipOp = new FlipOp();
+            flipOp.setParameterDefaultValues();
+            flipOp.setSourceProduct(targetProduct);
+            flipOp.setParameter("flipType", "Horizontal and Vertical");
+            final Product flippedMydProduct = flipOp.getTargetProduct();
+            flippedMydProduct.setName(targetProduct.getName());
+            return flippedMydProduct;
+        } else {
+            return targetProduct;
+        }
     }
 
     private void setProductDimensions(String structMetadata0String) {
