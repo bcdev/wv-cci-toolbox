@@ -11,20 +11,23 @@ from pyhdf.SD import SD, SDC
 
 __author__ = 'olafd'
 
-sensor = 'MODIS_TERRA'
+#sensor = 'MODIS_TERRA'
+sensor = 'MODIS_AQUA'
+#platformId = 'MOD'
+platformId = 'MYD'  # note that on neodc MYD03 and MYD35_L2 data start in May 2013 (as of 20200519) !!
 
 #years = ['2017']
-#years = ['2016']
+years = ['2016']
 #years = ['2011']
 #years = ['2011','2016']
-years = ['2013','2014']
+#years = ['2013','2014']
 
-#allMonths = ['03']
+allMonths = ['05']
 #allMonths = ['12']
 #allMonths = ['01','02','03']
 #allMonths = ['04','05','06']
 #allMonths = ['07','08','09']
-allMonths = ['10','11','12']
+#allMonths = ['10','11','12']
 #allMonths = ['08','09']
 #allMonths = ['10']
 #allMonths = ['11','12']
@@ -67,17 +70,18 @@ eraInterimRootDir = wvcciRootDir + '/auxiliary/era-interim-t2m-mslp-tcwv-u10-v10
 inputs = ['dummy']
 
 # NEW PMonitor version, MB/TB Nov 2018:
+# DOES NOT YET WORK WITH SLURM! Same jobs are executed multiple times (20200701). Check!!!
 m = PMonitor(inputs,
-             request='wvcci-l2-tcwv-modis-chain_4',
+             request='wvcci-l2-tcwv-modis-chain-slurm',
              logdir='log',
              hosts=[('localhost',256)],
-             types=[('wvcci-l2-tcwv-modis-step_4.sh', 256)],
+             types=[('wvcci-l2-tcwv-modis-step-slurm.sh', 256)],
              polling="job_status_callback.sh")
 
 for year in years:
     l1bRootDir = wvcciRootDir + '/L1b/' + sensor
-    modisLandMaskRootDir = wvcciRootDir + '/ModisLandMask/MOD03'
-    modisCloudMaskRootDir = wvcciRootDir + '/ModisCloudMask/MOD35_L2'
+    modisLandMaskRootDir = wvcciRootDir + '/ModisLandMask/' + platformId + '03'
+    modisCloudMaskRootDir = wvcciRootDir + '/ModisCloudMask/' + platformId + '35_L2'
     print('year: ' + year)
 
     for month in getMonth(year):
@@ -90,8 +94,8 @@ for year in years:
 
             #for day in days:
             #for iday in range(15, 16):
-            #for iday in range(2, 3):
-            for iday in range(1, numMonthDays+1):
+            for iday in range(1, 2):
+            #for iday in range(1, numMonthDays+1):
                 day = str(iday).zfill(2)
                 print('day: ' + day)
 
@@ -104,36 +108,30 @@ for year in years:
                         for index in range(0, len(l1bFiles)):
                             l1bPath = l1bRootDir + '/' + year + '/' + month + '/' + str(day).zfill(2) + '/' + l1bFiles[index]
 
-                            if l1bFiles[index].endswith(".hdf"):
+			    # TEST: do only 12 products, 10*
+                            if l1bFiles[index].endswith(".hdf") and l1bFiles[index].startswith("MYD021KM.A2016122.1030"):
                                 # MODIS only
-                                # MOD021KM product e.g. MOD021KM.A2015196.1855.061.2017321064215.hdf
+                                # MOD021KM or MOD021KM product e.g. MOD021KM.A2015196.1855.061.2017321064215.hdf
                                 dateTimeString = l1bFiles[index][9:22]  # A2015196.1855
                                 hhmm = dateTimeString[9:]   # 1855
 
-                                if os.path.exists(modisLandMaskRootDir + '/' + year + '/' + month + '/' + str(day).zfill(2)):
-                                    # we have a MOD03 land mask, should be the normal case!  
-                                    # MOD03 product e.g. MOD03.A2015196.1855.061.2017321064215.hdf
-                                    fileFilter = '*' + dateTimeString + '*.hdf'
-                                    modisLandMaskFiles = fnmatch.filter(os.listdir(modisLandMaskRootDir + '/' + year + '/' + month + '/' + str(day).zfill(2)), fileFilter) 
-                                    modisLandMaskPath  = modisLandMaskRootDir + '/' + year + '/' + month + '/' + str(day).zfill(2) + '/' + modisLandMaskFiles[0]
+                                fileFilter = '*' + dateTimeString + '*.hdf'
+                                l1bFileBase = os.path.splitext(l1bFiles[index])[0]
 
-                                    if os.path.exists(modisLandMaskPath):
-                                        l1bFileBase = os.path.splitext(l1bFiles[index])[0]
+                                # cloud product e.g. MOD35_L2.A2015196.1855.061.2017321064215.hdf
+                                modisCloudMaskFiles = fnmatch.filter(os.listdir(modisCloudMaskRootDir + '/' + year + '/' + month + '/' + str(day).zfill(2)), fileFilter)
+                                if len(modisCloudMaskFiles) > 0:
+                                    modisCloudMaskPath = modisCloudMaskRootDir + '/' + year + '/' + month + '/' + str(day).zfill(2) + '/' + modisCloudMaskFiles[0]
 
-                                        # cloud product e.g. MOD35_L2.A2015196.1855.061.2017321064215.hdf
-                                        modisCloudMaskFiles = fnmatch.filter(os.listdir(modisCloudMaskRootDir + '/' + year + '/' + month + '/' + str(day).zfill(2)), fileFilter)
-                                        modisCloudMaskPath = modisCloudMaskRootDir + '/' + year + '/' + month + '/' + str(day).zfill(2) + '/' + modisCloudMaskFiles[0]
+                                    if os.path.exists(modisCloudMaskPath):
 
-                                        if os.path.exists(modisCloudMaskPath):
-                                            #print( 'Daily product: ' + str(is_daily_product(modisCloudMaskPath)) + ' --> ' + modisCloudMaskPath)
+                                        # =============== Merge MODIS L1b with ERA-INTERIM, then TCWV from Idepix-ERA-INTERIM merge product  =======================
 
-                                            # =============== Merge MODIS L1b with ERA-INTERIM, then TCWV from Idepix-ERA-INTERIM merge product  =======================
-
-                                            l1bEraFile = l1bFileBase + '_l1b-era-interim.nc'
-                                            m.execute('wvcci-l2-tcwv-modis-step_4.sh',
-                                                       ['dummy'],
-                                                       [l1bEraFile],
-                                                       parameters=[l1bPath,l1bFiles[index],modisCloudMaskPath,year,month,day,hhmm,wvcciRootDir])
+                                        l1bEraFile = l1bFileBase + '_l1b-era-interim.nc'
+                                        m.execute('wvcci-l2-tcwv-modis-step-slurm.sh',
+                                                  ['dummy'],
+                                                  [l1bEraFile],
+                                                  parameters=[l1bPath,l1bFiles[index],modisCloudMaskPath,sensor,year,month,day,hhmm,wvcciRootDir])
 
 m.wait_for_completion()
 
