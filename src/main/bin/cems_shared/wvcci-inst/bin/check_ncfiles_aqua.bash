@@ -14,7 +14,7 @@ echo "numDays: $numDays"
 tmpdir=/work/scratch-nompiio/odanne/wvcci/tmp
 for j in `seq -w 01 $numDays`; do
   echo "day: $j"
-  for i in `ls -d /gws/nopw/j04/esacci_wv/odanne/WvcciRoot/Tcwv/MODIS_TERRA/$year/$month/$j/*.nc`; do
+  for i in `ls -d /gws/nopw/j04/esacci_wv/odanne/WvcciRoot/Tcwv/MODIS_AQUA/$year/$month/$j/*.nc`; do
     filename=`basename $i`
     stamp=$tmpdir/${filename}.stamp
     ncdump -k $i > $stamp
