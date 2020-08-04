@@ -38,7 +38,7 @@ date_after=`date +%Y-%m-%d -u -d @$day_after_in_seconds`
 #fi
 
 echo "$(date +%Y-%m-%dT%H:%M:%S -u) extracting geo information of $olciname ..."
-tcwvJarVersion=1.3-SNAPSHOT
+tcwvJarVersion=1.9-SNAPSHOT
 jars=snap-all.jar:snap-tcwv-${tcwvJarVersion}.jar
 class=org.esa.snap.core.gpf.main.GPT
 scripfile=${merisstem}-scrip.nc
@@ -52,16 +52,17 @@ fi
 
 
 # distinguish beginning of month, end of month, or in between and create time stacks
-
-if [ "$day" = "01" -a "$year$month" != "197901" ]
+last_day_in_month=`cal $month $year | xargs echo | awk '{print $NF}'`
+if [ "$day" == "01" ]
 then
   echo "$(date +%Y-%m-%dT%H:%M:%S -u) merge era stack with previous month ..."
   eradaybefore=$auxroot/era-interim-t2m-mslp-tcwv-u10-v10/${date_before:0:4}/era-interim-t2m-mslp-tcwv-u10-v10-${date_before:0:4}-${date_before:5:2}.nc
   erathisday=$auxroot/era-interim-t2m-mslp-tcwv-u10-v10/$year/era-interim-t2m-mslp-tcwv-u10-v10-$year-$month.nc
   eratimestack=era-interim-t2m-mslp-tcwv-u10-v10-${date_before:0:4}-${date_before:5:2}-$year-$month.nc
   $CDO_HOME/cdo -b 32 mergetime $eradaybefore $erathisday $eratimestack
-elif [ "$day" = "31" -a "$year$month" != "201509" ]
+elif [ "$day" == "$last_day_in_month" ]
 then
+  echo "$day is last day in month!"
   echo "$(date +%Y-%m-%dT%H:%M:%S -u) merge era stack with next month ..."
   erathisday=$auxroot/era-interim-t2m-mslp-tcwv-u10-v10/$year/era-interim-t2m-mslp-tcwv-u10-v10-$year-$month.nc
   eradayafter=$auxroot/era-interim-t2m-mslp-tcwv-u10-v10/${date_after:0:4}/era-interim-t2m-mslp-tcwv-u10-v10-${date_after:0:4}-${date_after:5:2}.nc
