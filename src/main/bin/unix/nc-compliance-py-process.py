@@ -90,7 +90,7 @@ def reset_ocean_cdr1(dst_var, surface_type_array, reset_value):
     """
     dst_var_arr = np.array(dst_var)
     tmp_array = np.copy(dst_var_arr)
-    tmp_array[np.where(surface_type_array == 1)] = reset_value
+    tmp_array[np.where((surface_type_array == 1) | (surface_type_array == 4))] = reset_value  # also reset coast!!
     dst_var[:, :] = tmp_array[:, :]
 
 
@@ -533,13 +533,10 @@ def create_time_variables(dst, day, month, year):
 
     # use days since 1970-01-01 as time value, and the given day at 12:00 as reference time...
     timeval = (datetime.datetime(int(year), int(month), int(day)) - datetime.datetime(1970, 1, 1)).days
-    time_bnds_0 = timeval
-    time_bnds_1 = timeval + 1
     # create 'time_bnds' variable:
-    time_bnds_arr = np.array([time_bnds_0, time_bnds_1])
     time_bnds = dst.createVariable('time_bnds', 'i4', ('time', 'nv'), zlib=True)
-    time_bnds[:, 0] = time_bnds_arr[0]
-    time_bnds[:, 1] = time_bnds_arr[1]
+    time_bnds[0, 0] = timeval - 1
+    time_bnds[0, 1] = timeval + 1
     time_bnds.setncattr('long_name', 'Time cell boundaries')
     time_bnds.setncattr('comment', 'Contains the start and end times for the time period the data represent.')
 
@@ -780,8 +777,6 @@ def run(args):
 
     # In case there are remaining 'valid' values for invalid pixels, reset to nan...
     reset_var_to_nan(dst.variables['tcwv'], indices)
-    var_tcwv_arr = np.array(dst.variables['tcwv'])
-    dst.variables['tcwv'].setncattr('actual_range', np.array([np.nanmin(var_tcwv_arr), np.nanmax(var_tcwv_arr)], 'f4'))
     reset_var_to_nan(dst.variables['stdv'], indices)
     reset_var_to_nan(dst.variables['tcwv_err'], indices)
     reset_var_to_nan(dst.variables['tcwv_ran'], indices)
@@ -800,6 +795,8 @@ def run(args):
 
     # If CDR-1 (land only!), reset everything over ocean:
     reset_ocean_for_cdr1(dst, sensor)
+    var_tcwv_arr = np.array(dst.variables['tcwv'])
+    dst.variables['tcwv'].setncattr('actual_range', np.array([np.nanmin(var_tcwv_arr), np.nanmax(var_tcwv_arr)], 'f4'))
 
     # Close files...
     print("Closing L3 input file...", file=sys.stderr)
