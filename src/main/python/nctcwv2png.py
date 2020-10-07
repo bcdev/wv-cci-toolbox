@@ -85,8 +85,8 @@ def plotImag(array, outPNG, band, date, tickets, cdict):
     ax1 = fig.add_axes([margin, margin, 1 - 2*margin, 1 - 2*margin])
     
     my_cmap=default_cmap
-    bla = cm.get_cmap(my_cmap, 12)
-    print(bla(range(100)))
+    # bla = cm.get_cmap(my_cmap, 12)
+    # print(bla(range(100)))
     if(cdict != None):
     	my_cmap = mpl.colors.LinearSegmentedColormap('my_colormap',cdict,256)
     	

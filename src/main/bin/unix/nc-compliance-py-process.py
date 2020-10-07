@@ -371,14 +371,16 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon):
             dstvar.setncattr('standard_name', 'atmosphere_water_vapor_content ')
             dstvar.setncattr('ancillary_variables', 'tcwv_uncertainty tcwv_counts')
             tcwv_arr = np.array(variable)
-            tcwv_min = np.nanmin(tcwv_arr)
-            tcwv_max = np.nanmax(tcwv_arr)
-            dstvar.setncattr('actual_range', np.array([tcwv_min, np.nanmax(tcwv_max)], 'f4'))
             tcwv_min_valid = 0.0
             tcwv_max_valid = 70.0
+            tcwv_arr[np.where(tcwv_arr < tcwv_min_valid)] = tcwv_min_valid
+            tcwv_arr[np.where(tcwv_arr > tcwv_max_valid)] = tcwv_max_valid
+            tcwv_min = np.nanmin(tcwv_arr)
+            tcwv_max = np.nanmax(tcwv_arr)
+            dstvar.setncattr('actual_range', np.array([tcwv_min, tcwv_max], 'f4'))
             dstvar.setncattr('valid_range', np.array([tcwv_min_valid, tcwv_max_valid], 'f4'))
             dstvar.setncattr('ancillary_variables', 'stdv num_obs')
-            dstvar[:, :] = variable[:, :]
+            dstvar[:, :] = tcwv_arr[:, :]
 
         if name == 'tcwv_sigma':
             dstvar = dst.createVariable('stdv', variable.datatype, variable.dimensions, zlib=True,
