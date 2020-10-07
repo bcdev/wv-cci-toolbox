@@ -136,7 +136,9 @@ def update_tcwv_quality_flag_for_hoaps(dst, sensor):
         tmparr[use_hoaps_ok] = 0
         use_hoaps_nok = np.where(
             ((surface_type_arr == 1) | (surface_type_arr == 4) | (surface_type_arr == 6)) & (np.isnan(tcwv_arr)))
-        tmparr[use_hoaps_nok] = 2
+        # tmparr[use_hoaps_nok] = 2
+        # dataset 2.x: reset to 3
+        tmparr[use_hoaps_nok] = 3
         dstvar[:, :] = tmparr[:, :]
 
 
@@ -216,6 +218,7 @@ def set_num_obs_variable(dst, src, sensor):
     else:
         tmparr[:, :] = var_counts[:, :]
     tmparr[np.where(np.isnan(var_tcwv_arr))] = 0
+    tmparr[np.where(tmparr < 0)] = 0
     dstvar[:, :] = tmparr[:, :]
 
 
