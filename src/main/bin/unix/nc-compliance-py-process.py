@@ -302,8 +302,6 @@ def set_tcwv_quality_flag(dst, src):
     variable = dst.variables['tcwv_quality_flag']
     set_variable_long_name_and_unit_attributes(variable, 'Quality flag of Total Column of Water Vapour', ' ')
     variable.setncattr('standard_name', 'status_flag ')
-    # fill_value = -128
-    # variable.setncattr('_FillValue', np.array([fill_value], 'b'))
     min_valid = 0
     max_valid = 3
     variable.setncattr('valid_range', np.array([min_valid, max_valid], 'b'))
@@ -313,23 +311,19 @@ def set_tcwv_quality_flag(dst, src):
     # set the quality flag values here:
     # flag = 0 for TCWV_OK, flag = 1 for TCWV_HIGH_COST_FUNCTION, flag = 2 for TCWV_INVALID (all NaN pixels)
     # NEW: flag = 0 for TCWV_OK, flag = 1 for TCWV_HIGH_COST_FUNCTION_1, flag = 2 for TCWV_HIGH_COST_FUNCTION_2,
-    # flag = 3 for TCWV_INVALID (all NaN pixels)
-    tcwv_quality_flag_maj_arr_src = np.array(src.variables['tcwv_quality_flags_majority'])
-    tcwv_quality_flag_min_arr_src = np.array(src.variables['tcwv_quality_flags_min'])
-    tcwv_arr_src = np.array(src.variables['tcwv_mean'])
-    tcwv_quality_flag_maj_arr = np.copy(tcwv_quality_flag_maj_arr_src)
-    tcwv_quality_flag_min_arr = np.copy(tcwv_quality_flag_min_arr_src)
-    tcwv_quality_flag_maj_arr[np.where(np.isnan(tcwv_quality_flag_maj_arr_src))] = 8
-    tcwv_quality_flag_min_arr[np.where(np.isnan(tcwv_quality_flag_min_arr_src))] = 8
-    tcwv_quality_flag_maj_arr[np.where(np.isnan(tcwv_arr_src))] = 8
-    tcwv_quality_flag_min_arr[np.where(np.isnan(tcwv_arr_src))] = 8
-    tmparr = np.copy(tcwv_quality_flag_maj_arr)
+    #      flag = 3 for TCWV_INVALID (all NaN pixels)
 
-    # if the majority is INVALID, reset everything to invalid/NaN
-    indices = np.where(tcwv_quality_flag_maj_arr > 4)
-    tmparr[indices] = 8
-    tcwv_quality_flag_arr = np.log2(tmparr)
-    variable[:, :] = tcwv_quality_flag_arr[:, :]
+    # we must consider the 'best available' quality in the grid cell (lowest value --> 'tcwv_quality_flags_min')
+    tcwv_quality_flag_min_arr_src = np.array(src.variables['tcwv_quality_flags_min'])
+    # harmonize final flag with NaNs already in raw L3 tcwv
+    tcwv_arr_src = np.array(src.variables['tcwv_mean'])
+    tcwv_quality_flag_min_arr = np.copy(tcwv_quality_flag_min_arr_src)
+    tcwv_quality_flag_min_arr[np.where(np.isnan(tcwv_quality_flag_min_arr_src))] = 8
+    tcwv_quality_flag_min_arr[np.where(np.isnan(tcwv_arr_src))] = 8
+
+    # if everything is INVALID, reset everything to invalid/NaN (identify indices)
+    indices = np.where(tcwv_quality_flag_min_arr > 4)
+    variable[:, :] = np.log2(tcwv_quality_flag_min_arr[:, :])
 
     return indices
 
