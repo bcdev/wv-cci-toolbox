@@ -384,36 +384,28 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon):
                                                        'kg/m2')
             dstvar[:, :] = variable[:, :]
         if name == 'tcwv_uncertainty_mean':
+            # Stengel et al., eq. (2):
             dstvar = dst.createVariable('tcwv_err', variable.datatype, variable.dimensions, zlib=True,
                                         fill_value=getattr(variable, '_FillValue'))
             copy_variable_attributes_from_source(variable, dstvar)
             set_variable_long_name_and_unit_attributes(dstvar, 'Average retrieval uncertainty', 'kg/m2')
             dstvar[:, :] = variable[:, :]
         if name == 'tcwv_uncertainty_sums_sum_sq':
+            # Stengel et al., eq. (3):
             dstvar = dst.createVariable('tcwv_ran', variable.datatype, variable.dimensions, zlib=True,
                                         fill_value=getattr(variable, '_FillValue'))
             # just set attributes, computation of tcwv_ran below
-            # NOTE: names tcwv_err, tcwv_ran were switched following PSD v2.0 (20191101)
             copy_variable_attributes_from_source(variable, dstvar)
             set_variable_long_name_and_unit_attributes(dstvar, 'Propagated retrieval uncertainty', 'kg/m2')
-            # // Stengel et al., eq. (3):
-            #  float tcwvUncertSumSq = sourceSamples[SRC_TCWV_UNCERTAINTY_SUM_SQ].getFloat();   // for eq. (3)
-            #  float sigmaSqrMean = tcwvUncertSumSq / numObs;
-            # // DWD wants this term stored instead, as this is what is written into HOAPS products (MS, 20190826):
-            #  float sigmaSqrMeanHoaps = (1.0f / numObs) * sigmaSqrMean; // = (1.0/(numObs*numObs)) * tcwvUncertSumSq
-            #  targetSamples[TRG_TCWV_PROPAGATED_RETRIEVAL_UNCERTAINTY].set(sigmaSqrMeanHoaps);
-
-            # NOTE: names tcwv_err, tcwv_ran were switched following PSD v2.0 (20191101)
 
             uncert_sum_sqr_arr = np.array(src.variables['tcwv_uncertainty_sums_sum_sq'])
             num_obs_arr = np.array(src.variables['num_obs'])
-
-            # This is the mean of the squares of the MEASURED L2 uncertainties in the bin cell
-            # --> but WHY do we have to divide tcwv_uncertainty_sums_sum by ALL possible measurements??
-            # --> this is because weightCoeff was set to 1.0 in aggregator config instead of 0.0 !!
-            uncert_sum_sqr_arr_norm = uncert_sum_sqr_arr / num_obs_arr
-            sigma_sqr_mean_hoaps_arr = np.sqrt(uncert_sum_sqr_arr_norm)  # PSD v2.0 section 3.1.4
-            dstvar[:, :] = sigma_sqr_mean_hoaps_arr[:, :]
+            uncert_sum_sqr_arr_norm = uncert_sum_sqr_arr / num_obs_arr  # this is eq. (3) !
+            # now sqrt, see PSD v2.0 section 3.1.4:
+            uncert_sum_sqr_arr_psd = np.sqrt(uncert_sum_sqr_arr_norm)  # PSD v2.0 section 3.1.4
+            dstvar[:, :] = uncert_sum_sqr_arr_psd[:, :]
+            # todo: with this computation, tcwv_err and tcwv_ran are nearly identical over land,
+            # whereas tcwv_err/tcwv_ran ~ 5 for HOAPS over water
 
         if name == 'crs':
             dstvar = dst.createVariable(name, variable.datatype, variable.dimensions, zlib=True)
