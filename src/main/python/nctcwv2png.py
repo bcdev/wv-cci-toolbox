@@ -48,7 +48,7 @@ def plot_image(array, out_png, date):
     # set up vertical color bar right to image
     divider = make_axes_locatable(ax1)
     cax = divider.append_axes("right", size="3%", pad=0.5)
-    wv_ticks = [0, 10, 20, 30, 40, 50, 60, 70, 80]
+    wv_ticks = [0, 10, 20, 30, 40, 50, 60, 70]
     cbar = plt.colorbar(im, ticks=wv_ticks, cax=cax)
     cbar.ax.yaxis.set_tick_params(color='black')
     for label in cbar.ax.get_yticklabels():
@@ -61,10 +61,16 @@ def plot_image(array, out_png, date):
              transform=ax1.transAxes,
              color='white', fontsize=30, fontstyle='oblique')
 
-    ax1.text(0.98, 0.025, "ESA/CM-SAF (C)" + creation_year,
-             verticalalignment='bottom', horizontalalignment='right',
-             transform=ax1.transAxes,
-             color='white', fontsize=30, fontstyle='oblique')
+    if 'cmsaf' in out_png:
+        ax1.text(0.98, 0.025, "(C)" + creation_year + ' ESA/CM-SAF',
+                 verticalalignment='bottom', horizontalalignment='right',
+                 transform=ax1.transAxes,
+                 color='white', fontsize=30, fontstyle='oblique')
+    else:
+        ax1.text(0.99, 0.025, "(C)" + creation_year + ' ESA',
+                 verticalalignment='bottom', horizontalalignment='right',
+                 transform=ax1.transAxes,
+                 color='white', fontsize=30, fontstyle='oblique')
 
     plt.savefig(out_png)
 
@@ -83,6 +89,7 @@ if __name__ == "__main__":
 
     # change values outside [0, 70] to black color (negative values for given 'gist_stern' color map)
     tcwv_arr = np.array(ncfile.variables['tcwv'])
+    tcwv_arr[0,0] = 70.0  # set one value to 70.0 to ensure unique colour scaling on [-3.0, 70.0]
     tcwv_arr[np.where(tcwv_arr > 70.0)] = -3.0
     tcwv_arr[np.where(np.isnan(tcwv_arr))] = -3.0
 
