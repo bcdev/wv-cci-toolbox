@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+'''
+Generates a quicklook png from TCWV final daily 005deg product.
+'''
+
 import netCDF4
 
 import matplotlib.pyplot as plt
@@ -16,21 +20,30 @@ creation_year = '2020'
 def plot_image(array, out_png, date):
     '''
 
-    :param array:
-    :param out_png:
-    :param date:
+    :param array: tcwv numpy 2D data array
+    :param out_png: path of output png
+    :param date: datestring as yyyyMMdd
+
     :return:
     '''
 
-    # draw image
-    fig, ax1 = plt.subplots(1, 1, figsize=(72, 36),
-                            subplot_kw={'xticks': [-180, -90, 0, 90, 180],
+    # set up plot
+    my_dpi=200.0
+    fig, ax1 = plt.subplots(1, 1, figsize=(36, 18), dpi=my_dpi,
+                            subplot_kw={'xticks': [-180, -150, -120, -90, -60, -30, 0, 30, 60, 90, 120, 150, 180],
                                         'yticks': [-60, -30, 0, 30, 60, 90]})
-    im = ax1.imshow(array, cmap=default_cmap, extent=[-180,180,-90,90])
+
+    # Add lat/lon grid
+    ax1.grid(which='major', axis='both', linestyle='-')
+
+    # show image
+    im = ax1.imshow(array, cmap=default_cmap, interpolation='none', extent=[-180,180,-90,90])
+
+    # change size of tickmarks
     for tick in ax1.xaxis.get_major_ticks():
-        tick.label.set_fontsize(30)
+        tick.label.set_fontsize(20)
     for tick in ax1.yaxis.get_major_ticks():
-        tick.label.set_fontsize(30)
+        tick.label.set_fontsize(20)
 
     # set up vertical color bar right to image
     divider = make_axes_locatable(ax1)
@@ -40,18 +53,18 @@ def plot_image(array, out_png, date):
     cbar.ax.yaxis.set_tick_params(color='black')
     for label in cbar.ax.get_yticklabels():
         label.set_color('black')
-        label.set_size(50)
+        label.set_size(30)
 
     # draw labels into image
     ax1.text(0.25, 0.05, 'TCWV (kg/m2) - ' + date,
              verticalalignment='bottom', horizontalalignment='right',
              transform=ax1.transAxes,
-             color='white', fontsize=60, fontstyle='oblique')
+             color='white', fontsize=30, fontstyle='oblique')
 
     ax1.text(0.98, 0.025, "ESA/CM-SAF (C)" + creation_year,
              verticalalignment='bottom', horizontalalignment='right',
              transform=ax1.transAxes,
-             color='white', fontsize=60, fontstyle='oblique')
+             color='white', fontsize=30, fontstyle='oblique')
 
     plt.savefig(out_png)
 
@@ -72,11 +85,6 @@ if __name__ == "__main__":
     tcwv_arr = np.array(ncfile.variables['tcwv'])
     tcwv_arr[np.where(tcwv_arr > 70.0)] = -3.0
     tcwv_arr[np.where(np.isnan(tcwv_arr))] = -3.0
-
-    # draw white grid lines every 30deg by changing tcwv values to 70.0 (white for given 'gist_stern' color map)
-    dx, dy = int(tcwv_arr.shape[0]/6), int(tcwv_arr.shape[0]/6)
-    tcwv_arr[:,::dy] = 70.0
-    tcwv_arr[::dx,:] = 70.0
 
     # create the plot and save to png
     output_dir = os.getcwd()
