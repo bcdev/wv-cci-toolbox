@@ -48,7 +48,7 @@ def plot_image(array, out_png, date):
     # set up vertical color bar right to image
     divider = make_axes_locatable(ax1)
     cax = divider.append_axes("right", size="3%", pad=0.5)
-    wv_ticks = [0, 10, 20, 30, 40, 50, 60, 70]
+    wv_ticks = [0, 10, 20, 30, 40, 50, 60, 70, 80]
     cbar = plt.colorbar(im, ticks=wv_ticks, cax=cax)
     cbar.ax.yaxis.set_tick_params(color='black')
     for label in cbar.ax.get_yticklabels():
