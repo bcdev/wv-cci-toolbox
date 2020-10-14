@@ -1,0 +1,25 @@
+#!/bin/bash
+set -e
+
+##########################################################################
+# Calvalus prepare script for TCWV final product quicklook generation.
+##########################################################################
+
+#[[
+
+nc_infile_noext=`basename $1 .nc`
+png_outdir=$2
+
+## filename following CCI standards:
+
+## output PNG filename:
+png_outfile="${nc_infile_noext}_QL.png"
+
+echo CALVALUS_OUTPUT_PRODUCT ${png_outfile}
+if /opt/hadoop/bin/hadoop fs -ls ${png_outdir}/${png_outfile} ; then
+  # output exist
+  echo CALVALUS_SKIP_PROCESSING yes
+fi
+
+]]#
+

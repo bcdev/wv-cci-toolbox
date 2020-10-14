@@ -1,0 +1,39 @@
+#!/bin/bash
+set -x
+set -e
+set -m
+
+##########################################################################
+# Calvalus processing script for TCWV final product quicklook generation.
+##########################################################################
+
+#[[
+
+nc_infile_noext=`basename $1 .nc`
+nc_infile=`basename $1`
+echo "nc_infile: ${nc_infile}"
+echo "Directory listing before processing:"
+echo "`ls -la $(pwd)`"
+/usr/bin/python --version
+echo "/usr/bin/python $(pwd)/process.py $(pwd)/${nc_infile}"
+/usr/bin/python $(pwd)/process.py $(pwd)/${nc_infile}
+
+status=$?
+echo "Status: $status"
+
+if [ $status = 0 ]
+then
+    echo "Quicklook PNG file created."
+    echo "Status: $status"
+    rm -f ./${nc_infile}
+fi
+
+## output PNG filename:
+png_outfile="${nc_infile_noext}_QL.png"
+
+echo CALVALUS_OUTPUT_PRODUCT ${png_outfile}
+echo "Directory listing AFTER processing:"
+echo "`ls -la $(pwd)`"
+
+]]#
+
