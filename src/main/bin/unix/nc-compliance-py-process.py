@@ -90,7 +90,7 @@ def reset_var_to_nan(dst_var, dst_indices):
 
 def reset_ocean_cdr1(dst_var, surface_type_array, reset_value):
     """
-    Resets everything to nan over ocean in case of CDR-1 (no HOAPS, only land)
+    Resets everything to nan over ocean, seaice, coastlines in case of CDR-1 (no HOAPS, only land)
     :param dst_var:
     :param surface_type_array:
     :param reset_value:
@@ -98,7 +98,10 @@ def reset_ocean_cdr1(dst_var, surface_type_array, reset_value):
     """
     dst_var_arr = np.array(dst_var)
     tmp_array = np.copy(dst_var_arr)
-    tmp_array[np.where((surface_type_array == 1) | (surface_type_array == 4))] = reset_value  # also reset coast!!
+    tmp_array[np.where((surface_type_array == 1) |
+                       (surface_type_array == 3) |
+                       (surface_type_array == 4) |
+                       (surface_type_array == 6))] = reset_value
     dst_var[:, :] = tmp_array[:, :]
 
 
