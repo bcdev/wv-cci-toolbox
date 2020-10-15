@@ -64,12 +64,12 @@ def plot_image(array, out_png, date):
              color='white', fontsize=30, fontstyle='oblique')
 
     if 'cmsaf' in out_png:
-        ax1.text(0.98, 0.025, u'\xa9 ' + creation_year + ' ESA/CM-SAF',
+        ax1.text(0.98, 0.025, u'\xa9 ' + creation_year + ' ESACCI/CM-SAF',
                  verticalalignment='bottom', horizontalalignment='right',
                  transform=ax1.transAxes,
                  color='white', fontsize=30, fontstyle='oblique')
     else:
-        ax1.text(0.99, 0.025, u'\xa9 ' + creation_year + ' ESA',
+        ax1.text(0.99, 0.025, u'\xa9 ' + creation_year + ' ESACCI',
                  verticalalignment='bottom', horizontalalignment='right',
                  transform=ax1.transAxes,
                  color='white', fontsize=30, fontstyle='oblique')

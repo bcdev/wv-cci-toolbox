@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#! /usr/bin/env python
+# ! /usr/bin/env python
 from __future__ import print_function
 
 # Generates final CF- and CCI-compliant TCWV L3 daily non-merged products ready for delivery.
@@ -24,6 +24,14 @@ LON_MAX_VALID = 180.0
 #############################################################################
 def is_py3():
     return sys.version_info.major == 3
+
+
+def is_cdr_1(sensor):
+    return not is_cdr_2(sensor)
+
+
+def is_cdr_2(sensor):
+    return sensor.find("hoaps") != -1
 
 
 def get_iteritems(iterable_obj):
@@ -103,7 +111,7 @@ def reset_ocean_for_cdr1(dst, sensor):
     """
     var_surface_type = dst.variables['surface_type_flag']
     surface_type_arr = np.array(var_surface_type)
-    if sensor.find("hoaps") == -1:
+    if is_cdr_1(sensor):
         # set num_obs to 0:
         reset_ocean_cdr1(dst.variables['num_obs'], surface_type_arr, 0)
         # set tcwv, stdv, and error terms to nan:
@@ -130,7 +138,7 @@ def update_tcwv_quality_flag_for_hoaps(dst, sensor):
     var_surface_type = dst.variables['surface_type_flag']
     surface_type_arr = np.array(var_surface_type)
     tmparr = np.copy(tcwv_qual_arr)
-    if sensor.find("hoaps") != -1:
+    if is_cdr_2(sensor):
         use_hoaps_ok = np.where(
             ((surface_type_arr == 1) | (surface_type_arr == 4) | (surface_type_arr == 6)) & (~np.isnan(tcwv_arr)))
         tmparr[use_hoaps_ok] = 0
@@ -187,7 +195,7 @@ def set_errors_for_hoaps(dst, src):
                               np.array(src.variables['wvpa_ran']),
                               has_wvpa_errors)
     else:
-        # if no HOAPS, set wvpa errors to NaN over ocean
+        # if no wvpa errors available, set to NaN over ocean
         set_ocean_wvpa_errors(dst.variables['tcwv_err'], surface_type_arr, tcwv_arr, None, has_wvpa_errors)
         set_ocean_wvpa_errors(dst.variables['tcwv_ran'], surface_type_arr, tcwv_arr, None, has_wvpa_errors)
 
@@ -208,12 +216,12 @@ def set_num_obs_variable(dst, src, sensor):
     var_tcwv_arr = np.array(var_tcwv)
     var_surface_type = dst.variables['surface_type_flag']
     surface_type_arr = np.array(var_surface_type)
-    use_hoaps = np.where((surface_type_arr == 1) & (~np.isnan(var_tcwv_arr)))
     dstvar = dst.variables['num_obs']
     tmparr = np.copy(var_counts_arr)
-    if sensor.find("hoaps") != -1:
+    if is_cdr_2(sensor):
         # if existing, we have to prioritize the HOAPS num_obs over ocean
         # Note that the meaning of HOAPS 'num_obs' corresponds to NIR 'tcwv_counts' !!
+        use_hoaps = np.where((surface_type_arr == 1) & (~np.isnan(var_tcwv_arr)))
         tmparr[use_hoaps] = var_numobs_src_arr[use_hoaps]
     else:
         tmparr[:, :] = var_counts[:, :]
@@ -607,10 +615,11 @@ def set_dimensions(dst, src):
     dst.createDimension('nv', 2)
 
 
-def set_global_attributes(datestring, dst, day, month, year, res, version, nc_infile, nc_outfile):
+def set_global_attributes(sensor, datestring, dst, day, month, year, res, version, nc_infile, nc_outfile):
     """
     Sets all global attributes  in nc compliant product.
-    CCI data standards v2.1 section 2.5.1. Updated to latest agreements in team, 20200902.
+    CCI data standards v2.1 section 2.5.1. Updated to latest agreements in team, 20201015.
+    :param sensor:
     :param datestring:
     :param dst:
     :param day:
@@ -623,52 +632,38 @@ def set_global_attributes(datestring, dst, day, month, year, res, version, nc_in
     :return:
     """
 
-    dst.setncattr('title', 'Global Total Column of Water Vapour Product from Microwave and Near Infrared Imagers')
-    dst.setncattr('institution', 'EUMETSAT/CM SAF')
-    dst.setncattr('publisher_name', 'EUMETSAT/CM SAF')
-    dst.setncattr('publisher_email', 'contact.cmsaf@dwd.de')
-    dst.setncattr('publisher_url', 'http://cmsaf.eu')
-    dst.setncattr('source', 'near-infrared Level 3 data (land, sea-ice and coast) from Brockmann Consult and '
-                            'Spectral Earth : microwave imager Level 3 data (ice-free ocean) from EUMETSAT CM SAF : '
-                            'combined NIR and MW data from Brockmann Consult and Spectral Earth : the combined product '
-                            'was funded by and generated within the ESA Water_Vapour_cci project')
+    dst.setncattr('title', get_global_attr_title(sensor))
+    dst.setncattr('institution', get_global_attr_institution(sensor))
+    dst.setncattr('publisher_name', get_global_attr_publisher_name(sensor))
+    dst.setncattr('publisher_email', get_global_attr_publisher_email(sensor))
+    dst.setncattr('publisher_url', get_global_attr_publisher_url(sensor))
+    dst.setncattr('source', get_global_attr_source(sensor))
     dst.setncattr('history', 'python nc-compliance-py-process.py ' + nc_infile)
     dst.setncattr('references',
                   'WV_cci D2.2: ATBD Part 1 - MERIS-MODIS-OLCI L2 Products, Issue 1.1, 3 April 2019; WV_cci D4.2: '
-                  'CRDP Issue 1.0, 13 June 2019 ')
+                  'CRDP Issue 2.1, 30 September 2020 ')
     dst.setncattr('tracking_id', str(uuid.uuid1()))
     dst.setncattr('Conventions', 'CF-1.7')
     dst.setncattr('product_version', version)
     dst.setncattr('format_version', 'CCI Data Standards v2.0')
-    dst.setncattr('summary', 'This global TCWV data record makes use of the complementary spatial coverage of near '
-                             'infrared (NIR) and microwave imager (MW) observations: SSM/I observations were used to '
-                             'generate TCWV data over the global ice-free ocean while MERIS, MODIS and OLCI '
-                             'observations were used over land, coastal areas and sea-ice. The product covers the '
-                             'period 2002-2017 with daily and montlhy as well as 0.05° and 0.5° temporal and spatial '
-                             'resolutions, respectively.')
+    dst.setncattr('summary', get_global_attr_summary(sensor))
     dst.setncattr('keywords',
                   'EARTH SCIENCE > ATMOSPHERE > ATMOSPHERIC WATER VAPOR > WATER VAPOR,EARTH SCIENCE > ATMOSPHERE > '
                   'ATMOSPHERIC WATER VAPOR > PRECIPITABLE WATER')
-    dst.setncattr('id', '10.5676/EUM_SAF_CM/COMBI/V001')
-    dst.setncattr('naming-authority', 'EUMETSAT/CM SAF')
+    dst.setncattr('id', get_global_attr_id(sensor, nc_outfile))
+    dst.setncattr('naming-authority', get_global_attr_naming_authority(sensor))
     dst.setncattr('filename', nc_outfile)
     dst.setncattr('keywords-vocabulary', 'GCMD Science Keywords, Version 8.1')
     dst.setncattr('cdm_data_type', 'grid')
-    dst.setncattr('comment', 'These data were produced in the frame of the Water Vapour ECV (Water_Vapour_cci) of the '
-                             'ESA Climate Change Initiative Extension (CCI+) Phase 1. '
-                             'They include CM SAF products over the ocean.')
+    dst.setncattr('comment', get_global_attr_comment(sensor))
     from datetime import datetime
     date_created = str(datetime.utcnow())[:19] + ' UTC'
     dst.setncattr('date_created', date_created)
     dst.setncattr('creator_name', 'ESA Water_Vapour_cci; Brockmann Consult; DWD; EUMETSAT/CM SAF; Spectral Earth')
     dst.setncattr('creator_url', 'http://cci.esa.int/watervapour')
-    dst.setncattr('creator_email', 'contact.cmsaf@dwd.de')
-    dst.setncattr('project', 'CM SAF')
-    dst.setncattr('acknowledgement',
-                  'The combined MW and NIR product was initiated and funded by the ESA Water_Vapour_cci '
-                  'project. The NIR retrieval was developed by Spectral Earth. The NIR data was processed '
-                  'and combined with the MW data by Brockmann Consult. NIR data is owned by '
-                  'Brockmann Consult and Spectral Earth.')
+    dst.setncattr('creator_email', get_global_attr_creator_email(sensor))
+    dst.setncattr('project', get_global_attr_project(sensor))
+    dst.setncattr('acknowledgement', get_global_attr_acknowledgement(sensor))
     dst.setncattr('geospatial_lat_min', '-90.0')
     dst.setncattr('geospatial_lat_max', '90.0')
     dst.setncattr('geospatial_lon_min', '-180.0')
@@ -689,17 +684,8 @@ def set_global_attributes(datestring, dst, day, month, year, res, version, nc_in
     dst.setncattr('time_coverage_start', starttime)
     dst.setncattr('time_coverage_end', endtime)
     dst.setncattr('standard_name_vocabulary', 'NetCDF Climate and Forecast (CF) Metadata Convention version 67')
-    dst.setncattr('license',
-                  'The CM SAF data are owned by EUMETSAT and are available to all users free of charge and with no '
-                  'conditions to use. If you wish to use these products, EUMETSATs copyright credit must be shown '
-                  'by displaying the words "Copyright (c) ([release-year]) EUMETSAT" under/in each of these SAF '
-                  'Products used in a project or shown in a publication or website. Please follow the citation '
-                  'guidelines given at [DOI landing- page] and also register as a user at http://cm-saf.eumetsat.int/ '
-                  'to receive latest information on CM SAF services and to get access to the CM SAF User Help Desk.')
-    dst.setncattr('platform', 'Environmental Satellite; Earth Observing System, Terra (AM-1); '
-                              'Defense Meteorological Satellite Program-F16; '
-                              'Defense Meteorological Satellite Program-F17; '
-                              'Defense Meteorological Satellite Program-F18')
+    dst.setncattr('license', get_global_attr_license(sensor))
+    dst.setncattr('platform', get_global_attr_platform(sensor))
     dst.setncattr('sensor', 'Medium Resolution Imaging Spectrometer; Moderate-Resolution Imaging Spectroradiometer; '
                             'Ocean and Land Colour Instrument; Special Sensor Microwave Imager/Sounder')
     spatial_resolution = '5.6km at Equator' if res == '005' else '56km at Equator'
@@ -710,6 +696,138 @@ def set_global_attributes(datestring, dst, day, month, year, res, version, nc_in
     dst.setncattr('geospatial_lat_resolution', geospatial_resolution)
     dst.setncattr('geospatial_lon_resolution', geospatial_resolution)
     dst.setncattr('key_variables', 'tcwv')
+
+
+def get_global_attr_title(sensor):
+    if is_cdr_1(sensor):
+        return 'Global Total Column of Water Vapour Product from Near Infrared Imagers'
+    else:
+        return 'Global Total Column of Water Vapour Product from Microwave and Near Infrared Imagers'
+
+
+def get_global_attr_institution(sensor):
+    if is_cdr_1(sensor):
+        return 'ESACCI'
+    else:
+        return 'EUMETSAT/CM SAF'
+
+
+def get_global_attr_publisher_name(sensor):
+    if is_cdr_1(sensor):
+        return 'ESACCI'
+    else:
+        return 'EUMETSAT/CM SAF'
+
+
+def get_global_attr_publisher_email(sensor):
+    if is_cdr_1(sensor):
+        return 'climate.office@esa.int'
+    else:
+        return 'contact.cmsaf@dwd.de'
+
+
+def get_global_attr_publisher_url(sensor):
+    if is_cdr_1(sensor):
+        return 'https://climate.esa.int/en/esa-climate/esa-cci/'
+    else:
+        return 'http://cmsaf.eu'
+
+
+def get_global_attr_source(sensor):
+    if is_cdr_1(sensor):
+        return 'Near-infrared Level 3 data over land from Brockmann Consult and Spectral Earth'
+    else:
+        return 'Near-infrared Level 3 data (land, sea-ice and coast) from Brockmann Consult and ' + \
+               'Spectral Earth : microwave imager Level 3 data (ice-free ocean) from EUMETSAT CM SAF : ' + \
+               'combined NIR and MW data from Brockmann Consult and Spectral Earth : the combined product ' + \
+               'was funded by and generated within the ESA Water_Vapour_cci project'
+
+
+def get_global_attr_summary(sensor):
+    if is_cdr_1(sensor):
+        return 'This global TCWV data record was generated from MERIS, MODIS and OLCI ' + \
+               'observations over land. The product covers the ' + \
+               'period 2002-2017 with daily and montlhy as well as 0.05° and 0.5° temporal and spatial ' + \
+               'resolutions, respectively.'
+    else:
+        return 'This global TCWV data record makes use of the complementary spatial coverage of near ' + \
+               'infrared (NIR) and microwave imager (MW) observations: SSM/I observations were used to ' + \
+               'generate TCWV data over the global ice-free ocean while MERIS, MODIS and OLCI ' + \
+               'observations were used over land, coastal areas and sea-ice. The product covers the ' + \
+               'period 2002-2017 with daily and montlhy as well as 0.05° and 0.5° temporal and spatial ' + \
+               'resolutions, respectively.'
+
+
+def get_global_attr_id(sensor, nc_outfile):
+    if is_cdr_1(sensor):
+        return os.path.splitext(nc_outfile)[0]
+    else:
+        return '10.5676/EUM_SAF_CM/COMBI/V001'
+
+
+def get_global_attr_naming_authority(sensor):
+    if is_cdr_1(sensor):
+        return 'ESACCI'
+    else:
+        return 'EUMETSAT/CM SAF'
+
+
+def get_global_attr_comment(sensor):
+    if is_cdr_1(sensor):
+        return 'These data were produced in the frame of the Water Vapour ECV (Water_Vapour_cci) of the ' + \
+               'ESA Climate Change Initiative Extension (CCI+) Phase 1.'
+    else:
+        return 'These data were produced in the frame of the Water Vapour ECV (Water_Vapour_cci) of the ' + \
+               'ESA Climate Change Initiative Extension (CCI+) Phase 1. ' + \
+               'They include CM SAF products over the ocean.'
+
+
+def get_global_attr_creator_email(sensor):
+    if is_cdr_1(sensor):
+        return 'climate.office@esa.int'
+    else:
+        return 'contact.cmsaf@dwd.de'
+
+
+def get_global_attr_project(sensor):
+    if is_cdr_1(sensor):
+        return 'Climate Change Initiative - European Space Agency'
+    else:
+        return 'CM SAF'
+
+
+def get_global_attr_acknowledgement(sensor):
+    if is_cdr_1(sensor):
+        return 'The combined MW and NIR product was initiated and funded by the ESA Water_Vapour_cci ' + \
+               'project. The NIR retrieval was developed by Spectral Earth. The NIR data was processed ' + \
+               'by Brockmann Consult. NIR data is owned by Brockmann Consult and Spectral Earth.'
+    else:
+        return 'The combined MW and NIR product was initiated and funded by the ESA Water_Vapour_cci ' + \
+               'project. The NIR retrieval was developed by Spectral Earth. The NIR data was processed ' + \
+               'and combined with the MW data by Brockmann Consult. NIR data is owned by ' + \
+               'Brockmann Consult and Spectral Earth.'
+
+
+def get_global_attr_license(sensor):
+    if is_cdr_1(sensor):
+        return 'ESA CCI Data Policy: free and open access'
+    else:
+        return 'The CM SAF data are owned by EUMETSAT and are available to all users free of charge and with no ' + \
+               'conditions to use. If you wish to use these products, EUMETSATs copyright credit must be shown ' + \
+               'by displaying the words "Copyright (c) ([release-year]) EUMETSAT" under/in each of these SAF ' + \
+               'Products used in a project or shown in a publication or website. Please follow the citation ' + \
+               'guidelines given at [DOI landing-page] and also register as a user at http://cm-saf.eumetsat.int/ ' + \
+               'to receive latest information on CM SAF services and to get access to the CM SAF User Help Desk.'
+
+
+def get_global_attr_platform(sensor):
+    if is_cdr_1(sensor):
+        return 'Envisat, Terra, Sentinel-3'
+    else:
+        return 'Environmental Satellite; Earth Observing System, Terra (AM-1); ' + \
+               'Defense Meteorological Satellite Program-F16; ' + \
+               'Defense Meteorological Satellite Program-F17; ' + \
+               'Defense Meteorological Satellite Program-F18'
 
 
 def run(args):
@@ -746,7 +864,7 @@ def run(args):
     set_dimensions(dst, src)
 
     # set global attributes...
-    set_global_attributes(datestring, dst, day, month, year, res, version, nc_infile, nc_outfile)
+    set_global_attributes(sensor, datestring, dst, day, month, year, res, version, nc_infile, nc_outfile)
 
     # Create time variables...
     create_time_variables(dst, day, month, year)
