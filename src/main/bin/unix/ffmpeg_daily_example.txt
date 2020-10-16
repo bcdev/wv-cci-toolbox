@@ -1,0 +1,1 @@
+ffmpeg -r 2 -pattern_type glob -i "./QL/2011/*.png" -s 1440x720 -c:v libx264 -pix_fmt yuv420p ./movies/tcwv_2011.mp4
