@@ -83,9 +83,9 @@ def reset_var_to_nan(dst_var, dst_indices):
     :param dst_indices:
     :return:
     """
-    dst_var_arr = np.array(dst_var)
-    dst_var_arr[dst_indices] = np.nan
-    dst_var[:, :] = dst_var_arr[:, :]
+    dst_var_arr_0 = np.array(dst_var)[0]
+    dst_var_arr_0[dst_indices] = np.nan
+    dst_var[0, :, :] = dst_var_arr_0[:, :]
 
 
 def reset_ocean_cdr1(dst_var, surface_type_array, reset_value):
@@ -102,7 +102,7 @@ def reset_ocean_cdr1(dst_var, surface_type_array, reset_value):
                        (surface_type_array == 3) |
                        (surface_type_array == 4) |
                        (surface_type_array == 6))] = reset_value
-    dst_var[:, :] = tmp_array[:, :]
+    dst_var[0, :, :] = tmp_array[0, :, :]
 
 
 def reset_ocean_for_cdr1(dst, sensor):
@@ -150,7 +150,7 @@ def update_tcwv_quality_flag_for_hoaps(dst, sensor):
         # tmparr[use_hoaps_nok] = 2
         # dataset 2.x: reset to 3
         tmparr[use_hoaps_nok] = 3
-        dstvar[:, :] = tmparr[:, :]
+        dstvar[0, :, :] = tmparr[0, :, :]
 
 
 def set_ocean_wvpa_errors(dst_var, surface_type_array, tcwv_array, wvpa_err_array, has_errors):
@@ -164,17 +164,19 @@ def set_ocean_wvpa_errors(dst_var, surface_type_array, tcwv_array, wvpa_err_arra
     :return:
     """
     dst_var_arr = np.array(dst_var)
-    tmp_arr = np.copy(dst_var_arr)
+    dst_var_arr_0 = np.copy(dst_var_arr)[0]
     if has_errors:
-        do_use_hoaps = np.where(((surface_type_array == 1) | (surface_type_array == 4) | (surface_type_array == 6)) & (
-            ~np.isnan(tcwv_array)) & (~np.isnan(wvpa_err_array)))
-        tmp_arr[do_use_hoaps] = wvpa_err_array[do_use_hoaps]
+        do_use_hoaps = np.where(
+            ((surface_type_array[0] == 1) | (surface_type_array[0] == 4) | (surface_type_array[0] == 6)) & (
+                ~np.isnan(tcwv_array[0])) & (~np.isnan(wvpa_err_array)))
+        dst_var_arr_0[do_use_hoaps] = wvpa_err_array[do_use_hoaps]
     else:
-        ocean_or_ice = np.where(((surface_type_array == 1) | (surface_type_array == 4) | (surface_type_array == 6)))
-        tmp_arr[ocean_or_ice] = np.nan
+        ocean_or_ice = np.where(
+            ((surface_type_array[0] == 1) | (surface_type_array[0] == 4) | (surface_type_array[0] == 6)))
+        dst_var_arr_0[ocean_or_ice] = np.nan
 
-    tmp_arr[np.where(np.isnan(tcwv_array))] = np.nan
-    dst_var[:, :] = tmp_arr[:, :]
+    dst_var_arr_0[np.where(np.isnan(tcwv_array[0]))] = np.nan
+    dst_var[0, :, :] = dst_var_arr_0[:, :]
 
 
 def set_errors_for_hoaps(dst, src):
@@ -184,23 +186,31 @@ def set_errors_for_hoaps(dst, src):
     :param src:
     :return:
     """
-    surface_type_arr = np.array(dst.variables['surface_type_flag'])
-    tcwv_arr = np.array(dst.variables['tcwv'])
     has_wvpa_errors = False
     for name, variable in get_iteritems(src.variables):
         if name == 'wvpa_err' or name == 'wvpa_ran':
             has_wvpa_errors = True
     if has_wvpa_errors:
-        set_ocean_wvpa_errors(dst.variables['tcwv_err'], surface_type_arr, tcwv_arr,
+        set_ocean_wvpa_errors(dst.variables['tcwv_err'],
+                              np.array(dst.variables['surface_type_flag']),
+                              np.array(dst.variables['tcwv']),
                               np.array(src.variables['wvpa_err']),
                               has_wvpa_errors)
-        set_ocean_wvpa_errors(dst.variables['tcwv_ran'], surface_type_arr, tcwv_arr,
+        set_ocean_wvpa_errors(dst.variables['tcwv_ran'],
+                              np.array(dst.variables['surface_type_flag']),
+                              np.array(dst.variables['tcwv']),
                               np.array(src.variables['wvpa_ran']),
                               has_wvpa_errors)
     else:
         # if no wvpa errors available, set to NaN over ocean
-        set_ocean_wvpa_errors(dst.variables['tcwv_err'], surface_type_arr, tcwv_arr, None, has_wvpa_errors)
-        set_ocean_wvpa_errors(dst.variables['tcwv_ran'], surface_type_arr, tcwv_arr, None, has_wvpa_errors)
+        set_ocean_wvpa_errors(dst.variables['tcwv_err'],
+                              np.array(dst.variables['surface_type_flag']),
+                              np.array(dst.variables['tcwv']), None,
+                              has_wvpa_errors)
+        set_ocean_wvpa_errors(dst.variables['tcwv_ran'],
+                              np.array(dst.variables['surface_type_flag']),
+                              np.array(dst.variables['tcwv']), None,
+                              has_wvpa_errors)
 
 
 def set_num_obs_variable(dst, src, sensor):
@@ -224,13 +234,14 @@ def set_num_obs_variable(dst, src, sensor):
     if is_cdr_2(sensor):
         # if existing, we have to prioritize the HOAPS num_obs over ocean
         # Note that the meaning of HOAPS 'num_obs' corresponds to NIR 'tcwv_counts' !!
-        use_hoaps = np.where((surface_type_arr == 1) & (~np.isnan(var_tcwv_arr)))
+        # use_hoaps = np.where((surface_type_arr == 1) & (~np.isnan(var_tcwv_arr)))
+        use_hoaps = np.where((surface_type_arr[0] == 1) & (~np.isnan(var_tcwv_arr[0])))
         tmparr[use_hoaps] = var_numobs_src_arr[use_hoaps]
     else:
         tmparr[:, :] = var_counts[:, :]
-    tmparr[np.where(np.isnan(var_tcwv_arr))] = 0
+    tmparr[np.where(np.isnan(var_tcwv_arr[0]))] = 0
     tmparr[np.where(tmparr < 0)] = 0
-    dstvar[:, :] = tmparr[:, :]
+    dstvar[0, :, :] = tmparr[:, :]
 
 
 def set_surface_type_flag(dst, src, day, res, ds_landmask, ds_seaice):
@@ -300,7 +311,7 @@ def set_surface_type_flag(dst, src, day, res, ds_landmask, ds_seaice):
     # set PARTLY_CLOUDY_OVER_LAND: must be the pixels identified in majority as CLOUD, but have a valid TCWV:
     tmparr[np.where((np.isfinite(tcwv_arr)) & (tmparr == 4))] = 32
     surface_type_flag_arr = np.log2(tmparr)
-    variable[:, :] = surface_type_flag_arr[:, :]
+    variable[0, :, :] = surface_type_flag_arr[:, :]
 
 
 def set_tcwv_quality_flag(dst, src):
@@ -334,7 +345,7 @@ def set_tcwv_quality_flag(dst, src):
 
     # if everything is INVALID, reset everything to invalid/NaN (identify indices)
     indices = np.where(tcwv_quality_flag_min_arr > 4)
-    variable[:, :] = np.log2(tcwv_quality_flag_min_arr[:, :])
+    variable[0, :, :] = np.log2(tcwv_quality_flag_min_arr[:, :])
 
     return indices
 
@@ -360,7 +371,7 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon):
     """
     for name, variable in get_iteritems(src.variables):
         if name == 'num_obs':
-            dstvar = dst.createVariable('num_obs', variable.datatype, variable.dimensions, zlib=True,
+            dstvar = dst.createVariable('num_obs', variable.datatype, ('time', 'lat', 'lon'), zlib=True,
                                         fill_value=getattr(variable, '_FillValue'))
             copy_variable_attributes_from_source(variable, dstvar)
             set_variable_long_name_and_unit_attributes(dstvar,
@@ -369,7 +380,7 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon):
                                                        ' ')
             dstvar.setncattr('coordinates', 'lat lon')
         if name == 'tcwv_mean':
-            dstvar = dst.createVariable('tcwv', variable.datatype, variable.dimensions, zlib=True,
+            dstvar = dst.createVariable('tcwv', variable.datatype, ('time', 'lat', 'lon'), zlib=True,
                                         fill_value=getattr(variable, '_FillValue'))
             copy_variable_attributes_from_source(variable, dstvar)
             set_variable_long_name_and_unit_attributes(dstvar, 'Total Column of Water', 'kg/m2')
@@ -385,25 +396,25 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon):
             dstvar.setncattr('actual_range', np.array([tcwv_min, tcwv_max], 'f4'))
             dstvar.setncattr('valid_range', np.array([tcwv_min_valid, tcwv_max_valid], 'f4'))
             dstvar.setncattr('ancillary_variables', 'stdv num_obs')
-            dstvar[:, :] = tcwv_arr[:, :]
+            dstvar[0, :, :] = tcwv_arr[:, :]
 
         if name == 'tcwv_sigma':
-            dstvar = dst.createVariable('stdv', variable.datatype, variable.dimensions, zlib=True,
+            dstvar = dst.createVariable('stdv', variable.datatype, ('time', 'lat', 'lon'), zlib=True,
                                         fill_value=getattr(variable, '_FillValue'))
             copy_variable_attributes_from_source(variable, dstvar)
             set_variable_long_name_and_unit_attributes(dstvar, 'Standard deviation of Total Column of Water Vapour',
                                                        'kg/m2')
-            dstvar[:, :] = variable[:, :]
+            dstvar[0, :, :] = variable[:, :]
         if name == 'tcwv_uncertainty_mean':
             # Stengel et al., eq. (2):
-            dstvar = dst.createVariable('tcwv_err', variable.datatype, variable.dimensions, zlib=True,
+            dstvar = dst.createVariable('tcwv_err', variable.datatype, ('time', 'lat', 'lon'), zlib=True,
                                         fill_value=getattr(variable, '_FillValue'))
             copy_variable_attributes_from_source(variable, dstvar)
             set_variable_long_name_and_unit_attributes(dstvar, 'Average retrieval uncertainty', 'kg/m2')
-            dstvar[:, :] = variable[:, :]
+            dstvar[0, :, :] = variable[:, :]
         if name == 'tcwv_uncertainty_sums_sum_sq':
             # Stengel et al., eq. (3):
-            dstvar = dst.createVariable('tcwv_ran', variable.datatype, variable.dimensions, zlib=True,
+            dstvar = dst.createVariable('tcwv_ran', variable.datatype, ('time', 'lat', 'lon'), zlib=True,
                                         fill_value=getattr(variable, '_FillValue'))
             # just set attributes, computation of tcwv_ran below
             copy_variable_attributes_from_source(variable, dstvar)
@@ -414,7 +425,7 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon):
             uncert_sum_sqr_arr_norm = uncert_sum_sqr_arr / num_obs_arr  # this is eq. (3) !
             # now sqrt, see PSD v2.0 section 3.1.4:
             uncert_sum_sqr_arr_psd = np.sqrt(uncert_sum_sqr_arr_norm)  # PSD v2.0 section 3.1.4
-            dstvar[:, :] = uncert_sum_sqr_arr_psd[:, :]
+            dstvar[0, :, :] = uncert_sum_sqr_arr_psd[:, :]
             # todo: with this computation, tcwv_err and tcwv_ran are nearly identical over land,
             # whereas tcwv_err/tcwv_ran ~ 5 for HOAPS over water
 
@@ -879,9 +890,11 @@ def run(args):
     has_latlon, height, width = set_lat_lon_variables(dst, res, src)
 
     # Create final flag variables...
-    dst.createVariable('tcwv_quality_flag', 'b', (dst.dimensions['lat'].name, dst.dimensions['lon'].name), zlib=True,
+    dst.createVariable('tcwv_quality_flag', 'b', ('time', dst.dimensions['lat'].name, dst.dimensions['lon'].name),
+                       zlib=True,
                        fill_value=np.array([-128], 'b'))
-    dst.createVariable('surface_type_flag', 'b', (dst.dimensions['lat'].name, dst.dimensions['lon'].name), zlib=True,
+    dst.createVariable('surface_type_flag', 'b', ('time', dst.dimensions['lat'].name, dst.dimensions['lon'].name),
+                       zlib=True,
                        fill_value=np.array([-128], 'b'))
 
     # Copy variables from source product and rename to correct names. Set attributes and data...
