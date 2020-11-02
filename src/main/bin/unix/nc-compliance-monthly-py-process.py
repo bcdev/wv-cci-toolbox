@@ -482,8 +482,8 @@ def set_global_attributes(sensor, datestring, dst, day, month, year, res, versio
     dst.setncattr('geospatial_vertical_max', '0.0')
     if int(day) == 0:
         num_days_in_month = calendar.monthrange(int(year), int(month))[1]
-        starttime = datestring + '-01 00:00:00 UTC'
-        endtime = datestring + '-' + str(num_days_in_month) + ' 23:59:59 UTC'
+        starttime = datestring + '01 00:00:00 UTC'
+        endtime = datestring + str(num_days_in_month) + ' 23:59:59 UTC'
         dst.setncattr('time_coverage_duration', 'P1M')
         dst.setncattr('time_coverage_resolution', 'P1M')
     else:

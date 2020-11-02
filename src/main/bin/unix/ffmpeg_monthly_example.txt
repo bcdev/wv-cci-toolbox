@@ -1,0 +1,4 @@
+- first, resort png files by name to get the frames in correct order, somehow like this for all years:
+rename 's/VAPOUR-/VAPOUR-2002-/g' *-2002*.png
+
+ffmpeg -r 1 -pattern_type glob -i "./QL/monthly/full_period/sorted/*.png" -s 1080x540 -c:v libx264 -pix_fmt yuv420p ./movies/monthly/tcwv_cdr2_2002_2017.mp4

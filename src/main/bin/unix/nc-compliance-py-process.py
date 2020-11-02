@@ -537,7 +537,8 @@ def create_time_variables(dst, day, month, year):
     timeval = (datetime.datetime(int(year), int(month), int(day)) - datetime.datetime(1970, 1, 1)).days
     # create 'time_bnds' variable:
     time_bnds = dst.createVariable('time_bnds', 'i4', ('time', 'nv'), zlib=True)
-    time_bnds[0, 0] = timeval - 1
+    # time_bnds[0, 0] = timeval - 1
+    time_bnds[0, 0] = timeval
     time_bnds[0, 1] = timeval + 1
     time_bnds.setncattr('long_name', 'Time cell boundaries')
     time_bnds.setncattr('comment', 'Contains the start and end times for the time period the data represent.')
@@ -682,6 +683,8 @@ def set_global_attributes(sensor, datestring, dst, day, month, year, res, versio
     else:
         starttime = datestring + ' 00:00:00 UTC'
         endtime = datestring + ' 23:59:59 UTC'
+        # starttime = datestring[0:4] + '-' + datestring[4:6] + '-' + datestring[6:8] + 'T00:00:00.000000000'
+        # endtime =  datestring[0:4] + '-' + datestring[4:6] + '-' + datestring[6:8] + 'T23:59:59.000000000'
         dst.setncattr('time_coverage_duration', 'P1D')
         dst.setncattr('time_coverage_resolution', 'P1D')
     dst.setncattr('time_coverage_start', starttime)
