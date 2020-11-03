@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#!/usr/bin/env python
+# !/usr/bin/env python
 from __future__ import print_function
 
 __author__ = 'olafd'
@@ -51,7 +51,7 @@ def reset_ocean_cdr1(dst_var, surface_type_array, reset_value):
                        (surface_type_array == 3) |
                        (surface_type_array == 4) |
                        (surface_type_array == 6))] = reset_value
-    dst_var[:, :] = tmp_array[:, :]
+    dst_var[0, :, :] = tmp_array[0, :, :]
 
 
 def reset_ocean_for_cdr1(dst, sensor):
@@ -151,7 +151,7 @@ def set_surface_type_flag(dst, src):
     tmparr[np.where((surface_type_flag_arr_maj == 2) & (np.isfinite(tcwv_arr_src)))] = 5
     # set to partly cloudy  if at least one daily sample is partly cloudy, and not already cloudy:
     tmparr[np.where((surface_type_flag_arr_max == 5) & (tmparr != 2))] = 5
-    variable[:, :] = tmparr[:, :]
+    variable[0, :, :] = tmparr[:, :]
 
 
 def copy_and_rename_variables_from_source_product(dst, src, has_latlon):
@@ -176,7 +176,7 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon):
     for name, variable in src.variables.items():
 
         if name == 'num_obs_sum':
-            dstvar = dst.createVariable('num_obs', variable.datatype, variable.dimensions, zlib=True,
+            dstvar = dst.createVariable('num_obs', variable.datatype, ('time', 'lat', 'lon'), zlib=True,
                                         fill_value=getattr(variable, '_FillValue'))
             copy_variable_attributes_from_source(variable, dstvar)
             set_variable_long_name_and_unit_attributes(dstvar,
@@ -185,9 +185,9 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon):
                                                        ' ')
             dstvar.setncattr('coordinates', 'lat lon')
             dstvar.setncattr('units', ' ')
-            dstvar[:, :] = variable[:, :]
+            dstvar[0, :, :] = variable[:, :]
         if name == 'tcwv_mean':
-            dstvar = dst.createVariable('tcwv', variable.datatype, variable.dimensions, zlib=True,
+            dstvar = dst.createVariable('tcwv', variable.datatype, ('time', 'lat', 'lon'), zlib=True,
                                         fill_value=getattr(variable, '_FillValue'))
             copy_variable_attributes_from_source(variable, dstvar)
             set_variable_long_name_and_unit_attributes(dstvar, 'Total Column of Water', 'kg/m2')
@@ -203,27 +203,28 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon):
             dstvar.setncattr('actual_range', np.array([tcwv_min, tcwv_max], 'f4'))
             dstvar.setncattr('valid_range', np.array([tcwv_min_valid, tcwv_max_valid], 'f4'))
             dstvar.setncattr('ancillary_variables', 'stdv num_obs')
-            dstvar[:, :] = tcwv_arr[:, :]
+            dstvar[0, :, :] = tcwv_arr[:, :]
+            print('bla')
 
         if name == 'stdv_mean':
-            dstvar = dst.createVariable('stdv', variable.datatype, variable.dimensions, zlib=True,
+            dstvar = dst.createVariable('stdv', variable.datatype, ('time', 'lat', 'lon'), zlib=True,
                                         fill_value=getattr(variable, '_FillValue'))
             copy_variable_attributes_from_source(variable, dstvar)
             set_variable_long_name_and_unit_attributes(dstvar, 'Standard deviation of Total Column of Water Vapour',
                                                        'kg/m2')
-            dstvar[:, :] = variable[:, :]
+            dstvar[0, :, :] = variable[:, :]
         if name == 'tcwv_err_mean':
-            dstvar = dst.createVariable('tcwv_err', variable.datatype, variable.dimensions, zlib=True,
+            dstvar = dst.createVariable('tcwv_err', variable.datatype, ('time', 'lat', 'lon'), zlib=True,
                                         fill_value=getattr(variable, '_FillValue'))
             copy_variable_attributes_from_source(variable, dstvar)
             set_variable_long_name_and_unit_attributes(dstvar, 'Average retrieval uncertainty', 'kg/m2')
-            dstvar[:, :] = variable[:, :]
+            dstvar[0, :, :] = variable[:, :]
         if name == 'tcwv_ran_mean':
-            dstvar = dst.createVariable('tcwv_ran', variable.datatype, variable.dimensions, zlib=True,
+            dstvar = dst.createVariable('tcwv_ran', variable.datatype, ('time', 'lat', 'lon'), zlib=True,
                                         fill_value=getattr(variable, '_FillValue'))
             copy_variable_attributes_from_source(variable, dstvar)
             set_variable_long_name_and_unit_attributes(dstvar, 'Random retrieval uncertainty', 'kg/m2')
-            dstvar[:, :] = variable[:, :]
+            dstvar[0, :, :] = variable[:, :]
         if name == 'crs':
             dstvar = dst.createVariable(name, variable.datatype, variable.dimensions, zlib=True)
             copy_variable_attributes_from_source(variable, dstvar)
@@ -343,7 +344,7 @@ def create_time_variables(dst, day, month, year):
     timeval = (datetime.datetime(int(year), int(month), int(day)) - datetime.datetime(1970, 1, 1)).days
     # create 'time_bnds' variable:
     time_bnds = dst.createVariable('time_bnds', 'i4', ('time', 'nv'), zlib=True)
-    time_bnds[0, 0] = timeval - 1
+    time_bnds[0, 0] = timeval
     time_bnds[0, 1] = timeval + 1
     time_bnds.setncattr('long_name', 'Time cell boundaries')
     time_bnds.setncattr('comment', 'Contains the start and end times for the time period the data represent.')
@@ -425,14 +426,13 @@ def set_dimensions(dst, src):
     dst.createDimension('nv', 2)
 
 
-def set_global_attributes(sensor, datestring, dst, day, month, year, res, version, nc_infile, nc_outfile):
+def set_global_attributes(sensor, datestring, dst, month, year, res, version, nc_infile, nc_outfile):
     """
     Sets all global attributes  in nc compliant product.
     CCI data standards v2.1 section 2.5.1. Updated to latest agreements in team, 20201015.
     :param sensor:
     :param datestring:
     :param dst:
-    :param day:
     :param month:
     :param year:
     :param res:
@@ -480,17 +480,11 @@ def set_global_attributes(sensor, datestring, dst, day, month, year, res, versio
     dst.setncattr('geospatial_lon_max', '180.0')
     dst.setncattr('geospatial_vertical_min', '0.0')
     dst.setncattr('geospatial_vertical_max', '0.0')
-    if int(day) == 0:
-        num_days_in_month = calendar.monthrange(int(year), int(month))[1]
-        starttime = datestring + '01 00:00:00 UTC'
-        endtime = datestring + str(num_days_in_month) + ' 23:59:59 UTC'
-        dst.setncattr('time_coverage_duration', 'P1M')
-        dst.setncattr('time_coverage_resolution', 'P1M')
-    else:
-        starttime = datestring + ' 00:00:00 UTC'
-        endtime = datestring + ' 23:59:59 UTC'
-        dst.setncattr('time_coverage_duration', 'P1D')
-        dst.setncattr('time_coverage_resolution', 'P1D')
+    num_days_in_month = calendar.monthrange(int(year), int(month))[1]
+    starttime = datestring + '01 00:00:00 UTC'
+    endtime = datestring + str(num_days_in_month) + ' 23:59:59 UTC'
+    dst.setncattr('time_coverage_duration', 'P1M')
+    dst.setncattr('time_coverage_resolution', 'P1M')
     dst.setncattr('time_coverage_start', starttime)
     dst.setncattr('time_coverage_end', endtime)
     dst.setncattr('standard_name_vocabulary', 'NetCDF Climate and Forecast (CF) Metadata Convention version 67')
@@ -640,7 +634,6 @@ def get_global_attr_platform(sensor):
                'Defense Meteorological Satellite Program-F18'
 
 
-
 def run(args):
     """
     Run the conversion to final nc and CCI compliant product.
@@ -673,7 +666,7 @@ def run(args):
     set_dimensions(dst, src)
 
     # set global attributes...
-    set_global_attributes(sensor, datestring, dst, '0', month, year, res, version, nc_infile, nc_outfile)
+    set_global_attributes(sensor, datestring, dst, month, year, res, version, nc_infile, nc_outfile)
 
     # Create time variables...
     # use days since 1970-01-01 as time base value, and the 15th of given month at 00:00 as reference time:
@@ -684,7 +677,8 @@ def run(args):
 
     # Create final flag bands:
     # no quality flag in monthlies!
-    dst.createVariable('surface_type_flag', 'b', (dst.dimensions['lat'].name, dst.dimensions['lon'].name), zlib=True)
+    dst.createVariable('surface_type_flag', 'b', ('time', dst.dimensions['lat'].name, dst.dimensions['lon'].name),
+                       zlib=True)
 
     copy_and_rename_variables_from_source_product(dst, src, has_latlon)
 
