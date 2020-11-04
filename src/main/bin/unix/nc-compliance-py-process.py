@@ -153,23 +153,28 @@ def update_tcwv_quality_flag_for_hoaps(dst, sensor):
         dstvar[0, :, :] = tmparr[0, :, :]
 
 
-def set_ocean_wvpa_errors(dst_var, surface_type_array, tcwv_array, wvpa_err_array, has_errors):
+def set_ocean_wvpa_errors(dst_var, surface_type_array, tcwv_array, wvpa_error_array, has_errors):
     """
     Sets HOAPS water vapour error terms over ocean.
     :param dst_var:
     :param surface_type_array:
     :param tcwv_array:
-    :param wvpa_err_array:
+    :param wvpa_error_array:
     :param has_errors:
     :return:
     """
     dst_var_arr = np.array(dst_var)
     dst_var_arr_0 = np.copy(dst_var_arr)[0]
     if has_errors:
+        if len(wvpa_error_array.shape) == 3:
+            wvpa_error_array_2d = wvpa_error_array[0]
+        else:
+            wvpa_error_array_2d = wvpa_error_array
+
         do_use_hoaps = np.where(
             ((surface_type_array[0] == 1) | (surface_type_array[0] == 4) | (surface_type_array[0] == 6)) & (
-                ~np.isnan(tcwv_array[0])) & (~np.isnan(wvpa_err_array)))
-        dst_var_arr_0[do_use_hoaps] = wvpa_err_array[do_use_hoaps]
+                ~np.isnan(tcwv_array[0])) & (~np.isnan(wvpa_error_array_2d)) & (wvpa_error_array_2d >= 0.0))
+        dst_var_arr_0[do_use_hoaps] = wvpa_error_array_2d[do_use_hoaps]
     else:
         ocean_or_ice = np.where(
             ((surface_type_array[0] == 1) | (surface_type_array[0] == 4) | (surface_type_array[0] == 6)))
@@ -187,30 +192,27 @@ def set_errors_for_hoaps(dst, src):
     :return:
     """
     has_wvpa_errors = False
+    wvpa_err_arr = None
+    wvpa_ran_arr = None
     for name, variable in get_iteritems(src.variables):
-        if name == 'wvpa_err' or name == 'wvpa_ran':
+        if name == 'wvpa_err':
             has_wvpa_errors = True
-    if has_wvpa_errors:
-        set_ocean_wvpa_errors(dst.variables['tcwv_err'],
-                              np.array(dst.variables['surface_type_flag']),
-                              np.array(dst.variables['tcwv']),
-                              np.array(src.variables['wvpa_err']),
-                              has_wvpa_errors)
-        set_ocean_wvpa_errors(dst.variables['tcwv_ran'],
-                              np.array(dst.variables['surface_type_flag']),
-                              np.array(dst.variables['tcwv']),
-                              np.array(src.variables['wvpa_ran']),
-                              has_wvpa_errors)
-    else:
-        # if no wvpa errors available, set to NaN over ocean
-        set_ocean_wvpa_errors(dst.variables['tcwv_err'],
-                              np.array(dst.variables['surface_type_flag']),
-                              np.array(dst.variables['tcwv']), None,
-                              has_wvpa_errors)
-        set_ocean_wvpa_errors(dst.variables['tcwv_ran'],
-                              np.array(dst.variables['surface_type_flag']),
-                              np.array(dst.variables['tcwv']), None,
-                              has_wvpa_errors)
+            wvpa_err_arr = np.array(src.variables['wvpa_err'])
+        if name == 'wvpa_ran':
+            has_wvpa_errors = True
+            wvpa_ran_arr = np.array(src.variables['wvpa_ran'])
+
+    # if no wvpa errors available, set to NaN over ocean (should no longer happen for latest HOAPS L3 products)
+    set_ocean_wvpa_errors(dst.variables['tcwv_err'],
+                          np.array(dst.variables['surface_type_flag']),
+                          np.array(dst.variables['tcwv']),
+                          wvpa_err_arr,
+                          has_wvpa_errors)
+    set_ocean_wvpa_errors(dst.variables['tcwv_ran'],
+                          np.array(dst.variables['surface_type_flag']),
+                          np.array(dst.variables['tcwv']),
+                          wvpa_ran_arr,
+                          has_wvpa_errors)
 
 
 def set_num_obs_variable(dst, src, sensor):
@@ -607,6 +609,26 @@ def get_ds_seaice(args):
     return ds_seaice
 
 
+def get_ds_hoaps(args):
+    """
+    Returns HOAPS original dataset if corresponding input file is given
+    (i.e. to apply HOAPS fixes at this final stage to avoid reprocessing full L3 chain).
+    :param args: program arguments
+    :return: ds_hoaps: hoaps nc4 dataset
+    """
+    hoaps_file = None
+    if len(args) == 11:
+        hoaps_file = args[10]
+    ds_hoaps = None
+    if hoaps_file:
+        try:
+            ds_hoaps = Dataset(hoaps_file)
+        except OSError:
+            print('Cannot read original HOAPS L3 file')
+            ds_hoaps = None
+    return ds_hoaps
+
+
 def set_dimensions(dst, src):
     """
     Sets all dimensions in nc compliant product.
@@ -871,6 +893,9 @@ def run(args):
     ds_seaice = get_ds_seaice(args)
     ds_landmask = Dataset(landmask_file)
 
+    # Original HOAPS dataset if given (20201103: to ingest corrected wvpa_ran values, requested by MS)
+    ds_hoaps = get_ds_hoaps(args)
+
     # Initialize nc result file and dataset...
     datestring = year + month + day
     dst, nc_outfile = init_nc_compliant_product(datestring, res, sensor, version)
@@ -916,7 +941,10 @@ def run(args):
     set_num_obs_variable(dst, src, sensor)
 
     # Set tcwv_err and tcwv_ran in case of existing HOAPS...
-    set_errors_for_hoaps(dst, src)
+    if ds_hoaps:
+        set_errors_for_hoaps(dst, ds_hoaps)
+    else:
+        set_errors_for_hoaps(dst, src)
 
     # Update tcwv_quality_flag in case of existing HOAPS...
     update_tcwv_quality_flag_for_hoaps(dst, sensor)
@@ -934,6 +962,9 @@ def run(args):
     if ds_seaice:
         print("Closing seaice file...", file=sys.stderr)
         ds_seaice.close()
+    if ds_hoaps:
+        print("Closing HOAPS L3 file...", file=sys.stderr)
+        ds_hoaps.close()
 
     print("FINISHED nc-compliance-py-process.py...", file=sys.stderr)
 
@@ -943,10 +974,10 @@ if __name__ == "__main__":
     print("STARTING nc-compliance-py-process.py", file=sys.stderr)
     print('Working dir: ', os.getcwd())
 
-    if len(sys.argv) != 9 and len(sys.argv) != 10:
+    if len(sys.argv) != 10 and len(sys.argv) != 11:
         print(
             'Usage:  python nc-compliance-py-process.py <nc_infile> <landmask_file> <sensor> <year> <month> <day> '
-            '<resolution> < product version> [<seaice_mask_file>] ')
+            '<resolution> <product version> <seaice_mask_file> [<hoaps_l3_file>]')
         sys.exit(-1)
 
     run(sys.argv)

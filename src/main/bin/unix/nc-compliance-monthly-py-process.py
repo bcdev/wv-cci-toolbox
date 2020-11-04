@@ -37,6 +37,37 @@ def is_cdr_2(sensor):
     return sensor.find("hoaps") != -1
 
 
+def set_ocean_wvpa_errors(dst_var, wvpa_error_array):
+    """
+    Sets HOAPS water vapour error terms over ocean.
+    :param dst_var:
+    :param wvpa_error_array:
+    :return:
+    """
+    dst_var_arr = np.array(dst_var)
+    dst_var_arr_0 = np.copy(dst_var_arr)[0]
+    wvpa_error_array_2d = wvpa_error_array[0]
+
+    do_use_hoaps = np.where(((~np.isnan(wvpa_error_array_2d)) & (wvpa_error_array_2d >= 0.0)))
+    dst_var_arr_0[do_use_hoaps] = wvpa_error_array_2d[do_use_hoaps]
+    dst_var[0, :, :] = dst_var_arr_0[:, :]
+
+
+def update_errors_for_hoaps(dst, src):
+    """
+    Wrapper function for setting HOAPS error terms over ocean.
+    :param dst:
+    :param src:
+    :return:
+    """
+    wvpa_err_arr = np.array(src.variables['wvpa_err'])
+    wvpa_ran_arr = np.array(src.variables['wvpa_ran'])
+
+    # if no wvpa errors available, set to NaN over ocean (should no longer happen for latest HOAPS L3 products)
+    set_ocean_wvpa_errors(dst.variables['tcwv_err'], wvpa_err_arr)
+    set_ocean_wvpa_errors(dst.variables['tcwv_ran'], wvpa_ran_arr)
+
+
 def reset_ocean_cdr1(dst_var, surface_type_array, reset_value):
     """
     Resets everything to nan over ocean, seaice, coastlines in case of CDR-1 (no HOAPS, only land)
@@ -204,7 +235,6 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon):
             dstvar.setncattr('valid_range', np.array([tcwv_min_valid, tcwv_max_valid], 'f4'))
             dstvar.setncattr('ancillary_variables', 'stdv num_obs')
             dstvar[0, :, :] = tcwv_arr[:, :]
-            print('bla')
 
         if name == 'stdv_mean':
             dstvar = dst.createVariable('stdv', variable.datatype, ('time', 'lat', 'lon'), zlib=True,
@@ -401,6 +431,26 @@ def get_ds_seaice(args):
             print('Cannot read seaice mask file')
             ds_seaice = None
     return ds_seaice
+
+
+def get_ds_hoaps(args):
+    """
+    Returns HOAPS original dataset if corresponding input file is given
+    (i.e. to apply HOAPS fixes at this final stage to avoid reprocessing full L3 chain).
+    :param args: program arguments
+    :return: ds_hoaps: hoaps nc4 dataset
+    """
+    hoaps_file = None
+    if len(args) == 11:
+        hoaps_file = args[10]
+    ds_hoaps = None
+    if hoaps_file:
+        try:
+            ds_hoaps = Dataset(hoaps_file)
+        except OSError:
+            print('Cannot read original HOAPS L3 file')
+            ds_hoaps = None
+    return ds_hoaps
 
 
 def set_dimensions(dst, src):
@@ -657,6 +707,9 @@ def run(args):
     ds_seaice = get_ds_seaice(args)
     ds_landmask = Dataset(landmask_file)
 
+    # Original HOAPS dataset if given (20201103: to ingest corrected wvpa_ran values, requested by MS)
+    ds_hoaps = get_ds_hoaps(args)
+
     # Initialize nc result file and dataset...
     # we have MONTHLY products:
     datestring = year + month
@@ -684,6 +737,10 @@ def run(args):
 
     set_surface_type_flag(dst, src)
 
+    # Update (fix) tcwv_err and tcwv_ran in case of existing HOAPS...
+    if ds_hoaps:
+        update_errors_for_hoaps(dst, ds_hoaps)
+
     # If CDR-1 (land only!), reset everything over ocean:
     reset_ocean_for_cdr1(dst, sensor)
     var_tcwv_arr = np.array(dst.variables['tcwv'])
@@ -698,6 +755,9 @@ def run(args):
     if ds_seaice:
         print("Closing seaice file...", file=sys.stderr)
         ds_seaice.close()
+    if ds_hoaps:
+        print("Closing HOAPS L3 file...", file=sys.stderr)
+        ds_hoaps.close()
 
     print("FINISHED nc-compliance-monthly-py-process.py...", file=sys.stderr)
 
@@ -707,9 +767,9 @@ if __name__ == "__main__":
     print("STARTING nc-compliance-monthly-py-process.py", file=sys.stderr)
     print('Working dir: ', os.getcwd())
 
-    if len(sys.argv) != 8 and len(sys.argv) != 9:
+    if len(sys.argv) != 9 and len(sys.argv) != 10:
         print('Usage:  python nc-compliance-monthly-py-process.py <nc_infile> <landmask_file> <sensor> <year> <month> '
-              '<resolution> < product version> [<seaice_mask_file>] ')
+              '<resolution> < product version> <seaice_mask_file> [<hoaps_l3_file>]')
         sys.exit(-1)
 
     run(sys.argv)
