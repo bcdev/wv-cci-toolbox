@@ -441,8 +441,8 @@ def get_ds_hoaps(args):
     :return: ds_hoaps: hoaps nc4 dataset
     """
     hoaps_file = None
-    if len(args) == 11:
-        hoaps_file = args[10]
+    if len(args) == 10:
+        hoaps_file = args[9]
     ds_hoaps = None
     if hoaps_file:
         try:
