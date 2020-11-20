@@ -104,7 +104,21 @@ def reset_ocean_cdr1(dst_var, surface_type_array, reset_value):
                        (surface_type_array == 6))] = reset_value
     dst_var[0, :, :] = tmp_array[0, :, :]
 
-def reset_polar(dst_var, tcwv_arr, lat_arr, surface_type_array, reset_value):
+def reset_ocean_cdr2(dst_var, wvpa_hoaps_array, surface_type_array, reset_value):
+    """
+    Resets (cleans) everything to nan over ocean, seaice where we have no HOAPS (wvpa) over water in case of CDR-2
+    :param dst_var:
+    :param wvpa_hoaps_array:
+    :param surface_type_array:
+    :param reset_value:
+    :return:
+    """
+    dst_var_arr = np.array(dst_var)
+    tmp_array = np.copy(dst_var_arr)
+    tmp_array[np.where((surface_type_array == 1) & (wvpa_hoaps_array < 0.0))] = reset_value
+    dst_var[0, :, :] = tmp_array[0, :, :]
+
+def reset_polar(dst_var, tcwv_arr, tcwv_quality_arr, lat_arr, surface_type_array, reset_value):
     """
     Resets everything to nan everywhere except ocean for tcwv > 10 and abs(lat) > 75
     :param dst_var:
@@ -114,19 +128,51 @@ def reset_polar(dst_var, tcwv_arr, lat_arr, surface_type_array, reset_value):
     """
     dst_var_arr = np.array(dst_var)
     tmp_array = np.copy(dst_var_arr)
-    tmp_array[np.where((tcwv_arr > 10.0) & (np.abs(lat_arr[0]) > 75.0) & (surface_type_array != 1))] = reset_value
+    # identify inconsistent pixel over non-land
+    tmp_array[np.where((tcwv_arr > 20.0) & (np.abs(lat_arr) > 70.0) &
+    # tmp_array[np.where((tcwv_quality_arr > 1) & (np.abs(lat_arr[0]) > 75.0) &
+                       ((surface_type_array == 3) |
+                       (surface_type_array == 4) |
+                       (surface_type_array == 6)))] = reset_value
+    # identify inconsistent pixel over land
+    # tmp_array[np.where((tcwv_arr > 20.0) & (np.abs(lat_arr[0]) > 75.0) & (surface_type_array == 0))] = reset_value
+    tmp_array[np.where((tcwv_arr > 20.0) & (np.abs(lat_arr) > 70.0) &
+                       ((surface_type_array == 0) | (surface_type_array == 2) | (surface_type_array == 5)))] = reset_value
     dst_var[0, :, :] = tmp_array[0, :, :]
 
-def reset_ocean_for_cdr1(dst, sensor):
+def cleanup_inconsistencies(dst, src_hoaps, sensor):
     """
-    Wrapper function for resetting everything to nan over ocean in case of CDR-1 (no HOAPS, only land).
+    Final cleanup of inconsistencies caused by L3 resampling problems such as Moiree effects, distortion near poles etc.
     :param dst:
     :param sensor:
     :return:
     """
+    var_surface_type = dst.variables['surface_type_flag']
+    surface_type_arr = np.array(var_surface_type)
+    var_tcwv = dst.variables['tcwv']
+    var_tcwv_quality = dst.variables['tcwv_quality_flag']
+    tcwv_arr = np.array(var_tcwv)
+    tcwv_quality_arr = np.array(var_tcwv_quality)
+    var_lat = dst.variables['lat']
+    lat_arr = np.array(var_lat)
+    lat_arr_3d = np.zeros((tcwv_arr.shape))
+    for i in range(len(lat_arr)):
+        lat_arr_3d[0][:][i] = lat_arr[i]
+
+    # cleanup polar regions
+    # set num_obs to 0:
+    reset_polar(dst.variables['num_obs'], tcwv_arr, tcwv_quality_arr, lat_arr_3d, surface_type_arr, 0)
+    # set tcwv, stdv, and error terms to nan:
+    reset_polar(dst.variables['tcwv'], tcwv_arr, tcwv_quality_arr, lat_arr_3d, surface_type_arr, np.nan)
+    reset_polar(dst.variables['stdv'], tcwv_arr, tcwv_quality_arr, lat_arr_3d, surface_type_arr, np.nan)
+    reset_polar(dst.variables['tcwv_err'], tcwv_arr, tcwv_quality_arr, lat_arr_3d, surface_type_arr, np.nan)
+    reset_polar(dst.variables['tcwv_ran'], tcwv_arr, tcwv_quality_arr, lat_arr_3d, surface_type_arr, np.nan)
+    # set tcwv_quality_flag to 3:
+    reset_polar(dst.variables['tcwv_quality_flag'], tcwv_arr, tcwv_quality_arr, lat_arr_3d, surface_type_arr, 3)
+
+    # remove all HOAPS (everything over ocean, coastal, seaice) in case of CDR-1
+    # clean everything remaining over ocean where we have no HOAPS (wvpa) over water in case of CDR-2
     if is_cdr_1(sensor):
-        var_surface_type = dst.variables['surface_type_flag']
-        surface_type_arr = np.array(var_surface_type)
         # set num_obs to 0:
         reset_ocean_cdr1(dst.variables['num_obs'], surface_type_arr, 0)
         # set tcwv, stdv, and error terms to nan:
@@ -136,29 +182,18 @@ def reset_ocean_for_cdr1(dst, sensor):
         reset_ocean_cdr1(dst.variables['tcwv_ran'], surface_type_arr, np.nan)
         # set tcwv_quality_flag to 3:
         reset_ocean_cdr1(dst.variables['tcwv_quality_flag'], surface_type_arr, 3)
+    else:
+        wvpa_arr = np.array(src_hoaps.variables['wvpa'])
+        # set num_obs to 0:
+        reset_ocean_cdr2(dst.variables['num_obs'], wvpa_arr, surface_type_arr, 0)
+        # set tcwv, stdv, and error terms to nan:
+        reset_ocean_cdr2(dst.variables['tcwv'], wvpa_arr, surface_type_arr, np.nan)
+        reset_ocean_cdr2(dst.variables['stdv'], wvpa_arr, surface_type_arr, np.nan)
+        reset_ocean_cdr2(dst.variables['tcwv_err'], wvpa_arr, surface_type_arr, np.nan)
+        reset_ocean_cdr2(dst.variables['tcwv_ran'], wvpa_arr, surface_type_arr, np.nan)
+        # set tcwv_quality_flag to 3:
+        reset_ocean_cdr2(dst.variables['tcwv_quality_flag'], wvpa_arr, surface_type_arr, 3)
 
-def reset_polar_all(dst):
-    """
-    Wrapper function for resetting everything to nan over ocean in case of CDR-1 (no HOAPS, only land).
-    :param dst:
-    :param sensor:
-    :return:
-    """
-    var_surface_type = dst.variables['surface_type_flag']
-    surface_type_arr = np.array(var_surface_type)
-    var_tcwv = dst.variables['tcwv']
-    tcwv_arr = np.array(var_tcwv)
-    var_lat = dst.variables['lat']
-    lat_arr = np.array(var_lat)
-    # set num_obs to 0:
-    reset_polar(dst.variables['num_obs'], tcwv_arr, lat_arr, surface_type_arr, 0)
-    # set tcwv, stdv, and error terms to nan:
-    reset_polar(dst.variables['tcwv'], tcwv_arr, lat_arr, surface_type_arr, np.nan)
-    reset_polar(dst.variables['stdv'], tcwv_arr, lat_arr, surface_type_arr, np.nan)
-    reset_polar(dst.variables['tcwv_err'], tcwv_arr, lat_arr, surface_type_arr, np.nan)
-    reset_polar(dst.variables['tcwv_ran'], tcwv_arr, lat_arr, surface_type_arr, np.nan)
-    # set tcwv_quality_flag to 3:
-    reset_polar(dst.variables['tcwv_quality_flag'], tcwv_arr, lat_arr, surface_type_arr, 3)
 
 def update_tcwv_quality_flag_for_hoaps(dst, sensor):
     """
@@ -979,13 +1014,8 @@ def run(args):
     # Update tcwv_quality_flag in case of existing HOAPS...
     update_tcwv_quality_flag_for_hoaps(dst, sensor)
 
-    # If CDR-1 (land only!), reset everything over ocean:
-    reset_ocean_for_cdr1(dst, sensor)
-    # var_tcwv_arr = np.array(dst.variables['tcwv'])
-    # dst.variables['tcwv'].setncattr('actual_range', np.array([np.nanmin(var_tcwv_arr), np.nanmax(var_tcwv_arr)], 'f4'))
-
-    # reset too high values over polar water/seaice:
-    reset_polar_all(dst)
+    # Cleanup inconsistencies of final arrays at this point:
+    cleanup_inconsistencies(dst, ds_hoaps, sensor)
     var_tcwv_arr = np.array(dst.variables['tcwv'])
     dst.variables['tcwv'].setncattr('actual_range', np.array([np.nanmin(var_tcwv_arr), np.nanmax(var_tcwv_arr)], 'f4'))
 
