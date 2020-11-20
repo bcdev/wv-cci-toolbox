@@ -198,6 +198,10 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon):
             - copy 'surface_type_flag_majority' to 'surface_type_flag', set attributes, make cloud_over_land to
                    partly_cloudy_over_land where we have tcwv!
 
+    - todo 20201109: per grid cell, we want to have number of days which have a TCWV value:
+      -->  take num_obs = 9*numDaysinMonth (e.g. 279) and 'tcwv_ran_counts' = x/num_obs where x is the number we want
+            This is implemented in latest l3-tcwv-monthly.xml
+
     :param dst:
     :param src:
     :param has_latlon:
