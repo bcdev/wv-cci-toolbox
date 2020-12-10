@@ -124,6 +124,8 @@ public class TcwvOp extends Operator {
     private Band stateVector1Band;
     private Band stateVector2Band;
 
+    private Band seaiceMaskTestBand;
+
     @Override
     public void initialize() throws OperatorException {
 
@@ -141,6 +143,10 @@ public class TcwvOp extends Operator {
             idepixClassifBand = pixelClassifBand;
             mod35Used = false;
         }
+
+        // test 20201115: take sea ice from L3 HOAPS product collocated with source product
+        // (usually, this band is null)
+        seaiceMaskTestBand = sourceProduct.getBand("mask_time25");
 
         try {
             if (auxdataPath == null || auxdataPath.length() == 0) {
@@ -262,6 +268,11 @@ public class TcwvOp extends Operator {
             idepixClassifTile = getSourceTile(idepixClassifBand, targetRectangle);
         }
 
+        Tile seaiceMaskTestTile = null;
+        if (seaiceMaskTestBand != null) {
+            seaiceMaskTestTile = getSourceTile(seaiceMaskTestBand, targetRectangle);
+        }
+
         Tile priorT2mTile = getTcwvInputTile(priorT2mBand, targetRectangle);
         Tile priorMslTile = getTcwvInputTile(priorMslBand, targetRectangle);
         Tile priorTcwvTile = getTcwvInputTile(priorTcwvBand, targetRectangle);
@@ -282,7 +293,10 @@ public class TcwvOp extends Operator {
         for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; y++) {
             checkForCancellation();
             for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
-//                if (x == 752 && y == 1561) {
+//                if (x == 157 && y == 132) {
+//                    System.out.println("x = " + x);
+//                }
+//                if (x == 217 && y == 161) {
 //                    System.out.println("x = " + x);
 //                }
 
@@ -305,12 +319,18 @@ public class TcwvOp extends Operator {
                 if (sensor != Sensor.MODIS_TERRA && sensor != Sensor.MODIS_AQUA) {
                     isSeaIce = isValid && isIdepixSeaIce(x, y, idepixClassifTile);
                 }
+                // test 20201115: take sea ice from L3 HOAPS product collocated with source product
+                if (seaiceMaskTestTile != null) {
+                    isSeaIce = seaiceMaskTestTile.getSampleInt(x, y) == 11 || seaiceMaskTestTile.getSampleInt(x, y) == 12;
+                }
+                isLand = isLand || isSeaIce;  // sea ice should always be processed as land! (RP, Nov 2020)
 
                 final boolean isCloud = isValid && (mod35Used ? isMod35Cloud(x, y, pixelClassifTile) :
                         isIdepixCloud(x, y, pixelClassifTile));
 
                 final boolean isCoastline = isValid && (mod35Used ? isMod35Coastline(x, y, pixelClassifTile) :
                         isIdepixCoastline(x, y, pixelClassifTile));
+
 
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_CLOUD, isCloud);
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_SEA_ICE, isSeaIce);
@@ -321,6 +341,7 @@ public class TcwvOp extends Operator {
                 isLand = isLand || (isCoastline && applyLandForCoastlinesAndRivers(y, x, csza, targetRectangle));
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_LAND, isLand);
                 final boolean isOcean = isValid && !isLand && !isSeaIce;
+
                 targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_OCEAN, isOcean);
 
                 // update win/abs bands according to possible change of isLand (important for MODIS!):
