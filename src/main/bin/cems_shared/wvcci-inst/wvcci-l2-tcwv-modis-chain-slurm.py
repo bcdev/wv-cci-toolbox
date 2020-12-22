@@ -108,7 +108,7 @@ for year in years:
                         for index in range(0, len(l1bFiles)):
                             l1bPath = l1bRootDir + '/' + year + '/' + month + '/' + str(day).zfill(2) + '/' + l1bFiles[index]
 
-			    # TEST: do only 12 products, 10*
+			    # TEST: do only 1 product, 1030
                             if l1bFiles[index].endswith(".hdf") and l1bFiles[index].startswith("MYD021KM.A2016122.1030"):
                                 # MODIS only
                                 # MOD021KM or MOD021KM product e.g. MOD021KM.A2015196.1855.061.2017321064215.hdf
