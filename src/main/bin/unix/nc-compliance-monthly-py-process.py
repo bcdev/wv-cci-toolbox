@@ -118,7 +118,7 @@ def reset_polar(dst_var, tcwv_arr, lat_arr, surface_type_array, reset_value):
     # identify inconsistent pixel over land
     tmp_array[np.where((tcwv_arr > 20.0) & (np.abs(lat_arr) > 70.0) &
                        ((surface_type_array == 0) | (surface_type_array == 2) | (
-                                   surface_type_array == 5)))] = reset_value
+                               surface_type_array == 5)))] = reset_value
     dst_var[0, :, :] = tmp_array[0, :, :]
 
 
@@ -161,7 +161,7 @@ def cleanup_inconsistencies(dst, src_hoaps, sensor):
     # set num_obs to 0:
     reset_polar(dst.variables['num_obs'], tcwv_arr, lat_arr_3d, surface_type_arr, 0)
     # set tcwv, stdv, and error terms to nan:
-    reset_polar(dst.variables['tcwv'], tcwv_arr,lat_arr_3d, surface_type_arr, np.nan)
+    reset_polar(dst.variables['tcwv'], tcwv_arr, lat_arr_3d, surface_type_arr, np.nan)
     reset_polar(dst.variables['stdv'], tcwv_arr, lat_arr_3d, surface_type_arr, np.nan)
     reset_polar(dst.variables['tcwv_err'], tcwv_arr, lat_arr_3d, surface_type_arr, np.nan)
     reset_polar(dst.variables['tcwv_ran'], tcwv_arr, lat_arr_3d, surface_type_arr, np.nan)
@@ -280,10 +280,6 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon):
             - copy 'surface_type_flag_majority' to 'surface_type_flag', set attributes, make cloud_over_land to
                    partly_cloudy_over_land where we have tcwv!
 
-    - todo 20201109: per grid cell, we want to have number of days which have a TCWV value:
-      -->  take num_obs = 9*numDaysinMonth (e.g. 279) and 'tcwv_ran_counts' = x/num_obs where x is the number we want
-            This is implemented in latest l3-tcwv-monthly.xml
-
     :param dst:
     :param src:
     :param has_latlon:
@@ -291,6 +287,23 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon):
     """
 
     for name, variable in src.variables.items():
+
+        if name == 'num_obs':
+            # - todo 20201109: per grid cell, we want to have number of days which have a TCWV value:
+            # -->  take num_obs = 9*numDaysinMonth (e.g. 279) and 'tcwv_ran_counts' = x*num_obs/numDaysinMonth where x
+            # is the number we want. ==> x = tcwv_ran_counts/9 . This is implemented in latest l3-tcwv-monthly.xml
+            dstvar = dst.createVariable('num_days_tcwv', variable.datatype, ('time', 'lat', 'lon'), zlib=True,
+                                        fill_value=getattr(variable, '_FillValue'))
+            copy_variable_attributes_from_source(variable, dstvar)
+            set_variable_long_name_and_unit_attributes(dstvar,
+                                                       'Number of days in month with a valid TCWV value '
+                                                       'in L3 grid cell',
+                                                       ' ')
+            dstvar.setncattr('coordinates', 'lat lon')
+            dstvar.setncattr('units', ' ')
+            tcwv_ran_counts_arr = np.array(src.variables['tcwv_ran_counts'])
+            num_days_tcwv_arr = tcwv_ran_counts_arr * 1.0 / 9.0
+            dstvar[0, :, :] = num_days_tcwv_arr[:, :]
 
         if name == 'num_obs_sum':
             dstvar = dst.createVariable('num_obs', variable.datatype, ('time', 'lat', 'lon'), zlib=True,

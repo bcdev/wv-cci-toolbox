@@ -281,6 +281,18 @@ def set_errors_for_hoaps(dst, src):
                           wvpa_ran_arr,
                           has_wvpa_errors)
 
+def update_num_hours_tcwv_for_hoaps(dst, src_hoaps, sensor):
+    """
+    Updates 'num_hours_tcwv' variable in presence of HOAPS data.
+    :param dst:
+    :param sensor:
+    :return:
+    """
+    if is_cdr_2(sensor):
+        num_hours_tcwv_arr = np.array(src_hoaps.variables['numh'])
+        num_hours_tcwv_arr[np.where(num_hours_tcwv_arr <= 0.0)] = -1
+        dst_var = dst.variables['num_hours_tcwv']
+        dst_var[0, :, :] = num_hours_tcwv_arr[0, :, :]
 
 def set_num_obs_variable(dst, src, sensor):
     """
@@ -448,6 +460,18 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon):
                                                        'to L3 grid cell',
                                                        ' ')
             dstvar.setncattr('coordinates', 'lat lon')
+
+            #
+            dstvar = dst.createVariable('num_hours_tcwv', variable.datatype, ('time', 'lat', 'lon'), zlib=True,
+                                        fill_value=getattr(variable, '_FillValue'))
+            set_variable_long_name_and_unit_attributes(dstvar,
+                                                       'Number of hours in day with a valid TCWV value '
+                                                       'in L3 grid cell',
+                                                       ' ')
+            dstvar.setncattr('coordinates', 'lat lon')
+            dstvar.setncattr('units', ' ')
+            dstvar[0, :, :] = -1
+
         if name == 'tcwv_mean':
             dstvar = dst.createVariable('tcwv', variable.datatype, ('time', 'lat', 'lon'), zlib=True,
                                         fill_value=getattr(variable, '_FillValue'))
@@ -1013,6 +1037,9 @@ def run(args):
 
     # Update tcwv_quality_flag in case of existing HOAPS...
     update_tcwv_quality_flag_for_hoaps(dst, sensor)
+
+    # Update 'num_hours_tcwv' in case of existing HOAPS...
+    update_num_hours_tcwv_for_hoaps(dst, ds_hoaps, sensor)
 
     # Cleanup inconsistencies of final arrays at this point:
     cleanup_inconsistencies(dst, ds_hoaps, sensor)
