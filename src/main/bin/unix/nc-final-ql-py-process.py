@@ -91,14 +91,20 @@ if __name__ == "__main__":
 
     # change values outside [0, 70] to black color (negative values for given 'gist_stern' color map)
     tcwv_arr = np.array(ncfile.variables['tcwv'])
-    tcwv_arr[0,0] = 70.0  # set one value to 70.0 to ensure unique colour scaling on [-3.0, 70.0]
-    tcwv_arr[np.where(tcwv_arr > 70.0)] = -3.0
-    tcwv_arr[np.where(np.isnan(tcwv_arr))] = -3.0
+    if len(tcwv_arr.shape) == 3:
+        # fv3.1 or higher
+        tcwv_arr_2d = tcwv_arr[0]
+    else:
+        # older data
+        tcwv_arr_2d = tcwv_arr
+    tcwv_arr_2d[0, 0] = 70.0  # set one value to 70.0 to ensure unique colour scaling on [-3.0, 70.0]
+    tcwv_arr_2d[np.where(tcwv_arr_2d > 70.0)] = -3.0
+    tcwv_arr_2d[np.where(np.isnan(tcwv_arr_2d))] = -3.0
 
     # create the plot and save to png
     output_dir = os.getcwd()
     output_path = output_dir + '/' + input_filename + '_QL.png'
-    plot_image(tcwv_arr, output_path, date_str)
+    plot_image(tcwv_arr_2d, output_path, date_str)
 
     # close input netcdf
     ncfile.close()
