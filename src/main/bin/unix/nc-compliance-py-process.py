@@ -104,6 +104,7 @@ def reset_ocean_cdr1(dst_var, surface_type_array, reset_value):
                        (surface_type_array == 6))] = reset_value
     dst_var[0, :, :] = tmp_array[0, :, :]
 
+
 def reset_ocean_cdr2(dst_var, wvpa_hoaps_array, surface_type_array, reset_value):
     """
     Resets (cleans) everything to nan over ocean, seaice where we have no HOAPS (wvpa) over water in case of CDR-2
@@ -118,6 +119,7 @@ def reset_ocean_cdr2(dst_var, wvpa_hoaps_array, surface_type_array, reset_value)
     tmp_array[np.where((surface_type_array == 1) & (wvpa_hoaps_array < 0.0))] = reset_value
     dst_var[0, :, :] = tmp_array[0, :, :]
 
+
 def reset_polar(dst_var, tcwv_arr, tcwv_quality_arr, lat_arr, surface_type_array, reset_value):
     """
     Resets everything to nan everywhere except ocean for tcwv > 10 and abs(lat) > 75
@@ -130,15 +132,17 @@ def reset_polar(dst_var, tcwv_arr, tcwv_quality_arr, lat_arr, surface_type_array
     tmp_array = np.copy(dst_var_arr)
     # identify inconsistent pixel over non-land
     tmp_array[np.where((tcwv_arr > 20.0) & (np.abs(lat_arr) > 70.0) &
-    # tmp_array[np.where((tcwv_quality_arr > 1) & (np.abs(lat_arr[0]) > 75.0) &
+                       # tmp_array[np.where((tcwv_quality_arr > 1) & (np.abs(lat_arr[0]) > 75.0) &
                        ((surface_type_array == 3) |
-                       (surface_type_array == 4) |
-                       (surface_type_array == 6)))] = reset_value
+                        (surface_type_array == 4) |
+                        (surface_type_array == 6)))] = reset_value
     # identify inconsistent pixel over land
     # tmp_array[np.where((tcwv_arr > 20.0) & (np.abs(lat_arr[0]) > 75.0) & (surface_type_array == 0))] = reset_value
     tmp_array[np.where((tcwv_arr > 20.0) & (np.abs(lat_arr) > 70.0) &
-                       ((surface_type_array == 0) | (surface_type_array == 2) | (surface_type_array == 5)))] = reset_value
+                       ((surface_type_array == 0) | (surface_type_array == 2) | (
+                                   surface_type_array == 5)))] = reset_value
     dst_var[0, :, :] = tmp_array[0, :, :]
+
 
 def cleanup_inconsistencies(dst, src_hoaps, sensor):
     """
@@ -216,6 +220,7 @@ def update_tcwv_quality_flag_for_hoaps(dst, src_hoaps, sensor):
             tmparr[np.where(is_ocean & (tcwv_qual_arr_src[0] == i))] = i
         dstvar[0, :, :] = tmparr[0, :, :]
 
+
 def set_ocean_wvpa_errors(dst_var, surface_type_array, tcwv_array, wvpa_error_array, has_errors):
     """
     Sets HOAPS water vapour error terms over ocean.
@@ -235,12 +240,14 @@ def set_ocean_wvpa_errors(dst_var, surface_type_array, tcwv_array, wvpa_error_ar
             wvpa_error_array_2d = wvpa_error_array
 
         do_use_hoaps = np.where(
-            ((surface_type_array[0] == 1) | (surface_type_array[0] == 4) | (surface_type_array[0] == 6)) & (
+            ((surface_type_array[0] == 1) | (surface_type_array[0] == 3) | (surface_type_array[0] == 4) | (
+                        surface_type_array[0] == 7)) & (
                 ~np.isnan(tcwv_array[0])) & (~np.isnan(wvpa_error_array_2d)) & (wvpa_error_array_2d >= 0.0))
         dst_var_arr_0[do_use_hoaps] = wvpa_error_array_2d[do_use_hoaps]
     else:
         ocean_or_ice = np.where(
-            ((surface_type_array[0] == 1) | (surface_type_array[0] == 4) | (surface_type_array[0] == 6)))
+            ((surface_type_array[0] == 1) | (surface_type_array[0] == 3) | (surface_type_array[0] == 4) | (
+                        surface_type_array[0] == 7)))
         dst_var_arr_0[ocean_or_ice] = np.nan
 
     dst_var_arr_0[np.where(np.isnan(tcwv_array[0]))] = np.nan
@@ -277,6 +284,7 @@ def set_errors_for_hoaps(dst, src):
                           wvpa_ran_arr,
                           has_wvpa_errors)
 
+
 def update_num_hours_tcwv_for_hoaps(dst, src_hoaps, sensor):
     """
     Updates 'num_hours_tcwv' variable in presence of HOAPS data.
@@ -289,6 +297,7 @@ def update_num_hours_tcwv_for_hoaps(dst, src_hoaps, sensor):
         num_hours_tcwv_arr[np.where(num_hours_tcwv_arr <= 0.0)] = -1
         dst_var = dst.variables['num_hours_tcwv']
         dst_var[0, :, :] = num_hours_tcwv_arr[0, :, :]
+
 
 def set_num_obs_variable(dst, src, sensor):
     """
@@ -385,7 +394,8 @@ def set_surface_type_flag(dst, src, day, res, ds_hoaps, ds_landmask, ds_seaice):
         # tmparr[np.where(seaice_arr_src_day == 12)] = 64 # make hoaps seaice edge to PARTLY_SEA_ICE
         # requested by DWD instead: make hoaps seaice > 0% and < 100% to PARTLY_SEA_ICE
         tmparr[
-            np.where((seaice_arr_src_day >= 11) & (seaice_frac_arr_src_day > 0) & (seaice_frac_arr_src_day < 100))] = 128
+            np.where(
+                (seaice_arr_src_day >= 11) & (seaice_frac_arr_src_day > 0) & (seaice_frac_arr_src_day < 100))] = 128
 
     if ds_hoaps:
         hoaps_scat_ratio_arr_src = np.array(ds_hoaps.variables['scat_ratio'])
@@ -395,6 +405,7 @@ def set_surface_type_flag(dst, src, day, res, ds_hoaps, ds_landmask, ds_seaice):
     tmparr[np.where((np.isfinite(tcwv_arr)) & (tmparr == 4))] = 64
     surface_type_flag_arr = np.log2(tmparr)
     variable[0, :, :] = surface_type_flag_arr[:, :]
+
 
 def set_tcwv_quality_flag(dst, src):
     """
@@ -1069,10 +1080,10 @@ if __name__ == "__main__":
     print("STARTING nc-compliance-py-process.py", file=sys.stderr)
     print('Working dir: ', os.getcwd())
 
-    if len(sys.argv) != 10 and len(sys.argv) != 11:
+    if len(sys.argv) != 11:
         print(
             'Usage:  python nc-compliance-py-process.py <nc_infile> <landmask_file> <sensor> <year> <month> <day> '
-            '<resolution> <product version> <seaice_mask_file> [<hoaps_l3_file>]')
+            '<resolution> <product version> <seaice_mask_file> <hoaps_l3_file>')
         sys.exit(-1)
 
     run(sys.argv)

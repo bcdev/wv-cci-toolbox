@@ -140,12 +140,13 @@ def reset_polar(dst_var, tcwv_arr, lat_arr, surface_type_array, reset_value):
 #         reset_ocean_cdr1(dst.variables['tcwv_err'], surface_type_arr, np.nan)
 #         reset_ocean_cdr1(dst.variables['tcwv_ran'], surface_type_arr, np.nan)
 
-def cleanup_inconsistencies(dst, src_hoaps, sensor):
+def cleanup_inconsistencies(dst, sensor):
     """
     Final cleanup of inconsistencies caused by L3 resampling problems such as Moiree effects, distortion near poles etc.
     :param dst:
     :param sensor:
     :return:
+    todo: do we need this at all in monthly final processing?
     """
     var_surface_type = dst.variables['surface_type_flag']
     surface_type_arr = np.array(var_surface_type)
@@ -167,7 +168,6 @@ def cleanup_inconsistencies(dst, src_hoaps, sensor):
     reset_polar(dst.variables['tcwv_ran'], tcwv_arr, lat_arr_3d, surface_type_arr, np.nan)
 
     # remove all HOAPS (everything over ocean, coastal, seaice) in case of CDR-1
-    # clean everything remaining over ocean where we have no HOAPS (wvpa) over water in case of CDR-2
     if is_cdr_1(sensor):
         # set num_obs to 0:
         reset_ocean_cdr1(dst.variables['num_obs'], surface_type_arr, 0)
@@ -176,16 +176,6 @@ def cleanup_inconsistencies(dst, src_hoaps, sensor):
         reset_ocean_cdr1(dst.variables['stdv'], surface_type_arr, np.nan)
         reset_ocean_cdr1(dst.variables['tcwv_err'], surface_type_arr, np.nan)
         reset_ocean_cdr1(dst.variables['tcwv_ran'], surface_type_arr, np.nan)
-    else:
-        wvpa_arr = np.array(src_hoaps.variables['wvpa'])
-        # set num_obs to 0:
-        # reset_ocean_cdr2(dst.variables['num_obs'], wvpa_arr, surface_type_arr, 0)
-        # # set tcwv, stdv, and error terms to nan:
-        # reset_ocean_cdr2(dst.variables['tcwv'], wvpa_arr, surface_type_arr, np.nan)
-        # reset_ocean_cdr2(dst.variables['stdv'], wvpa_arr, surface_type_arr, np.nan)
-        # reset_ocean_cdr2(dst.variables['tcwv_err'], wvpa_arr, surface_type_arr, np.nan)
-        # reset_ocean_cdr2(dst.variables['tcwv_ran'], wvpa_arr, surface_type_arr, np.nan)
-
 
 def get_iteritems(iterable_obj):
     """
@@ -229,17 +219,17 @@ def set_variable_long_name_and_unit_attributes(dst_var, long_name_string, unit_s
     dst_var.setncattr('units', unit_string)
 
 
-def set_surface_type_flag(dst, src):
+def set_surface_type_flag(dst, src, ds_hoaps):
     # Set surface type flag...
     variable = dst.variables['surface_type_flag']
     set_variable_long_name_and_unit_attributes(variable, 'Surface type flag', ' ')
     variable.setncattr('standard_name', 'status_flag ')
     min_valid = 0
-    max_valid = 6
+    max_valid = 7
     variable.setncattr('valid_range', np.array([min_valid, max_valid], 'b'))
-    variable.setncattr('flag_values', np.array([0, 1, 2, 3, 4, 5, 6], 'b'))
+    variable.setncattr('flag_values', np.array([0, 1, 2, 3, 4, 5, 6, 7], 'b'))
     variable.setncattr('flag_meanings',
-                       'LAND OCEAN CLOUD_OVER_LAND SEA_ICE COAST PARTLY_CLOUDY_OVER_LAND PARTLY_SEA_ICE')
+                       'LAND OCEAN CLOUD_OVER_LAND HEAVY_PRECIP_OVER_OCEAN SEA_ICE COAST PARTLY_CLOUDY_OVER_LAND PARTLY_SEA_ICE')
 
     # a) CLOUDY_OVER_LAND (2) in daily products: the pixels identified purely as CLOUD (all L2 samples), no valid TCWV
     # b) PARTLY_CLOUDY_OVER_LAND (5) in daily products: the pixels identified in majority as CLOUD,
@@ -265,6 +255,15 @@ def set_surface_type_flag(dst, src):
     tmparr[np.where((surface_type_flag_arr_maj == 2) & (np.isfinite(tcwv_arr_src)))] = 5
     # set to partly cloudy  if at least one daily sample is partly cloudy, and not already cloudy:
     tmparr[np.where((surface_type_flag_arr_max == 5) & (tmparr != 2))] = 5
+
+    # Req. DWD, Dec 2020: we want 'heavy precipitation' in surface type flag with value 3
+    # easiest way: insert 'heavy precipitation' flag = 3, increase existing flags 3-6 by 1:
+    for i in range(4):
+        tmparr[np.where(tmparr == 6-i)] = 7-i
+    if ds_hoaps:
+        hoaps_scat_ratio_arr_src = np.array(ds_hoaps.variables['scat_ratio'])
+        tmparr[np.where(hoaps_scat_ratio_arr_src[0] > 0.2)] = 3  # hoaps heavy precipitation criterion (MS, 202012)
+
     variable[0, :, :] = tmparr[:, :]
 
 
@@ -834,19 +833,14 @@ def run(args):
 
     copy_and_rename_variables_from_source_product(dst, src, has_latlon)
 
-    set_surface_type_flag(dst, src)
+    set_surface_type_flag(dst, src, ds_hoaps)
 
     # Update (fix) tcwv_err and tcwv_ran in case of existing HOAPS...
     if ds_hoaps:
         update_errors_for_hoaps(dst, ds_hoaps)
 
-    # If CDR-1 (land only!), reset everything over ocean:
-    # reset_ocean_for_cdr1(dst, sensor)
-    # var_tcwv_arr = np.array(dst.variables['tcwv'])
-    # dst.variables['tcwv'].setncattr('actual_range', np.array([np.nanmin(var_tcwv_arr), np.nanmax(var_tcwv_arr)], 'f4'))
-
     # Cleanup inconsistencies of final arrays at this point:
-    cleanup_inconsistencies(dst, ds_hoaps, sensor)
+    cleanup_inconsistencies(dst, sensor)
     var_tcwv_arr = np.array(dst.variables['tcwv'])
     dst.variables['tcwv'].setncattr('actual_range', np.array([np.nanmin(var_tcwv_arr), np.nanmax(var_tcwv_arr)], 'f4'))
 
