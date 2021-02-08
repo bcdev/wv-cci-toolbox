@@ -902,7 +902,8 @@ def get_global_attr_summary(sensor):
 def get_global_attr_id(sensor, nc_outfile):
     if is_cdr_1(sensor):
         # todo: insert DOI once provided by STFC/ODP
-        return os.path.splitext(nc_outfile)[0]
+        # return os.path.splitext(nc_outfile)[0]
+        return '10.5285/a5c833831e26474bb1100ad3aa58bdf9'
     else:
         return '10.5676/EUM_SAF_CM/COMBI/V001'
 
@@ -1043,17 +1044,15 @@ def run(args):
     # Set num_obs variable...
     set_num_obs_variable(dst, src, sensor)
 
-    # Set tcwv_err and tcwv_ran in case of existing HOAPS...
     if ds_hoaps:
+        # Set tcwv_err and tcwv_ran in case of existing HOAPS...
         set_errors_for_hoaps(dst, ds_hoaps)
+        # Update tcwv_quality_flag in case of existing HOAPS...
+        update_tcwv_quality_flag_for_hoaps(dst, ds_hoaps, sensor)
+        # Update 'num_hours_tcwv' in case of existing HOAPS...
+        update_num_hours_tcwv_for_hoaps(dst, ds_hoaps, sensor)
     else:
         set_errors_for_hoaps(dst, src)
-
-    # Update tcwv_quality_flag in case of existing HOAPS...
-    update_tcwv_quality_flag_for_hoaps(dst, ds_hoaps, sensor)
-
-    # Update 'num_hours_tcwv' in case of existing HOAPS...
-    update_num_hours_tcwv_for_hoaps(dst, ds_hoaps, sensor)
 
     # Cleanup inconsistencies of final arrays at this point:
     cleanup_inconsistencies(dst, ds_hoaps, sensor)
@@ -1080,10 +1079,10 @@ if __name__ == "__main__":
     print("STARTING nc-compliance-py-process.py", file=sys.stderr)
     print('Working dir: ', os.getcwd())
 
-    if len(sys.argv) != 11:
+    if len(sys.argv) != 10 and len(sys.argv) != 11:
         print(
             'Usage:  python nc-compliance-py-process.py <nc_infile> <landmask_file> <sensor> <year> <month> <day> '
-            '<resolution> <product version> <seaice_mask_file> <hoaps_l3_file>')
+            '<resolution> <product version> <seaice_mask_file> [<hoaps_l3_file>]')
         sys.exit(-1)
 
     run(sys.argv)
