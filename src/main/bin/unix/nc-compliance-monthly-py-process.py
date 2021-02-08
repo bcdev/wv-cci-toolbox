@@ -712,7 +712,8 @@ def get_global_attr_summary(sensor):
 
 def get_global_attr_id(sensor, nc_outfile):
     if is_cdr_1(sensor):
-        return os.path.splitext(nc_outfile)[0]
+        return '10.5285/a5c833831e26474bb1100ad3aa58bdf9'
+        # return os.path.splitext(nc_outfile)[0]
     else:
         return '10.5676/EUM_SAF_CM/COMBI/V001'
 
