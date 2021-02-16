@@ -866,7 +866,7 @@ if __name__ == "__main__":
     print("STARTING nc-compliance-monthly-py-process.py", file=sys.stderr)
     print('Working dir: ', os.getcwd())
 
-    if len(sys.argv) != 10 and len(sys.argv) != 11:
+    if len(sys.argv) != 9 and len(sys.argv) != 10:
         print('Usage:  python nc-compliance-monthly-py-process.py <nc_infile> <landmask_file> <sensor> <year> <month> '
               '<resolution> < product version> <seaice_mask_file> [<hoaps_l3_file>]')
         sys.exit(-1)
