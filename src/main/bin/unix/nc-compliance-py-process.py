@@ -99,9 +99,9 @@ def reset_ocean_cdr1(dst_var, surface_type_array, reset_value):
     dst_var_arr = np.array(dst_var)
     tmp_array = np.copy(dst_var_arr)
     tmp_array[np.where((surface_type_array == 1) |
-                       (surface_type_array == 3) |
                        (surface_type_array == 4) |
-                       (surface_type_array == 6))] = reset_value
+                       (surface_type_array == 5) |
+                       (surface_type_array == 7))] = reset_value
     dst_var[0, :, :] = tmp_array[0, :, :]
 
 
