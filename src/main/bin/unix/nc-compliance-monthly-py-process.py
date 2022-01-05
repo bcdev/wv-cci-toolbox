@@ -793,7 +793,7 @@ def run(args):
     # Evaluate input parameters...
     nc_infile = args[1]
     landmask_file = args[2]
-    sensor = args[3]
+    sensor = args[3].replace('-', '_')
     year = args[4]
     month = args[5]
     res = args[6]
