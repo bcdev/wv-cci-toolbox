@@ -227,7 +227,7 @@ def set_surface_type_flag(dst, src, ds_hoaps):
     min_valid = 0
     max_valid = 7
     variable.setncattr('valid_range', np.array([min_valid, max_valid], 'b'))
-    variable.setncattr('flag_values', np.array([0, 1, 2, 3, 4, 5, 6, 7], 'b'))
+    variable.setncattr('flag_values', np.array([0, 1, 2, 3, 4, 5, 6, 7], 'b'))  # TODO: introduce constants for these!
     variable.setncattr('flag_meanings',
                        'LAND OCEAN CLOUD_OVER_LAND HEAVY_PRECIP_OVER_OCEAN SEA_ICE COAST PARTLY_CLOUDY_OVER_LAND PARTLY_SEA_ICE')
 
@@ -598,8 +598,8 @@ def set_global_attributes(sensor, datestring, dst, month, year, res, version, nc
     dst.setncattr('source', get_global_attr_source(sensor))
     dst.setncattr('history', 'python nc-compliance-py-process.py ' + nc_infile)
     dst.setncattr('references',
-                  'WV_cci D2.2: ATBD Part 1 - MERIS-MODIS-OLCI L2 Products, Issue 1.1, 3 April 2019; WV_cci D4.2: '
-                  'CRDP Issue 2.1, 30 September 2020 ')
+                  'WV_cci D2.2: ATBD Part 1 - MERIS-MODIS-OLCI L2 Products, Issue 2.1, 21 January 2021; WV_cci D4.2: '
+                  'CRDP Issue 3.0, 11 August 2021 ')
     dst.setncattr('tracking_id', str(uuid.uuid1()))
     dst.setncattr('Conventions', 'CF-1.7')
     dst.setncattr('product_version', version)
@@ -712,8 +712,8 @@ def get_global_attr_summary(sensor):
 
 def get_global_attr_id(sensor, nc_outfile):
     if is_cdr_1(sensor):
-        return '10.5285/a5c833831e26474bb1100ad3aa58bdf9'
-        # return os.path.splitext(nc_outfile)[0]
+        # return '10.5285/a5c833831e26474bb1100ad3aa58bdf9'
+        return '10.5285/4a85c0ef880e4f668cd4ec8e846855ef'
     else:
         return '10.5676/EUM_SAF_CM/COMBI/V001'
 
