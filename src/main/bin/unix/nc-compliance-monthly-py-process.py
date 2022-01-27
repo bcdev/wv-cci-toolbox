@@ -472,8 +472,9 @@ def create_time_variables(dst, day, month, year):
     timeval = (datetime.datetime(int(year), int(month), int(day)) - datetime.datetime(1970, 1, 1)).days
     # create 'time_bnds' variable:
     time_bnds = dst.createVariable('time_bnds', 'i4', ('time', 'nv'), zlib=True)
-    time_bnds[0, 0] = timeval
-    time_bnds[0, 1] = timeval + 1
+    time_bnds[0, 0] = timeval - 14  # timeval refers to the 15th in month
+    num_days_in_month = calendar.monthrange(int(year), int(month))[1]
+    time_bnds[0, 1] = time_bnds[0, 0] + num_days_in_month - 1
     time_bnds.setncattr('long_name', 'Time cell boundaries')
     time_bnds.setncattr('comment', 'Contains the start and end times for the time period the data represent.')
 
