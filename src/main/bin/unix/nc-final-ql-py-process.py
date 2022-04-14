@@ -7,6 +7,8 @@ Generates a quicklook png from TCWV L3 final product.
 import netCDF4
 
 import matplotlib
+from matplotlib.colors import LinearSegmentedColormap
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -30,7 +32,7 @@ def plot_image(array, out_png, date):
     '''
 
     # set up plot
-    my_dpi=200.0
+    my_dpi = 200.0
     fig, ax1 = plt.subplots(1, 1, figsize=(36, 18), dpi=my_dpi,
                             subplot_kw={'xticks': [-180, -150, -120, -90, -60, -30, 0, 30, 60, 90, 120, 150, 180],
                                         'yticks': [-60, -30, 0, 30, 60, 90]})
@@ -38,8 +40,27 @@ def plot_image(array, out_png, date):
     # Add lat/lon grid
     ax1.grid(which='major', axis='both', linestyle='-')
 
+    ### test
+    cdict = {'red': ((0.0, 119.0 / 255.0, 119.0 / 255.0),
+                     (0.5, 119.0 / 255.0, 119.0 / 255.0),
+                     (1.0, 52.0 / 255.0, 52.0 / 255.0)),
+             'green': ((0.0, 194.0 / 255.0, 194.0 / 255.0),
+                       (0.5, 194.0 / 255.0, 194.0 / 255.0),
+                       (1.0, 94.0 / 255.0, 94.0 / 255.0)),
+             'blue': ((0.0, 174.0 / 255.0, 174.0 / 255.0),
+                      (0.5, 174.0 / 255.0, 174.0 / 255.0),
+                      (1.0, 153.0 / 255.0, 153.0 / 255.0)),
+             'alpha': ((0.0, 0.0, 0.0),
+                       (0.5, 1.0, 1.0),
+                       (1.0, 1.0, 1.0))
+             }
+
+    my_cmap = matplotlib.colors.LinearSegmentedColormap('my_colormap', cdict, 256)
+    im = ax1.imshow(array, cmap=my_cmap, interpolation='none', extent=[-180, 180, -90, 90])
+    ### end test
+
     # show image
-    im = ax1.imshow(array, cmap=default_cmap, interpolation='none', extent=[-180,180,-90,90])
+    # im = ax1.imshow(array, cmap=default_cmap, interpolation='none', extent=[-180,180,-90,90])
 
     # change size of tickmarks
     for tick in ax1.xaxis.get_major_ticks():
