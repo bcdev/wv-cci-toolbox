@@ -40,7 +40,7 @@ def plot_image(array, out_png, date):
     # Add lat/lon grid
     ax1.grid(which='major', axis='both', linestyle='-')
 
-    ### test
+    ### now use this color palette to be in line with CCI KE (20220413):
     cdict = {'red': ((0.0, 119.0 / 255.0, 119.0 / 255.0),
                      (0.5, 119.0 / 255.0, 119.0 / 255.0),
                      (1.0, 52.0 / 255.0, 52.0 / 255.0)),
@@ -56,10 +56,10 @@ def plot_image(array, out_png, date):
              }
 
     my_cmap = matplotlib.colors.LinearSegmentedColormap('my_colormap', cdict, 256)
-    im = ax1.imshow(array, cmap=my_cmap, interpolation='none', extent=[-180, 180, -90, 90])
-    ### end test
-
     # show image
+    im = ax1.imshow(array, cmap=my_cmap, interpolation='none', extent=[-180, 180, -90, 90])
+
+    # default cmap:
     # im = ax1.imshow(array, cmap=default_cmap, interpolation='none', extent=[-180,180,-90,90])
 
     # change size of tickmarks
