@@ -82,18 +82,21 @@ def plot_image(array, out_png, date):
     ax1.text(0.25, 0.05, 'TCWV (kg/m2) - ' + date,
              verticalalignment='bottom', horizontalalignment='right',
              transform=ax1.transAxes,
-             color='white', fontsize=30, fontstyle='oblique')
+             color='black', fontsize=30, fontstyle='oblique')
+             # color='white', fontsize=30, fontstyle='oblique')
 
     if 'cmsaf' in out_png:
         ax1.text(0.98, 0.025, u'\xa9 ' + creation_year + ' ESACCI/CM-SAF',
                  verticalalignment='bottom', horizontalalignment='right',
                  transform=ax1.transAxes,
-                 color='white', fontsize=30, fontstyle='oblique')
+                 color='black', fontsize=30, fontstyle='oblique')
+                 # color='white', fontsize=30, fontstyle='oblique')
     else:
         ax1.text(0.99, 0.025, u'\xa9 ' + creation_year + ' ESACCI',
                  verticalalignment='bottom', horizontalalignment='right',
                  transform=ax1.transAxes,
-                 color='white', fontsize=30, fontstyle='oblique')
+                 color='black', fontsize=30, fontstyle='oblique')
+                 # color='white', fontsize=30, fontstyle='oblique')
 
     plt.savefig(out_png)
 
