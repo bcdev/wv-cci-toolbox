@@ -19,7 +19,6 @@ public class TcwvInterpolationUtils {
      * Chaecks if input array is monotonically increasing
      *
      * @param arr - input array of doubles
-     *
      * @return boolean
      */
     public static boolean isMontonicallyIncreasing(double[] arr) {
@@ -35,7 +34,6 @@ public class TcwvInterpolationUtils {
      * Chaecks if input array is monotonically decreasing
      *
      * @param arr - input array of doubles
-     *
      * @return boolean
      */
     public static boolean isMontonicallyDecreasing(double[] arr) {
@@ -51,7 +49,6 @@ public class TcwvInterpolationUtils {
      * Converts 2D input array to 1D array
      *
      * @param src - 2D input array of doubles
-     *
      * @return 1D result array
      */
     public static double[] convert2Dto1DArray(double[][] src) {
@@ -69,7 +66,6 @@ public class TcwvInterpolationUtils {
      * Converts 3D input array to 1D array
      *
      * @param src - 3D input array of doubles
-     *
      * @return 1D result array
      */
     public static double[] convert3Dto1DArray(double[][][] src) {
@@ -86,10 +82,30 @@ public class TcwvInterpolationUtils {
     }
 
     /**
+     * Converts 4D input array to 1D array
+     *
+     * @param src - 4D input array of doubles
+     * @return 1D result array
+     */
+    public static double[] convert4Dto1DArray(double[][][][] src) {
+        double[] result = new double[src.length * src[0].length * src[0][0].length * src[0][0][0].length];
+        int index = 0;
+        for (double[][][] srcSubArr : src) {
+            for (int j = 0; j < src[0].length; j++) {
+                for (int k = 0; k < src[0][0].length; k++) {
+                    for (int l = 0; l < src[0][0][0].length; l++) {
+                        result[index++] = srcSubArr[j][k][l];
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
      * Converts 6D input array to 1D array
      *
      * @param src - 6D input array of doubles
-     *
      * @return 1D result array
      */
     public static double[] convert6Dto1DArray(double[][][][][][] src) {
@@ -115,8 +131,7 @@ public class TcwvInterpolationUtils {
     /**
      * Converts 9D input array to 1D array
      *
-     * @param src - 9D input array of doubles
-     *
+     * @param src    - 9D input array of doubles
      * @param sensor
      * @return 1D result array
      */
@@ -160,9 +175,7 @@ public class TcwvInterpolationUtils {
      * Extracts 1D Netcdf integer variable as primitive 1D int[]
      *
      * @param variable - 1D Netcdf integer variable
-     *
      * @return - int[]
-     *
      * @throws IOException -
      */
     public static int[] getInt1DArrayFromNetcdfVariable(Variable variable) throws IOException {
@@ -174,9 +187,7 @@ public class TcwvInterpolationUtils {
      * Extracts 1D Netcdf double variable as primitive 1D double[]
      *
      * @param variable - 1D Netcdf integer variable
-     *
      * @return - double[]
-     *
      * @throws IOException -
      */
     public static double[] getDouble1DArrayFromNetcdfVariable(Variable variable) throws IOException {
@@ -188,9 +199,7 @@ public class TcwvInterpolationUtils {
      * Extracts 4D Netcdf double variable as primitive 4D double[][][][]
      *
      * @param variable - 4D Netcdf integer variable
-     *
      * @return - double[][][][]
-     *
      * @throws IOException -
      */
     public static double[][][][] getDouble4DArrayFromNetcdfVariable(Variable variable) throws IOException {
@@ -202,9 +211,7 @@ public class TcwvInterpolationUtils {
      * Extracts 7D Netcdf double variable as primitive 7D double[][][][][][][]
      *
      * @param variable - 7D Netcdf integer variable
-     *
      * @return - double[][][][][][][]
-     *
      * @throws IOException -
      */
     public static double[][][][][][][] getDouble7DArrayFromNetcdfVariable(Variable variable) throws IOException {
@@ -216,9 +223,7 @@ public class TcwvInterpolationUtils {
      * Extracts 10D Netcdf double variable as primitive 10D double[][][][][][][][][][]
      *
      * @param variable - 10D Netcdf integer variable
-     *
      * @return - double[][][][][][][][][][]
-     *
      * @throws IOException -
      */
     public static double[][][][][][][][][][] getDouble10DArrayFromNetcdfVariable(Variable variable) throws IOException {
@@ -230,7 +235,6 @@ public class TcwvInterpolationUtils {
      * Switches last dimension of 4D input array to the first dimension
      *
      * @param src - 4D input array of doubles
-     *
      * @return - rearranged array
      */
     public static double[][][][] change4DArrayLastToFirstDimension(double[][][][] src) {
@@ -253,7 +257,6 @@ public class TcwvInterpolationUtils {
      * Switches last dimension of 7D input array to the first dimension
      *
      * @param src - 7D input array of doubles
-     *
      * @return - rearranged array
      */
     public static double[][][][][][][] change7DArrayLastToFirstDimension(double[][][][][][][] src) {
@@ -284,7 +287,6 @@ public class TcwvInterpolationUtils {
      * Switches last dimension of 10D input array to the first dimension
      *
      * @param src - 10D input array of doubles
-     *
      * @return - rearranged array
      */
     public static double[][][][][][][][][][] change10DArrayLastToFirstDimension(double[][][][][][][][][][] src) {
@@ -324,7 +326,6 @@ public class TcwvInterpolationUtils {
      *
      * @param arr1 - first array
      * @param arr2 second array
-     *
      * @return - concatenated array
      */
     public static double[] concat1DArrays(double[] arr1, double[] arr2) {

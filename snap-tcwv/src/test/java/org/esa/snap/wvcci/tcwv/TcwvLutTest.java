@@ -82,6 +82,97 @@ public class TcwvLutTest {
     }
 
     @Test
+    public void testTcwvLut_3D() {
+        double[] axis1 = new double[]{1.f, 2.f};
+        double[] axis2 = new double[]{3.f, 4.f, 5.f};
+        double[] axis3 = new double[]{6.f, 7.f, 8.f, 9.f};
+
+        double[][][] testLutArr = new double[][][]{
+                {
+                        {0.f, 1.f, 2.f, 3.f},
+                        {4.f, 5.f, 6.f, 7.f},
+                        {8.f, 9.f, 10.f, 11.f},
+                },
+                {
+                        {12.f, 13.f, 14.f, 15.f},
+                        {16.f, 17.f, 18.f, 19.f},
+                        {20.f, 21.f, 22.f, 23.f},
+                }
+        };
+
+        double[] testLutArrAs1D = TcwvInterpolationUtils.convert3Dto1DArray(testLutArr);
+
+        LookupTable lookupTable = new LookupTable(testLutArrAs1D, axis1, axis2, axis3);
+        double[] coordinates = {3.5, 11.0, 7.2};
+        double value = lookupTable.getValue(coordinates);
+        assertEquals(21.2, value, 1.E-6);
+
+        coordinates = new double[]{1.7, 4.1, 8.2};
+        value = lookupTable.getValue(coordinates);
+        assertEquals(15.0, value, 1.E-6);
+    }
+
+    @Test
+    public void testTcwvLut_4D() {
+        double[] axis1 = new double[]{1.f, 2.f};
+        double[] axis2 = new double[]{3.f, 4.f, 5.f};
+        double[] axis3 = new double[]{6.f, 7.f, 8.f, 9.f};
+        double[] axis4 = new double[]{10.f, 11.f, 12.f, 13.f, 14.f};
+
+        double[][][][] testLutArr = new double[2][3][4][5];
+        for (int i = 0; i < testLutArr.length; i++) {
+            for (int j = 0; j < testLutArr[0].length; j++) {
+                for (int k = 0; k < testLutArr[0][0].length; k++) {
+                    for (int l = 0; l < testLutArr[0][0][0].length; l++) {
+                        testLutArr[i][j][k][l] = 1.0 + (i * j * k * l);
+                    }
+                }
+            }
+        }
+
+        double[] testLutArrAs1D = TcwvInterpolationUtils.convert4Dto1DArray(testLutArr);
+
+        LookupTable lookupTable = new LookupTable(testLutArrAs1D, axis1, axis2, axis3, axis4);
+        double[] coordinates = {1.7, 4.1, 8.2, 12.3};
+        double value = lookupTable.getValue(coordinates);
+        assertEquals(4.8962, value, 1.E-6);
+    }
+
+
+    @Test
+    public void testTcwvLut_6D() {
+        double[] axis1 = new double[]{1.f, 2.f};
+        double[] axis2 = new double[]{3.f, 4.f, 5.f};
+        double[] axis3 = new double[]{6.f, 7.f, 8.f, 9.f};
+        double[] axis4 = new double[]{10.f, 11.f, 12.f, 13.f, 14.f};
+        double[] axis5 = new double[]{15.f, 16.f, 17.f, 18.f, 19.f, 20.f};
+        double[] axis6 = new double[]{21.f, 22.f, 23.f, 24.f, 25.f, 26.f, 27.f};
+
+        double[][][][][][] testLutArr = new double[2][3][4][5][6][7];
+        for (int i = 0; i < testLutArr.length; i++) {
+            for (int j = 0; j < testLutArr[0].length; j++) {
+                for (int k = 0; k < testLutArr[0][0].length; k++) {
+                    for (int l = 0; l < testLutArr[0][0][0].length; l++) {
+                        for (int m = 0; m < testLutArr[0][0][0][0].length; m++) {
+                            for (int n = 0; n < testLutArr[0][0][0][0][0].length; n++) {
+                                testLutArr[i][j][k][l][m][n] = 1.0 + (i * j * k * l * m * n);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        double[] testLutArrAs1D = TcwvInterpolationUtils.convert6Dto1DArray(testLutArr);
+
+        LookupTable lookupTable = new LookupTable(testLutArrAs1D, axis1, axis2, axis3, axis4, axis5, axis6);
+        double[] coordinates = {1.7, 4.1, 8.2, 12.3, 19.6, 23.1};
+        double value = lookupTable.getValue(coordinates);
+        assertEquals(38.637292, value, 1.E-6);
+    }
+
+
+    @Test
     public void testTcwvLut_all3() {
         // test values from breadboard:
         // lut2func.py --> test
@@ -260,9 +351,9 @@ public class TcwvLutTest {
 
             final double[][] axesArray = {axes0Array, axes1Array, axes2Array};
             final JacobiFunction jacobiFunction = TcwvInterpolation.jacobiLut2Function(jlutArray2D,
-                                                                                       axesArray,
-                                                                                       nynxArray[1],
-                                                                                       nynxArray[0]);
+                    axesArray,
+                    nynxArray[1],
+                    nynxArray[0]);
             final double[] testVector = new double[]{3., 10., 1.};
             final double[][] jacobiMatrixArr = jacobiFunction.f(testVector, null);
             assertNotNull(jacobiMatrixArr);
