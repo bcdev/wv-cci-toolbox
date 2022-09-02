@@ -13,42 +13,37 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Generates SCRIP conformant NetCDF file with the pixel geocoding of the product.
+ * Generates SCRIP conformant NetCDF file with the pixel geocoding of the product
+ * (now NetCDF4, 20220902).
  *
  * <pre>
-    netcdf grob3s {
-    dimensions:
-            grid_size = 12120 ;
-            grid_xsize = 120 ;
-            grid_ysize = 101 ;
+     netcdf ENV_ME_1_RRG____20110504T083152_20110504T091545_________________2633_102_122______DSI_R_NT____.SEN3-scrip {
+     dimensions:
+            grid_size = 16771281 ;
+            grid_ny = 14961 ;
+            grid_nx = 1121 ;
             grid_corners = 4 ;
             grid_rank = 2 ;
-    variables:
+     variables:
             int grid_dims(grid_rank) ;
-            float grid_center_lat(grid_ysize, grid_xsize) ;
-                    grid_center_lat:units = ”degrees” ;
-                    grid_center_lat:bounds = ”grid_corner_lat” ;
-            float grid_center_lon(grid_ysize, grid_xsize) ;
-                    grid_center_lon:units = ”degrees” ;
-                    grid_center_lon:bounds = ”grid_corner_lon” ;
-            int grid_imask(grid_ysize, grid_xsize) ;
-                    grid_imask:units = ”unitless” ;
-                    grid_imask:coordinates = ”grid_center_lon grid_center_lat” ;
-            float grid_corner_lat(grid_ysize, grid_xsize, grid_corners) ;
-                    grid_corner_lat:units = ”degrees” ;
-            float grid_corner_lon(grid_ysize, grid_xsize, grid_corners) ;
-                    grid_corner_lon:units = ”degrees” ;
+            float grid_center_lat(grid_ny, grid_nx) ;
+            string grid_center_lat:units = "degrees" ;
+            float grid_center_lon(grid_ny, grid_nx) ;
+            string grid_center_lon:units = "degrees" ;
+            int grid_imask(grid_ny, grid_nx) ;
+            float grid_corner_lat(grid_ny, grid_nx, grid_corners) ;
+            float grid_corner_lon(grid_ny, grid_nx, grid_corners) ;
 
-    // global attributes:
-                    :title = ”grob3s” ;
-    }
+     // global attributes:
+            string :title = "geo-location in SCRIP format" ;
+     }
  * </pre>
  *
- * @author Martin Boettcher
+ * @author Martin Boettcher, Olaf Danne
  */
-public class ScripGeocodingWriter extends AbstractProductWriter {
+public class ScripGeocodingNc4Writer extends AbstractProductWriter {
 
-    ScripGeocodingWriter(ProductWriterPlugIn plugin) {
+    ScripGeocodingNc4Writer(ProductWriterPlugIn plugin) {
         super(plugin);
     }
 
@@ -62,7 +57,9 @@ public class ScripGeocodingWriter extends AbstractProductWriter {
         } else {
             throw new IllegalArgumentException("output " + getOutput() + " neither String nor File");
         }
-        NetcdfFileWriter geoFile = NetcdfFileWriter.createNew(NetcdfFileWriter.Version.netcdf3, outputPath);
+
+        // now NetCDF4:
+        NetcdfFileWriter geoFile = NetcdfFileWriter.createNew(NetcdfFileWriter.Version.netcdf4_classic, outputPath);
 
         int height = getSourceProduct().getSceneRasterHeight();
         int width = getSourceProduct().getSceneRasterWidth();
@@ -80,12 +77,20 @@ public class ScripGeocodingWriter extends AbstractProductWriter {
         final Variable gridCornerLon = geoFile.addVariable(null, "grid_corner_lon", DataType.FLOAT, "grid_ny grid_nx grid_corners");
         gridCenterLat.addAttribute(new Attribute("units", "degrees"));
         gridCenterLon.addAttribute(new Attribute("units", "degrees"));
-        geoFile.addGroupAttribute(null, new Attribute("title", "geo-location in SCRIP format"));
+//        geoFile.addGroupAttribute(null, new Attribute("title", "geo-location in SCRIP format"));
 
         geoFile.create();
         try {
-//            geoFile.write(gridDims, Array.factory(new int[]{width, height}));
-            geoFile.write(gridDims, Array.factory(DataType.INT, new int[]{width, height}));
+            // grid_dims
+
+            // this does no longer work with netcdfAll_5.3.1 (OD, 20220902):
+            //geoFile.write(gridDims, Array.factory(new int[]{width, height}));
+
+            // use this instead:
+            ArrayInt ai = new ArrayInt.D1(2, false);
+            ai.setInt(ai.getIndex().set(0), width);
+            ai.setInt(ai.getIndex().set(1), height);
+            geoFile.write(gridDims, ai);
 
             final int[] targetStart = {0, 0};
             final int[] targetStart2 = {0, 0, 0};

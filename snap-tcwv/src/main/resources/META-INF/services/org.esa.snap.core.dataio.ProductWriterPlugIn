@@ -1,2 +1,3 @@
 org.esa.snap.wvcci.tcwv.dataio.nc4.SnapWvcciNc4WriterPlugIn
 org.esa.snap.wvcci.tcwv.dataio.erainterim.ScripGeocodingWriterPlugIn
+org.esa.snap.wvcci.tcwv.dataio.erainterim.ScripGeocodingNc4WriterPlugIn
