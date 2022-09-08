@@ -19,6 +19,30 @@ public class L3MergeSensorsOpTest {
         assertEquals("ESACCI.Tcwv.L3.Merge", operatorSpi.getOperatorAlias());
         assertNotNull(operatorSpi.getOperatorDescriptor());
         assertSame(operatorSpi.getOperatorClass(), operatorSpi.getOperatorDescriptor().getOperatorClass());
+
+        operatorSpi = registry.getOperatorSpi("ESACCI.Tcwv.L3.Merge.Nir.Nir");
+        assertNotNull(operatorSpi);
+        assertEquals("ESACCI.Tcwv.L3.Merge.Nir.Nir", operatorSpi.getOperatorAlias());
+        assertNotNull(operatorSpi.getOperatorDescriptor());
+        assertSame(operatorSpi.getOperatorClass(), operatorSpi.getOperatorDescriptor().getOperatorClass());
+
+        operatorSpi = registry.getOperatorSpi("ESACCI.Tcwv.L3.Merge.Nir.Hoaps");
+        assertNotNull(operatorSpi);
+        assertEquals("ESACCI.Tcwv.L3.Merge.Nir.Hoaps", operatorSpi.getOperatorAlias());
+        assertNotNull(operatorSpi.getOperatorDescriptor());
+        assertSame(operatorSpi.getOperatorClass(), operatorSpi.getOperatorDescriptor().getOperatorClass());
+
+        operatorSpi = registry.getOperatorSpi("ESACCI.Tcwv.L3.Merge.Nir.Hoaps2");
+        assertNotNull(operatorSpi);
+        assertEquals("ESACCI.Tcwv.L3.Merge.Nir.Hoaps2", operatorSpi.getOperatorAlias());
+        assertNotNull(operatorSpi.getOperatorDescriptor());
+        assertSame(operatorSpi.getOperatorClass(), operatorSpi.getOperatorDescriptor().getOperatorClass());
+
+        operatorSpi = registry.getOperatorSpi("ESACCI.Tcwv.L3.Merge.Nir.Hoaps.TEST");
+        assertNotNull(operatorSpi);
+        assertEquals("ESACCI.Tcwv.L3.Merge.Nir.Hoaps.TEST", operatorSpi.getOperatorAlias());
+        assertNotNull(operatorSpi.getOperatorDescriptor());
+        assertSame(operatorSpi.getOperatorClass(), operatorSpi.getOperatorDescriptor().getOperatorClass());
     }
 
     @Test

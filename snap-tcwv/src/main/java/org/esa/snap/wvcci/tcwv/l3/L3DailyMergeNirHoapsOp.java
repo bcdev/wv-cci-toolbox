@@ -251,6 +251,9 @@ public class L3DailyMergeNirHoapsOp extends PixelOperator {
         configurator.defineSample(SRC_NIR_TCWV_QUALITY_FLAGS_MAX, TcwvConstants.TCWV_QUALITY_FLAG_MAX_L3_BAND_NAME, nirProduct);
         configurator.defineSample(SRC_NIR_TCWV_SURFACE_TYPE_FLAGS_MAJORITY, TcwvConstants.SURFACE_TYPE_FLAG_L3_BAND_NAME, nirProduct);
 
+        // todo: operator gets stuck here on Calvalus with SNAP 8. Seems that hoapsProduct cannot be accessed
+        //  properly here. Everything is still fine locally or with SNAP 7 (snap-wvcci-1.2-SNAPSHOT instance).
+        //  CLARIFY!!
         configurator.defineSample(SRC_HOAPS_NUM_OBS, TcwvConstants.NIUM_OBS_HOAPS_BAND_NAME, hoapsProduct);
         configurator.defineSample(SRC_HOAPS_TCWV, TcwvConstants.TCWV_HOAPS_BAND_NAME, hoapsProduct);
         configurator.defineSample(SRC_HOAPS_TCWV_SIGMA, TcwvConstants.TCWV_SIGMA_HOAPS_BAND_NAME, hoapsProduct);
