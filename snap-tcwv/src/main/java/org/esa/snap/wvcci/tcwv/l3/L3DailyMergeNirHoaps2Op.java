@@ -11,6 +11,7 @@ import org.esa.snap.core.gpf.annotations.OperatorMetadata;
 import org.esa.snap.core.gpf.annotations.Parameter;
 import org.esa.snap.core.gpf.annotations.SourceProduct;
 import org.esa.snap.core.gpf.common.resample.ResamplingOp;
+import org.esa.snap.core.util.ProductUtils;
 import org.esa.snap.wvcci.tcwv.TcwvConstants;
 import org.esa.snap.wvcci.tcwv.util.TcwvUtils;
 
@@ -171,7 +172,7 @@ public class L3DailyMergeNirHoaps2Op extends Operator {
         final double srcNirTcwvNodata = tcwvL3Band.getNoDataValue();
         final double srcNirTcwvCountsNodata = tcwvUncertaintyCountsL3Band.getNoDataValue();
         final int srcHoapsNumObsNodata = (int) numObsHoapsBand.getNoDataValue();
-        final double srcHoapsTcwvNodata = hoapsProduct.getBand(TcwvConstants.TCWV_HOAPS_BAND_NAME).getNoDataValue();
+        final double srcHoapsTcwvNodata = tcwvHoapsBand.getNoDataValue();
         double srcHoapsTcwvPropagErrNodata = 0;
         double srcHoapsTcwvRandomErrNodata = 0;
         if (tcwvPropagErrHoapsBand != null) {
@@ -250,6 +251,10 @@ public class L3DailyMergeNirHoaps2Op extends Operator {
 
     private void createTargetProduct() {
         targetProduct = new Product(getId(), getClass().getName(), width, height);
+
+        ProductUtils.copyGeoCoding(hoapsProduct, targetProduct);
+        targetProduct.setStartTime(hoapsProduct.getStartTime());
+        targetProduct.setEndTime(hoapsProduct.getEndTime());
 
         targetProduct.addBand(TcwvConstants.NUM_OBS_L3_BAND_NAME,
                 nirProduct.getBand(TcwvConstants.NUM_OBS_L3_BAND_NAME).getDataType());
