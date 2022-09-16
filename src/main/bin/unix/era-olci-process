@@ -46,7 +46,8 @@ if [ ! -e $scripfile ]; then
   #unzip $olcifile
   #if ! /usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} Write -PformatName=SCRIP -Pfile=$scripfile ${olcifile_unzipped} > gpt.out 2>&1
   #if ! /usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} Write -PformatName=SCRIP -Pfile=$scripfile ${olcifile} > gpt.out 2>&1
-  if ! /usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} Write -PformatName=SCRIP_NC4 -Pfile=$scripfile ${olcifile} > gpt.out 2>&1
+  # make sure to give enough memory for SNAP 8!
+  if ! /usr/lib/jvm/default-java/bin/java -Xmx4096M -classpath ${jars} ${class} Write -PformatName=SCRIP_NC4 -Pfile=$scripfile ${olcifile} > gpt.out 2>&1
   then
     cat gpt.out
     exit 1
