@@ -1,0 +1,96 @@
+#!/bin/bash
+set -x
+set -e
+ulimit -a
+
+CDO_HOME=cdo
+#export BEAM_HOME=beam
+export LD_LIBRARY_PATH=$CDO_HOME:$LD_LIBRARY_PATH
+auxroot=.
+
+# MER_RR__1PRACR20080215_152228_000026032066_00054_31170_0000.N1
+# S3A_OL_1_ERR____20180116T003839_20180116T012231_20180117T051223_2632_026_373______MAR_O_NT_002.SEN3.zip
+#olcifile=$1
+olcifile=$(dirname "$1")  # $ is the manifest (why?)- We need to go one dir up
+#olcifile=${olcifile}.zip
+olciname=$(basename $olcifile)
+#olciname="$(basename "$(dirname "$olcifile")")"
+olcistem=${olciname}
+#olcistem=${olciname%.zip}
+
+year=${olciname:16:4}
+month=${olciname:20:2}
+day=${olciname:22:2}
+hour=${olciname:25:2}
+minute=${olciname:27:2}
+second=${olciname:29:2}
+date_in_seconds=$(date +%s -u -d "$year-$month-$day $hour:$minute:$second")
+let day_before_in_seconds="date_in_seconds - 86400"
+let day_after_in_seconds="date_in_seconds + 86400"
+date_before=`date +%Y-%m-%d -u -d @$day_before_in_seconds`
+date_after=`date +%Y-%m-%d -u -d @$day_after_in_seconds`
+
+# extract geo information in SCRIP format for CDOs
+
+echo "$(date +%Y-%m-%dT%H:%M:%S -u) extracting geo information of $olciname ..."
+#tcwvJarVersion=1.9-SNAPSHOT
+tcwvJarVersion=4.0-SNAPSHOT
+jars=snap-all.jar:snap-tcwv-${tcwvJarVersion}.jar
+class=org.esa.snap.core.gpf.main.GPT
+scripfile=${olcistem}-scrip.nc
+if [ ! -e $scripfile ]; then
+  #if ! $BEAM_HOME/bin/gpt.sh Write -PformatName=SCRIP -Pfile=$scripfile $olcifile > gpt.out 2>&1
+  #olcifile_unzipped=${olcifile%.zip}
+  echo "Directory listing before unzipping:"
+  echo "`ls -la $(pwd)`"
+  #unzip $olcifile
+  #if ! /usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} Write -PformatName=SCRIP -Pfile=$scripfile ${olcifile_unzipped} > gpt.out 2>&1
+  #if ! /usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} Write -PformatName=SCRIP -Pfile=$scripfile ${olcifile} > gpt.out 2>&1
+  if ! /usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} Write -PformatName=SCRIP_NC4 -Pfile=$scripfile ${olcifile} > gpt.out 2>&1
+  then
+    cat gpt.out
+    exit 1
+  fi
+fi
+
+# distinguish beginning of month, end of month, or in between and create time stacks
+last_day_in_month=`cal $month $year | xargs echo | awk '{print $NF}'`
+if [ "$day" == "01" ]
+then
+  echo "$(date +%Y-%m-%dT%H:%M:%S -u) merge era stack with previous month ..."
+  eradaybefore=$auxroot/era-interim-t2m-mslp-tcwv-u10-v10/${date_before:0:4}/era-interim-t2m-mslp-tcwv-u10-v10-${date_before:0:4}-${date_before:5:2}.nc
+  erathisday=$auxroot/era-interim-t2m-mslp-tcwv-u10-v10/$year/era-interim-t2m-mslp-tcwv-u10-v10-$year-$month.nc
+  eratimestack=era-interim-t2m-mslp-tcwv-u10-v10-${date_before:0:4}-${date_before:5:2}-$year-$month.nc
+  $CDO_HOME/cdo -b 32 mergetime $eradaybefore $erathisday $eratimestack
+elif [ "$day" == "$last_day_in_month" ]
+then
+  echo "$day is last day in month!"
+  echo "$(date +%Y-%m-%dT%H:%M:%S -u) merge era stack with next month ..."
+  erathisday=$auxroot/era-interim-t2m-mslp-tcwv-u10-v10/$year/era-interim-t2m-mslp-tcwv-u10-v10-$year-$month.nc
+  eradayafter=$auxroot/era-interim-t2m-mslp-tcwv-u10-v10/${date_after:0:4}/era-interim-t2m-mslp-tcwv-u10-v10-${date_after:0:4}-${date_after:5:2}.nc
+  eratimestack=era-interim-tcwv-u10-v10-$year-$month-${date_after:0:4}-${date_after:5:2}.nc
+  $CDO_HOME/cdo -b 32 mergetime $erathisday $eradayafter $eratimestack
+else
+  eratimestack=$auxroot/era-interim-t2m-mslp-tcwv-u10-v10/$year/era-interim-t2m-mslp-tcwv-u10-v10-$year-$month.nc
+fi
+
+# interpolate temporally
+
+echo "$(date +%Y-%m-%dT%H:%M:%S -u) interpolate temporally ..."
+eratimeslice=era-interim-t2m-mslp-tcwv-u10-v10-$year$month$day$hour$minute.nc
+$CDO_HOME/cdo inttime,$year-$month-$day,$hour:$minute:01 $eratimestack $eratimeslice
+
+# interpolate spatially
+
+echo "$(date +%Y-%m-%dT%H:%M:%S -u) interpolate spatially ..."
+#eraolci=${year:2:2}$month$day$hour$minute-era-interim.nc
+#eraolci=${olcistem}_era-interim.nc
+eraolci=ERA_${olcistem}.nc
+$CDO_HOME/cdo -L -f nc4c remapbil,$scripfile $eratimeslice $eraolci
+
+# list results
+
+mkdir -p $day
+mv $eraolci $day
+
+echo "CALVALUS_OUTPUT_PRODUCT $day/$eraolci"

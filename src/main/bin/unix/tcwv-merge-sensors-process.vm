@@ -101,8 +101,20 @@ then
     seaiceFile="hoaps-g.r30.d01.icec.${year}-${month}.nc"
     echo "Directory listing before processing:"
     echo "`ls -la $(pwd)`"
-    echo "/usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Hoaps -SnirProduct=${sensor1_infile} -ShoapsProduct=$(pwd)/${sensor2_infile_name} -SlandmaskProduct=$(pwd)/${landmaskFile} -SseaiceProduct=$(pwd)/${seaiceFile} -PdayOfMonth=$iday -f NetCDF4-WVCCI -t ./${outfile}.nc"
-    /usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Hoaps -SnirProduct=${sensor1_infile} -ShoapsProduct=$(pwd)/${sensor2_infile_name} -SlandmaskProduct=$(pwd)/${landmaskFile} -SseaiceProduct=$(pwd)/${seaiceFile} -PdayOfMonth=$iday -f NetCDF4-WVCCI -t ./${outfile}.nc
+    #/usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Hoaps -SnirProduct=${sensor1_infile} -ShoapsProduct=$(pwd)/${sensor2_infile_name} -SlandmaskProduct=$(pwd)/${landmaskFile} -SseaiceProduct=$(pwd)/${seaiceFile} -PdayOfMonth=$iday -f NetCDF4-WVCCI -t ./${outfile}.nc
+    # make sure that we have enoght memory for SNAP 8 (2048M as for SNAP 7 is not sufficient for merge with HOAPS products! (20220916)
+    # just in case, also make sure to set hdf library paths 
+    /usr/lib/jvm/default-java/bin/java -Xmx4096M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Hoaps \
+        -Dncsa.hdf.hdflib.HDFLibrary.hdflib=$(pwd)/libjhdf.so \
+        -Dncsa.hdf.hdf5lib.H5.hdf5lib=$(pwd)/libjhdf5.so \
+        -Dsnap.home=$(pwd) \
+        -Dsnap.userdir=$(pwd) \
+        -Djava.io.tmpdir=$(pwd) \
+        -SnirProduct=${sensor1_infile} -ShoapsProduct=$(pwd)/${sensor2_infile_name} \
+        -SlandmaskProduct=$(pwd)/${landmaskFile} \
+        -SseaiceProduct=$(pwd)/${seaiceFile} \
+        -PdayOfMonth=$iday \
+        -f NetCDF4-WVCCI -t ./${outfile}.nc
   fi
 else
   echo "/usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Nir -Ssensor1Product=${sensor1_infile} -Ssensor2Product=$(pwd)/${sensor2_infile_name} -f NetCDF4-WVCCI -t ./${outfile}.nc"

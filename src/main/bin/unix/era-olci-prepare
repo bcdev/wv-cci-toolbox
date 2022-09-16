@@ -1,0 +1,69 @@
+#!/bin/bash
+set -x
+set -e
+
+#beamVersion=beam-5.0.1
+
+inputPath="$1"
+outputPath="$2"
+
+#MER_RR__1PRACR20030202_001540_000026042013_00274_04837_0000.N1
+#S3A_OL_1_ERR____20180116T003839_20180116T012231_20180117T051223_2632_026_373______MAR_O_NT_002.SEN3.zip
+olciname=$(basename $inputPath)
+olcistem=${olciname%.zip}
+year=${olciname:16:4}
+month=${olciname:20:2}
+day=${olciname:22:2}
+hour=${olciname:25:2}
+minute=${olciname:27:2}
+second=${olciname:29:2}
+
+acquisitionTime=${olciname:16:8}
+outFileName=${aquisitionTime:6:2}/${olcistem}_era.nc
+
+if hdfs dfs -ls ${outputPath}/$day${outFileName} ; then
+  # output exist
+  echo CALVALUS_SKIP_PROCESSING yes
+  exit 0
+fi
+
+# copy era interim
+date_in_seconds=$(date +%s -u -d "$year-$month-$day $hour:$minute:$second")
+let day_before_in_seconds="date_in_seconds - 86400"
+let day_after_in_seconds="date_in_seconds + 86400"
+d=${acquisitionTime:0:4}-${acquisitionTime:4:2}
+d1=`date -d @$day_before_in_seconds -u +%Y'-'%m`
+d2=`date -d @$day_after_in_seconds -u +%Y'-'%m`
+mkdir -p era-interim-t2m-mslp-tcwv-u10-v10/${d:0:4}
+hdfs dfs -get /calvalus/auxiliary/era-interim-t2m-mslp-tcwv-u10-v10/${d:0:4}/era-interim-t2m-mslp-tcwv-u10-v10-$d.nc era-interim-t2m-mslp-tcwv-u10-v10/${d:0:4}
+if [ "$d1" != "$d" ]; then
+  mkdir -p era-interim-t2m-mslp-tcwv-u10-v10/${d1:0:4}
+  hdfs dfs -get /calvalus/auxiliary/era-interim-t2m-mslp-tcwv-u10-v10/${d1:0:4}/era-interim-t2m-mslp-tcwv-u10-v10-$d1.nc era-interim-t2m-mslp-tcwv-u10-v10/${d1:0:4}
+fi
+if [ "$d2" != "$d" ]; then
+  mkdir -p era-interim-t2m-mslp-tcwv-u10-v10/${d2:0:4}
+  hdfs dfs -get /calvalus/auxiliary/era-interim-t2m-mslp-tcwv-u10-v10/${d2:0:4}/era-interim-t2m-mslp-tcwv-u10-v10-$d2.nc era-interim-t2m-mslp-tcwv-u10-v10/${d2:0:4}
+fi
+
+# prepare the BEAM environment:
+# --> we now use SNAP for writing SCRIP files (20190716)
+
+#mkdir -p beam/modules
+#cd beam/modules
+#ln -s ../../$beamVersion/modules/* .
+#ln -s ../../beam-avhrr-ac-auxdata-*.jar .
+#cd ..
+#ln -s ../$beamVersion/{lib,config} .
+#cd ..
+
+#mkdir -p beam/bin
+#cat $beamVersion/bin/gpt.sh | \
+#sed -e "s,-Dceres.context=beam,-Dceres.context=beam -Dbeam.modules=beam/modules," \
+#    -e "s,\$(cd \$(dirname \$0);cd ..;pwd),$(pwd)/beam," \
+#    -e 's,"$@",-e "$@",' \
+#    -e 's,-Xmx1501M,-Xmx4G,' \
+#    > beam/bin/gpt.sh
+#chmod 755 beam/bin/gpt.sh
+#cd beam/bin
+#ln -s ../../$beamVersion/bin/{detect_java.sh,ceres-launcher.jar} .
+#cd ../..
