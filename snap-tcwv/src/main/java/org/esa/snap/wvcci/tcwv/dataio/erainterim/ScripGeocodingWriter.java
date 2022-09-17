@@ -84,8 +84,7 @@ public class ScripGeocodingWriter extends AbstractProductWriter {
 
         geoFile.create();
         try {
-//            geoFile.write(gridDims, Array.factory(new int[]{width, height}));
-            geoFile.write(gridDims, Array.factory(DataType.INT, new int[]{width, height}));
+            geoFile.write(gridDims, Array.factory(new int[]{width, height}));
 
             final int[] targetStart = {0, 0};
             final int[] targetStart2 = {0, 0, 0};

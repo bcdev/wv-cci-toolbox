@@ -3,11 +3,9 @@ package org.esa.snap.wvcci.tcwv.util;
 import org.esa.snap.core.datamodel.*;
 import org.esa.snap.core.gpf.OperatorException;
 import org.esa.snap.core.util.BitSetter;
-import org.esa.snap.wvcci.tcwv.Sensor;
 import org.esa.snap.wvcci.tcwv.TcwvConstants;
 
 import java.awt.*;
-import java.io.IOException;
 
 /**
  * Utility class for TCWV retrievals
@@ -19,7 +17,7 @@ public class TcwvUtils {
     /**
      * Copies properties from a source band to a new band.
      *
-     * @param b          - the new band
+     * @param b - the new band
      * @param sourceBand - the source band
      */
     public static void copyBandProperties(Band b, Band sourceBand) {
@@ -35,6 +33,7 @@ public class TcwvUtils {
      * Provides the TCWV quality flag coding
      *
      * @param flagId - the flag ID
+     *
      * @return - the flag coding
      */
     public static FlagCoding createTcwvQualityFlagCoding(String flagId) {
@@ -42,17 +41,17 @@ public class TcwvUtils {
         FlagCoding flagCoding = new FlagCoding(flagId);
 
         flagCoding.addFlag("TCWV_OK",
-                BitSetter.setFlag(0, TcwvConstants.TCWV_OK),
-                TcwvConstants.TCWV_OK_DESCR_TEXT);
+                           BitSetter.setFlag(0, TcwvConstants.TCWV_OK),
+                           TcwvConstants.TCWV_OK_DESCR_TEXT);
         flagCoding.addFlag("TCWV_COST_FUNCTION_1",
-                BitSetter.setFlag(0, TcwvConstants.TCWV_COST_FUNCTION_1),
-                TcwvConstants.TCWV_COST_FUNCTION_1_DESCR_TEXT);
+                           BitSetter.setFlag(0, TcwvConstants.TCWV_COST_FUNCTION_1),
+                           TcwvConstants.TCWV_COST_FUNCTION_1_DESCR_TEXT);
         flagCoding.addFlag("TCWV_COST_FUNCTION_2",
-                BitSetter.setFlag(0, TcwvConstants.TCWV_COST_FUNCTION_2),
-                TcwvConstants.TCWV_COST_FUNCTION_2_DESCR_TEXT);
+                           BitSetter.setFlag(0, TcwvConstants.TCWV_COST_FUNCTION_2),
+                           TcwvConstants.TCWV_COST_FUNCTION_2_DESCR_TEXT);
         flagCoding.addFlag("TCWV_INVALID",
-                BitSetter.setFlag(0, TcwvConstants.TCWV_INVALID),
-                TcwvConstants.TCWV_INVALID_DESCR_TEXT);
+                           BitSetter.setFlag(0, TcwvConstants.TCWV_INVALID),
+                           TcwvConstants.TCWV_INVALID_DESCR_TEXT);
 
         return flagCoding;
     }
@@ -62,6 +61,7 @@ public class TcwvUtils {
      * final TCWV L3 product.
      *
      * @param flagId - the flag ID
+     *
      * @return - the flag coding
      */
     public static FlagCoding createSurfaceTypeFlagCoding(String flagId) {
@@ -69,15 +69,15 @@ public class TcwvUtils {
         FlagCoding flagCoding = new FlagCoding(flagId);
 
         flagCoding.addFlag("LAND", BitSetter.setFlag(0, TcwvConstants.SURFACE_TYPE_LAND),
-                TcwvConstants.LAND_DESCR_TEXT);
+                           TcwvConstants.LAND_DESCR_TEXT);
         flagCoding.addFlag("OCEAN", BitSetter.setFlag(0, TcwvConstants.SURFACE_TYPE_OCEAN),
-                TcwvConstants.OCEAN_DESCR_TEXT);
+                           TcwvConstants.OCEAN_DESCR_TEXT);
         flagCoding.addFlag("SEA_ICE", BitSetter.setFlag(0, TcwvConstants.SURFACE_TYPE_SEA_ICE),
-                TcwvConstants.SEA_ICE_DESCR_TEXT);
+                           TcwvConstants.SEA_ICE_DESCR_TEXT);
         flagCoding.addFlag("CLOUD", BitSetter.setFlag(0, TcwvConstants.SURFACE_TYPE_CLOUD),
-                TcwvConstants.CLOUD_DESCR_TEXT);
+                           TcwvConstants.CLOUD_DESCR_TEXT);
         flagCoding.addFlag("UNDEFINED", BitSetter.setFlag(0, TcwvConstants.SURFACE_TYPE_UNDEFINED),
-                TcwvConstants.UNDEFINED_DESCR_TEXT);
+                           TcwvConstants.UNDEFINED_DESCR_TEXT);
 
         return flagCoding;
     }
@@ -87,6 +87,7 @@ public class TcwvUtils {
      * Provides the TCWV quality flag bitmask
      *
      * @param tcwvProduct - the TCWV product
+     *
      */
     public static void setupTcwvQualityFlagBitmask(Product tcwvProduct) {
 
@@ -97,27 +98,27 @@ public class TcwvUtils {
 
         final String flagBandName = TcwvConstants.TCWV_QUALITY_FLAG_BAND_NAME;
         mask = Mask.BandMathsType.create("TCWV_OK",
-                TcwvConstants.TCWV_OK_DESCR_TEXT, w, h,
-                flagBandName + ".TCWV_OK",
-                Color.GREEN, 0.5f);
+                                         TcwvConstants.TCWV_OK_DESCR_TEXT, w, h,
+                                         flagBandName + ".TCWV_OK",
+                                         Color.GREEN, 0.5f);
         tcwvProduct.getMaskGroup().add(index++, mask);
 
         mask = Mask.BandMathsType.create("TCWV_COST_FUNCTION_1",
-                TcwvConstants.TCWV_COST_FUNCTION_1_DESCR_TEXT, w, h,
-                flagBandName + ".TCWV_COST_FUNCTION_1",
-                Color.YELLOW, 0.5f);
+                                         TcwvConstants.TCWV_COST_FUNCTION_1_DESCR_TEXT, w, h,
+                                         flagBandName + ".TCWV_COST_FUNCTION_1",
+                                         Color.YELLOW, 0.5f);
         tcwvProduct.getMaskGroup().add(index++, mask);
 
         mask = Mask.BandMathsType.create("TCWV_COST_FUNCTION_2",
-                TcwvConstants.TCWV_COST_FUNCTION_2_DESCR_TEXT, w, h,
-                flagBandName + ".TCWV_COST_FUNCTION_2",
-                Color.ORANGE, 0.5f);
+                                         TcwvConstants.TCWV_COST_FUNCTION_2_DESCR_TEXT, w, h,
+                                         flagBandName + ".TCWV_COST_FUNCTION_2",
+                                         Color.ORANGE, 0.5f);
         tcwvProduct.getMaskGroup().add(index++, mask);
 
         mask = Mask.BandMathsType.create("TCWV_INVALID",
-                TcwvConstants.TCWV_INVALID_DESCR_TEXT, w, h,
-                flagBandName + ".TCWV_INVALID",
-                Color.RED, 0.5f);
+                                         TcwvConstants.TCWV_INVALID_DESCR_TEXT, w, h,
+                                         flagBandName + ".TCWV_INVALID",
+                                         Color.RED, 0.5f);
         tcwvProduct.getMaskGroup().add(index, mask);
     }
 
@@ -125,6 +126,7 @@ public class TcwvUtils {
      * Provides the surface type flag bitmask
      *
      * @param tcwvProduct - the TCWV product
+     *
      */
     public static void setupSurfaceTypeFlagBitmask(Product tcwvProduct) {
 
@@ -135,33 +137,33 @@ public class TcwvUtils {
 
         final String flagBandName = TcwvConstants.SURFACE_TYPE_FLAG_BAND_NAME;
         mask = Mask.BandMathsType.create("LAND",
-                TcwvConstants.LAND_DESCR_TEXT, w, h,
-                flagBandName + ".LAND",
-                Color.GREEN, 0.5f);
+                                         TcwvConstants.LAND_DESCR_TEXT, w, h,
+                                         flagBandName + ".LAND",
+                                         Color.GREEN, 0.5f);
         tcwvProduct.getMaskGroup().add(index++, mask);
 
         mask = Mask.BandMathsType.create("OCEAN",
-                TcwvConstants.OCEAN_DESCR_TEXT, w, h,
-                flagBandName + ".OCEAN",
-                Color.BLUE, 0.5f);
+                                         TcwvConstants.OCEAN_DESCR_TEXT, w, h,
+                                         flagBandName + ".OCEAN",
+                                         Color.BLUE, 0.5f);
         tcwvProduct.getMaskGroup().add(index++, mask);
 
         mask = Mask.BandMathsType.create("SEA_ICE",
-                TcwvConstants.SEA_ICE_DESCR_TEXT, w, h,
-                flagBandName + ".SEA_ICE",
-                Color.CYAN, 0.5f);
+                                         TcwvConstants.SEA_ICE_DESCR_TEXT, w, h,
+                                         flagBandName + ".SEA_ICE",
+                                         Color.CYAN, 0.5f);
         tcwvProduct.getMaskGroup().add(index++, mask);
 
         mask = Mask.BandMathsType.create("CLOUD",
-                TcwvConstants.CLOUD_DESCR_TEXT, w, h,
-                flagBandName + ".CLOUD",
-                Color.YELLOW, 0.5f);
+                                         TcwvConstants.CLOUD_DESCR_TEXT, w, h,
+                                         flagBandName + ".CLOUD",
+                                         Color.YELLOW, 0.5f);
         tcwvProduct.getMaskGroup().add(index++, mask);
 
         mask = Mask.BandMathsType.create("UNDEFINED",
-                TcwvConstants.UNDEFINED_DESCR_TEXT, w, h,
-                flagBandName + ".UNDEFINED",
-                Color.gray, 0.5f);
+                                         TcwvConstants.UNDEFINED_DESCR_TEXT, w, h,
+                                         flagBandName + ".UNDEFINED",
+                                         Color.gray, 0.5f);
 
         tcwvProduct.getMaskGroup().add(index, mask);
 
@@ -172,13 +174,14 @@ public class TcwvUtils {
      * See more details in function 'snr_to_pseudo_absoprtion_measurement_variance' in cowa_core.py of software
      * package 'consolidated_cci_luts' provided by RP, Jan 2020
      *
-     * @param snr           - SNR
+     * @param snr - SNR
      * @param interpolError - interpolation error
-     * @param amf           - air mass factor
+     * @param amf - air mass factor
+     *
      * @return - the pseudo absorption measurement error
      */
     public static double computePseudoAbsorptionMeasurementVariance(double snr, double interpolError, double amf) {
-        return ((1.0 / (snr * snr)) + (1.0 / (snr * snr) + interpolError)) / amf;
+       return ((1.0/(snr*snr)) + (1.0/(snr*snr) + interpolError)) / amf;
     }
 
 //    public static void checkIfMod021KMDayProduct(Product product) {
@@ -197,28 +200,8 @@ public class TcwvUtils {
         return (dayNightAttr != null && dayNightAttr.getData().getElemString().equals("Day"));
     }
 
-    public static double getSurfacePressure(double seaLevelPress, double height) {
-        return height < 0.0 ? seaLevelPress : Math.pow(1. - (height * 0.0065 / 288.15), 5.2555) * seaLevelPress;
-    }
-
-    public static double getSurfaceTemperature(Sensor sensor, double[] atmTempData,
-                                               double surfacePress) throws IOException {
-        if (!(sensor == Sensor.MERIS) && !(sensor == Sensor.OLCI)) {
-            throw new IOException("getSurfaceTemperature: sensor '" + sensor.getName() + "' not supported");
-        }
-
-        final double[] refPressLevels = sensor == Sensor.MERIS ? TcwvConstants.MERIS_REF_PRESSURE_LEVELS :
-                TcwvConstants.OLCI_REF_PRESSURE_LEVELS;
-
-        double surfaceTemp = atmTempData[0];
-
-        for (int i = 0; i < atmTempData.length - 1; i++) {
-            if (refPressLevels[i] >= surfacePress && refPressLevels[i + 1] < surfacePress) {
-                final double frac = (refPressLevels[i] - surfacePress) / (refPressLevels[i] - refPressLevels[i + 1]);
-                surfaceTemp = atmTempData[i] + frac * (atmTempData[i + 1] - atmTempData[i]);
-            }
-        }
-        return surfaceTemp;
+    public static double getAtmosphericPressure(double seaLevelPress, double height) {
+        return height < 0.0 ? seaLevelPress : Math.pow(1.-(height*0.0065/288.15), 5.2555) * seaLevelPress;
     }
 
 }

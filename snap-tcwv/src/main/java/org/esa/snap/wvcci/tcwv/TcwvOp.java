@@ -95,14 +95,11 @@ public class TcwvOp extends Operator {
     private Band idepixClassifBand;
 
     private Band priorT2mBand;
-    private RasterDataNode priorMslBand;
-    private RasterDataNode priorTcwvBand;
-    private RasterDataNode priorU10Band;
-    private RasterDataNode priorV10Band;
+    private Band priorMslBand;
+    private Band priorTcwvBand;
+    private Band priorU10Band;
+    private Band priorV10Band;
     private Band priorWspBand;
-
-    private RasterDataNode[] atmTempBands;  // atmospheric_temperature_profile_<i> , OLCI/MERIS
-    private double[] refPressureLevels;
 
     private Band[] landWinBands;
     private Band[] landAbsBands;
@@ -199,57 +196,22 @@ public class TcwvOp extends Operator {
         priorV10Band = null;
         priorWspBand = null;
         if (sourceProduct.containsBand(TcwvConstants.PRIOR_T2M_BAND_NAME)) {
-            // from ERA for MODIS
             priorT2mBand = sourceProduct.getBand(TcwvConstants.PRIOR_T2M_BAND_NAME);
         }
         if (sourceProduct.containsBand(TcwvConstants.PRIOR_MSL_BAND_NAME)) {
-            // from ERA for MODIS
             priorMslBand = sourceProduct.getBand(TcwvConstants.PRIOR_MSL_BAND_NAME);
-        } else if (sourceProduct.containsTiePointGrid(TcwvConstants.PRIOR_MSL_TPG_NAME)) {
-            // for MERIS 4RP and OLCI: from TPG
-            priorMslBand = sourceProduct.getTiePointGrid(TcwvConstants.PRIOR_MSL_TPG_NAME);
         }
         if (sourceProduct.containsBand(TcwvConstants.PRIOR_TCWV_BAND_NAME)) {
-            // from ERA for MODIS
             priorTcwvBand = sourceProduct.getBand(TcwvConstants.PRIOR_TCWV_BAND_NAME);
-        } else if (sourceProduct.containsTiePointGrid(TcwvConstants.PRIOR_TCWV_TPG_NAME)) {
-            // for MERIS 4RP and OLCI: from TPG
-            priorTcwvBand = sourceProduct.getTiePointGrid(TcwvConstants.PRIOR_TCWV_TPG_NAME);
         }
         if (sourceProduct.containsBand(TcwvConstants.PRIOR_U10_BAND_NAME)) {
-            // from ERA for MODIS
             priorU10Band = sourceProduct.getBand(TcwvConstants.PRIOR_U10_BAND_NAME);
-        } else if (sourceProduct.containsTiePointGrid(TcwvConstants.PRIOR_U10_TPG_NAME)) {
-            // for MERIS 4RP and OLCI: from TPG
-            priorU10Band = sourceProduct.getTiePointGrid(TcwvConstants.PRIOR_U10_TPG_NAME);
         }
         if (sourceProduct.containsBand(TcwvConstants.PRIOR_V10_BAND_NAME)) {
-            // from ERA for MODIS
             priorV10Band = sourceProduct.getBand(TcwvConstants.PRIOR_V10_BAND_NAME);
-        } else if (sourceProduct.containsTiePointGrid(TcwvConstants.PRIOR_V10_TPG_NAME)) {
-            // for MERIS 4RP and OLCI: from TPG
-            priorV10Band = sourceProduct.getTiePointGrid(TcwvConstants.PRIOR_V10_TPG_NAME);
         }
         if (sourceProduct.containsBand(TcwvConstants.PRIOR_WSP_BAND_NAME)) {
-            // from ERA for MODIS
             priorWspBand = sourceProduct.getBand(TcwvConstants.PRIOR_WSP_BAND_NAME);
-        }
-
-        if (sensor == Sensor.MERIS) {
-            atmTempBands = new RasterDataNode[TcwvConstants.MERIS_REF_PRESSURE_LEVELS.length];
-            // MERIS: ordered from top to bottom!
-            for (int i = atmTempBands.length-1; i >=0; i--) {
-                final String bandName = "atmospheric_temperature_profile_pressure_level_" + (i + 1);
-                atmTempBands[i] = sourceProduct.getRasterDataNode(bandName);
-            }
-        }
-        if (sensor == Sensor.OLCI) {
-            atmTempBands = new RasterDataNode[TcwvConstants.OLCI_REF_PRESSURE_LEVELS.length];
-            // OLCI: ordered from bottom to top!
-            for (int i = 0; i < atmTempBands.length; i++) {
-                final String bandName = "atmospheric_temperature_profile_pressure_level_" + (i + 1);
-                atmTempBands[i] = sourceProduct.getRasterDataNode(bandName);
-            }
         }
 
         szaBand = sourceProduct.getRasterDataNode(sensor.getTpgNames()[0]);
@@ -289,11 +251,6 @@ public class TcwvOp extends Operator {
         Tile[] oceanWinBandTiles = getSourceTiles(oceanWinBands, targetRectangle);
         Tile[] oceanAbsBandTiles = getSourceTiles(oceanAbsBands, targetRectangle);
 
-        Tile[] atmTempTiles = null;
-        if (atmTempBands != null) {
-            atmTempTiles = getSourceTiles(atmTempBands, targetRectangle);
-        }
-
         Tile szaTile = getSourceTile(szaBand, targetRectangle);
         Tile vzaTile = getSourceTile(vzaBand, targetRectangle);
         Tile saaTile = getSourceTile(saaBand, targetRectangle);
@@ -328,11 +285,6 @@ public class TcwvOp extends Operator {
         double[] oceanWinBandData = new double[oceanWinBandTiles.length];
         double[] oceanAbsBandData = new double[oceanAbsBandTiles.length];
 
-        double[] atmTempData = null;
-        if (atmTempTiles != null) {
-            atmTempData = new double[atmTempTiles.length];
-        }
-
         Tile[] winBandTiles;
         Tile[] absBandTiles;
         double[] winBandData;
@@ -342,6 +294,9 @@ public class TcwvOp extends Operator {
             checkForCancellation();
             for (int x = targetRectangle.x; x < targetRectangle.x + targetRectangle.width; x++) {
 //                if (x == 157 && y == 132) {
+//                    System.out.println("x = " + x);
+//                }
+//                if (x == 217 && y == 161) {
 //                    System.out.println("x = " + x);
 //                }
 
@@ -405,45 +360,26 @@ public class TcwvOp extends Operator {
                     final double relAzi = 180. - Math.acos(Math.cos(saaR) * Math.cos(vaaR) +
                             Math.sin(saaR) * Math.sin(vaaR)) * MathUtils.RTOD;
                     final double amf = 1. / csza + 1. / Math.cos(vzaR);
-                    final double altitude = altitudeTile.getSampleDouble(x, y);
 
-                    // priors from TPs for MERIS, OLCI (RP Sep 2022):
-                    // sea_level_pressure (OLCI), atm_press (MERIS) --> not new, but compute surface pressure now!
-                    // total_columnar_water_vapour (new)
-                    // horizontal_wind_vector_1 (new)
-                    // horizontal_wind_vector_2 (new)
-                    // atmospheric_temperature_profile_pressure_level_<i>, i=1,..,20 (MERIS), 1,..,25 (OLCI)
-
+                    // prior atmospheric pressure:
+                    double atmPress = mslPressure;
                     double t2m = temperature;
                     double priorWs = TcwvConstants.WS_INIT_VALUE;
-
-                    // prior surface and sea level pressure:
-                    double surfacePress = mslPressure;
-                    double slp= mslPressure;
                     if (isLand) {
+                        final double altitude = altitudeTile.getSampleDouble(x, y);
+                        double slp;
                         if (seaLevelPressTile != null) {
-                            // MERIS, OLCI: from TPG
                             slp = seaLevelPressTile.getSampleDouble(x, y);
                         } else {
-                            // MODIS
                             if (priorMslTile != null) {
                                 // ERA Interim: Pa, e.g. 100500  --> divide by -100 to get negative hPa for current LUTs
                                 slp = priorMslTile.getSampleDouble(x, y) / 100.0;
+                            } else {
+                                slp = mslPressure;
                             }
                         }
-                        surfacePress = TcwvUtils.getSurfacePressure(slp, altitude);
+                        atmPress = TcwvUtils.getAtmosphericPressure(slp, altitude);
                         t2m = priorT2mTile != null ? priorT2mTile.getSampleDouble(x, y) : temperature;
-
-                        if (atmTempData != null) {
-                            // MERIS, OLCI: from TPGs
-                            for (int i = 0; i < atmTempData.length; i++) {
-                                atmTempData[i] = atmTempTiles[i].getSampleDouble(x, y);
-                            }
-                            try {
-                                t2m = TcwvUtils.getSurfaceTemperature(sensor, atmTempData, surfacePress);
-                            } catch (IOException ignore) {
-                            }
-                        }
                     } else {
                         if (priorU10Tile != null && priorV10Tile != null) {
                             final double u10 = priorU10Tile.getSampleDouble(x, y);
@@ -476,10 +412,9 @@ public class TcwvOp extends Operator {
                         }
                     }
 
-                    TcwvAlgorithmInput input = new TcwvAlgorithmInput(winBandData, absBandData, sza,
-                            vzaTile.getSampleDouble(x, y), relAzi,
+                    TcwvAlgorithmInput input = new TcwvAlgorithmInput(winBandData, absBandData, sza, vzaTile.getSampleDouble(x, y), relAzi,
                             amf, priorAot, priorAl0, priorAl1,
-                            t2m, surfacePress, priorWs, priorTcwv);
+                            t2m, atmPress, priorWs, priorTcwv);
 
                     // 'ocean' parameters are null for land processing!
                     final TcwvResult result = tcwvAlgorithm.compute(sensor, landLut, oceanLut,
@@ -553,7 +488,7 @@ public class TcwvOp extends Operator {
         return minCoastNormRadValue > sensor.getMinCoastNormRadValue();
     }
 
-    private Tile[] getSourceTiles(RasterDataNode[] sourceBands, Rectangle rectangle) {
+    private Tile[] getSourceTiles(Band[] sourceBands, Rectangle rectangle) {
         Tile[] sourceTiles = new Tile[sourceBands.length];
         for (int i = 0; i < sourceBands.length; i++) {
             sourceTiles[i] = getSourceTile(sourceBands[i], rectangle);
@@ -561,7 +496,7 @@ public class TcwvOp extends Operator {
         return sourceTiles;
     }
 
-    private Tile getTcwvInputTile(RasterDataNode sourceBand, Rectangle rectangle) {
+    private Tile getTcwvInputTile(Band sourceBand, Rectangle rectangle) {
         if (sourceBand != null) {
             return getSourceTile(sourceBand, rectangle);
         } else {

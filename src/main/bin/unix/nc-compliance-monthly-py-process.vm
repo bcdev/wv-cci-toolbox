@@ -49,56 +49,19 @@ landmaskFile="kosh.r30.lmask.nc"
 seaiceFilePath="/calvalus/projects/wvcci/auxdata/seaice/${year}/hoaps-g.r30.d01.icec.${year}-${month}.nc"
 echo "Seaice HDFS file path: '${seaiceFilePath}'"
 if ! copy_file_from_hdfs ${seaiceFilePath}; then
-  echo "failed to get seaice file '${seaiceFilePath}' - will exit..."
-  exit 1
-fi
-seaiceFile="hoaps-g.r30.d01.icec.${year}-${month}.nc"
-
-# in case of CDR-2 processing, copy original HOAPS file from HDFS to current dir (in case for final fixes):
-if [[ $sensor == *"cmsaf_hoaps"* ]]; then
-  # e.g. origHoapsFilePath="/calvalus/projects/wvcci/tcwv/cmsaf_hoaps/l3-monthly/005/2011/07-L3-1/hoaps-g.r03.d01.wvpa.2011-07.nc"
-  if [ "$res" == "005" ]
-  then
-    resHoaps="r03"
-  else
-    resHoaps="r30"
-  fi
-  origHoapsFilePath="/calvalus/projects/wvcci/tcwv/cmsaf_hoaps/l3-monthly/${res}/${year}/${month}-L3-output/hoaps-g.${resHoaps}.m01.wvpa.${year}-${month}.nc"
-  echo "Original HOAPS file path: '${origHoapsFilePath}'"
-  if ! copy_file_from_hdfs ${origHoapsFilePath}; then
-    echo "failed to get original HOAPS file '${origHoapsFilePath}'"
-    exit 1
-  fi
-  origHoapsFile="hoaps-g.${resHoaps}.m01.wvpa.${year}-${month}.nc"
-fi
-
-# now process:
-echo "Directory listing before processing:"
-echo "`ls -la $(pwd)`"
-
-### For wvcci postprocessing in 2.x instance, we need a python3 from a Miniconda which has netCDF4, numpy, scipy, matplotlib
-# (the miniconda package taken from conda-xarray-1.0 instance does the job...):
-wvcci_py_dir=$(ls -ld miniconda3-wvcci |awk '{print $11}')
-CURRENT_LINK=$(ls -ld /home/yarn/opt/miniconda3-wvcci|awk '{print $11}')
-if [ "$CURRENT_LINK" != "${wvcci_py_dir}" ]; then
-  mkdir -p /home/yarn/opt
-  ln -s -f -T ${wvcci_py_dir} /home/yarn/opt/miniconda3-wvcci
-fi
-echo "`ls -la ${wvcci_py_dir}/bin/python*`"
-
-#/usr/bin/python --version
-#/usr/bin/python3 --version
-${wvcci_py_dir}/bin/python3.9 --version
-if [[ -f "$(pwd)/${origHoapsFile}" ]]; then
-  #echo "/usr/bin/python $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${sensor} ${year} ${month} ${res} ${version} $(pwd)/${seaiceFile}"
-  #/usr/bin/python $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${sensor} ${year} ${month} ${res} ${version} $(pwd)/${seaiceFile}
-  echo "${wvcci_py_dir}/bin/python3.9 $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${sensor} ${year} ${month} ${res} ${version} $(pwd)/${seaiceFile}"
-  ${wvcci_py_dir}/bin/python3.9 $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${sensor} ${year} ${month} ${res} ${version} $(pwd)/${seaiceFile}
+  echo "failed to get seaice file '${seaiceFilePath}' - will do compliance step without seaice info..."
+  echo "Directory listing before processing:"
+  echo "`ls -la $(pwd)`"
+  /usr/bin/python --version
+  echo "/usr/bin/python $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${sensor} ${year} ${month} ${res} ${version}"
+  /usr/bin/python $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${sensor} ${year} ${month} ${res} ${version}
 else
-  #echo "/usr/bin/python $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${sensor} ${year} ${month} ${res} ${version} $(pwd)/${seaiceFile}"
-  #/usr/bin/python $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${sensor} ${year} ${month} ${res} ${version} $(pwd)/${seaiceFile}
-  echo "${wvcci_py_dir}/bin/python3.9 $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${sensor} ${year} ${month} ${res} ${version} $(pwd)/${seaiceFile}"
-  ${wvcci_py_dir}/bin/python3.9 $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${sensor} ${year} ${month} ${res} ${version} $(pwd)/${seaiceFile}
+  seaiceFile="hoaps-g.r30.d01.icec.${year}-${month}.nc"
+  echo "Directory listing before processing:"
+  echo "`ls -la $(pwd)`"
+  /usr/bin/python --version
+  echo "/usr/bin/python $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${sensor} ${year} ${month} ${res} ${version} $(pwd)/${seaiceFile}"
+  /usr/bin/python $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${sensor} ${year} ${month} ${res} ${version} $(pwd)/${seaiceFile}
 fi
 
 status=$?
@@ -113,8 +76,6 @@ fi
 
 ## filename following CCI standards:
 # monthly products
-# use underscore for two sensors, request of AW, Nov. 2021:
-sensor=${sensor/"-"/"_"}
 if [[ $sensor == *"-"* ]]; then
   # merged product
   nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor}-${res}deg-${year}${month}-fv${version}.nc"

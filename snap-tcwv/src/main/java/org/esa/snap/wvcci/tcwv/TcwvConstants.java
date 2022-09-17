@@ -50,7 +50,7 @@ public class TcwvConstants {
     public static final int TCWV_OK = 0;
     public static final int TCWV_COST_FUNCTION_1 = 1;
     public static final int TCWV_COST_FUNCTION_2 = 2;
-    public static final int TCWV_INVALID = 3;
+    public static final int TCWV_INVALID= 3;
 
     public static final int SURFACE_TYPE_LAND = 0;
     public static final int SURFACE_TYPE_OCEAN = 1;
@@ -60,11 +60,11 @@ public class TcwvConstants {
 
     // todo: DWD/SE to provide exact criteria, then refine texts
     public static final String TCWV_OK_DESCR_TEXT = "TCWV retrieval has no known issues";
-    //    public static final String TCWV_L1_QUALITY_ISSUES_DESCR_TEXT = "L1 input data for TCWV retrieval has quality issues";
+//    public static final String TCWV_L1_QUALITY_ISSUES_DESCR_TEXT = "L1 input data for TCWV retrieval has quality issues";
 //    public static final String TCWV_CRITICAL_RETRIEVAL_CONDITIONS_DESCR_TEXT = "TCWV is based on critical retrieval conditions";
     public static final String TCWV_COST_FUNCTION_1_DESCR_TEXT = "Value of cost function in TCWV retrieval is in [1.0, 2.0]";
     public static final String TCWV_COST_FUNCTION_2_DESCR_TEXT = "Value of cost function in TCWV retrieval is greater than 2.0";
-    //    public static final String TCWV_INACCURATE_UNCERTAINTY_DESCR_TEXT = "TCWV retrieval has inaccurate uncertainty";
+//    public static final String TCWV_INACCURATE_UNCERTAINTY_DESCR_TEXT = "TCWV retrieval has inaccurate uncertainty";
     public static final String TCWV_INVALID_DESCR_TEXT = "Invalid pixel (no TCWV retrieval)";
 
     public static final String LAND_DESCR_TEXT = "Land";
@@ -79,13 +79,9 @@ public class TcwvConstants {
 
     static final String PRIOR_T2M_BAND_NAME = "t2m";
     static final String PRIOR_MSL_BAND_NAME = "msl";
-    static final String PRIOR_MSL_TPG_NAME = "sea_level_pressure";   // new in Phase 2 for MERIS, OLCI
     static final String PRIOR_TCWV_BAND_NAME = "tcwv";
-    static final String PRIOR_TCWV_TPG_NAME = "total_columnar_water_vapour";  // new in Phase 2 for MERIS, OLCI
     static final String PRIOR_U10_BAND_NAME = "u10";
-    static final String PRIOR_U10_TPG_NAME = "horizontal_wind_vector_1";   // new in Phase 2 for MERIS, OLCI
     static final String PRIOR_V10_BAND_NAME = "v10";
-    static final String PRIOR_V10_TPG_NAME = "horizontal_wind_vector_2";   // new in Phase 2 for MERIS, OLCI
     static final String PRIOR_WSP_BAND_NAME = "wsp";
 
     static final double AL0_INIT_VALUE = 0.13;     // AL0 865nm initial value for algorithm
@@ -115,8 +111,8 @@ public class TcwvConstants {
     static final double MIN_NORM_RAD_VALUE = 0.001;
 
     static final String[] MOD35_BAND_NAMES = {
-            ModisMod35L2Constants.CLOUD_MASK_BYTE_TARGET_BAND_NAME + "1",
-            ModisMod35L2Constants.QUALITY_ASSURANCE_QA_DIMENSION_BAND_NAME + "1"
+            ModisMod35L2Constants.CLOUD_MASK_BYTE_TARGET_BAND_NAME +  "1",
+            ModisMod35L2Constants.QUALITY_ASSURANCE_QA_DIMENSION_BAND_NAME +  "1"
     };
 
     // delivered by RP 20190902, used for Dataset 2:
@@ -138,14 +134,6 @@ public class TcwvConstants {
     static final String MODIS_TERRA_LAND_LUT_NC_FILENAME = "land_core_modis_terra_calib_arm.nc4";
     static final String OLCI_LAND_LUT_NC_FILENAME = "land_core_olci_calib_arm.nc4";
     static final String OLCI_OCEAN_LUT_NC_FILENAME = "ocean_core_olci_calib_after_aot.nc4";
-
-
-    ///////////////////////////// MERIS ////////////////////////////////////
-
-    public final static double[] MERIS_REF_PRESSURE_LEVELS = {
-            1000., 975., 950., 925., 900., 875., 850., 825., 800., 775.,
-            750., 700., 650., 600., 550., 500., 450., 400., 350., 300.
-    };
 
     final static String[] MERIS_REFL_BAND_NAMES = new String[]{
             "reflectance_13", // 864 nm
@@ -311,7 +299,7 @@ public class TcwvConstants {
     final static double[][] MODIS_LAND_SE = {
             {0.001, 0.0, 0.0, 0.0, 0.0},
             {0.0, 0.001, 0.0, 0.0, 0.0},
-            {0.0, 0.0, 0.012, 0.0, 0.0},
+            {0.0, 0.0,0.012, 0.0, 0.0},
             {0.0, 0.0, 0.0, 0.012, 0.0},
             {0.0, 0.0, 0.0, 0.0, 0.012}
     };
@@ -361,18 +349,6 @@ public class TcwvConstants {
             935.0,
             936.0
     };
-
-    //////////////////////// OLCI ///////////////////////////////////////////////
-
-//    final static double[] OLCI_REF_PRESSURE_LEVELS = {
-//            1000., 950., 925., 900., 850., 800., 700.,
-//            600., 500., 400., 300., 250., 200., 150.,
-//            100., 70., 50., 30., 20., 10., 7., 5., 3., 2., 1.};
-
-    // up to 300hPa is enough for us:
-    public final static double[] OLCI_REF_PRESSURE_LEVELS = {
-            1000., 950., 925., 900., 850., 800., 700.,
-            600., 500., 400., 300.};
 
     final static String[] OLCI_REFL_BAND_NAMES = new String[]{
             "Oa18_reflectance",  // 884 nm
@@ -473,7 +449,7 @@ public class TcwvConstants {
             939.02
     };
 
-    //    final static double[][] SA_LAND = {
+//    final static double[][] SA_LAND = {
 //            {20.0, 0.0, 0.0},
 //            {0.0, 1.0, 0.0},
 //            {0.0, 0.0, 1.0}
