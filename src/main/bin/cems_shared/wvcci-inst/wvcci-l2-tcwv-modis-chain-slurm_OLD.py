@@ -6,8 +6,6 @@ import fnmatch
 
 from calendar import monthrange
 from pmonitor import PMonitor
-from monitor import Monitor
-from job import Job
 
 from pyhdf.SD import SD, SDC
 
@@ -71,15 +69,15 @@ eraInterimRootDir = wvcciRootDir + '/auxiliary/era-interim-t2m-mslp-tcwv-u10-v10
 
 inputs = ['dummy']
 
-# NEW PMonitor version for SLURM, MB/TB Nov 2018:
-mon = Monitor(inputs,
-             'wvcci-l2-tcwv-modis-chain-slurm',
-             [('localhost',32)],
-             [('wvcci-l2-tcwv-modis-step-slurm.sh', 64)],
-             'log',
-             False)
+# NEW PMonitor version, MB/TB Nov 2018:
+# DOES NOT YET WORK WITH SLURM! Same jobs are executed multiple times (20200701). Check!!!
+m = PMonitor(inputs,
+             request='wvcci-l2-tcwv-modis-chain-slurm',
+             logdir='log',
+             hosts=[('localhost',256)],
+             types=[('wvcci-l2-tcwv-modis-step-slurm.sh', 256)],
+             polling="job_status_callback.sh")
 
-print('start...')
 for year in years:
     l1bRootDir = wvcciRootDir + '/L1b/' + sensor
     modisLandMaskRootDir = wvcciRootDir + '/ModisLandMask/' + platformId + '03'
@@ -111,8 +109,7 @@ for year in years:
                             l1bPath = l1bRootDir + '/' + year + '/' + month + '/' + str(day).zfill(2) + '/' + l1bFiles[index]
 
 			    # TEST: do only 1 product, 1030
-                            #if l1bFiles[index].endswith(".hdf") and l1bFiles[index].startswith("MYD021KM.A2016122.1030"):
-                            if l1bFiles[index].endswith(".hdf"):
+                            if l1bFiles[index].endswith(".hdf") and l1bFiles[index].startswith("MYD021KM.A2016122.1030"):
                                 # MODIS only
                                 # MOD021KM or MOD021KM product e.g. MOD021KM.A2015196.1855.061.2017321064215.hdf
                                 dateTimeString = l1bFiles[index][9:22]  # A2015196.1855
@@ -131,12 +128,10 @@ for year in years:
                                         # =============== Merge MODIS L1b with ERA-INTERIM, then TCWV from Idepix-ERA-INTERIM merge product  =======================
 
                                         l1bEraFile = l1bFileBase + '_l1b-era-interim.nc'
+                                        m.execute('wvcci-l2-tcwv-modis-step-slurm.sh',
+                                                  ['dummy'],
+                                                  [l1bEraFile],
+                                                  parameters=[l1bPath,l1bFiles[index],modisCloudMaskPath,sensor,year,month,day,hhmm,wvcciRootDir])
 
-                                        job = Job('test-' + dateTimeString, 'wvcci-l2-tcwv-modis-step-slurm.sh', 
-                                                 ['dummy'], [l1bEraFile], 
-                                                 [l1bPath,l1bFiles[index],modisCloudMaskPath,sensor,year,month,day,hhmm,wvcciRootDir])
-                                        #print('call mon.execute...')
-                                        mon.execute(job)
-
-mon.wait_for_completion()
+m.wait_for_completion()
 

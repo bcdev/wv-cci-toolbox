@@ -236,9 +236,9 @@ class PMonitor(object):
         """
         if async_ == None:
             async_ = self._async if self._async != None else self._polling != None
-        #print '... mutex 2 acquiring'
+        print ('... mutex 2 acquiring')
         with self._mutex:
-            #print '... mutex 2 acquired'
+            print ('... mutex 2 acquired')
             if logprefix is None:
                 logprefix = call[call.rfind('/')+1:]
                 if logprefix.endswith('.sh') or logprefix.endswith('.py'):
@@ -251,7 +251,13 @@ class PMonitor(object):
                     self._counts[o] += 1
                 else:
                     self._counts[o] = 1
-            
+
+            print('self._created: ' + str(self._created))
+            print('self._counts: ' + str(self._counts))
+            print('self._delay: ' + str(self._delay))
+            print('collating: ' + str(collating))
+            print('self._all_inputs_available(inputs): ' + str(self._all_inputs_available(inputs)))            
+            print('self._constraints_fulfilled(request): ' + str(self._constraints_fulfilled(request)))           
             if self._all_inputs_available(inputs) and self._constraints_fulfilled(request):
                 input_paths = self._paths_of(inputs)
                 if collating:
@@ -268,6 +274,7 @@ class PMonitor(object):
                         else:
                             self._created += 1
                             args = [ call, self._created, parameters, input_paths[i:i+1], outputs, None, logprefix, async_ ]
+                            print('calling _process_step from execute(). ')
                             request = threadpool.WorkRequest(self._process_step, args,
                                                              priority=priority, requestID=self._created)
                             for o in outputs:
@@ -285,12 +292,14 @@ class PMonitor(object):
                     request.callable = self._expand_step
                 PMonitor.Args.set_inputs(request.args, inputs)
                 self._backlog.append(request)
-        #print '... mutex 2 released'
+        print ('... mutex 2 released')
 
     def wait_for_completion(self, stop_if_idle=True):
         """
         Waits until all scheduled tasks are run, then returns
         """
+        print('entering wait_for_completion...')
+
         #print '... mutex 3 acquiring'
         with self._mutex:
             #print '... mutex 3 acquired'
@@ -336,6 +345,8 @@ class PMonitor(object):
         """
         Waits until no requests of the listed call types are in backlog, then returns
         """
+        print('entering wait_for_idle...')
+
         if not self._backlog_condition:
             self._backlog_condition = threading.Condition()
             time.sleep(1)
@@ -371,6 +382,8 @@ class PMonitor(object):
         Returns the current load of the task queue, i.e. maximum of the number of queued tasks 
         of some type divided by the capacity for the respective type
         """
+        print('entering current_load...')
+
         max_load = 0
         #print '... mutex 3 acquiring'
         with self._mutex:
@@ -398,6 +411,8 @@ class PMonitor(object):
           bin/meris-l3.sh /home/boe/eodata/MER_WV__2P/v01/2010/01/25 /home/boe/eodata/MER_WV__3P/v01/2010/01/25/meris-l3-daily-25.dat
           #output /home/boe/eodata/MER_WV__3P/v01/2010/01/25/meris-l3-daily-25.dat /home/boe/eodata/MER_WV__3P/v01/2010/01/25/meris-l3-daily-25.dat.real
         """
+        print('entering _maybe_read_report...')
+
         if glob.glob(report_path):
             self._report = open(report_path, 'r+')
             for line in self._report.readlines():
@@ -413,6 +428,8 @@ class PMonitor(object):
 
     def _maybe_read_status(self, status_path):
         """Reads status file containing lines with exernal ID and command line call"""
+        print('entering _read_status...')
+
         if glob.glob(status_path):
             with open(status_path, 'r') as file:
                 for line in file.readlines():
@@ -422,6 +439,8 @@ class PMonitor(object):
                         self._running[command] = external_id
 
     def _write_status(self, with_backlog=False):
+        print('entering _write_status...')
+
         self._status.seek(0)
         #pending = len(self._pool.workRequests) - len(self._running)
         self._status.write('{0} created, {1} running, {2} backlog, {3} processed, {4} failed\n'.\
@@ -463,16 +482,19 @@ class PMonitor(object):
         executes call by os call, scans process stdout for `output=...`
         updates report, maintains products, and schedules mature tasks
         """
+        print('entering _process_step...')
         try:
             if self._script:
                 command = '{0} {1} {2} {3} {4}'.format(self._path_of_call(self._script), call, ' '.join(parameters), ' '.join(inputs), ' '.join(outputs))
             else:
                 command = '{0} {1} {2} {3}'.format(self._path_of_call(call), ' '.join(parameters), ' '.join(inputs), ' '.join(outputs))
             if command in self._commands:
+                print('eins')
                 self._skip_step(call, command, outputs, host)
                 self._observe_step(call, inputs, outputs, parameters, 0)
             elif command in self._running and isinstance(self._running[command], str) and not self._simulation:
                 # async running request, mark as to be inquired
+                print('zwei')
                 self._running[command] = PMonitor.Args(call, task_id, parameters, inputs, outputs, host, log_prefix, async_, external_id=self._running[command])
                 sys.__stdout__.write('reconsidering {0}\n'.format(command))
                 with self._mutex:
@@ -480,6 +502,7 @@ class PMonitor(object):
                     self._check_for_mature_tasks()
                     self._write_status()
             else:
+                print('drei')
                 self._prepare_step(command)
                 output_paths = []
                 if not self._simulation:
@@ -523,6 +546,8 @@ class PMonitor(object):
         """
         Marks outputs of step and schedules mature tasks
         """
+        print('entering _skip_step...')
+
         #print '... mutex 4 acquiring'
         with self._mutex:
             #print '... mutex 4 acquired'
@@ -537,6 +562,8 @@ class PMonitor(object):
         """
         Updates status, selects host and returns it
         """
+        print('entering _prepare_step...')
+
         #print '... mutex 5 acquiring'
         with self._mutex:
             #print '... mutex 5 acquired'
@@ -548,6 +575,8 @@ class PMonitor(object):
         """
         Executes command on host, collects output paths if any, returns exit code
         """
+        print('entering _run_step...')
+
         wd = self._prepare_working_dir(task_id)
         process = PMonitor._start_processor(command, host, wd)
         self._trace_processor_output(output_paths, process, task_id, wd, log_prefix, async_)
@@ -562,6 +591,8 @@ class PMonitor(object):
         releases host and type resources, updates report, schedules mature steps, handles failure
         """
         #print '... mutex 6 acquiring'
+        print('entering _finalise_step...')
+
         with self._mutex:
             #print '... mutex 6 acquired'
             self._release_constraint(call, host, typeOnly=typeOnly)
@@ -581,6 +612,8 @@ class PMonitor(object):
         pass
 
     def _inquire_status(self):
+        print('entering _inquire_status...')
+
         with self._mutex:
             self._retry_timestamp = None
             running = { x:self._running[x] for x in self._running if isinstance(self._running[x], PMonitor.Args) }
@@ -633,6 +666,7 @@ class PMonitor(object):
                     self._release_constraint(args.call, args.host, typeOnly=True)
                     self._running.pop(command)
                     args2 = [ args.call, args.task_id, args.parameters, args.inputs, args.outputs, None, args.log_prefix, args._async ]
+                    print('calling _process_step from _inquire_status. Status: ' + str(status))
                     request = threadpool.WorkRequest(self._process_step, args2,
                                                      priority=1, requestID=args.task_id)
                     self._backlog.append(request)
@@ -643,6 +677,7 @@ class PMonitor(object):
                 self._write_status()
 
     def _retry_pending(self):
+        print('entering _retry_pending... ')
         with self._mutex:
             self._retry_timestamp = None
             running = [ (x,self._running[x])
@@ -666,6 +701,8 @@ class PMonitor(object):
 
     def _prepare_working_dir(self, task_id):
         """Creates working directory in .../cache/request-id/task-id"""
+        print('entering _prepare_working_dir...')
+
         if self._cache is None:
             wd = '.'
         else:
@@ -677,6 +714,8 @@ class PMonitor(object):
     @staticmethod
     def _start_processor(command, host, wd):
         """starts subprocess either locally or via ssh, returns process handle"""
+        print('entering _start_processor...'
+)
         if host == 'localhost':
             cmd = command
         else:
@@ -690,6 +729,8 @@ class PMonitor(object):
         traces processor output, recognises 'output=' lines, writes all lines to trace file in working dir.
         for async calls reads external ID from stdout.
         """
+        print('entering _trace_processor...')
+
         if self._cache is None or self._logdir != '.':
             trace = io.open('{0}/{1}-{2:04d}.out'.format(self._logdir, log_prefix, task_id), mode='w', encoding="utf-8")
         else:
@@ -714,6 +755,8 @@ class PMonitor(object):
         distinguishes collating and non-collating tasks by the callable used
         generates one task per input for non-collating tasks
         """
+        print('entering _check_for_mature_tasks...')
+
         mature_tasks = []
         for task in self._backlog:
             if task.callable == self._process_step or self._all_inputs_available(PMonitor.Args.get_inputs(task.args)):
@@ -741,6 +784,7 @@ class PMonitor(object):
                                 args = [ PMonitor.Args.get_call(task.args), self._created, PMonitor.Args.get_parameters(task.args),
                                          input_paths[i:i+1], PMonitor.Args.get_outputs(task.args),
                                          None, PMonitor.Args.get_log_prefix(task.args), PMonitor.Args.get_async(task.args) ]
+                                print('calling _process_step from _check_for_mature_tasks.')
                                 task = threadpool.WorkRequest(self._process_step, args,
                                                               priority=task.priority, requestID=self._created)
                                 self._counts[PMonitor.Args.get_outputs(task.args)[0]] += 1
@@ -763,6 +807,8 @@ class PMonitor(object):
 
     def _constraints_fulfilled(self, request):
         """looks for host with sufficient capacity and updates host load, type load, and request host"""
+        print('entering _constraints_fulfilled...')
+
         call = PMonitor.Args.get_call(request.args)
         typeConstraint = None
         for type in self._typeConstraints:
@@ -789,6 +835,8 @@ class PMonitor(object):
 
     def _release_constraint(self, call, hostname, typeOnly=False, hostOnly=False):
         """updates host load"""
+        print('entering _release_constraints...')
+
         try:
             if not hostOnly:
                 type = PMonitor._find_by_name(call, self._typeConstraints)
@@ -822,10 +870,15 @@ class PMonitor(object):
         """
         Returns whether all inputs are bound in products map and no one waits for more non-collating tasks to contribute
         """
+        print('entering _all_inputs_available...')
+
         for i in inputs:
+            print('all_inputs_available: ' + str(i) + ', ' + str(self._paths))
             if not i in self._paths:
+                print('eins')
                 return False
             if i in self._counts:
+                print('zwei')
                 return False
         return True
 
@@ -833,6 +886,8 @@ class PMonitor(object):
         """
         Marks initial inputs as being bound, with the path being the same as the name
         """
+        print('entering _mark_inputs...')
+
         for i in inputs:
             if i not in self._paths:
                 self._paths[i] = None
@@ -842,6 +897,8 @@ class PMonitor(object):
         Marks task outputs as being bound, with the paths preliminarily being the same as the names
         count down the count for non-collating outputs
         """
+        print('entering _mark_outputs...')
+
         for o in outputs:
             if o not in self._paths:
                 self._paths[o] = None
@@ -856,6 +913,8 @@ class PMonitor(object):
         """
         Binds outputs in products map to None, a path or a set of paths, maintains report
         """
+        print('entering _report_and_bind_outputs...')
+
         self._mark_outputs(outputs)
         if len(output_paths) == 0:
             pass
