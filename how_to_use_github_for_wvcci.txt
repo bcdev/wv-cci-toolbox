@@ -19,8 +19,10 @@ always when you want to update or commit/push:
 2. git pull -a
 3. cp -p $WVCCI_INST/*.py src/main/bin/cems_shared/wvcci-inst
 4. cp -p $WVCCI_INST/my* src/main/bin/cems_shared/wvcci-inst
-5. cp -p $WVCCI_INST/src/*.py src/main/bin/cems_shared/wvcci-inst/src
-6. cp -p $WVCCI_INST/bin/*sh src/main/bin/cems_shared/wvcci-inst/bin
-7. git add src/main/bin/cems_shared/wvcci-inst
-8. git commit -m "updated JASMIN WVCCI_INST scripts"
-9. git push
+5. cp -p $WVCCI_INST/*.bash src/main/bin/cems_shared/wvcci-inst
+6. cp -p $WVCCI_INST/*.txt src/main/bin/cems_shared/wvcci-inst
+7. cp -p $WVCCI_INST/src/*.py src/main/bin/cems_shared/wvcci-inst/src
+8. cp -p $WVCCI_INST/bin/*sh src/main/bin/cems_shared/wvcci-inst/bin
+9. git add src/main/bin/cems_shared/wvcci-inst
+10. git commit -m "updated JASMIN WVCCI_INST scripts"
+11. git push

@@ -210,7 +210,7 @@ public class TcwvUtils {
         final double[] refPressLevels = sensor == Sensor.MERIS ? TcwvConstants.MERIS_REF_PRESSURE_LEVELS :
                 TcwvConstants.OLCI_REF_PRESSURE_LEVELS;
 
-        double surfaceTemp = atmTempData[0];
+        double surfaceTemp = sensor == Sensor.OLCI ? atmTempData[0] : atmTempData[atmTempData.length - 1];
 
         for (int i = 0; i < atmTempData.length - 1; i++) {
             if (refPressLevels[i] >= surfacePress && refPressLevels[i + 1] < surfacePress) {

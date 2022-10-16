@@ -130,7 +130,8 @@ public class TcwvConstants {
 //    static final String OLCI_OCEAN_LUT_NC_FILENAME = "ocean_core_olci_calib.nc4";
 
     // delivered by RP 20200113:
-    static final String MERIS_LAND_LUT_NC_FILENAME = "land_core_meris_calib_final_arm.nc4";
+//    static final String MERIS_LAND_LUT_NC_FILENAME = "land_core_meris_calib_final_arm.nc4";
+    static final String MERIS_LAND_LUT_NC_FILENAME = "land_core_meris_calib_final_arm_4th_rp_los.nc4";
     static final String MERIS_OCEAN_LUT_NC_FILENAME = "ocean_core_meris_calib_after_aot.nc4";
     static final String MODIS_AQUA_OCEAN_LUT_NC_FILENAME = "ocean_core_modis_terra_calib_after_aot.nc4";
     static final String MODIS_TERRA_OCEAN_LUT_NC_FILENAME = "ocean_core_modis_terra_calib_after_aot.nc4";
