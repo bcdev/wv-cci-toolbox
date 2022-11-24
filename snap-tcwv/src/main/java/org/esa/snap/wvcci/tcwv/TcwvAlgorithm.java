@@ -127,8 +127,8 @@ public class TcwvAlgorithm {
             sa[0][0] = TcwvConstants.SA_OCEAN[0][0];
         }
 
-//        OptimalEstimation oe = new OptimalEstimation(tcwvFunction, a, b, mes, par, jacobiFunction);
-        OptimalEstimation oe = new OptimalEstimation(tcwvFunction, a, b, mes, par, null);  // test!!!
+        OptimalEstimation oe = new OptimalEstimation(tcwvFunction, a, b, mes, par, jacobiFunction);
+//        OptimalEstimation oe = new OptimalEstimation(tcwvFunction, a, b, mes, par, null);  // test: compute NumericalJacobi!!!
 
         return getTcwvResult(a, xa, se, sa, oe, sensor);
     }

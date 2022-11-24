@@ -304,12 +304,14 @@ public class TcwvConstants {
 
     // 'cor' from land_core_meris_calib_arm.nc4, abs band 15
     final static double[][] MERIS_LAND_RECT_CORR = {
-            {0.00060347, 0.956954}   // changed Jan 2020!
+//            {0.00060347, 0.956954}   // changed Jan 2020!
+            {0.00416965, 0.97388918}   // changed Oct 2022, LUT: land_core_meris_calib_final_arm_4th_rp_los.nc4!
     };
 
     // 'cor' from ocean_core_meris_calib.nc4, abs band 15
+    // 'cor' from ocean_core_meris_calib_after_aot.nc4, abs band 15, Oct 2022, same values as before
     final static double[][] MERIS_OCEAN_RECT_CORR = {
-            {-0.0342265, 0.7524297}
+            {-0.0342265066355642, 0.752429745572561}
     };
 
     // cwvl from land_core_meris_calib_arm.nc4, bands 13, 14, 15

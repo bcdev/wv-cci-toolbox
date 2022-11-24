@@ -3,6 +3,7 @@ package org.esa.snap.wvcci.tcwv.oe;
 import Jama.Matrix;
 import org.esa.snap.wvcci.tcwv.TcwvFunction;
 import org.esa.snap.wvcci.tcwv.interpolation.ClippedDifferenceFunction;
+import org.esa.snap.wvcci.tcwv.interpolation.NumericalJacobiFunction;
 import org.esa.snap.wvcci.tcwv.oe.OptimalEstimationUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -91,7 +92,8 @@ public class OptimalEstimationUtilsTest {
         double delta = 0.001;
 
         final ClippedDifferenceFunction fnc = new ClippedDifferenceFunction(a, b, testFunctionLinR2R3, y);
-        double[][] jac = OptimalEstimationUtils.getNumericalJacobi(a, b, x, fnc, null, x.length, y.length, delta);
+        NumericalJacobiFunction numericalJacobiFunction = new NumericalJacobiFunction(a, b, fnc, y, delta);
+        double[][] jac = numericalJacobiFunction.f(x, null);
 
         assertNotNull(jac);
         assertEquals(3, jac.length);
