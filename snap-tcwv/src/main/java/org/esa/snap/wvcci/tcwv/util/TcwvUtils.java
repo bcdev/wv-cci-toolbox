@@ -215,7 +215,11 @@ public class TcwvUtils {
         for (int i = 0; i < atmTempData.length - 1; i++) {
             if (refPressLevels[i] >= surfacePress && refPressLevels[i + 1] < surfacePress) {
                 final double frac = (refPressLevels[i] - surfacePress) / (refPressLevels[i] - refPressLevels[i + 1]);
-                surfaceTemp = atmTempData[i] + frac * (atmTempData[i + 1] - atmTempData[i]);
+//                surfaceTemp = atmTempData[i] + frac * (atmTempData[i + 1] - atmTempData[i]);
+                // this is correct for MERIS:
+                surfaceTemp = atmTempData[atmTempData.length - i - 1] - frac *
+                        (atmTempData[atmTempData.length - i - 1] - atmTempData[atmTempData.length - i -2]);
+                break;
             }
         }
         return surfaceTemp;

@@ -119,12 +119,16 @@ public class TcwvAlgorithm {
         }
 
         double[][] sa = TcwvConstants.SA_LAND;
+        if (sensor == Sensor.MERIS) {
+            sa = TcwvConstants.MERIS_SA_LAND;
+        }
         // RP March 2020:
         if (isCoastline) {
             sa[0][0] = TcwvConstants.SA_OCEAN[0][0];
         }
 
-        OptimalEstimation oe = new OptimalEstimation(tcwvFunction, a, b, mes, par, jacobiFunction);
+//        OptimalEstimation oe = new OptimalEstimation(tcwvFunction, a, b, mes, par, jacobiFunction);
+        OptimalEstimation oe = new OptimalEstimation(tcwvFunction, a, b, mes, par, null);  // test!!!
 
         return getTcwvResult(a, xa, se, sa, oe, sensor);
     }

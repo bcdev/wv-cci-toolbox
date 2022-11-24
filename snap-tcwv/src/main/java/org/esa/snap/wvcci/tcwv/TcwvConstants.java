@@ -148,35 +148,87 @@ public class TcwvConstants {
             750., 700., 650., 600., 550., 500., 450., 400., 350., 300.
     };
 
-    final static String[] MERIS_REFL_BAND_NAMES = new String[]{
-            "reflectance_13", // 864 nm
-            "reflectance_14", // 884 nm
-            "reflectance_15"  // 900 nm
+    final static String[] MERIS_RAD_BAND_NAMES = new String[]{
+            "M13_radiance", // 864 nm
+            "M14_radiance", // 884 nm
+            "M15_radiance"  // 900 nm
     };
 
-    final static String[] MERIS_LAND_REFL_WIN_BAND_NAMES = new String[]{
-            "reflectance_13", // 864 nm
-            "reflectance_14", // 884 nm
+    final static String[] MERIS_LAND_RAD_WIN_BAND_NAMES = new String[]{
+            "M13_radiance", // 864 nm
+            "M14_radiance", // 884 nm
     };
 
-    final static String[] MERIS_LAND_REFL_ABS_BAND_NAMES = new String[]{
-            "reflectance_15"  // 900 nm
+    final static String[] MERIS_LAND_RAD_ABS_BAND_NAMES = new String[]{
+            "M15_radiance"  // 900 nm
     };
 
-    final static String[] MERIS_OCEAN_REFL_WIN_BAND_NAMES = new String[]{
-            "reflectance_13", // 864 nm
-            "reflectance_14", // 884 nm
+    final static String[] MERIS_OCEAN_RAD_WIN_BAND_NAMES = new String[]{
+            "M13_radiance", // 864 nm
+            "M14_radiance", // 884 nm
     };
 
-    final static String[] MERIS_OCEAN_REFL_ABS_BAND_NAMES = new String[]{
-            "reflectance_15"  // 900 nm
+    final static String[] MERIS_OCEAN_RAD_ABS_BAND_NAMES = new String[]{
+            "M15_radiance"  // 900 nm
     };
 
-    final static String MERIS_ALTITUDE_BAND_NAME = "dem_alt";
+    final static String[] MERIS_FLUX_BAND_NAMES = new String[]{
+            "solar_flux_band_13", // 864 nm
+            "solar_flux_band_14", // 884 nm
+            "solar_flux_band_15"  // 900 nm
+    };
+
+    final static String[] MERIS_LAND_FLUX_WIN_BAND_NAMES = new String[]{
+            "solar_flux_band_13", // 864 nm
+            "solar_flux_band_14", // 884 nm
+    };
+
+    final static String[] MERIS_LAND_FLUX_ABS_BAND_NAMES = new String[]{
+            "solar_flux_band_15"  // 900 nm
+    };
+
+    final static String[] MERIS_OCEAN_FLUX_WIN_BAND_NAMES = new String[]{
+            "solar_flux_band_13", // 864 nm
+            "solar_flux_band_14", // 884 nm
+    };
+
+    final static String[] MERIS_OCEAN_FLUX_ABS_BAND_NAMES = new String[]{
+            "solar_flux_band_15"  // 900 nm
+    };
+
+//    final static String[] MERIS_REFL_BAND_NAMES = new String[]{
+//            "reflectance_13", // 864 nm
+//            "reflectance_14", // 884 nm
+//            "reflectance_15"  // 900 nm
+//    };
+//
+//    final static String[] MERIS_LAND_REFL_WIN_BAND_NAMES = new String[]{
+//            "reflectance_13", // 864 nm
+//            "reflectance_14", // 884 nm
+//    };
+//
+//    final static String[] MERIS_LAND_REFL_ABS_BAND_NAMES = new String[]{
+//            "reflectance_15"  // 900 nm
+//    };
+//
+//    final static String[] MERIS_OCEAN_REFL_WIN_BAND_NAMES = new String[]{
+//            "reflectance_13", // 864 nm
+//            "reflectance_14", // 884 nm
+//    };
+//
+//    final static String[] MERIS_OCEAN_REFL_ABS_BAND_NAMES = new String[]{
+//            "reflectance_15"  // 900 nm
+//    };
+
+
+    //    final static String MERIS_ALTITUDE_BAND_NAME = "dem_alt";
+    final static String MERIS_ALTITUDE_BAND_NAME = "altitude";
     final static String MERIS_SLP_BAND_NAME = "atm_press";
 
-    final static String MERIS_MIN_COAST_NORM_RAD_BAND_NAME = "reflectance_14";
+//    final static String MERIS_MIN_COAST_NORM_RAD_BAND_NAME = "reflectance_14";
+    final static String MERIS_MIN_COAST_NORM_RAD_BAND_NAME = "M14_radiance";
     final static double MERIS_MIN_COAST_NORM_RAD_VALUE = 0.005;
+    final static String MERIS_MIN_COAST_FLUX_BAND_NAME = "solar_flux_band_14";
 
     final static String[] MERIS_TPG_NAMES = new String[]{
             "sun_zenith",
@@ -204,15 +256,29 @@ public class TcwvConstants {
 //    };
 
     // RP 20200316 (see debug_meris_breadboard). Only used for initialisation, then reset with SNR (see code):
+//    final static double[][] MERIS_LAND_SE = {
+//            {1.11111111e-05, 0.0, 0.0},
+//            {0.0, 1.11111111e-05, 0.0},
+//            {0.0, 0.0, 4.25299710e-03}
+//    };
+    // phase 2:
     final static double[][] MERIS_LAND_SE = {
-            {1.11111111e-05, 0.0, 0.0},
-            {0.0, 1.11111111e-05, 0.0},
-            {0.0, 0.0, 4.25299710e-03}
+            {20.0, 0.0, 0.0},
+            {0.0, 0.005, 0.0},
+            {0.0, 0.0, 0.005}
+    };
+    // todo clarify
+    final static double[][] MERIS_SA_LAND = {
+            {20.0, 0.0, 0.0},
+            {0.0, 0.005, 0.0},
+            {0.0, 0.0, 0.005}
     };
 
 
-    final static double MERIS_LAND_SNR = 300.0;
-    final static double[] MERIS_LAND_INTERPOL_ERROR = {0.01};
+//    final static double MERIS_LAND_SNR = 300.0;
+    final static double MERIS_LAND_SNR = 500.0;  // phase 2
+//    final static double[] MERIS_LAND_INTERPOL_ERROR = {0.01};
+    final static double[] MERIS_LAND_INTERPOL_ERROR = {0.005};
 
     //    final static double[][] MERIS_OCEAN_SE = {
 //            {0.0001, 0.0, 0.0},
@@ -221,10 +287,16 @@ public class TcwvConstants {
 //    };
     // 4% of 0.05 for bands 13, 14; 4% of 0.05 for band 15
     // Based on rough estimates from histograms in an ocean subset!
+//    final static double[][] MERIS_OCEAN_SE = {
+//            {0.002, 0.0, 0.0},
+//            {0.0, 0.002, 0.0},
+//            {0.0, 0.0, 0.002}
+//    };
+    // phase 2:
     final static double[][] MERIS_OCEAN_SE = {
-            {0.002, 0.0, 0.0},
-            {0.0, 0.002, 0.0},
-            {0.0, 0.0, 0.002}
+            {5.0, 0.0, 0.0},
+            {0.0, 1.0, 0.0},
+            {0.0, 0.0, 25.0}
     };
 
     final static double MERIS_OCEAN_SNR = 100.0;

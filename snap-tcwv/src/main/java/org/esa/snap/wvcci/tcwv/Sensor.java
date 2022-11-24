@@ -9,15 +9,26 @@ import static org.esa.snap.wvcci.tcwv.TcwvConstants.*;
  */
 public enum Sensor {
     MERIS("MERIS",
-            MERIS_REFL_BAND_NAMES,
-            MERIS_LAND_REFL_WIN_BAND_NAMES,
-            MERIS_LAND_REFL_ABS_BAND_NAMES,
-            MERIS_OCEAN_REFL_WIN_BAND_NAMES,
-            MERIS_OCEAN_REFL_ABS_BAND_NAMES,
+            MERIS_RAD_BAND_NAMES,
+            MERIS_LAND_RAD_WIN_BAND_NAMES,
+            MERIS_LAND_RAD_ABS_BAND_NAMES,
+            MERIS_OCEAN_RAD_WIN_BAND_NAMES,
+            MERIS_OCEAN_RAD_ABS_BAND_NAMES,
+            MERIS_FLUX_BAND_NAMES,
+            MERIS_LAND_FLUX_WIN_BAND_NAMES,
+            MERIS_LAND_FLUX_ABS_BAND_NAMES,
+            MERIS_OCEAN_FLUX_WIN_BAND_NAMES,
+            MERIS_OCEAN_FLUX_ABS_BAND_NAMES,
+//            MERIS_REFL_BAND_NAMES,
+//            MERIS_LAND_REFL_WIN_BAND_NAMES,
+//            MERIS_LAND_REFL_ABS_BAND_NAMES,
+//            MERIS_OCEAN_REFL_WIN_BAND_NAMES,
+//            MERIS_OCEAN_REFL_ABS_BAND_NAMES,
             MERIS_ALTITUDE_BAND_NAME,
             MERIS_SLP_BAND_NAME,
             MERIS_MIN_COAST_NORM_RAD_BAND_NAME,
             MERIS_MIN_COAST_NORM_RAD_VALUE,
+            MERIS_MIN_COAST_FLUX_BAND_NAME,
             MERIS_TPG_NAMES,
             MERIS_OCEAN_LUT_NC_FILENAME,
             MERIS_LAND_LUT_NC_FILENAME,
@@ -36,10 +47,16 @@ public enum Sensor {
             MODIS_LAND_REFL_ABS_BAND_NAMES,
             MODIS_OCEAN_REFL_WIN_BAND_NAMES,
             MODIS_OCEAN_REFL_ABS_BAND_NAMES,
+            null,
+            null,
+            null,
+            null,
+            null,
             MODIS_ALTITUDE_BAND_NAME,
             null,
             MODIS_MIN_COAST_NORM_RAD_BAND_NAME,
             MODIS_MIN_COAST_NORM_RAD_VALUE,
+            null,
             MODIS_TPG_NAMES,
             MODIS_TERRA_OCEAN_LUT_NC_FILENAME,
             MODIS_TERRA_LAND_LUT_NC_FILENAME,
@@ -58,10 +75,16 @@ public enum Sensor {
             MODIS_LAND_REFL_ABS_BAND_NAMES,
             MODIS_OCEAN_REFL_WIN_BAND_NAMES,
             MODIS_OCEAN_REFL_ABS_BAND_NAMES,
+            null,
+            null,
+            null,
+            null,
+            null,
             MODIS_ALTITUDE_BAND_NAME,
             null,
             MODIS_MIN_COAST_NORM_RAD_BAND_NAME,
             MODIS_MIN_COAST_NORM_RAD_VALUE,
+            null,
             MODIS_TPG_NAMES,
             MODIS_AQUA_OCEAN_LUT_NC_FILENAME,
             MODIS_AQUA_LAND_LUT_NC_FILENAME,
@@ -80,10 +103,16 @@ public enum Sensor {
             OLCI_LAND_REFL_ABS_BAND_NAMES,
             OLCI_OCEAN_REFL_WIN_BAND_NAMES,
             OLCI_OCEAN_REFL_ABS_BAND_NAMES,
+            null,
+            null,
+            null,
+            null,
+            null,
             OLCI_ALTITUDE_BAND_NAME,
             OLCI_SLP_BAND_NAME,
             OLCI_MIN_COAST_NORM_RAD_BAND_NAME,
             OLCI_MIN_COAST_NORM_RAD_VALUE,
+            null,
             OLCI_TPG_NAMES,
             OLCI_OCEAN_LUT_NC_FILENAME,
             OLCI_LAND_LUT_NC_FILENAME,
@@ -103,10 +132,16 @@ public enum Sensor {
     private String[] landAbsBandNames;
     private String[] oceanWinBandNames;
     private String[] oceanAbsBandNames;
+    private String[] fluxBandNames;
+    private String[] landFluxWinBandNames;
+    private String[] landFluxAbsBandNames;
+    private String[] oceanFluxWinBandNames;
+    private String[] oceanFluxAbsBandNames;
     private String altitudeBandName;
     private String slpBandName;
     private String minCoastNormRadBandName;
     private double minCoastNormRadValue;
+    private String minCoastFluxBandName;
     private String[] tpgNames;
     private String oceanLutName;
     private String landLutName;
@@ -120,13 +155,22 @@ public enum Sensor {
     private double[] oceanInterpolError;
     private double[] cwvlRectCorr;
 
-    Sensor(String name, String[] reflBandNames,
-           String[] landWinBandNames, String[] landAbsBandNames,
-           String[] oceanWinBandNames, String[] oceanAbsBandNames,
+    Sensor(String name,
+           String[] reflBandNames,
+           String[] landWinBandNames,
+           String[] landAbsBandNames,
+           String[] oceanWinBandNames,
+           String[] oceanAbsBandNames,
+           String[] fluxBandNames,
+           String[] landFluxWinBandNames,
+           String[] landFluxAbsBandNames,
+           String[] oceanFluxWinBandNames,
+           String[] oceanFluxAbsBandNames,
            String altitudeBandName,
            String slpBandName,
            String minCoastNormRadBandName,
            double minCoastNormRadValue,
+           String minCoastFluxBandName,
            String[] tpgNames,
            String oceanLutName, String landLutName, double[][] landSe, double[][] oceanSe,
            double[][] landRectCorr, double[][] oceanRectCorr,
@@ -139,10 +183,16 @@ public enum Sensor {
         this.landAbsBandNames = landAbsBandNames;
         this.oceanWinBandNames = oceanWinBandNames;
         this.oceanAbsBandNames = oceanAbsBandNames;
+        this.fluxBandNames = fluxBandNames;
+        this.landFluxWinBandNames = landFluxWinBandNames;
+        this.landFluxAbsBandNames = landFluxAbsBandNames;
+        this.oceanFluxWinBandNames = oceanFluxWinBandNames;
+        this.oceanFluxAbsBandNames = oceanFluxAbsBandNames;
         this.altitudeBandName = altitudeBandName;
         this.slpBandName = slpBandName;
         this.minCoastNormRadBandName = minCoastNormRadBandName;
         this.minCoastNormRadValue = minCoastNormRadValue;
+        this.minCoastFluxBandName = minCoastFluxBandName;
         this.tpgNames = tpgNames;
         this.oceanLutName = oceanLutName;
         this.landLutName = landLutName;
@@ -179,6 +229,26 @@ public enum Sensor {
 
     public String[] getOceanAbsBandNames() {
         return oceanAbsBandNames;
+    }
+
+    public String[] getFluxBandNames() {
+        return fluxBandNames;
+    }
+
+    public String[] getLandFluxWinBandNames() {
+        return landFluxWinBandNames;
+    }
+
+    public String[] getLandFluxAbsBandNames() {
+        return landFluxAbsBandNames;
+    }
+
+    public String[] getOceanFluxWinBandNames() {
+        return oceanFluxWinBandNames;
+    }
+
+    public String[] getOceanFluxAbsBandNames() {
+        return oceanFluxAbsBandNames;
     }
 
     public String getAltitudeBandName() {
