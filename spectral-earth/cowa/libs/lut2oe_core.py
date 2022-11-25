@@ -158,7 +158,7 @@ def inverse_batch(inn):
         #out = inn*0.
     #return out
 
-@njit(cache=NBCACHE, fastmath=FASTMATH, nogil=NOGIL)
+# @njit(cache=NBCACHE, fastmath=FASTMATH, nogil=NOGIL)
 def check_increment(ix, sri, eps):
     """
     see Rodgers for details...
@@ -171,7 +171,7 @@ def check_increment(ix, sri, eps):
     conv =  nbnorm(ix,sri)
     return conv  < (eps * ix.size)
 
-@njit(cache=NBCACHE, fastmath=FASTMATH, nogil=NOGIL)
+# @njit(cache=NBCACHE, fastmath=FASTMATH, nogil=NOGIL)
 def check_increment_batch(ix, sri, eps):
     conv =  np.zeros(ix.shape[0])
     for i in range(ix.shape[0]):
@@ -376,7 +376,8 @@ def internal_optimizer(y, xa, fg, sei, sai, se, sa, eps, maxiter,
     #func = forward
     if clip is True:
         def func(x,p):
-            return forward(x.clip(ll,ul),p)
+            xclip = x.clip(ll, ul)
+            return forward(xclip, p)
     else:
         func = forward
     #import inspect

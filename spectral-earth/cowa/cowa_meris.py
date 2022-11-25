@@ -4,6 +4,7 @@ import numpy as np
 
 from  .libs import  cowa_core
 from  .libs import  cowa_meris_io
+from  .libs import  cowa_meris_io_nc
 
 about_me = cowa_core.about_me()
 about_me['scriptname'] = __file__

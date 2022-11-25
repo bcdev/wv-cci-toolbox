@@ -1,0 +1,86 @@
+- meris_processor.py --> def doit()
+	# erg_land  = cowa_land_processor.inverse(**data_land)
+
+--> lut2oe.py --> def lut2oe --> def func_inverse (l. 458)
+	# result = RESULT(...)
+	
+--> lut2oe_core.py --> def internal_optimizer (l. 355)
+	# kk, kp, yn = func(xn, param) (l. 416)
+	
+--> lut2oe_core.py --> def internal_optimizer (l. 379)
+	# return forward(xclip, p)
+	
+--> lut2oe.py --> def lut2oe --> def forward (l. 368)
+	# j, r = generic_forward(inp)
+	
+--> lut2oe.py --> def lut2func --> def function (l. 272)
+	# woo = FUNCTION(wo) with:
+		$$ woo[0] = axes_int[0](wo.T[0]) with axes_int[0] = generate_interpol_to_index_batch(
+		                                                        x=wo.T[0], xx=np.array([0.70710678 2.44948974 4.47213595 6.4807407  8.66025404]))
+		$$ woo[1] = axes_int[1](wo.T[1]) with axes_int[1] = generate_interpol_to_index_batch(
+		                                                        x=wo.T[1], xx=np.array([0.001, 0.01, 0.1, 0.3, 1.]
+		$$ ...
+		$$ woo[8] = axes_int[8](wo.T[8]) with axes_int[8] = generate_interpol_to_index_batch(
+		                                                        x=wo.T[8], xx=np.array([ 0., 18.88979912, 37.05080032, 55.20589828, 73.35949707])
+																																														
+	# out = itps_jaco(woo)
+	
+--> interpolators_pupy_numba.py --> def generate_itp_pn_jac_parallel --> def function_itp_np_j_bp (l. 621)
+	# jobs=[(_function_itp_np_j_b,[wo[ch*i:ch*(i+1)],i],{}) for i in range(nj+1)]
+	
+--> interpolators_pupy_numba.py --> def generate_itp_pn_jac_parallel --> def _function_itp_np_j_b (l. 604)
+	# _jac, _itp, pos = interpol_npn_jac(wo[i], put, sha, exx, mul)
+
+--> interpolators_pupy_numba.py --> def interpol_npn_jac (l. 238)
+	# coor = find_hypercube(wo, sh, nn) --> l. 57
+	# dist = calc_dist(wo, coor, nn, tol=1.e-7) --> l. 69
+	
+	
+	
+Test inputs/results:
+
+--> disable @njit for debugging!
+
+- calc_dist: 
+	# input: 
+		## wo: np.array([2.36620042, 2.59394603, 2.59716579, 2.5, 0.64709991, 1.47439961, 4.89195506, 0.07208584, 1.4860903])
+		## coor: np.array([[2 3], [2 3], [2 3], [2 3], [0 1], [1 2], [4 5], [0 1], [1 2]])
+		## nn: 9
+		## tol=1.E-7
+	# result:
+		## array = {NdArrayItemsContainer} <pydevd_plugins.extensions.types.pydevd_plugin_numpy_types.NdArrayItemsContainer object at 0x0000020437788760>
+			 0 = {ndarray: (2,)} [0.63379958 0.36620042]
+			 1 = {ndarray: (2,)} [0.40605397 0.59394603]
+			 2 = {ndarray: (2,)} [0.40283421 0.59716579]
+			 3 = {ndarray: (2,)} [0.5 0.5]
+			 4 = {ndarray: (2,)} [0.35290009 0.64709991]
+			 5 = {ndarray: (2,)} [0.52560039 0.47439961]
+			 6 = {ndarray: (2,)} [0.10804494 0.89195506]
+			 7 = {ndarray: (2,)} [0.92791416 0.07208584]
+			 8 = {ndarray: (2,)} [0.5139097 0.4860903]
+			 
+- find_hypercube:
+	# input:
+		## wo: np.array([2.36620042, 2.59394603, 2.59716579, 2.5, 0.64709991, 1.47439961, 4.89195506, 0.07208584, 1.4860903])
+		## sh: np.array([5 5 5 5 3 3 6 5 5])
+		## nn: 9
+	# result: coor: np.array([[2 3], [2 3], [2 3], [2 3], [0 1], [1 2], [4 5], [0 1], [1 2]])
+	
+- interpol_npn_jac:
+	# input:
+		## wo: np.array([2.36620042, 2.59394603, 2.59716579, 2.5, 0.64709991, 1.47439961, 4.89195506, 0.07208584, 1.4860903])
+		## lut: np.array([[ 0.00216999  0.00200539 -0.00123454], [ 0.00205734  0.00190109 -0.00128092], [ 0.00177471  0.0016391  -0.00143658], 
+				 [ 0.00141689  0.0013064  -0.00186528], [ 0.00109433  0.00100492 -0.00295225]])
+		## sh: np.array([5, 5, 5, 5, 3, 3, 6, 5, 5])
+		## ex: 3
+		## mul: np.array([168750, 33750, 6750, 1350, 450, 150, 25, 5, 1])
+	# result:
+		## jaco: array = {NdArrayItemsContainer} <pydevd_plugins.extensions.types.pydevd_plugin_numpy_types.NdArrayItemsContainer object at 0x0000020437770310>
+					 0 = {ndarray: (9,)} [-0.09472656 -0.06494141 -0.05639648  0.02734375 -0.02954102 -0.10620117,  0.05102539 -0.06640625  0.27050781]
+					 1 = {ndarray: (9,)} [-0.09375    -0.05664062 -0.02575684 -0.05444336  0.02233887  0.00317383,  0.14123535 -0.05078125  0.47070312]
+					 2 = {ndarray: (9,)} [ 0.3046875   0.25195312  0.09375    -0.15087891  0.30957031 -0.2734375,  0.63671875 -0.3984375  -1.76464844]
+		## out: np.array([0.00109433, 0.00100492, -0.00295225])
+		## coor: np.array([[2 3], [2 3], [2 3], [2 3], [0 1], [1 2], [4 5], [0 1], [1 2]])
+				 
+				 
+				 
