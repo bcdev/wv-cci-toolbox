@@ -69,6 +69,7 @@ def doit():
         l2_name = sys.argv[3]
 
     if l1_name.endswith('SEN3'):
+        print('input is SAFE format...')
         # 2. check l1 l2
         # requires L2!
         cowa.cowa_meris_io.check_if_files_exists(l1_name,l2_name)
@@ -77,6 +78,7 @@ def doit():
         # 3. get and prepare  all necessary data
         data = cowa.cowa_meris_io.get_relevant_l1l2_data(l1_name, l2_name,DEMO_CONFIG)
     else:
+        print('input is NetCDF format...')
         cowa.cowa_meris_io_nc.check_if_files_exists(l1_name)
         ds_l1 = Dataset(l1_name)
         ds_l2 = None
