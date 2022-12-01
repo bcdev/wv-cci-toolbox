@@ -84,12 +84,18 @@ def doit():
         ds_l2 = None
         if not l2_name is None:
             ds_l2 = Dataset(l2_name)
+        print('call get_relevant_l1l2_data...')
         data = cowa.cowa_meris_io_nc.get_relevant_l1l2_data(ds_l1, ds_l2,DEMO_CONFIG, cmi=True)
+        print('back from get_relevant_l1l2_data.')
 
     #print(data.keys())
-    #return 
-    data_land = cowa_land_processor.prepare_processing(data,DEMO_CONFIG,target = 'land')  
-    data_ocean = cowa_ocean_processor.prepare_processing(data,DEMO_CONFIG,target = 'ocean')  
+    #return
+    print('call prepare_processing land...')
+    data_land = cowa_land_processor.prepare_processing(data,DEMO_CONFIG,target = 'land')
+    print('back from prepare_processing land.')
+    print('call prepare_processing ocean...')
+    data_ocean = cowa_ocean_processor.prepare_processing(data,DEMO_CONFIG,target = 'ocean')
+    print('back from prepare_processing ocean.')
     data_land['eps'] = float(cowa_land_processor.config['INTERNAL']['eps'])
     data_land['maxiter'] = int(cowa_land_processor.config['INTERNAL']['maxiter'])
     data_land['progress']=True
@@ -110,11 +116,16 @@ def doit():
     #print(data['rad'].keys()) 
     #return
     if data_land['yy'].shape[0] > 0 and data_land['yy'].shape[1] > 0:
+        print('call inverse land...')
         erg_land  = cowa_land_processor.inverse(**data_land)
+        print('back from inverse land.')
     if data_ocean['yy'].shape[0] > 0 and data_ocean['yy'].shape[1] > 0:
+        print('call inverse ocean...')
         erg_ocean  = cowa_ocean_processor.inverse(**data_ocean)
+        print('back from inverse ocean.')
     
-#    4. select relevant fields 
+#    4. select relevant fields
+    print('prepare out...')
     out = OD()
 
     # if data_land['yy'].shape[0] > 0 and data_land['yy'].shape[1] > 0:

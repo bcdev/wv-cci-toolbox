@@ -210,12 +210,12 @@ def interpolate_tie_profile(inn, al, ac):
 #         al = ds.al_subsampling_factor
 #     return masked2filled(interpolate_tie(lat, al, ac)[::st[0], ::st[1]])
 
-def get_pressure(ds, st=(1, 1)):
+def get_pressure(ds, ac, al, st=(1, 1)):
     prs = ds.variables['sea_level_pressure'][:] * 1.
     # ac = ds.ac_subsampling_factor
     # al = ds.al_subsampling_factor
-    # return masked2filled(interpolate_tie(prs, al, ac)[::st[0], ::st[1]])
-    return masked2filled(prs[::st[0], ::st[1]])
+    return masked2filled(interpolate_tie(prs, al, ac)[::st[0], ::st[1]])
+    # return masked2filled(prs[::st[0], ::st[1]])
 
 
 # def get_temperature(ff, st=(1, 1)):
@@ -230,7 +230,7 @@ def get_pressure(ds, st=(1, 1)):
 #         al = ds.al_subsampling_factor
 #     return masked2filled(interpolate_tie(tmp, al, ac)[::st[0], ::st[1]])
 
-def get_temperature(ds, st=(1, 1)):
+def get_temperature(ds, ac, al, st=(1, 1)):
     # this is just the tenmperatur at the lowest
     # pressure profile, wich could be below
     # the surface. Use get_surf_temperature
@@ -240,8 +240,8 @@ def get_temperature(ds, st=(1, 1)):
     # tmp=ds.variables['atmospheric_temperature_profile'][:,:,0].squeeze()*1.
     # ac = ds.ac_subsampling_factor
     # al = ds.al_subsampling_factor
-    # return masked2filled(interpolate_tie(tmp, al, ac)[::st[0], ::st[1]])
-    return masked2filled(tmp[::st[0], ::st[1]])
+    return masked2filled(interpolate_tie(tmp, al, ac)[::st[0], ::st[1]])
+    # return masked2filled(tmp[::st[0], ::st[1]])
 
 
 # def get_wind(ff, st=(1, 1)):
@@ -251,14 +251,15 @@ def get_temperature(ds, st=(1, 1)):
 #         al = ds.al_subsampling_factor
 #     return masked2filled(interpolate_tie(wsp, al, ac)[::st[0], ::st[1]])
 
-def get_wind(ds, st=(1, 1)):
-    wsp_comp = np.empty((ds.dimensions['y'].size, ds.dimensions['x'].size, 2))
+def get_wind(ds, ac, al, st=(1, 1)):
+    wsp_comp = np.empty((ds.dimensions['tp_y'].size, ds.dimensions['tp_x'].size, 2))
     for k in range(2):
         variable = 'horizontal_wind_vector_' + str(k+1)
         wsp_comp[:, :, k] = (ds.variables[variable][:, :]) * 1.
 
     wsp = (wsp_comp[:, :, :] ** 2).sum(axis=2) ** 0.5
-    return masked2filled(wsp[::st[0], ::st[1]])
+    return masked2filled(interpolate_tie(wsp, al, ac)[::st[0], ::st[1]])
+    # return masked2filled(wsp[::st[0], ::st[1]])
 
 
 # def get_tcw(ff, st=(1, 1)):
@@ -268,12 +269,12 @@ def get_wind(ds, st=(1, 1)):
 #         al = ds.al_subsampling_factor
 #     return masked2filled(interpolate_tie(tcw, al, ac)[::st[0], ::st[1]])
 
-def get_tcw(ds, st=(1, 1)):
+def get_tcw(ds, ac, al, st=(1, 1)):
     tcw = ds.variables['total_columnar_water_vapour'][:] * 1
     # ac = ds.ac_subsampling_factor
     # al = ds.al_subsampling_factor
-    # return masked2filled(interpolate_tie(tcw, al, ac)[::st[0], ::st[1]])
-    return masked2filled(tcw[::st[0], ::st[1]])
+    return masked2filled(interpolate_tie(tcw, al, ac)[::st[0], ::st[1]])
+    # return masked2filled(tcw[::st[0], ::st[1]])
 
 
 # def get_lsmask(ff, st=(1, 1)):
@@ -309,13 +310,13 @@ def get_band_saturation(ds, bn, st=(1, 1)):
 #         al = ds.al_subsampling_factor
 #     return masked2filled(interpolate_tie(lat, al, ac)[::st[0], ::st[1]])
 
-def get_latitude(ds, st=(1, 1)):
+def get_latitude(ds, ac, al, st=(1, 1)):
     ## assumes FR dataset
     lat = ds.variables['latitude'][:] * 1.
     # ac = ds.ac_subsampling_factor
     # al = ds.al_subsampling_factor
-    # return masked2filled(interpolate_tie(lat, al, ac)[::st[0], ::st[1]])
-    return masked2filled(lat[::st[0], ::st[1]])
+    return masked2filled(interpolate_tie(lat, al, ac)[::st[0], ::st[1]])
+    # return masked2filled(lat[::st[0], ::st[1]])
 
 
 # def get_longitude(ff, st=(1, 1)):
@@ -330,17 +331,17 @@ def get_latitude(ds, st=(1, 1)):
 #     im_out = interpolate_tie(im, al, ac)[::st[0], ::st[1]]
 #     return masked2filled(np.arctan2(re_out, im_out) * 180. / np.pi)
 
-def get_longitude(ds, st=(1, 1)):
+def get_longitude(ds, ac, al, st=(1, 1)):
     ## assumes FR dataset
     lon = ds.variables['longitude'][:] * 1.
     # ac = ds.ac_subsampling_factor
     # al = ds.al_subsampling_factor
     re = np.sin(lon * np.pi / 180.)
     im = np.cos(lon * np.pi / 180.)
-    # re_out = interpolate_tie(re, al, ac)[::st[0], ::st[1]]
-    # im_out = interpolate_tie(im, al, ac)[::st[0], ::st[1]]
-    re_out = re
-    im_out = im
+    re_out = interpolate_tie(re, al, ac)[::st[0], ::st[1]]
+    im_out = interpolate_tie(im, al, ac)[::st[0], ::st[1]]
+    # re_out = re
+    # im_out = im
     return masked2filled(np.arctan2(re_out, im_out) * 180. / np.pi)
 
 
@@ -355,7 +356,7 @@ def get_longitude(ds, st=(1, 1)):
 #     out['ADA'] = azi2azid(out['SAA'], out['OAA'])
 #     return out
 
-def get_geometry(ds, st=(1, 1)):
+def get_geometry(ds, ac, al, st=(1, 1)):
     out = {}
     # ac = ds.ac_subsampling_factor
     # al = ds.al_subsampling_factor
@@ -371,9 +372,9 @@ def get_geometry(ds, st=(1, 1)):
         if k == 'OAA' or k == 'view_azimuth':
             out['OAA'] = ds.variables[k][:] * 1.
     for k in out:
-        # out[k] = masked2filled(interpolate_tie(out[k], al, ac)[::st[0], ::st[1]])
-        print('k = ' + k)
-        out[k] = masked2filled(out[k][::st[0], ::st[1]])
+        out[k] = masked2filled(interpolate_tie(out[k], al, ac)[::st[0], ::st[1]])
+        # print('k = ' + k)
+        # out[k] = masked2filled(out[k][::st[0], ::st[1]])
     out['ADA'] = azi2azid(out['SAA'], out['OAA'])
 
     # for k in ds.variables:
@@ -447,11 +448,11 @@ def add_cloud_margin(cm, b=2):
     return out
 
 
-def get_surf_temperature(s3, st=(1, 1)):
-    tmp = get_temperature_profile(s3, st)
+def get_surf_temperature(s3, ac, al, st=(1, 1)):
+    tmp = get_temperature_profile(s3, ac, al, st)
     plv = get_pressure_profile(s3, st)
     alt = get_altitude(s3, st)
-    slp = get_pressure(s3, st)
+    slp = get_pressure(s3, ac, al, st)
     prs = height2press(alt.clip(0), slp)
     stm = np.zeros_like(alt, dtype=np.float32)
     if plv[0] < plv[1]:  # Merislike
@@ -676,7 +677,7 @@ def get_idepix_cloudmask(ds, st=(1, 1)):
         bit = flagbits[fn]
         return test_bit(flg, bit)
 
-    out = tb('IDEPIX_CLOUD') | tb('IDEPIX_CLOUD_AMBIGUOUS') | tb('IDEPIX_CLOUD_BUFFER') | tb('IDEPIX_CLOUD_SURE')
+    out = tb('IDEPIX_INVALID') | tb('IDEPIX_CLOUD') | tb('IDEPIX_CLOUD_AMBIGUOUS') | tb('IDEPIX_CLOUD_BUFFER') | tb('IDEPIX_CLOUD_SURE') | tb('IDEPIX_GLINT_RISK')
     return out
 
 
@@ -743,16 +744,16 @@ def get_corner(ds, st=(1, 1)):
 #     # return out[::st[0], ::st[1], :]
 #     return tie[::st[0], ::st[1], :]
 
-def get_temperature_profile(ds, st=(1, 1)):
-    tie = np.empty((ds.dimensions['y'].size, ds.dimensions['x'].size, 20))
+def get_temperature_profile(ds, ac, al, st=(1, 1)):
+    tie = np.empty((ds.dimensions['tp_y'].size, ds.dimensions['tp_x'].size, 20))
     for k in range(20):
         variable = 'atmospheric_temperature_profile_pressure_level_' + str(k+1)
         tie[:, :, k] = (ds.variables[variable][:, :]) * 1.
     # ac = ds.ac_subsampling_factor
     # al = ds.al_subsampling_factor
-    # out = interpolate_tie_profile(tie, al, ac)
-    # return out[::st[0], ::st[1], :]
-    return tie[::st[0], ::st[1], :]
+    out = interpolate_tie_profile(tie, al, ac)
+    return out[::st[0], ::st[1], :]
+    # return tie[::st[0], ::st[1], :]
 
 
 
@@ -830,15 +831,17 @@ def get_relevant_l1l2_data(ds_l1, ds_l2, config, cmi=False, bnds=[13, 14, 15, ])
     stride = config['PROCESSING']['stride']
     # l2_lon = get_longitude(oll2,stride)
     # l2_lat = get_latitude(oll2,stride)
-    l1_lon = get_longitude(ds_l1, stride)
-    l1_lat = get_latitude(ds_l1, stride)
+    ac_subsampling_factor = int(np.round(ds_l1.dimensions['x'].size / ds_l1.dimensions['tp_x'].size))
+    al_subsampling_factor = int(np.round(ds_l1.dimensions['y'].size / ds_l1.dimensions['tp_y'].size))
+    l1_lon = get_longitude(ds_l1, ac_subsampling_factor, al_subsampling_factor, stride)
+    l1_lat = get_latitude(ds_l1, ac_subsampling_factor, al_subsampling_factor, stride)
 
     rad = {k: get_band(ds_l1, k, stride) / get_solar_flux(ds_l1, k, stride) for k in bnds}
     # cwl = {k: get_cwl(ds_l1, k, stride) for k in bnds}
     sat = {k: get_band_saturation(ds_l1, k, stride) for k in range(1, 16)}
-    geo = get_geometry(ds_l1, stride)
-    lon = get_longitude(ds_l1, stride)
-    lat = get_latitude(ds_l1, stride)
+    geo = get_geometry(ds_l1, ac_subsampling_factor, al_subsampling_factor, stride)
+    lon = get_longitude(ds_l1, ac_subsampling_factor, al_subsampling_factor, stride)
+    lat = get_latitude(ds_l1, ac_subsampling_factor, al_subsampling_factor, stride)
     prs = height2press(get_altitude(ds_l1, stride))
     lsm = get_lsmask(ds_l1, stride)
 
@@ -846,12 +849,12 @@ def get_relevant_l1l2_data(ds_l1, ds_l2, config, cmi=False, bnds=[13, 14, 15, ])
     cb = max(1, cb)
     # print('Coast Boarder in stride units:',cb)
     sct = simple_coast(lsm, cb)
-    tem_ = get_temperature(ds_l1, stride)
-    tem = get_surf_temperature(ds_l1, stride)
+    tem_ = get_temperature(ds_l1, ac_subsampling_factor, al_subsampling_factor, stride)
+    tem = get_surf_temperature(ds_l1, ac_subsampling_factor, al_subsampling_factor, stride)
     # tem = get_temperature(oll1,stride)
     # tem_ = get_surf_temperature(oll1,stride)
-    wsp = get_wind(ds_l1, stride)
-    tcw = get_tcw(ds_l1, stride)
+    wsp = get_wind(ds_l1, ac_subsampling_factor, al_subsampling_factor, stride)
+    tcw = get_tcw(ds_l1, ac_subsampling_factor, al_subsampling_factor, stride)
     if cmi:
         cld = get_idepix_cloudmask(ds_l1, stride)
         aot_l2 = np.zeros_like(tcw) + config['PROCESSING']['ocean_aot_fallback']
@@ -878,8 +881,8 @@ def get_relevant_l1l2_data(ds_l1, ds_l2, config, cmi=False, bnds=[13, 14, 15, ])
         dok = dok & (rad[b] >= config['PROCESSING']['min_norm_rad'])
 
     # data for land processing
-    # dfl = dok & (lsm  |  (sct & (rad[14] > config['PROCESSING']['min_coast_norm_rad'])))
-    dfl = np.ones_like(lsm)  # TEST: assume all is land and valid
+    # dfl = np.ones_like(lsm)  # TEST: assume all is land and valid
+    dfl = dok & (lsm  |  (sct & (rad[14] > config['PROCESSING']['min_coast_norm_rad'])))
     # data for ocean processing
     dfo = dok & ~dfl
 
