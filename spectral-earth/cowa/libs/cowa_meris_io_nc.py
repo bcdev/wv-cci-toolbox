@@ -1,5 +1,6 @@
 import calendar
 import datetime
+from datetime import datetime as dt
 import os
 import sys
 import time
@@ -865,6 +866,8 @@ def get_relevant_l1l2_data(ds_l1, ds_l2, config, cmi=False, bnds=[13, 14, 15, ])
         aot_l2 = np.where(~ get_l2_ocean_aot_fail(ds_l2, stride), aot_l2, config['PROCESSING']['ocean_aot_fallback'])
     amf = 1. / np.cos(geo['SZA'] * np.pi / 180.) + 1. / np.cos(geo['OZA'] * np.pi / 180.)
 
+    ds_l1.close()
+
     # radiance ok
     mask = np.ones_like(lsm)
     for xx in rad:
@@ -898,7 +901,7 @@ def get_relevant_l1l2_data(ds_l1, ds_l2, config, cmi=False, bnds=[13, 14, 15, ])
             }
 
 
-def write_to_ncdf(outname, dct):
+def write_to_ncdf_cci(outname, dct, start_date_string, stop_date_string):
     yy = dct['lat'].shape[0]
     xx = dct['lat'].shape[1]
     for key in dct:
@@ -916,13 +919,44 @@ def write_to_ncdf(outname, dct):
         if dct[key].dtype == np.bool:
             dct[key] = dct[key].astype(np.int8)
 
-    with Dataset(outname, 'w', format='NETCDF4') as nc:
-        nc.filename = outname
-        nc.history = datetime.datetime.now().strftime('created on %Y-%m-%d %H:%M:%S UTC')
-        nc.Conventions = "CF-1.4"
-        nc.metadata_version = "0.5"
-        nc.createDimension('y', yy)
-        nc.createDimension('x', xx)
+    with Dataset(outname, 'w', format='NETCDF4') as nc_out:
+        nc_out.filename = outname
+        nc_out.history = datetime.datetime.now().strftime('created on %Y-%m-%d %H:%M:%S UTC')
+        nc_out.Conventions = "CF-1.4"
+        nc_out.metadata_version = "0.5"
+        nc_out.createDimension('y', yy)
+        nc_out.createDimension('x', xx)
+
+        # set subset of global attributes following CF and CCI standards:
+        nc_out.setncattr('title', 'Water Vapour CCI Total Column of Water Vapour L2 Product')
+        nc_out.setncattr('institution', 'Brockmann Consult GmbH')
+        nc_out.setncattr('source', 'MERIS RR L1B 4th Reprocessing')
+        nc_out.setncattr('product_version', '4.0')  # todo: extract as parameter
+        nc_out.setncattr('summary', 'Water Vapour CCI TCWV Version')
+        nc_out.setncattr('id', os.path.basename(nc_out.filename))
+        nc_out.setncattr('time_coverage_start', start_date_string)
+        nc_out.setncattr('time_coverage_end', stop_date_string)
+        nc_out.setncattr('naming-authority', 'brockmann-consult.de')
+        nc_out.setncattr('comment',
+                         'These data were produced in the frame of the Water Vapour ECV (Water_Vapour_cci) of the ESA Climate Change Initiative Extension (CCI+) Phase 2')
+
+        date_created = str(dt.utcnow())[:19] + ' UTC'
+        nc_out.setncattr('date_created', date_created)
+        nc_out.setncattr('creator_name', 'Brockmann Consult GmbH')
+        nc_out.setncattr('creator_url', 'www.brockmann-consult.de')
+        nc_out.setncattr('creator_email', 'info@brockmann-consult.de')
+        nc_out.setncattr('project', 'WV_cci')
+
         for key in dct:
-            nc_dum = nc.createVariable(key, dct[key].dtype, ('y', 'x'), zlib=True)
-            nc_dum[:] = dct[key]
+            # nc_dum=nc_out.createVariable(key,dct[key].dtype,('y','x'),zlib=True)
+            # nc_dum[:]=dct[key]
+            if key == 'tcwv':
+                # TCWV
+                #  float tcwv(y, x) --> ushort tcwv(y, x) with scale_factor = 0.001:
+                inv_scale_factor = 100
+                var_tcwv = nc_out.createVariable(key, 'u2', ('y', 'x'), fill_value=0, zlib=True)
+                var_tcwv[:] = dct[key] * inv_scale_factor
+                var_tcwv.setncattr('long_name', 'Total Column of Water Vapour')
+                var_tcwv.setncattr('units', 'kg/m^2')
+                var_tcwv.setncattr('coordinates', 'lat lon')
+                var_tcwv.setncattr('scale_factor', 1. / inv_scale_factor)

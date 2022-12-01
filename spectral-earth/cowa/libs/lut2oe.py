@@ -422,6 +422,7 @@ def lut2oe(lut, axes, state_index=None, verbose=True, axes_names=(), lut_name='r
     
 
     def func_inverse(yy, pa=None, se=None, sa=None, xa=None, eps=0.01,
+                    # fg=None, maxiter=10, full=True, clip=True, gnform='n',
                     fg=None, maxiter=10, full=True, clip=True, gnform='n',
                     ll=ll, ul=ul, sp=None, progress=False):
         """
