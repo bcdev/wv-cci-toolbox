@@ -255,7 +255,7 @@ def get_temperature(ds, ac, al, st=(1, 1)):
 def get_wind(ds, ac, al, st=(1, 1)):
     wsp_comp = np.empty((ds.dimensions['tp_y'].size, ds.dimensions['tp_x'].size, 2))
     for k in range(2):
-        variable = 'horizontal_wind_vector_' + str(k+1)
+        variable = 'horizontal_wind_vector_' + str(k + 1)
         wsp_comp[:, :, k] = (ds.variables[variable][:, :]) * 1.
 
     wsp = (wsp_comp[:, :, :] ** 2).sum(axis=2) ** 0.5
@@ -678,9 +678,9 @@ def get_idepix_cloudmask(ds, st=(1, 1)):
         bit = flagbits[fn]
         return test_bit(flg, bit)
 
-    out = tb('IDEPIX_INVALID') | tb('IDEPIX_CLOUD') | tb('IDEPIX_CLOUD_AMBIGUOUS') | tb('IDEPIX_CLOUD_BUFFER') | tb('IDEPIX_CLOUD_SURE') | tb('IDEPIX_GLINT_RISK')
+    out = tb('IDEPIX_INVALID') | tb('IDEPIX_CLOUD') | tb('IDEPIX_CLOUD_AMBIGUOUS') | tb('IDEPIX_CLOUD_BUFFER') | tb(
+        'IDEPIX_CLOUD_SURE') | tb('IDEPIX_GLINT_RISK')
     return out
-
 
 
 # def flagname_to_flagbit(ff, datatype='l2', target='common_flags', variable='CC'):
@@ -748,14 +748,13 @@ def get_corner(ds, st=(1, 1)):
 def get_temperature_profile(ds, ac, al, st=(1, 1)):
     tie = np.empty((ds.dimensions['tp_y'].size, ds.dimensions['tp_x'].size, 20))
     for k in range(20):
-        variable = 'atmospheric_temperature_profile_pressure_level_' + str(k+1)
+        variable = 'atmospheric_temperature_profile_pressure_level_' + str(k + 1)
         tie[:, :, k] = (ds.variables[variable][:, :]) * 1.
     # ac = ds.ac_subsampling_factor
     # al = ds.al_subsampling_factor
     out = interpolate_tie_profile(tie, al, ac)
     return out[::st[0], ::st[1], :]
     # return tie[::st[0], ::st[1], :]
-
 
 
 # def get_pressure_profile(ff, st=(1, 1)):
@@ -772,7 +771,7 @@ def get_pressure_profile(ds, st=(1, 1)):
     # out = (ds.variables[variable][:]) * 1.
     # return out
     return np.array([300, 350, 400, 450, 500, 550, 600, 650, 700, 750,
-                                     775, 800, 825, 850, 875, 900, 925, 950, 975, 1000]) * 1.0
+                     775, 800, 825, 850, 875, 900, 925, 950, 975, 1000]) * 1.0
 
 
 def test_agreement_and_exit_if_not(oll1, oll2):
@@ -885,7 +884,7 @@ def get_relevant_l1l2_data(ds_l1, ds_l2, config, cmi=False, bnds=[13, 14, 15, ])
 
     # data for land processing
     # dfl = np.ones_like(lsm)  # TEST: assume all is land and valid
-    dfl = dok & (lsm  |  (sct & (rad[14] > config['PROCESSING']['min_coast_norm_rad'])))
+    dfl = dok & (lsm | (sct & (rad[14] > config['PROCESSING']['min_coast_norm_rad'])))
     # data for ocean processing
     dfo = dok & ~dfl
 
@@ -921,15 +920,14 @@ def write_to_ncdf_cci(outname, dct, start_date_string, stop_date_string):
 
     with Dataset(outname, 'w', format='NETCDF4') as nc_out:
         nc_out.filename = outname
-        nc_out.history = datetime.datetime.now().strftime('created on %Y-%m-%d %H:%M:%S UTC')
-        nc_out.Conventions = "CF-1.4"
+        nc_out.Conventions = "CF-1.10"
         nc_out.metadata_version = "0.5"
         nc_out.createDimension('y', yy)
         nc_out.createDimension('x', xx)
 
         # set subset of global attributes following CF and CCI standards:
         nc_out.setncattr('title', 'Water Vapour CCI Total Column of Water Vapour L2 Product')
-        nc_out.setncattr('institution', 'Brockmann Consult GmbH')
+        nc_out.setncattr('institution', 'Brockmann Consult GmbH, Spectral Earth GmbH')
         nc_out.setncattr('source', 'MERIS RR L1B 4th Reprocessing')
         nc_out.setncattr('product_version', '4.0')  # todo: extract as parameter
         nc_out.setncattr('summary', 'Water Vapour CCI TCWV Version')
@@ -960,3 +958,23 @@ def write_to_ncdf_cci(outname, dct, start_date_string, stop_date_string):
                 var_tcwv.setncattr('units', 'kg/m^2')
                 var_tcwv.setncattr('coordinates', 'lat lon')
                 var_tcwv.setncattr('scale_factor', 1. / inv_scale_factor)
+
+        # scan time (on request T.Trent):
+        # todo: make this a user option
+        create_scan_time_variable(nc_out, start_date_string, stop_date_string)
+
+
+def create_scan_time_variable(nc_out, start_date_string, stop_date_string):
+    time1970 = dt(1970, 1, 1)
+    starttime = dt.strptime(start_date_string, "%d-%b-%Y %H:%M:%S.%f")
+    stoptime = dt.strptime(stop_date_string, "%d-%b-%Y %H:%M:%S.%f")
+    start_since_1970 = (starttime - time1970).total_seconds()
+    stop_since_1970 = (stoptime - time1970).total_seconds()
+
+    scantime_incr = (stop_since_1970 - start_since_1970) * 1.0 / (len(nc_out.dimensions['y']) - 1)
+    scantime_arr = np.arange(start_since_1970, stop_since_1970 + scantime_incr / 2, scantime_incr)
+    scan_time = nc_out.createVariable('scan_time', np.float64, ('y'), zlib=True)
+    scan_time[:] = scantime_arr
+    scan_time.setncattr('long_name', 'Across-track scan time')
+    scan_time.setncattr('standard_name', 'scan_time')
+    scan_time.setncattr('units', 'Seconds since 1970-01-01')
