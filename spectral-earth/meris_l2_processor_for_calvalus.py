@@ -96,6 +96,7 @@ def doit():
     out['lat'] = data['lat']
     out['lon_tp'] = data['lon_tp']
     out['lat_tp'] = data['lat_tp']
+    out['stfl'] = data['stfl']
     out['tcwv'] = np.zeros_like(data['lon'], dtype=np.float32) + np.nan
     out['cst'] = np.zeros_like(data['lon'], dtype=np.float32) + np.nan
     out['nit'] = np.zeros_like(data['lon'], dtype=np.int16)

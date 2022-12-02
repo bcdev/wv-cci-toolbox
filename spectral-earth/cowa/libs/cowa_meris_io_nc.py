@@ -343,27 +343,6 @@ def get_l2_ocean_aot_fail(ds, st=(1, 1)):
     return inv
 
 
-def get_idepix_cloudmask(ds, st=(1, 1)):
-    fname = 'pixel_classif_flags'
-    variable = 'pixel_classif_flags'
-    flagbits = flagname_to_flagbit(ds, datatype='idepix', target=fname)
-    flg = ds.variables[variable][:, :][::st[0], ::st[1]]
-
-    def tb(fn):
-        bit = flagbits[fn]
-        return test_bit(flg, bit)
-
-    out = tb('IDEPIX_INVALID') | tb('IDEPIX_CLOUD') | tb('IDEPIX_CLOUD_AMBIGUOUS') | tb('IDEPIX_CLOUD_BUFFER') | tb(
-        'IDEPIX_CLOUD_SURE') | tb('IDEPIX_GLINT_RISK')
-
-    invalid = tb('IDEPIX_INVALID')
-    cld = tb('IDEPIX_CLOUD') | tb('IDEPIX_CLOUD_AMBIGUOUS') | tb('IDEPIX_CLOUD_BUFFER') | tb('IDEPIX_CLOUD_SURE')
-    seaice = tb('IDEPIX_SNOW_ICE')
-    land = tb('IDEPIX_LAND')
-    # ocean = (not tb('IDEPIX_INVALID')) & (not tb('IDEPIX_LAND'))
-    return out
-
-
 def flagname_to_flagbit(ds, datatype='l2', target='common_flags'):
     """
     valid l2 targets: common_flags, wqsf,cqsf,lqsf
@@ -391,6 +370,33 @@ def get_temperature_profile(ds, ac, al, st=(1, 1)):
 def get_pressure_profile():
     return np.array([300, 350, 400, 450, 500, 550, 600, 650, 700, 750,
                      775, 800, 825, 850, 875, 900, 925, 950, 975, 1000]) * 1.0
+
+
+def get_idepix_masks(ds, st=(1, 1)):
+    fname = 'pixel_classif_flags'
+    variable = 'pixel_classif_flags'
+    flagbits = flagname_to_flagbit(ds, datatype='idepix', target=fname)
+    flg = ds.variables[variable][:, :][::st[0], ::st[1]]
+
+    def tb(fn):
+        bit = flagbits[fn]
+        return test_bit(flg, bit)
+
+    mask_all = tb('IDEPIX_INVALID') | tb('IDEPIX_CLOUD') | tb('IDEPIX_CLOUD_AMBIGUOUS') | tb(
+        'IDEPIX_CLOUD_BUFFER') | tb(
+        'IDEPIX_CLOUD_SURE') | tb('IDEPIX_GLINT_RISK')
+
+    invalid = tb('IDEPIX_INVALID')
+    cloud = tb('IDEPIX_CLOUD') | tb('IDEPIX_CLOUD_AMBIGUOUS') | tb('IDEPIX_CLOUD_BUFFER') | tb('IDEPIX_CLOUD_SURE')
+    seaice = tb('IDEPIX_SNOW_ICE')
+    land = tb('IDEPIX_LAND')
+    return {
+        'mask_all': mask_all,
+        'invalid': invalid,
+        'cloud': cloud,
+        'seaice': seaice,
+        'land': land
+    }
 
 
 def get_relevant_l1l2_data(ds_l1, config, cmi=False):
@@ -434,10 +440,11 @@ def get_relevant_l1l2_data(ds_l1, config, cmi=False):
     # data ok for processing
     dok = np.ones_like(mask)
     dok = dok & mask
-    cld = None
+    idepix_masks = {}
     if cmi:
-        cld = get_idepix_cloudmask(ds_l1, stride)
-        dok = dok & ~cld.filled(True)
+        idepix_masks = get_idepix_masks(ds_l1, stride)
+        dok = dok & ~idepix_masks['mask_all'].filled(True)
+
     ds_l1.close()
     dok = dok & (geo['SZA'] <= config['PROCESSING']['max_solar_zenith'])
     for b in rad:
@@ -453,11 +460,27 @@ def get_relevant_l1l2_data(ds_l1, config, cmi=False):
     # eventally fill the land processing with aot land background
     aot_l2[dfl] = config['PROCESSING']['land_aot_fallback']
 
+    # set surface type flag:
+    stfl = np.zeros_like(mask, dtype=np.int16)
+    if cmi:
+        # land
+        stfl[np.where(idepix_masks['land'] == 1)] = 1
+        # ocean
+        stfl[np.where(idepix_masks['land'] != 1)] = 2
+        # sea ice
+        stfl[np.where(idepix_masks['seaice'] == 1)] = 4
+        # cloud
+        stfl[np.where(idepix_masks['cloud'] == 1)] = 8
+        # undefined:
+        stfl[np.where(idepix_masks['invalid'] == 1)] = 16
+        # undefined remainders??
+        stfl[np.where(stfl == 0)] = 16
+
     return {'lon': l1_lon, 'lat': l1_lat,
             'lon_tp': l1_lon_tp, 'lat_tp': l1_lat_tp,
             'geo': geo, 'amf': amf,
             'rad': rad, 'sat': sat,
-            'lsm': lsm, 'sct': sct, 'cld': cld,
+            'lsm': lsm, 'sct': sct, 'cld': idepix_masks['mask_all'], 'stfl': stfl,
             'prs': prs, 'wsp': wsp, 'tem': tem, 'tem_': tem_, 'tcw': tcw, 'aot': aot_l2,
             'msk': mask, 'dok': dok, 'nnn': dok.size, 'dfl': dfl, 'dfo': dfo,
             }
@@ -539,18 +562,19 @@ def write_to_ncdf_cci(outname, dct, start_date_string, stop_date_string):
             if key == 'cst':
                 # Cost function
                 # todo: make configurable as debug band
-                var_cst = nc_out.createVariable(key, dct[key].dtype, ('y', 'x'), zlib=True)
-                var_cst[:] = dct[key]
-                var_cst.setncattr('units', 'dl')
-                var_cst.setncattr('long_name', 'Cost function of TCWV retrieval')
-                var_cst.setncattr('standard_name', 'cost')
+                # var_cst = nc_out.createVariable(key, dct[key].dtype, ('y', 'x'), zlib=True)
+                # var_cst[:] = dct[key]
+                # var_cst.setncattr('units', 'dl')
+                # var_cst.setncattr('long_name', 'Cost function of TCWV retrieval')
+                # var_cst.setncattr('standard_name', 'cost')
+                pass
 
             # lat/lon
             # todo: make configurable if we need full res, TP or both.
             #  T.Trent needs full res!
             if key == 'lat':
                 # Latitude full
-                var_lat = nc_out.createVariable(key, dct[key].dtype, ('y', 'x'), zlib=True)
+                var_lat = nc_out.createVariable(key, 'f4', ('y', 'x'), zlib=True)
                 var_lat[:] = dct[key]
                 var_lat.setncattr('units', 'degrees_north')
                 var_lat.setncattr('long_name', 'latitude coordinate')
@@ -558,41 +582,50 @@ def write_to_ncdf_cci(outname, dct, start_date_string, stop_date_string):
 
             if key == 'lon':
                 # Longitude full
-                var_lon = nc_out.createVariable(key, dct[key].dtype, ('y', 'x'), zlib=True)
+                var_lon = nc_out.createVariable(key, 'f4', ('y', 'x'), zlib=True)
                 var_lon[:] = dct[key]
                 var_lon.setncattr('units', 'degrees_east')
                 var_lon.setncattr('long_name', 'longitude coordinate')
                 var_lon.setncattr('standard_name', 'longitude')
 
-            if key == 'lat_tp':
-                # Latitude TP
-                var_lat = nc_out.createVariable('latitude', dct[key].dtype, ('tp_y', 'tp_x'), zlib=True)
-                var_lat[:] = dct[key]
-                var_lat.setncattr('offset_x', 0.5)
-                var_lat.setncattr('offset_y', 0.5)
-                var_lat.setncattr('subsampling_x', 0.5)
-                var_lat.setncattr('subsampling_y', 0.5)
+            # if key == 'lat_tp':
+            #     # Latitude TP
+            #     var_lat = nc_out.createVariable('latitude', dct[key].dtype, ('tp_y', 'tp_x'), zlib=True)
+            #     var_lat[:] = dct[key]
+            #     var_lat.setncattr('offset_x', 0.5)
+            #     var_lat.setncattr('offset_y', 0.5)
+            #     var_lat.setncattr('subsampling_x', 0.5)
+            #     var_lat.setncattr('subsampling_y', 0.5)
+            #
+            # if key == 'lon_tp':
+            #     # Longitude TP
+            #     var_lon = nc_out.createVariable('longitude', dct[key].dtype, ('tp_y', 'tp_x'), zlib=True)
+            #     var_lon[:] = dct[key]
+            #     var_lon.setncattr('offset_x', 0.5)
+            #     var_lon.setncattr('offset_y', 0.5)
+            #     var_lon.setncattr('subsampling_x', 0.5)
+            #     var_lon.setncattr('subsampling_y', 0.5)
 
-            if key == 'lon_tp':
-                # Longitude TP
-                var_lon = nc_out.createVariable('longitude', dct[key].dtype, ('tp_y', 'tp_x'), zlib=True)
-                var_lon[:] = dct[key]
-                var_lon.setncattr('offset_x', 0.5)
-                var_lon.setncattr('offset_y', 0.5)
-                var_lon.setncattr('subsampling_x', 0.5)
-                var_lon.setncattr('subsampling_y', 0.5)
+        for key in dct:
+            if key == 'stfl':
+                # Surface type flags
+                surface_type_flags_var = nc_out.createVariable('surface_type_flags', 'i1', ('y', 'x'), zlib=True)
+                surface_type_flags_var[:] = dct[key]
+                surface_type_flags_var.setncattr('long_name', 'Surface type flags')
+                surface_type_flags_var.setncattr('standard_name', 'Surface type flags')
+                surface_type_flags_var.setncattr('coordinates', 'lat lon')
+                surface_type_flags_var.setncattr('flag_meanings', 'LAND OCEAN SEA_ICE CLOUD UNDEFINED')
+                surface_type_flags_var.setncattr('flag_masks', np.array([1, 2, 4, 8, 16], 'b'))
+                surface_type_flags_var.setncattr('flag_coding_name', 'surface_type_flags')
+                surface_type_flags_var.setncattr('flag_descriptions', 'Land\tOcean\tSea ice\tCloud\tUndefined')
+
+            if key == 'cst':
+                # TCWV quality flags
+                create_tcwv_quality_flags_variable(nc_out, dct['cst'])
 
         # scan time (on request T.Trent):
         # todo: make this a user option
         create_scan_time_variable(nc_out, start_date_string, stop_date_string)
-
-        # TCWV quality flags
-        # todo
-        create_tcwv_quality_flags_variable(nc_out, dct['cst'])
-
-        # Surface type flags
-        # todo
-        # create_surface_type_variable(nc_out)
 
 
 def create_scan_time_variable(nc_out, start_date_string, stop_date_string):
@@ -615,43 +648,18 @@ def create_tcwv_quality_flags_variable(nc_out, cst_arr):
     tcwv_quality_flags_var = nc_out.createVariable('tcwv_quality_flags', 'i1', ('y', 'x'), zlib=True)
     tcwv_quality_flags_var.setncattr('long_name', 'TCWV quality flags')
     tcwv_quality_flags_var.setncattr('standard_name', 'TCWV quality flags')
-    tcwv_quality_flags_var.setncattr('units', 'dl')
     tcwv_quality_flags_var.setncattr('coordinates', 'lat lon')
-    tcwv_quality_flags_var.setncattr('flag_meanings', 'TCWV_OK TCWV_HIGH_COST_FUNCTION TCWV_INVALID')
-    tcwv_quality_flags_var.setncattr('flag_masks', np.array([0, 1, 2, 3, 4, 5, 6, 7], 'b'))
+    tcwv_quality_flags_var.setncattr('flag_meanings', 'TCWV_OK TCWV_COST_FUNCTION_1 TCWV_COST_FUNCTION_2 TCWV_INVALID')
+    tcwv_quality_flags_var.setncattr('flag_masks', np.array([1, 2, 4, 8], 'b'))
     tcwv_quality_flags_var.setncattr('flag_coding_name', 'tcwv_quality_flags')
-    tcwv_quality_flags_var.setncattr('flag_descriptions', 'TCWV retrieval has no known issues\tHigh cost function in TCWV retrieval\tInvalid pixel (no TCWV retrieval)')
+    tcwv_quality_flags_var.setncattr('flag_descriptions',
+                                     'TCWV retrieval has no known issues\tHigh cost function 1 in TCWV '
+                                     'retrieval\tHigh cost function 2 in TCWV '
+                                     'retrieval\tInvalid pixel (no TCWV retrieval)')
 
     tcwv_quality_flags_arr = np.array(tcwv_quality_flags_var)
-    tcwv_quality_flags_arr[np.where(cst_arr > 0.0)] = 1.0
-    tcwv_quality_flags_arr[np.where(cst_arr > 1.0)] = 2.0
+    tcwv_quality_flags_arr[np.where((cst_arr >= 0.0) & (cst_arr < 1.0))] = 1.0
+    tcwv_quality_flags_arr[np.where((cst_arr >= 1.0) & (cst_arr < 2.0))] = 2.0
     tcwv_quality_flags_arr[np.where(cst_arr > 2.0)] = 4.0
     tcwv_quality_flags_arr[np.where(np.isnan(cst_arr))] = 8.0
     tcwv_quality_flags_var[:, :] = tcwv_quality_flags_arr[:, :]
-
-def create_surface_type_flags_variable(nc_out, cst_arr):
-    # rules:
-    # targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_CLOUD, isCloud);
-    # targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_SEA_ICE, isSeaIce);
-    # targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_UNDEFINED, !isValid);
-    # isLand = isLand || (isCoastline && applyLandForCoastlinesAndRivers(y, x, csza, targetRectangle));
-    # targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_LAND, isLand);
-    # isOcean = isValid && !isLand && !isSeaIce;
-    # targetTiles.get(tcwvSurfaceTypeFlagBand).setSample(x, y, TcwvConstants.SURFACE_TYPE_OCEAN, isOcean);
-
-    tcwv_quality_flags_var = nc_out.createVariable('tcwv_quality_flags', 'i1', ('y', 'x'), zlib=True)
-    tcwv_quality_flags_var.setncattr('long_name', 'TCWV quality flags')
-    tcwv_quality_flags_var.setncattr('standard_name', 'TCWV quality flags')
-    tcwv_quality_flags_var.setncattr('units', 'dl')
-    tcwv_quality_flags_var.setncattr('coordinates', 'lat lon')
-    tcwv_quality_flags_var.setncattr('flag_meanings', 'TCWV_OK TCWV_HIGH_COST_FUNCTION TCWV_INVALID')
-    tcwv_quality_flags_var.setncattr('flag_masks', np.array([0, 1, 2, 3, 4, 5, 6, 7], 'b'))
-    tcwv_quality_flags_var.setncattr('flag_coding_name', 'tcwv_quality_flags')
-    tcwv_quality_flags_var.setncattr('flag_descriptions', 'TCWV retrieval has no known issues\tHigh cost function in TCWV retrieval\tInvalid pixel (no TCWV retrieval)')
-
-    tcwv_quality_flags_arr = np.array(tcwv_quality_flags_var)
-    tcwv_quality_flags_arr[np.where(cst_arr > 0.0)] = 1.0
-    tcwv_quality_flags_arr[np.where(cst_arr > 1.0)] = 2.0
-    tcwv_quality_flags_arr[np.where(cst_arr > 2.0)] = 4.0
-    tcwv_quality_flags_arr[np.where(np.isnan(cst_arr))] = 8.0
-
