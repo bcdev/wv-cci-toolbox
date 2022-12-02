@@ -85,19 +85,17 @@ def doit():
     erg_land = None
     erg_ocean = None
     if data_land['yy'].shape[0] > 0 and data_land['yy'].shape[1] > 0:
-        print('call inverse land...')
         erg_land = cowa_land_processor.inverse(**data_land)
-        print('back from inverse land.')
     if data_ocean['yy'].shape[0] > 0 and data_ocean['yy'].shape[1] > 0:
-        print('call inverse ocean...')
         erg_ocean = cowa_ocean_processor.inverse(**data_ocean)
-        print('back from inverse ocean.')
 
     #    4. select relevant fields
     out = collections.OrderedDict()
 
     out['lon'] = data['lon']
     out['lat'] = data['lat']
+    out['lon_tp'] = data['lon_tp']
+    out['lat_tp'] = data['lat_tp']
     out['tcwv'] = np.zeros_like(data['lon'], dtype=np.float32) + np.nan
     out['cst'] = np.zeros_like(data['lon'], dtype=np.float32) + np.nan
     out['nit'] = np.zeros_like(data['lon'], dtype=np.int16)
