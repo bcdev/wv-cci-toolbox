@@ -537,8 +537,9 @@ def get_relevant_l1l2_data(oll1, oll2, config, cmi = False,bnds=[13,14,15,]):
     else:
         cld = get_l2_cloudmask(oll2,stride)
         cld = add_cloud_margin(cld)
-        aot_l2 = np.log10(0.1 + get_l2_aot(oll2,stride).filled(np.nan))
-        aot_l2 = np.where(~ get_l2_ocean_aot_fail(oll2,stride), aot_l2, config['PROCESSING']['ocean_aot_fallback'])
+        # aot_l2 = np.log10(0.1 + get_l2_aot(oll2,stride).filled(np.nan))
+        # aot_l2 = np.where(~ get_l2_ocean_aot_fail(oll2,stride), aot_l2, config['PROCESSING']['ocean_aot_fallback'])
+        aot_l2 = np.zeros_like(tcw) + config['PROCESSING']['ocean_aot_fallback']
     amf = 1./np.cos(geo['SZA']*np.pi/180.)+1./np.cos(geo['OZA']*np.pi/180.)
     
     # radiance ok

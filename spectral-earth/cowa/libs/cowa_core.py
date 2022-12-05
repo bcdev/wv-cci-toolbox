@@ -89,23 +89,29 @@ def snr_to_pseudo_absoprtion_measurement_variance(snr=500,interpolation_error=0.
 class cowa_core:
     '''
     '''
-    def __init__(self,inifile):
+    def __init__(self,inifile,script_path=os.getcwd()):
         '''
         TODO: This init is a bit long, 
         '''
         self.about_me = about_me()
-        self.config = read_and_analyze_ini(inifile,COWA_INI_RULE)
+        #self.config = read_and_analyze_ini(inifile,COWA_INI_RULE)
+        inipath = os.path.join(script_path, 'ini', inifile)
+        self.config = read_and_analyze_ini(inipath,COWA_INI_RULE)
         self.si = self.config['INTERNAL']['state_index']
-        
+
+        lutpath = os.path.join(script_path, self.config['GENERAL']['lut_file'])
         if self.config['INTERNAL']['absorption_band'] == 'all':
-            with Dataset(self.config['GENERAL']['lut_file'],'r') as ncds:
+            # with Dataset(self.config['GENERAL']['lut_file'],'r') as ncds:
+            with Dataset(lutpath,'r') as ncds:
                 self.wb = [int(i) for i in ncds.getncattr('win_bnd').split(',')]
                 self.ab = [int(i) for i in ncds.getncattr('abs_bnd').split(',')]
                 self.cor = {bnd:ncds.groups['cor'].variables['%i'%bnd][:] for bnd in self.ab}
                 self.cwvl={bnd:float(ncds.groups['cha'].groups['%i'%bnd].cwvl) for bnd in self.wb+self.ab}
-            self.ds = xr.load_dataset(self.config['GENERAL']['lut_file'])
+            # self.ds = xr.load_dataset(self.config['GENERAL']['lut_file'])
+            self.ds = xr.load_dataset(lutpath)
         else:
-            with Dataset(self.config['GENERAL']['lut_file'],'r') as ncds:
+            # with Dataset(self.config['GENERAL']['lut_file'],'r') as ncds:
+            with Dataset(lutpath, 'r') as ncds:
                 self.wb = [int(i) for i in ncds.getncattr('win_bnd').split(',')]
                 self.ab = [int(self.config['INTERNAL']['absorption_band'])]
                 self._ab = [int(i) for i in ncds.getncattr('abs_bnd').split(',')]
@@ -114,8 +120,9 @@ class cowa_core:
             ab_idx = self._ab.index(self.ab[0])
             wo_idx = list(range(len(self.wb)))+[len(self.wb)+ab_idx]
             #print(wo_idx)
-            self.ds = xr.load_dataset(self.config['GENERAL']['lut_file']).isel(bands=wo_idx)
-            
+            # self.ds = xr.load_dataset(self.config['GENERAL']['lut_file']).isel(bands=wo_idx)
+            self.ds = xr.load_dataset(lutpath).isel(bands=wo_idx)
+
         self.parameter_names = self.ds['lut'].dims[self.si:-1]
         self.state_names = self.ds['lut'].dims[:self.si]
         self.n_meas = len(self.ds['lut'].bands)

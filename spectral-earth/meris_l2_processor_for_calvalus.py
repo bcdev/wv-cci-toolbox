@@ -49,8 +49,8 @@ SNR_ocean = DEMO_CONFIG['PROCESSING']['ocean_snr']  # , actually, its hard to be
 IPE_land = DEMO_CONFIG['PROCESSING']['land_interpolation_error']
 IPE_ocean = DEMO_CONFIG['PROCESSING']['ocean_interpolation_error']
 
-cowa_land_processor = cowa.cowa_land(DEMO_CONFIG['GENERAL']['land_processor_ini'])
-cowa_ocean_processor = cowa.cowa_land(DEMO_CONFIG['GENERAL']['ocean_processor_ini'])
+cowa_land_processor = cowa.cowa_land(DEMO_CONFIG['GENERAL']['land_processor_ini'],script_path=SCRIPT_PATH)
+cowa_ocean_processor = cowa.cowa_land(DEMO_CONFIG['GENERAL']['ocean_processor_ini'],script_path=SCRIPT_PATH)
 
 
 def doit():
@@ -62,7 +62,7 @@ def doit():
     l1_name = sys.argv[1]
     tcwv_name = sys.argv[2]
 
-    if l1_name.lower().endswith('nc'):
+    if l1_name.lower().endswith('nc') or l1_name.lower().endswith('nc.gz'):
         print('input is NetCDF format...')
         cowa.cowa_meris_io_nc.check_if_files_exists(l1_name)
         ds_l1 = Dataset(l1_name)
