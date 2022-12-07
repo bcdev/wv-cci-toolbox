@@ -404,8 +404,15 @@ def get_relevant_l1l2_data(ds_l1, config, cmi=False):
     """
     bnds = [13, 14, 15, ]
     stride = config['PROCESSING']['stride']
-    ac_subsampling_factor = int(np.round(ds_l1.dimensions['x'].size / ds_l1.dimensions['tp_x'].size))
-    al_subsampling_factor = int(np.round(ds_l1.dimensions['y'].size / ds_l1.dimensions['tp_y'].size))
+    # tie points subsampling factor: use value for MERIS RR (16), but
+    # make it work also for very small subsets (e.g. 3x3), test purposes.
+    # todo: make more flexible if needed, e.g. for FR
+    # the original values are global attributes in MERIS L1b netcdf files (e.g. tie_meteo.nc):
+    ac_subsampling_factor = 16
+    al_subsampling_factor = 16
+    if ds_l1.dimensions['x'].size < 16 or ds_l1.dimensions['y'].size < 16:
+        ac_subsampling_factor = 1
+        al_subsampling_factor = 1
 
     # lat/lon
     # todo: make configurable if we need full res, TP or both
