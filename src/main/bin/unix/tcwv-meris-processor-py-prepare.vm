@@ -1,0 +1,23 @@
+#!/bin/bash
+set -e
+
+####################################################################################
+# Calvalus prepare script for TCWV MERIS product generation with original RP Python.
+####################################################################################
+
+#[[
+
+idepix_nc_infile_basename=`basename $1 .nc`
+idepix_nc_infile_nc=${idepix_nc_infile_basename}.nc
+
+tcwv_outdir=$2
+tcwv_outfile="L2_of_${idepix_nc_infile_nc}"
+
+echo CALVALUS_OUTPUT_PRODUCT ${tcwv_outfile}
+if /opt/hadoop/bin/hadoop fs -ls ${tcwv_outdir}/${tcwv_outfile} ; then
+  # output exist
+  echo CALVALUS_SKIP_PROCESSING yes
+fi
+
+]]#
+

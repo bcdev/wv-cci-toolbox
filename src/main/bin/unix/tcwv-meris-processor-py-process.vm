@@ -1,0 +1,52 @@
+#!/bin/bash
+set -x
+set -e
+set -m
+
+#######################################################################################
+# Calvalus processing script for TCWV MERIS product generation with original RP Python.
+#######################################################################################
+
+#[[
+
+# memory settings
+let m="1024*1024*9"
+ulimit -m $m
+
+# make available conda in a static path
+CONDA_DIR=$(ls -ld miniconda3-wvcci|awk '{print $11}')
+mkdir -p /home/yarn/opt
+ln -s -f -T $CONDA_DIR /home/yarn/miniconda3-wvcci
+export PATH=/home/yarn/miniconda3-wvcci/bin:$PATH
+
+idepix_nc_infile_basename=`basename $1 .nc`
+idepix_nc_infile_nc=${idepix_nc_infile_basename}.nc
+echo "idepix_nc_infile: ${idepix_nc_infile_nc}"
+
+echo "Directory listing before processing:"
+echo "`ls -la $(pwd)`"
+echo `which python`
+python --version
+echo "python $(pwd)/tcwv_meris_code/meris_l2_processor_for_calvalus.py $(pwd)/${idepix_nc_infile_nc} $(pwd)/L2_of_${idepix_nc_infile_nc}"
+python $(pwd)/tcwv_meris_code/meris_l2_processor_for_calvalus.py $(pwd)/${idepix_nc_infile_nc} $(pwd)/L2_of_${idepix_nc_infile_nc}
+
+status=$?
+echo "Status: $status"
+
+if [ $status = 0 ]
+then
+    echo "TCWV MERIS L2 nc file created."
+    echo "Status: $status"
+    rm -f ./$1
+    rm -f ./${idepix_nc_infile_nc}
+fi
+
+## output TCWV nc filename:
+tcwv_nc_outfile="L2_of_${idepix_nc_infile_nc}"
+
+echo CALVALUS_OUTPUT_PRODUCT ${tcwv_nc_outfile}
+echo "Directory listing AFTER processing:"
+echo "`ls -la $(pwd)`"
+
+]]#
+
