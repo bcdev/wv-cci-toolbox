@@ -248,18 +248,19 @@ def set_surface_type_flag(dst, src, ds_hoaps):
     tcwv_arr_src = np.array(src.variables['tcwv_mean'])
     surface_type_flag_arr_maj = np.array(src.variables['surface_type_flag_majority'])
     surface_type_flag_arr_max = np.array(src.variables['surface_type_flag_max'])
+
+    # Req. DWD, Dec 2020: we want 'heavy precipitation' in surface type flag with value 3,
+    # with higher flags being increased by 1.
+    # --> NOTE: the below is no longer compatible with raw L3 from earlier days! If needed, use old code
+    #     from phase1_maintenance branch.
     tmparr = np.copy(surface_type_flag_arr_maj)
     # set to cloudy if partly cloudy but no valid TCWV:
-    tmparr[np.where((surface_type_flag_arr_maj == 5) & (~np.isfinite(tcwv_arr_src)))] = 2
+    tmparr[np.where((surface_type_flag_arr_maj == 6) & (~np.isfinite(tcwv_arr_src)))] = 2
     # set to partly cloudy  if cloudy but valid TCWV:
-    tmparr[np.where((surface_type_flag_arr_maj == 2) & (np.isfinite(tcwv_arr_src)))] = 5
+    tmparr[np.where((surface_type_flag_arr_maj == 2) & (np.isfinite(tcwv_arr_src)))] = 6
     # set to partly cloudy  if at least one daily sample is partly cloudy, and not already cloudy:
-    tmparr[np.where((surface_type_flag_arr_max == 5) & (tmparr != 2))] = 5
+    tmparr[np.where((surface_type_flag_arr_max == 6) & (tmparr != 2))] = 6
 
-    # Req. DWD, Dec 2020: we want 'heavy precipitation' in surface type flag with value 3
-    # easiest way: insert 'heavy precipitation' flag = 3, increase existing flags 3-6 by 1:
-    for i in range(4):
-        tmparr[np.where(tmparr == 6-i)] = 7-i
     if ds_hoaps:
         hoaps_scat_ratio_arr_src = np.array(ds_hoaps.variables['scat_ratio'])
         tmparr[np.where(hoaps_scat_ratio_arr_src[0] > 0.2)] = 3  # hoaps heavy precipitation criterion (MS, 202012)
@@ -830,7 +831,8 @@ def run(args):
 
     # Create final flag bands:
     # no quality flag in monthlies!
-    dst.createVariable('surface_type_flag', 'b', ('time', dst.dimensions['lat'].name, dst.dimensions['lon'].name),
+    # dst.createVariable('surface_type_flag', 'b', ('time', dst.dimensions['lat'].name, dst.dimensions['lon'].name),
+    dst.createVariable('surface_type_flag', 'u2', ('time', dst.dimensions['lat'].name, dst.dimensions['lon'].name),
                        zlib=True)
 
     copy_and_rename_variables_from_source_product(dst, src, has_latlon)

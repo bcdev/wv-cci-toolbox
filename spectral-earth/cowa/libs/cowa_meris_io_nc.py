@@ -471,15 +471,16 @@ def get_relevant_l1l2_data(ds_l1, config, cmi=False):
     stfl = np.zeros_like(mask, dtype=np.int16)
     if cmi:
         # land
-        stfl[np.where(idepix_masks['land'] == 1)] = 1
+        stfl[np.where(idepix_masks['land'] == 1)] = stfl[np.where(idepix_masks['land'] == 1)] + 1
         # ocean
-        stfl[np.where(idepix_masks['land'] != 1)] = 2
+        stfl[np.where((idepix_masks['invalid'] != 1) & (idepix_masks['land'] != 1) & (idepix_masks['seaice'] != 1))] = \
+        stfl[np.where((idepix_masks['invalid'] != 1) & (idepix_masks['land'] != 1) & (idepix_masks['seaice'] != 1))] + 2
         # sea ice
-        stfl[np.where(idepix_masks['seaice'] == 1)] = 4
+        stfl[np.where(idepix_masks['seaice'] == 1)] = stfl[np.where(idepix_masks['seaice'] == 1)] + 4
         # cloud
-        stfl[np.where(idepix_masks['cloud'] == 1)] = 8
+        stfl[np.where(idepix_masks['cloud'] == 1)] = stfl[np.where(idepix_masks['cloud'] == 1)] + 8
         # undefined:
-        stfl[np.where(idepix_masks['invalid'] == 1)] = 16
+        stfl[np.where((idepix_masks['invalid'] == 1) | (geo['SZA'] > config['PROCESSING']['max_solar_zenith']))] = 16
         # undefined remainders??
         stfl[np.where(stfl == 0)] = 16
 
