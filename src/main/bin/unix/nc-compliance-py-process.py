@@ -269,7 +269,10 @@ def rescale_hoaps_to_005(src_arr, res):
     :return:
     """
     if res == '005':
-        return scipy.ndimage.zoom(src_arr[0], 10, order=0)
+        if len(src_arr.shape) == 3:
+            return scipy.ndimage.zoom(src_arr[0], 10, order=0)
+        else:
+            return scipy.ndimage.zoom(src_arr, 10, order=0)
     else:
         return src_arr
 
@@ -413,10 +416,9 @@ def set_surface_type_flag(dst, src, day, res, ds_hoaps, ds_landmask, ds_seaice):
         seaice_arr_src = np.array(ds_seaice.variables['mask'])
         seaice_frac_arr_src = np.array(ds_seaice.variables['icec'])
         day_index = int(day.zfill(1)) - 1
-        seaice_arr_src_day_src = seaice_arr_src[day_index]
-        seaice_frac_arr_src_day_src = seaice_frac_arr_src[day_index]
-        seaice_arr_src_day = rescale_hoaps_to_005(seaice_arr_src_day_src, res)
-        seaice_frac_arr_src_day = rescale_hoaps_to_005(seaice_frac_arr_src_day_src, res)
+
+        seaice_arr_src_day = rescale_hoaps_to_005(seaice_arr_src[day_index], res)
+        seaice_frac_arr_src_day = rescale_hoaps_to_005(seaice_frac_arr_src[day_index], res)
 
         seaice_frac_arr_src_day[np.where(np.isnan(seaice_frac_arr_src_day))] = 0  # make NaN to 0
         tmparr[np.where(seaice_arr_src_day == 11)] = 16  # make hoaps seaice to SEA_ICE
