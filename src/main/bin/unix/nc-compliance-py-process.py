@@ -188,7 +188,7 @@ def cleanup_inconsistencies(dst, src_hoaps, sensor, res):
         reset_ocean_cdr1(dst.variables['tcwv_quality_flag'], surface_type_arr, 3)
     else:
         wvpa_arr_src = np.array(src_hoaps.variables['wvpa'])
-        wvpa_arr = rescale_hoaps_to_005(wvpa_arr_src, res)
+        wvpa_arr = rescale_hoaps(wvpa_arr_src, res)
         # set num_obs to 0:
         reset_ocean_cdr2(dst.variables['num_obs'], wvpa_arr, surface_type_arr, 0)
         # set tcwv, stdv, and error terms to nan:
@@ -210,7 +210,7 @@ def update_tcwv_quality_flag_for_hoaps(dst, src_hoaps, sensor, res):
     """
     dstvar = dst.variables['tcwv_quality_flag']
     tcwv_qual_arr_hoaps_src = np.array(src_hoaps.variables['tcwv_quality_flag'])
-    tcwv_qual_arr_hoaps = rescale_hoaps_to_005(tcwv_qual_arr_hoaps_src, res)
+    tcwv_qual_arr_hoaps = rescale_hoaps(tcwv_qual_arr_hoaps_src, res)
     tcwv_qual_arr_dst = np.array(dstvar).astype(int)
 
     # tcwv_qual_arr_src = np.array(dstvar).astype(int)
@@ -260,7 +260,7 @@ def set_ocean_wvpa_errors(dst_var, surface_type_array, tcwv_array, wvpa_error_ar
     dst_var[0, :, :] = dst_var_arr_0[:, :]
 
 
-def rescale_hoaps_to_005(src_arr, res):
+def rescale_hoaps(src_arr, res):
     """
     Rescales 0.5 deg hoaps array to target resolution
 
@@ -274,7 +274,10 @@ def rescale_hoaps_to_005(src_arr, res):
         else:
             return scipy.ndimage.zoom(src_arr, 10, order=0)
     else:
-        return src_arr
+        if len(src_arr.shape) == 3:
+            return src_arr[0]
+        else:
+            return src_arr
 
 
 def set_errors_for_hoaps(dst, src, res):
@@ -292,12 +295,12 @@ def set_errors_for_hoaps(dst, src, res):
             has_wvpa_errors = True
             # wvpa_err_arr = np.array(src.variables['wvpa_err'])
             wvpa_err_arr_src = np.array(src.variables['wvpa_err'])
-            wvpa_err_arr = rescale_hoaps_to_005(wvpa_err_arr_src, res)
+            wvpa_err_arr = rescale_hoaps(wvpa_err_arr_src, res)
         if name == 'wvpa_ran':
             has_wvpa_errors = True
             # wvpa_ran_arr = np.array(src.variables['wvpa_ran'])
             wvpa_ran_arr_src = np.array(src.variables['wvpa_ran'])
-            wvpa_ran_arr = rescale_hoaps_to_005(wvpa_ran_arr_src, res)
+            wvpa_ran_arr = rescale_hoaps(wvpa_ran_arr_src, res)
 
     # if no wvpa errors available, set to NaN over ocean (should no longer happen for latest HOAPS L3 products)
     set_ocean_wvpa_errors(dst.variables['tcwv_err'],
@@ -321,7 +324,7 @@ def update_num_hours_tcwv_for_hoaps(dst, src_hoaps, sensor, res):
     """
     if is_cdr_2(sensor):
         num_hours_tcwv_arr_src = np.array(src_hoaps.variables['numh'])
-        num_hours_tcwv_arr = rescale_hoaps_to_005(num_hours_tcwv_arr_src, res)
+        num_hours_tcwv_arr = rescale_hoaps(num_hours_tcwv_arr_src, res)
         num_hours_tcwv_arr[np.where(num_hours_tcwv_arr <= 0.0)] = -1
         dst_var = dst.variables['num_hours_tcwv']
         dst_var[0, :, :] = num_hours_tcwv_arr[:, :]
@@ -398,7 +401,7 @@ def set_surface_type_flag(dst, src, day, res, ds_hoaps, ds_landmask, ds_seaice):
     #     hoaps_surface_type_flag_arr = scipy.ndimage.zoom(hoaps_surface_type_flag_arr, 10, order=0)
     #     hoaps_surface_type_flag_arr[np.where(np.isnan(hoaps_surface_type_flag_arr))] = 0  # make NaN to water
 
-    hoaps_surface_type_flag_arr = rescale_hoaps_to_005(hoaps_surface_type_flag_arr_src, res)
+    hoaps_surface_type_flag_arr = rescale_hoaps(hoaps_surface_type_flag_arr_src, res)
     hoaps_surface_type_flag_arr[np.where(np.isnan(hoaps_surface_type_flag_arr))] = 0  # make NaN to water
 
     # make ocean + tcwv_quality_flag.TCWV_INVALID + tcwv = NaN to INVALID (fix of originally L2 bug)):
@@ -417,8 +420,8 @@ def set_surface_type_flag(dst, src, day, res, ds_hoaps, ds_landmask, ds_seaice):
         seaice_frac_arr_src = np.array(ds_seaice.variables['icec'])
         day_index = int(day.zfill(1)) - 1
 
-        seaice_arr_src_day = rescale_hoaps_to_005(seaice_arr_src[day_index], res)
-        seaice_frac_arr_src_day = rescale_hoaps_to_005(seaice_frac_arr_src[day_index], res)
+        seaice_arr_src_day = rescale_hoaps(seaice_arr_src[day_index], res)
+        seaice_frac_arr_src_day = rescale_hoaps(seaice_frac_arr_src[day_index], res)
 
         seaice_frac_arr_src_day[np.where(np.isnan(seaice_frac_arr_src_day))] = 0  # make NaN to 0
         tmparr[np.where(seaice_arr_src_day == 11)] = 16  # make hoaps seaice to SEA_ICE
@@ -434,7 +437,7 @@ def set_surface_type_flag(dst, src, day, res, ds_hoaps, ds_landmask, ds_seaice):
         # hoaps_scat_ratio_arr = np.copy(hoaps_scat_ratio_arr_src[0])
         # if res == '005':
         #     hoaps_scat_ratio_arr = scipy.ndimage.zoom(hoaps_scat_ratio_arr, 10, order=0)
-        hoaps_scat_ratio_arr = rescale_hoaps_to_005(hoaps_scat_ratio_arr_src, res)
+        hoaps_scat_ratio_arr = rescale_hoaps(hoaps_scat_ratio_arr_src, res)
         tmparr[np.where(hoaps_scat_ratio_arr > 0.2)] = 8  # hoaps heavy precipitation criterion (MS, 202012)
 
     # set PARTLY_CLOUDY_OVER_LAND: must be the pixels identified in majority as CLOUD, but have a valid TCWV:
