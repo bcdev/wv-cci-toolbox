@@ -58,13 +58,14 @@ seaiceFile="hoaps-g.r30.d01.icec.${year}-${month}.nc"
 # in case of CDR-2 processing, copy original HOAPS file from HDFS to current dir (in case for final fixes):
 if [[ $sensor == *"cmsaf_hoaps"* ]]; then
   # e.g. origHoapsFilePath="/calvalus/projects/wvcci/tcwv/cmsaf_hoaps/l3-daily/005/2011/07/15-L3-1/hoaps-g.r03.d01.wvpa.2011-07-15.nc"
-  if [ "$res" == "005" ]
-  then
-    resHoaps="r03"
-  else
-    resHoaps="r30"
-  fi
-  origHoapsFilePath="/calvalus/projects/wvcci/tcwv/cmsaf_hoaps/l3-daily/${res}/${year}/${month}/${day}-L3-1/hoaps-g.${resHoaps}.d01.wvpa.${year}-${month}-${day}.nc"
+  #if [ "$res" == "005" ]
+  #then
+  #  resHoaps="r03"
+  #else
+  #  resHoaps="r30"
+  #fi
+  resHoaps="r30"  # always use low res in line with land mask to ensure same kind of upscaling (scipy.ndimage), OD 20221215
+  origHoapsFilePath="/calvalus/projects/wvcci/tcwv/cmsaf_hoaps/l3-daily/05/${year}/${month}/${day}-L3-1/hoaps-g.${resHoaps}.d01.wvpa.${year}-${month}-${day}.nc"
   echo "Original HOAPS file path: '${origHoapsFilePath}'"
   if ! copy_file_from_hdfs ${origHoapsFilePath}; then
     echo "failed to get original HOAPS file '${origHoapsFilePath}'"
