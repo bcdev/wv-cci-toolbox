@@ -65,7 +65,9 @@ if [[ $sensor == *"cmsaf_hoaps"* ]]; then
   #  resHoaps="r30"
   #fi
   resHoaps="r30"  # always use low res in line with land mask to ensure same kind of upscaling (scipy.ndimage), OD 20221215
-  origHoapsFilePath="/calvalus/projects/wvcci/tcwv/cmsaf_hoaps/l3-daily/05/${year}/${month}/${day}-L3-1/hoaps-g.${resHoaps}.d01.wvpa.${year}-${month}-${day}.nc"
+  #origHoapsFilePath="/calvalus/projects/wvcci/tcwv/cmsaf_hoaps/l3-daily/05/${year}/${month}/${day}-L3-1/hoaps-g.${resHoaps}.d01.wvpa.${year}-${month}-${day}.nc"
+  # PHASE 2: switch to async processing: no 'L3-1' substrings anymore!! 20230306
+  origHoapsFilePath="/calvalus/projects/wvcci/tcwv/cmsaf_hoaps/l3-daily/05/${year}/${month}/${day}/hoaps-g.${resHoaps}.d01.wvpa.${year}-${month}-${day}.nc"
   echo "Original HOAPS file path: '${origHoapsFilePath}'"
   if ! copy_file_from_hdfs ${origHoapsFilePath}; then
     echo "failed to get original HOAPS file '${origHoapsFilePath}'"

@@ -76,6 +76,17 @@ class=org.esa.snap.core.gpf.main.GPT
 
 if [[ $sensor2 =~ "hoaps" ]]
 then
+  ### For wvcci processing in 2.x instance, we need a python3 from a Miniconda which has netCDF4, numpy, scipy, matplotlib
+  # (the miniconda package taken from conda-xarray-1.0 instance does the job...): 
+  wvcci_py_dir=$(ls -ld miniconda3-wvcci |awk '{print $11}')
+  CURRENT_LINK=$(ls -ld /home/yarn/opt/miniconda3-wvcci|awk '{print $11}')
+  if [ "$CURRENT_LINK" != "${wvcci_py_dir}" ]; then
+    mkdir -p /home/yarn/opt
+    ln -s -f -T ${wvcci_py_dir} /home/yarn/opt/miniconda3-wvcci
+  fi
+  echo "`ls -la ${wvcci_py_dir}/bin/python*`"
+  ${wvcci_py_dir}/bin/python3.9 --version
+
   # in case of HOAPS we need landmask and seaice mask...
   iday=$((10#$day))
 
@@ -88,6 +99,10 @@ then
   fi
   landmaskFile="kosh.r30.lmask.nc"
 
+  # SNAP-8 cannot deal with the HOAPS nc4 inputs (memory issue?!) - convert to nc3 before gpt call...
+  echo "${wvcci_py_dir}/bin/python3.9 $(pwd)/process.py ${sensor1_infile} ${sensor1_infile}3"
+  ${wvcci_py_dir}/bin/python3.9 $(pwd)/process.py $(pwd)/${sensor2_infile_name} $(pwd)/${sensor2_infile_name}3
+
   # copy seaice file from HDFS to current dir:
   seaiceFilePath="/calvalus/projects/wvcci/auxdata/seaice/${year}/hoaps-g.r30.d01.icec.${year}-${month}.nc"
   echo "Seaice HDFS file path: '${seaiceFilePath}'"
@@ -95,22 +110,31 @@ then
     echo "failed to get seaice file '${seaiceFilePath}' - will do compliance step without seaice info..."
     echo "Directory listing before processing:"
     echo "`ls -la $(pwd)`"
-    echo "/usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Hoaps -SnirProduct=${sensor1_infile} -ShoapsProduct=$(pwd)/${sensor2_infile_name} -SlandmaskProduct=$(pwd)/${landmaskFile} -PdayOfMonth=$iday -f NetCDF4-WVCCI -t ./${outfile}.nc"
-    /usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Hoaps -SnirProduct=${sensor1_infile} -ShoapsProduct=$(pwd)/${sensor2_infile_name} -SlandmaskProduct=$(pwd)/${landmaskFile} -PdayOfMonth=$iday -f NetCDF4-WVCCI -t ./${outfile}.nc
-  else
-    seaiceFile="hoaps-g.r30.d01.icec.${year}-${month}.nc"
-    echo "Directory listing before processing:"
-    echo "`ls -la $(pwd)`"
-    #/usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Hoaps -SnirProduct=${sensor1_infile} -ShoapsProduct=$(pwd)/${sensor2_infile_name} -SlandmaskProduct=$(pwd)/${landmaskFile} -SseaiceProduct=$(pwd)/${seaiceFile} -PdayOfMonth=$iday -f NetCDF4-WVCCI -t ./${outfile}.nc
-    # make sure that we have enoght memory for SNAP 8 (2048M as for SNAP 7 is not sufficient for merge with HOAPS products! (20220916)
+    # make sure that we have enough memory for SNAP 8 (2048M as for SNAP 7 is not sufficient when dealing with HOAPS products! (20220916)
     # just in case, also make sure to set hdf library paths 
-    /usr/lib/jvm/default-java/bin/java -Xmx4096M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Hoaps \
+    /usr/lib/jvm/default-java/bin/java -Xmx6G -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Hoaps \
         -Dncsa.hdf.hdflib.HDFLibrary.hdflib=$(pwd)/libjhdf.so \
         -Dncsa.hdf.hdf5lib.H5.hdf5lib=$(pwd)/libjhdf5.so \
         -Dsnap.home=$(pwd) \
         -Dsnap.userdir=$(pwd) \
         -Djava.io.tmpdir=$(pwd) \
-        -SnirProduct=${sensor1_infile} -ShoapsProduct=$(pwd)/${sensor2_infile_name} \
+        -SnirProduct=${sensor1_infile} -ShoapsProduct=$(pwd)/${sensor2_infile_name}3 \
+        -SlandmaskProduct=$(pwd)/${landmaskFile} \
+        -PdayOfMonth=$iday \
+        -f NetCDF4-WVCCI -t ./${outfile}.nc
+  else
+    seaiceFile="hoaps-g.r30.d01.icec.${year}-${month}.nc"
+    echo "Directory listing before processing:"
+    echo "`ls -la $(pwd)`"
+    # make sure that we have enough memory for SNAP 8 (2048M as for SNAP 7 is not sufficient when dealing with HOAPS products! (20220916)
+    # just in case, also make sure to set hdf library paths 
+    /usr/lib/jvm/default-java/bin/java -Xmx6G -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Hoaps \
+        -Dncsa.hdf.hdflib.HDFLibrary.hdflib=$(pwd)/libjhdf.so \
+        -Dncsa.hdf.hdf5lib.H5.hdf5lib=$(pwd)/libjhdf5.so \
+        -Dsnap.home=$(pwd) \
+        -Dsnap.userdir=$(pwd) \
+        -Djava.io.tmpdir=$(pwd) \
+        -SnirProduct=${sensor1_infile} -ShoapsProduct=$(pwd)/${sensor2_infile_name}3 \
         -SlandmaskProduct=$(pwd)/${landmaskFile} \
         -SseaiceProduct=$(pwd)/${seaiceFile} \
         -PdayOfMonth=$iday \
@@ -128,7 +152,6 @@ if [ $status = 0 ]
 then
     echo "Merge file of $sensor1 and $sensor2 created."
     echo "Status: $status"
-    rm -f ./${sensor2_infile_name}.nc
 fi
 
 echo CALVALUS_OUTPUT_PRODUCT ${outfile}.nc
