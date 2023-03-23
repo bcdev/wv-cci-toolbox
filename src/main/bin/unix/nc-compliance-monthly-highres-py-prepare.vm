@@ -1,0 +1,36 @@
+#!/bin/bash
+set -e
+
+roi="$parameters.get('roi')"  # currently: 'roi_test_0_30_0_30', 'roi1', 'roi2a', 'roi2b', 'roi3'
+sensor="$parameters.get('sensor')"
+year="$parameters.get('year')"
+month="$parameters.get('month')"
+lat_min="$parameters.get('lat_min')"
+lat_max="$parameters.get('lat_max')"
+lon_min="$parameters.get('lon_min')"
+lon_max="$parameters.get('lon_max')"
+version="$parameters.get('version')"
+
+#[[
+
+nc_outdir=$2
+
+res='001'
+
+## filename following CCI standards:
+# monthly products
+if [[ $sensor == *"-"* ]]; then
+  # merged product
+  nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor}-${res}deg-${roi}-${year}${month}-fv${version}.nc"
+else
+  # single sensor
+  nc_outfile="ESACCI-WATERVAPOUR-L3C-TCWV-${sensor}-${res}deg-${roi}-${year}${month}-fv${version}.nc"
+fi
+
+if /opt/hadoop/bin/hadoop fs -ls ${nc_outdir}/${nc_outfile} ; then
+  # output exist
+  echo CALVALUS_SKIP_PROCESSING yes
+fi
+
+]]#
+

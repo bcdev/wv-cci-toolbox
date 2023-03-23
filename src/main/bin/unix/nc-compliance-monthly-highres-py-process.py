@@ -441,7 +441,7 @@ def init_nc_compliant_product(datestring, roi, sensor, version):
         l3_suffix = 'C'
 
     # final product name following CCI data standards v2.1 section 2.7:
-    nc_outfile = 'ESACCI-WATERVAPOUR-L3' + l3_suffix + '-TCWV-' + sensor + '001deg-' + roi + '-' + datestring + '-fv' + \
+    nc_outfile = 'ESACCI-WATERVAPOUR-L3' + l3_suffix + '-TCWV-' + sensor + '-001deg-' + roi + '-' + datestring + '-fv' + \
                  version + '.nc'
     outpath = os.getcwd() + os.sep + nc_outfile
     nc_compliant_ds = Dataset(outpath, 'w', format='NETCDF4')

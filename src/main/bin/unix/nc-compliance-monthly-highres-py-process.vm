@@ -1,0 +1,99 @@
+#!/bin/bash
+set -x
+set -e
+set -m
+
+##########################################################################
+# Calvalus processing script for the final NetCDF and CCI compliance step.
+##########################################################################
+
+function copy_file_from_hdfs {
+  local filePath=$1
+  result=1
+  echo "checking HDFS ${filePath}"
+  local hadoopLsResult=$(hadoop fs -ls ${filePath})
+  if [[ ${hadoopLsResult} ]]; then
+    echo "copy to CWD: ${filePath}"
+    /opt/hadoop/bin/hadoop fs -copyToLocal $filePath ${pwd}
+    result=0
+  fi
+  return $result
+}
+
+roi="$parameters.get('roi')"  # currently: 'roi_test_0_30_0_30', 'roi1', 'roi2a', 'roi2b', 'roi3'
+sensor="$parameters.get('sensor')"
+year="$parameters.get('year')"
+month="$parameters.get('month')"
+lat_min="$parameters.get('lat_min')"
+lat_max="$parameters.get('lat_max')"
+lon_min="$parameters.get('lon_min')"
+lon_max="$parameters.get('lon_max')"
+version="$parameters.get('version')"
+
+#[[
+
+res='001'
+
+#nc_gz_infile=$1
+#nc_infile=`basename ${nc_gz_infile} .gz`
+#gunzip -c ${nc_gz_infile} > ./${nc_infile}
+nc_infile=`basename $1`
+echo "nc_infile: ${nc_infile}"
+
+# copy landmask file from HDFS to current dir:
+landmaskFilePath="/calvalus/projects/wvcci/auxdata/landmask/kosh/${roi}_of_kosh.r30.lmask.nc"
+echo "KOSH landmask HDFS file path: '${landmaskFilePath}'"
+if ! copy_file_from_hdfs ${landmaskFilePath}; then
+  echo "failed to get KOSH landmask file '${landmaskFilePath}'"
+  exit 1
+fi
+landmaskFile="${roi}_of_kosh.r30.lmask.nc"
+
+# now process:
+echo "Directory listing before processing:"
+echo "`ls -la $(pwd)`"
+
+### For wvcci postprocessing in 2.x instance, we need a python3 from a Miniconda which has netCDF4, numpy, scipy, matplotlib
+# (the miniconda package taken from conda-xarray-1.0 instance does the job...):
+wvcci_py_dir=$(ls -ld miniconda3-wvcci |awk '{print $11}')
+CURRENT_LINK=$(ls -ld /home/yarn/opt/miniconda3-wvcci|awk '{print $11}')
+if [ "$CURRENT_LINK" != "${wvcci_py_dir}" ]; then
+  mkdir -p /home/yarn/opt
+  ln -s -f -T ${wvcci_py_dir} /home/yarn/opt/miniconda3-wvcci
+fi
+echo "`ls -la ${wvcci_py_dir}/bin/python*`"
+
+#/usr/bin/python --version
+#/usr/bin/python3 --version
+${wvcci_py_dir}/bin/python3.9 --version
+echo "${wvcci_py_dir}/bin/python3.9 $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${roi} ${sensor} ${year} ${month} ${lat_min} ${lat_max} ${lon_min} ${lon_max} ${version}"
+${wvcci_py_dir}/bin/python3.9 $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${roi} ${sensor} ${year} ${month} ${lat_min} ${lat_max} ${lon_min} ${lon_max} ${version}
+
+status=$?
+echo "Status: $status"
+
+if [ $status = 0 ]
+then
+    echo "NetCDF compliance file created."
+    echo "Status: $status"
+    rm -f ./${nc_infile}
+fi
+
+## filename following CCI standards:
+# monthly products
+# use underscore for two sensors, request of AW, Nov. 2021:
+sensor=${sensor/"-"/"_"}
+if [[ $sensor == *"-"* ]]; then
+  # merged product
+  nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor}-${res}deg-${roi}-${year}${month}-fv${version}.nc"
+else
+  # single sensor
+  nc_outfile="ESACCI-WATERVAPOUR-L3C-TCWV-${sensor}-${res}deg-${roi}-${year}${month}-fv${version}.nc"
+fi
+
+echo CALVALUS_OUTPUT_PRODUCT ${nc_outfile}
+echo "Directory listing AFTER processing:"
+echo "`ls -la $(pwd)`"
+
+]]#
+
