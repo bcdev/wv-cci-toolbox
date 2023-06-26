@@ -19,8 +19,8 @@
         <!--<snap.version>7.0.0-SNAPSHOT</snap.version>-->
         <!--<snap.version>8.0.0-SNAPSHOT</snap.version>-->
 <!--        <snap.version>7.0.0</snap.version>-->
-        <snap.version>8.0.9</snap.version>
-<!--        <snap.version>8.0.10-SNAPSHOT</snap.version>-->
+<!--        <snap.version>8.0.9</snap.version>-->
+        <snap.version>8.0.10-SNAPSHOT</snap.version>
     </properties>
 
     <dependencies>

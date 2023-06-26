@@ -393,8 +393,6 @@ public class TcwvOp extends Operator {
 
         Tile[] fluxWinBandTiles = null;
         Tile[] fluxAbsBandTiles = null;
-        double[] fluxWinBandData = null;
-        double[] fluxAbsBandData = null;
 
         for (int y = targetRectangle.y; y < targetRectangle.y + targetRectangle.height; y++) {
             checkForCancellation();
@@ -456,8 +454,6 @@ public class TcwvOp extends Operator {
                 if (sensor == Sensor.MERIS) {
                     fluxWinBandTiles = isLand ? landFluxWinBandTiles : oceanFluxWinBandTiles;
                     fluxAbsBandTiles = isLand ? landFluxAbsBandTiles : oceanFluxAbsBandTiles;
-                    fluxWinBandData = isLand ? landFluxWinBandData : oceanFluxWinBandData;
-                    fluxAbsBandData = isLand ? landFluxAbsBandData : oceanFluxAbsBandData;
                 }
 
                 if (!isValid || isCloud || (!processOcean && !isLand)) {
@@ -651,7 +647,8 @@ public class TcwvOp extends Operator {
     private void normalizeSpectralInputBands(int y, int x, double csza, Tile[] spectralBandTiles,
                                              double[] spectralBandData, Tile[] spectralFluxTiles) {
         for (int i = 0; i < spectralBandData.length; i++) {
-            spectralBandData[i] = normalizeSpectralInputBand(y, x, csza, spectralBandTiles[i], spectralFluxTiles[i]);
+            final Tile fluxTile = sensor == Sensor.MERIS ? spectralFluxTiles[i] : null;
+            spectralBandData[i] = normalizeSpectralInputBand(y, x, csza, spectralBandTiles[i], fluxTile);
         }
     }
 
