@@ -131,13 +131,16 @@ public class TcwvConstants {
 
     // delivered by RP 20200113:
 //    static final String MERIS_LAND_LUT_NC_FILENAME = "land_core_meris_calib_final_arm.nc4";
-    static final String MERIS_LAND_LUT_NC_FILENAME = "land_core_meris_calib_final_arm_4th_rp_los.nc4";
+    static final String MERIS_LAND_LUT_NC_FILENAME = "land_core_meris_calib_final_arm_4th_rp_los.nc4";  // RP 20220927
     static final String MERIS_OCEAN_LUT_NC_FILENAME = "ocean_core_meris_calib_after_aot.nc4";
-    static final String MODIS_AQUA_OCEAN_LUT_NC_FILENAME = "ocean_core_modis_terra_calib_after_aot.nc4";
+    static final String MODIS_AQUA_OCEAN_LUT_NC_FILENAME = "ocean_core_modis_aqua_calib_after_aot.nc4";
     static final String MODIS_TERRA_OCEAN_LUT_NC_FILENAME = "ocean_core_modis_terra_calib_after_aot.nc4";
-    static final String MODIS_AQUA_LAND_LUT_NC_FILENAME = "land_core_modis_terra_calib_arm.nc4";
+//    static final String MODIS_AQUA_LAND_LUT_NC_FILENAME = "land_core_modis_terra_calib_arm.nc4";
+    static final String MODIS_AQUA_LAND_LUT_NC_FILENAME = "land_core_modis_aqua_calib_arm.nc4"; // RP 20230622
     static final String MODIS_TERRA_LAND_LUT_NC_FILENAME = "land_core_modis_terra_calib_arm.nc4";
-    static final String OLCI_LAND_LUT_NC_FILENAME = "land_core_olci_calib_arm.nc4";
+//    static final String OLCI_LAND_LUT_NC_FILENAME = "land_core_olci_calib_arm.nc4";
+    static final String OLCI_LAND_LUT_NC_FILENAME = "land_core_olci_A_calib_arm_05052023.nc4";  // RP 20230622
+    static final String OLCI_B_LAND_LUT_NC_FILENAME = "land_core_olci_B_homog_calib_arm_05052023.nc4";  // RP 20230622
     static final String OLCI_OCEAN_LUT_NC_FILENAME = "ocean_core_olci_calib_after_aot.nc4";
 
 
