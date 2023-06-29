@@ -13,18 +13,18 @@ from pyhdf.SD import SD, SDC
 
 __author__ = 'olafd'
 
-#sensor = 'MODIS_TERRA'
-sensor = 'MODIS_AQUA'
-#platformId = 'MOD'
-platformId = 'MYD'  # note that on neodc MYD03 and MYD35_L2 data start in May 2013 (as of 20200519) !!
+sensor = 'MODIS_TERRA'
+#sensor = 'MODIS_AQUA'
+platformId = 'MOD'
+#platformId = 'MYD'  # note that on neodc MYD03 and MYD35_L2 data start in May 2013 (as of 20200519) !!
 
-#years = ['2017']
-years = ['2016']
+years = ['2010']
+#years = ['2016']
 #years = ['2011']
 #years = ['2011','2016']
 #years = ['2013','2014']
 
-allMonths = ['06']
+allMonths = ['07']
 #allMonths = ['12']
 #allMonths = ['01','02','03']
 #allMonths = ['04','05','06']
@@ -73,9 +73,9 @@ inputs = ['dummy']
 
 # NEW PMonitor version for SLURM, MB/TB Nov 2018:
 mon = Monitor(inputs,
-             'wvcci-l2-tcwv-modis-chain-slurm',
+             'wvcci-l2-tcwv-modis-python-chain-slurm',
              [('localhost',64)],
-             [('wvcci-l2-tcwv-modis-step-slurm.sh', 64)],
+             [('wvcci-l2-tcwv-modis-python-step-slurm.sh', 64)],
              'log',
              False)
 
@@ -96,12 +96,12 @@ for year in years:
 
             #for day in days:
             #for iday in range(15, 16):
-            for iday in range(3, 4):
+            for iday in range(28, 29):
             #for iday in range(1, numMonthDays+1):
                 day = str(iday).zfill(2)
                 print('day: ' + day)
 
-                tcwvDir = wvcciRootDir + '/Tcwv/' + sensor + '/' + year + '/' + month + '/' + str(day).zfill(2)
+                tcwvDir = wvcciRootDir + '/Tcwv_python/' + sensor + '/' + year + '/' + month + '/' + str(day).zfill(2)
 
                 if os.path.exists(l1bRootDir + '/' + year + '/' + month + '/' + str(day).zfill(2)):
                     l1bFiles = os.listdir(l1bRootDir + '/' + year + '/' + month + '/' + str(day).zfill(2))
@@ -110,8 +110,9 @@ for year in years:
                         for index in range(0, len(l1bFiles)):
                             l1bPath = l1bRootDir + '/' + year + '/' + month + '/' + str(day).zfill(2) + '/' + l1bFiles[index]
 
-			    # TEST: do only 1 product, 1030
-                            if l1bFiles[index].endswith(".hdf") and l1bFiles[index].startswith("MYD021KM.A2016155.1030"):
+			    # TEST: do only 1 Terra product, DOY 209, 10:50
+                            if l1bFiles[index].endswith(".hdf") and l1bFiles[index].startswith("MOD021KM.A2010209.1050"):
+                            # END TEST 
                             #if l1bFiles[index].endswith(".hdf"):
                                 # MODIS only
                                 # MOD021KM or MOD021KM product e.g. MOD021KM.A2015196.1855.061.2017321064215.hdf
@@ -132,7 +133,7 @@ for year in years:
 
                                         l1bEraFile = l1bFileBase + '_l1b-era-interim.nc'
 
-                                        job = Job('test-' + dateTimeString, 'wvcci-l2-tcwv-modis-step-slurm.sh', 
+                                        job = Job('test-' + dateTimeString, 'wvcci-l2-tcwv-modis-python-step-slurm.sh', 
                                                  ['dummy'], [l1bEraFile], 
                                                  [l1bPath,l1bFiles[index],modisCloudMaskPath,sensor,year,month,day,hhmm,wvcciRootDir])
                                         #print('call mon.execute...')

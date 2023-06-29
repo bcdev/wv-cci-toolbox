@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Updates all relevant files of $WVCCI_INST to github 'wv-cci-toolbox' repository.
+# See https://github.com/bcdev/wv-cci-toolbox
+# OD, 20220921
+
 olddir=$(pwd)
 
 cd workspace/git/wv-cci-toolbox

@@ -98,6 +98,7 @@ then
   ${MY_CDO} -b 32 mergetime $erathisday $eradayafter $eratimestack
   echo "END cdo mergetime - wallclock time is: `date`"
 else
+  # the normal case: this is a monthly Era interim file with a 6-hour time interval (e.g. 124 entries for August) 
   eratimestack=$auxroot/era-interim-t2m-mslp-tcwv-u10-v10/$year/era-interim-t2m-mslp-tcwv-u10-v10-$year-$month.nc
 fi
 
@@ -117,7 +118,8 @@ echo "END gpt Merge/Collocate - wallclock time is: `date`"
 
 # remove EraModis time slice...
 sleep 10
-rm -f $eramodistimeslice
+# test: do not remove, inspect
+# rm -f $eramodistimeslice
 
 ## TCWV
 if [ -f $l1bEraInterimMerge ]; then
