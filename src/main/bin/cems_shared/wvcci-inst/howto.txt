@@ -1,0 +1,2 @@
+# kill all my pending jobs:
+scancel -u <my_user_name>

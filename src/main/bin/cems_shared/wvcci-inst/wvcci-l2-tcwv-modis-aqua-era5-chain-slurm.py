@@ -13,9 +13,7 @@ from pyhdf.SD import SD, SDC
 
 __author__ = 'olafd'
 
-#sensor = 'MODIS_TERRA'
 sensor = 'MODIS_AQUA'
-#platform_id = 'MOD'
 platform_id = 'MYD'  # note that on neodc MYD03 and MYD35_L2 data start in May 2013 (as of 20200519) !!
 
 #years = ['2017']
@@ -24,13 +22,13 @@ years = ['2022']
 #years = ['2011','2016']
 #years = ['2013','2014']
 
-all_months = ['08']
+#all_months = ['09']
 #all_months = ['12']
 #all_months = ['01','02','03']
 #all_months = ['04','05','06']
 #all_months = ['07','08','09']
 #all_months = ['10','11','12']
-#all_months = ['08','09']
+all_months = ['06','07']
 #all_months = ['10']
 #all_months = ['11','12']
 
@@ -79,6 +77,32 @@ def is_daily_product(hdf_filename):
     else:
         return false
 
+def get_cleaned_list(orig_list):
+
+    # fill help list with substrings until hhmm, e.g. 'MOD021KM.A2015196.1830':
+    s_list_substrings = []
+    for s in orig_list:
+        s_list_substrings.append(s[:22])
+
+    # get indices of duplicates in list of substrings:
+    uniqueItems = []
+    duplicateIndexes = []
+    counter = 0
+    for s in s_list_substrings:
+        if s not in uniqueItems:
+            uniqueItems.append(s)
+        else:
+            duplicateIndexes.append(counter)
+        counter += 1
+
+    # provide a copy of the list, but skipping elements at these indices:
+    cleaned_list = []
+    for i in range(len(orig_list)):
+        if i not in duplicateIndexes:
+            cleaned_list.append(orig_list[i])
+
+    return cleaned_list
+
 
 ######################## L1b --> Idepix --> IdepixEraInterim --> TCWV: ###########################
 
@@ -90,8 +114,8 @@ inputs = ['dummy']
 # NEW PMonitor version for SLURM, MB/TB Nov 2018:
 mon = Monitor(inputs,
              'wvcci-l2-tcwv-modis-aqua-era5-chain-slurm',
-             [('localhost',256)],
-             [('wvcci-l2-tcwv-modis-aqua-era5-step-slurm.sh', 256)],
+             [('localhost',512)],
+             [('wvcci-l2-tcwv-modis-aqua-era5-step-slurm.sh', 512)],
              'log',
              False)
 
@@ -111,16 +135,18 @@ for year in years:
             print('num_month_days: ' + str(num_month_days))
 
             #for day in days:
-            for iday in range(16, 17):
+            #for iday in range(16, 17):
             #for iday in range(1, 2):
-            #for iday in range(1, num_month_days+1):
+            for iday in range(1, num_month_days+1):
                 day = str(iday).zfill(2)
                 print('day: ' + day)
 
                 tcwv_dir = wvcci_root_dir + '/Tcwv/' + sensor + '/' + year + '/' + month + '/' + str(day).zfill(2)
 
                 if os.path.exists(l1b_root_dir + '/' + year + '/' + month + '/' + str(day).zfill(2)):
-                    l1b_files = os.listdir(l1b_root_dir + '/' + year + '/' + month + '/' + str(day).zfill(2))
+                    l1b_files_raw = os.listdir(l1b_root_dir + '/' + year + '/' + month + '/' + str(day).zfill(2))
+                    # remove possible duplicate files at same time:
+                    l1b_files = get_cleaned_list(l1b_files_raw)
 
                     if len(l1b_files) > 0:
                         for index in range(0, len(l1b_files)):
@@ -128,9 +154,9 @@ for year in years:
 
 			    # TEST: do only 1 product, 1030
                             #if l1b_files[index].endswith(".hdf") and l1b_files[index].startswith("MYD021KM.A2022213.0410"):
-                            if l1b_files[index].endswith(".hdf"):
+                            if l1b_files[index].startswith("MYD021KM") and l1b_files[index].endswith(".hdf"):
                                 # MODIS only
-                                # MOD021KM or MOD021KM product e.g. MOD021KM.A2015196.1855.061.2017321064215.hdf
+                                # MOD021KM or MYD021KM product e.g. MOD021KM.A2015196.1855.061.2017321064215.hdf
                                 date_time_string = l1b_files[index][9:22]  # A2015196.1855
                                 hhmm = date_time_string[9:]   # 1855
 
@@ -152,7 +178,7 @@ for year in years:
 
                                         l1b_era_file = l1b_file_base + '_l1b-era-interim.nc'
 
-                                        job = Job('test-' + date_time_string, 'wvcci-l2-tcwv-modis-era5-step-slurm.sh', 
+                                        job = Job('test-' + date_time_string, 'wvcci-l2-tcwv-modis-aqua-era5-step-slurm.sh', 
                                                  ['dummy'], [l1b_era_file], 
                                                  [lab_path,l1b_files[index],modis_cloud_mask_path,era5_path,sensor,year,month,day,hhmm,wvcci_root_dir])
                                         #print('call mon.execute...')
