@@ -24,11 +24,12 @@ years = ['2022']
 
 #all_months = ['09']
 #all_months = ['12']
+all_months = ['01','02','03','04','05']
 #all_months = ['01','02','03']
 #all_months = ['04','05','06']
 #all_months = ['07','08','09']
 #all_months = ['10','11','12']
-all_months = ['06','07']
+#all_months = ['06','07']
 #all_months = ['10']
 #all_months = ['11','12']
 
