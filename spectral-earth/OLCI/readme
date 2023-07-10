@@ -1,0 +1,47 @@
+Hier findes du Aufrufe für cowa mit und ohne smile correction und die entsprechenden LUTs. 
+Für CCI nutzen wir: OLCI A ohne desmile (Fall I) und OLCI B  mit desmile (Fall IV). 
+
+Offen ist (für mich) wie ihr die Wolkenmaske macht. Ich kann sie entweder direkt vom 
+passenden l2 lesen (option -l2 /path/to/l2) oder ich nutze den gpt idepix (-cmi). Dafür
+habe ich einen kleinen wraper geschrieben, der idepix aufruft, und aus dem ergebnis von 
+idepix ein kleines nc4 file macht. Default sucht er es im SEN3 ordner, man kann es aber 
+auch  explicit angeben (-idp)
+
+
+
+
+Fall I
+# OLCI A ohne smile correction mit consistenten LUTs
+$> python olci_processor4cci.py -l1 test_data/S3A_OL_1_EFR____20230528T094318_20230528T094618_20230529T152238_0179_099_193_2160_MAR_O_NT_002.SEN3/ -cmi -s 1,1 -ini ini/olci_A_processor4cci.ini -t  /tmp/OLCI_A_not_desmiled.nc4
+$> python olci_processor4cci.py -l1 test_data/S3A_OL_1_EFR____20230528T094318_20230528T094618_20230529T152238_0179_099_193_2160_MAR_O_NT_002.SEN3/ -cmi -s 1,1 -ini ini/olci_A_processor4cci.ini -t  testdata/results/OLCI_A_not_desmiled.nc4
+$> python olci_processor4cci.py -l1 .\test_data\S3A_OL_1_EFR____20230528T094318_20230528T094618_20230529T152238_0179_099_193_2160_MAR_O_NT_002.SEN3 -cmi -s 1,1 -ini .\ini\olci_A_processor4cci.ini -t  .\test_data\results\OLCI_A_not_desmiled.nc4
+
+timing: 1489.44 user;  7:47.60 @ 321% CPU
+
+
+Fall II
+# OLCI B ohne smile correction mit consistenten LUTs
+$> python olci_processor4cci.py -l1 test_data/S3B_OL_1_EFR____20230528T090112_20230528T090412_20230529T132241_0179_080_050_1980_MAR_O_NT_002.SEN3 -cmi -s 1,1 -ini  ini/olci_B_processor4cci.ini -t  /tmp/OLCI_B_not_desmiled.nc4
+$> python olci_processor4cci.py -l1 test_data/S3B_OL_1_EFR____20230528T090112_20230528T090412_20230529T132241_0179_080_050_1980_MAR_O_NT_002.SEN3 -cmi -s 1,1 -ini  ini/olci_B_processor4cci.ini -t  test_data/results//OLCI_B_not_desmiled.nc4
+
+timing: 1655.15 user;  7:57.72 @ 349% CPU
+
+
+
+Fall III
+# OLCI B ohne smile correction aber mit den desmiled LUTs
+$> python olci_processor4cci.py -l1 test_data/S3B_OL_1_EFR____20230528T090112_20230528T090412_20230529T132241_0179_080_050_1980_MAR_O_NT_002.SEN3 -cmi  -s 1,1 -ini  ini/olci_B_homog_processor4cci.ini -t  /tmp/OLCI_B_with_desmiled_lut_but_not_desmiled.nc4
+$> python olci_processor4cci.py -l1 test_data/S3B_OL_1_EFR____20230528T090112_20230528T090412_20230529T132241_0179_080_050_1980_MAR_O_NT_002.SEN3 -cmi  -s 1,1 -ini  ini/olci_B_homog_processor4cci.ini -t  test_data/results/OLCI_B_with_desmiled_lut_but_not_desmiled.nc4
+
+timing: 1655.16 user;  7:57.63 @ 349% CPU
+
+
+Fall IV
+# Mit smile correction OLCI B: 
+# Achtung: Für B  muss  das richtige ini file genommen werden (es zeigt auf die richtigen LUT)
+$> python olci_processor4cci.py -l1 test_data/S3B_OL_1_EFR____20230528T090112_20230528T090412_20230529T132241_0179_080_050_1980_MAR_O_NT_002.SEN3 -cmi  -s 1,1 -ini ini/olci_B_homog_processor4cci.ini -dsm -t /tmp/OLCI_B_desmiled.nc4
+$> python olci_processor4cci.py -l1 test_data/S3B_OL_1_EFR____20230528T090112_20230528T090412_20230529T132241_0179_080_050_1980_MAR_O_NT_002.SEN3 -cmi  -s 1,1 -ini ini/olci_B_homog_processor4cci.ini -dsm -t test_data/results/OLCI_B_desmiled.nc4
+
+timing: 1696.28 user;  8:15.79 @ 345% CPU
+
+(das de-smile-ling macht es nur unwesentlich langsamer, wahrscheinlich, weil IO gecached wird)
