@@ -125,14 +125,15 @@ def cleanup_inconsistencies(dst):
     # remove all HOAPS (everything over ocean, coastal, seaice) in case of CDR-1
     # clean everything remaining over ocean where we have no HOAPS (wvpa) over water in case of CDR-2
     # set num_obs to 0:
-    reset_ocean_cdr1(dst.variables['num_obs'], surface_type_arr, 0)
+    # todo: clarify what we want over ocean. TCWV from NIR, from CMSAF or nothing?
+    #reset_ocean_cdr1(dst.variables['num_obs'], surface_type_arr, 0)
     # set tcwv, stdv, and error terms to nan:
-    reset_ocean_cdr1(dst.variables['tcwv'], surface_type_arr, np.nan)
-    reset_ocean_cdr1(dst.variables['stdv'], surface_type_arr, np.nan)
-    reset_ocean_cdr1(dst.variables['tcwv_err'], surface_type_arr, np.nan)
-    reset_ocean_cdr1(dst.variables['tcwv_ran'], surface_type_arr, np.nan)
+    #reset_ocean_cdr1(dst.variables['tcwv'], surface_type_arr, np.nan)
+    #reset_ocean_cdr1(dst.variables['stdv'], surface_type_arr, np.nan)
+    #reset_ocean_cdr1(dst.variables['tcwv_err'], surface_type_arr, np.nan)
+    #reset_ocean_cdr1(dst.variables['tcwv_ran'], surface_type_arr, np.nan)
     # set tcwv_quality_flag to 3:
-    reset_ocean_cdr1(dst.variables['tcwv_quality_flag'], surface_type_arr, 3)
+    #reset_ocean_cdr1(dst.variables['tcwv_quality_flag'], surface_type_arr, 3)
 
 
 def set_ocean_wvpa_errors(dst_var, surface_type_array, tcwv_array, wvpa_error_array, has_errors):
@@ -499,15 +500,17 @@ def set_lat_lon_variables(dst, lat_min, lat_max, lon_min, lon_max, src):
     # create 'lat_bnds' and 'lon_bnds' variables:
     incr = 0.01
     lat_bnds_arr_0 = np.arange(lat_max, lat_min, -incr)
-    lat_bnds_arr_1 = np.arange(lat_max - incr, lat_min - incr, -incr)
+    # lat_bnds_arr_1 = np.arange(lat_max - incr, lat_min - incr, -incr) # why this? I don't remember (OD, 29230712)
     lon_bnds_arr_0 = np.arange(lon_min, lon_max, incr)
-    lon_bnds_arr_1 = np.arange(lon_min + incr, lon_max + incr, incr)
+    # lon_bnds_arr_1 = np.arange(lon_min + incr, lon_max + incr, incr)  # s.a.
     lat_bnds_arr = np.empty(shape=[height, 2])
     lon_bnds_arr = np.empty(shape=[width, 2])
     lat_bnds_arr[:, 0] = lat_bnds_arr_0
-    lat_bnds_arr[:, 1] = lat_bnds_arr_1
+    # lat_bnds_arr[:, 1] = lat_bnds_arr_1
+    lat_bnds_arr[:, 1] = lat_bnds_arr_0
     lon_bnds_arr[:, 0] = lon_bnds_arr_0
-    lon_bnds_arr[:, 1] = lon_bnds_arr_1
+    # lon_bnds_arr[:, 1] = lon_bnds_arr_1
+    lon_bnds_arr[:, 1] = lon_bnds_arr_0
     lat_bnds = dst.createVariable('lat_bnds', 'f4', ('lat', 'nv'), zlib=True)
     lon_bnds = dst.createVariable('lon_bnds', 'f4', ('lon', 'nv'), zlib=True)
     lat_bnds.setncattr('long_name', 'Latitude cell boundaries')
