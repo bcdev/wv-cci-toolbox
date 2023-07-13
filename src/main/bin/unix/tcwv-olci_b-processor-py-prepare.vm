@@ -1,0 +1,25 @@
+#!/bin/bash
+set -e
+
+####################################################################################
+# Calvalus prepare script for TCWV OLCI S3B product generation with original RP Python.
+####################################################################################
+
+#[[
+
+idepix_input_path=$1   # /hd1/yarn/.../L2_of_S3B_OL_1_ERR____20230101T131455_20230101T135854_20230102T182708_2639_094_024______MAR_O_NT_002.SEN3.nc
+idepix_input_path_noext=$(basename ${idepix_input_path} .nc)   # /hd1/yarn/.../L2_of_S3B_OL_1_ERR____20230101T131455_20230101T135854_20230102T182708_2639_094_024______MAR_O_NT_002.SEN3
+idepix_input_filename_noext=$(basename ${idepix_input_path_noext})   # L2_of_S3B_OL_1_ERR____20230101T131455_20230101T135854_20230102T182708_2639_094_024______MAR_O_NT_002.SEN3
+idepix_input_filename=${idepix_input_filename_noext}.nc   # L2_of_S3B_OL_1_ERR____20230101T131455_20230101T135854_20230102T182708_2639_094_024______MAR_O_NT_002.SEN3.nc
+
+tcwv_outdir=$2
+tcwv_outfile="L2_of_${idepix_input_filename}"
+
+echo CALVALUS_OUTPUT_PRODUCT ${tcwv_outfile}
+if /opt/hadoop/bin/hadoop fs -ls ${tcwv_outdir}/${tcwv_outfile} ; then
+  # output exist
+  echo CALVALUS_SKIP_PROCESSING yes
+fi
+
+]]#
+

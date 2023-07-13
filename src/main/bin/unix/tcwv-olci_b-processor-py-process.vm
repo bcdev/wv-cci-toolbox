@@ -1,0 +1,99 @@
+#!/bin/bash
+set -x
+set -e
+set -m
+
+#######################################################################################
+# Calvalus processing script for TCWV OLCI S3A product generation with original RP Python.
+#######################################################################################
+
+function copy_file_from_hdfs {
+  local filePath=$1
+  result=1
+  echo "checking HDFS ${filePath}"
+  local hadoopLsResult=$(hadoop fs -ls ${filePath})
+  if [[ ${hadoopLsResult} ]]; then
+    echo "copy to CWD: ${filePath}"
+    /opt/hadoop/bin/hadoop fs -copyToLocal $filePath ${pwd}
+    result=0
+  fi
+  return $result
+}
+
+l1b_input_dir="$parameters.get('l1bInputDir')"
+idepix_input_dir="$parameters.get('idepixInputDir')"
+year="$parameters.get('year')"
+month="$parameters.get('month')"
+day="$parameters.get('day')"
+
+
+#[[
+
+# memory settings
+let m="1024*1024*9"
+ulimit -m $m
+
+# make available conda in a static path
+CONDA_DIR=$(ls -ld miniconda3-wvcci|awk '{print $11}')
+mkdir -p /home/yarn/opt
+ln -s -f -T $CONDA_DIR /home/yarn/miniconda3-wvcci
+export PATH=/home/yarn/miniconda3-wvcci/bin:$PATH
+
+
+idepix_input_path=$1   # /hd1/yarn/.../L2_of_S3B_OL_1_ERR____20230101T131455_20230101T135854_20230102T182708_2639_094_024______MAR_O_NT_002.SEN3.nc
+idepix_input_path_noext=$(basename ${idepix_input_path} .nc)   # /hd1/yarn/.../L2_of_S3B_OL_1_ERR____20230101T131455_20230101T135854_20230102T182708_2639_094_024______MAR_O_NT_002.SEN3
+idepix_input_filename_noext=$(basename ${idepix_input_path_noext})   # L2_of_S3B_OL_1_ERR____20230101T131455_20230101T135854_20230102T182708_2639_094_024______MAR_O_NT_002.SEN3
+idepix_input_filename=${idepix_input_filename_noext}.nc   # L2_of_S3B_OL_1_ERR____20230101T131455_20230101T135854_20230102T182708_2639_094_024______MAR_O_NT_002.SEN3.nc
+
+prefix=L2_of_
+l1b_dir=${idepix_input_filename_noext/#$prefix}   # S3B_OL_1_ERR____20230101T131455_20230101T135854_20230102T182708_2639_094_024______MAR_O_NT_002.SEN3
+l1b_filename_noext=$(basename ${l1b_dir} .SEN3)  # S3B_OL_1_ERR____20230101T131455_20230101T135854_20230102T182708_2639_094_024______MAR_O_NT_002
+l1b_input_path=${l1b_input_dir}/$year/$month/$day/${l1b_dir}
+echo "l1b_input_dir: ${l1b_input_dir}"
+echo "l1b_input_path: ${l1b_input_path}"
+
+# copy L1b file from HDFS to current dir:
+if ! copy_file_from_hdfs ${l1b_input_path}; then
+  if ! copy_file_from_hdfs ${l1b_input_path}.zip; then
+    echo "failed to get L1b input product"
+    exit 1
+  fi
+fi
+
+if [[ $(pwd)/${l1b_dir}.zip} ]]; then
+  unzip $(pwd)/${l1b_dir}.zip
+  rm $(pwd)/${l1b_dir}.zip
+fi
+
+
+#echo "Idepix input filename: ${idepix_input_filename}"
+
+echo "Directory listing before processing:"
+echo "`ls -la $(pwd)`"
+echo `which python`
+python --version
+python $(pwd)/tcwv_olci_code/olci_l2_processor_for_calvalus.py -l1 $(pwd)/${l1b_dir} -idp $(pwd)/${idepix_input_filename} \
+-ini $(pwd)/tcwv_olci_code/ini/olci_B_homog_processor4cci.ini -lpi $(pwd)/tcwv_olci_code/ini/olci_B_homog_land_all_onl_calib.ini -opi $(pwd)/tcwv_olci_code/ini/olci_ocean_all_onl_calib.ini \
+-ll $(pwd)/tcwv_olci_code/luts/land_core_olci_B_homog_calib_arm_05052023.nc4 -ol $(pwd)/tcwv_olci_code/luts/ocean_core_olci_calib_after_aot.nc4 \
+-t $(pwd)/L2_of_${idepix_input_filename}
+
+status=$?
+echo "Status: $status"
+
+if [ $status = 0 ]
+then
+    echo "TCWV MERIS L2 nc file created."
+    echo "Status: $status"
+    rm -f ./$1
+    rm -Rf $(pwd)/${l1b_dir}
+fi
+
+## output TCWV nc filename:
+tcwv_nc_outfile="L2_of_${idepix_input_filename}"
+
+echo CALVALUS_OUTPUT_PRODUCT ${tcwv_nc_outfile}
+echo "Directory listing AFTER processing:"
+echo "`ls -la $(pwd)`"
+
+]]#
+
