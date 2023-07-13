@@ -123,17 +123,17 @@ def cleanup_inconsistencies(dst):
         lat_arr_3d[0][:][i] = lat_arr[i]
 
     # remove all HOAPS (everything over ocean, coastal, seaice) in case of CDR-1
+    # todo: clarify what we want to do over ocean in highres processing! For the moment consider land only. (20230713)
     # clean everything remaining over ocean where we have no HOAPS (wvpa) over water in case of CDR-2
     # set num_obs to 0:
-    # todo: clarify what we want over ocean. TCWV from NIR, from CMSAF or nothing?
-    #reset_ocean_cdr1(dst.variables['num_obs'], surface_type_arr, 0)
+    reset_ocean_cdr1(dst.variables['num_obs'], surface_type_arr, 0)
     # set tcwv, stdv, and error terms to nan:
-    #reset_ocean_cdr1(dst.variables['tcwv'], surface_type_arr, np.nan)
-    #reset_ocean_cdr1(dst.variables['stdv'], surface_type_arr, np.nan)
-    #reset_ocean_cdr1(dst.variables['tcwv_err'], surface_type_arr, np.nan)
-    #reset_ocean_cdr1(dst.variables['tcwv_ran'], surface_type_arr, np.nan)
+    reset_ocean_cdr1(dst.variables['tcwv'], surface_type_arr, np.nan)
+    reset_ocean_cdr1(dst.variables['stdv'], surface_type_arr, np.nan)
+    reset_ocean_cdr1(dst.variables['tcwv_err'], surface_type_arr, np.nan)
+    reset_ocean_cdr1(dst.variables['tcwv_ran'], surface_type_arr, np.nan)
     # set tcwv_quality_flag to 3:
-    #reset_ocean_cdr1(dst.variables['tcwv_quality_flag'], surface_type_arr, 3)
+    reset_ocean_cdr1(dst.variables['tcwv_quality_flag'], surface_type_arr, 3)
 
 
 def set_ocean_wvpa_errors(dst_var, surface_type_array, tcwv_array, wvpa_error_array, has_errors):
