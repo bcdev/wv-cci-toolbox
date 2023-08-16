@@ -26,9 +26,29 @@ month=$7
 day=$8
 wvcciRootDir=$9
 
+modisstem=${l1bName%.hdf}
+hour=${l1bName:18:2}
+minute=${l1bName:20:2}
+date_in_seconds=$(($(date +%s -u -d "$year-01-01 $hour:$minute:00") + ( 1$doy - 1000 ) * 86400 - 86400))
+month=$(date --date "@$date_in_seconds" +%m)
+day=$(date --date "@$date_in_seconds" +%d)
+acquisitionTime=$year$month$day
+
+# replace 'L1b' by 'L1bEra5':
+l1bDir=`dirname $l1bPath`
+current="L1b"
+replace="L1bEra5"
+l1bEra5Dir=${l1bDir/$current/$replace}
+
+replace="Tcwv"
+tcwvDir=${l1bDir/$current/$replace}
+mkdir -p $tcwvDir
+tcwv=$tcwvDir/${modisstem}_tcwv.nc
+
 # Exit already here if L1b product is not in daily mode: (note the syntax: no [] brackets!!)
 if ! `python $WVCCI_INST/bin/check_if_modis_daily_product.py $l1bPath`; then
-  echo "SKIP nightly product $l1bPath ..."
+  echo "SKIP nightly product $l1bPath. Just write a dummy marker as TCWV 'result' ..."
+  touch ${tcwv}.NIGHTLY
   exit 0
 else
   echo "DAILY product: $l1bPath ..."
@@ -38,26 +58,7 @@ fi
 tmpdir=$wvcciRootDir/tmp
 #tmpdir=/work/scratch-nompiio/odanne/wvcci/tmp
 mkdir -p $tmpdir
-
-modisstem=${l1bName%.hdf}
-hour=${l1bName:18:2}
-minute=${l1bName:20:2}
-date_in_seconds=$(($(date +%s -u -d "$year-01-01 $hour:$minute:00") + ( 1$doy - 1000 ) * 86400 - 86400))
-month=$(date --date "@$date_in_seconds" +%m)
-day=$(date --date "@$date_in_seconds" +%d)
-
-acquisitionTime=$year$month$day
-
-# replace 'L1b' by 'L1bEra5':
-l1bDir=`dirname $l1bPath`
-current="L1b"
-replace="L1bEra5"
-l1bEra5Dir=${l1bDir/$current/$replace}
 mkdir -p $l1bEra5Dir
-
-replace="Tcwv"
-tcwvDir=${l1bDir/$current/$replace}
-mkdir -p $tcwvDir
 
 eramodis=${tmpdir}/${modisstem}_era5.nc
 echo "eramodis: $eramodis"
@@ -80,6 +81,7 @@ if [ -f $era5Path ]; then
     echo "END gpt Merge/Collocate - wallclock time is: `date`"
 else
     echo "ERA5 auxdata $era5Path does not exist - cannot generate reliable TCWV product."    
+    exit -1
 fi
 
 

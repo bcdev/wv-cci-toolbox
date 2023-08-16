@@ -5,6 +5,8 @@
 export WVCCI_INST=/gws/nopw/j04/esacci_wv/odanne/wvcci-inst
 export WVCCI_LOG=$WVCCI_INST/log
 
+export SCRATCH_ROOT=/work/scratch-nopw2/odanne
+
 export WVCCI_USER=odanne
 export SCHEDULER='SLURM'
 

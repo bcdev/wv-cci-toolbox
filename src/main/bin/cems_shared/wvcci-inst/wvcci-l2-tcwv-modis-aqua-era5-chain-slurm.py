@@ -16,24 +16,24 @@ __author__ = 'olafd'
 sensor = 'MODIS_AQUA'
 platform_id = 'MYD'  # note that on neodc MYD03 and MYD35_L2 data start in May 2013 (as of 20200519) !!
 
+# done: 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013
+#years = ['2022']
+#years = ['2021']
+#years = ['2020']
+#years = ['2019']
+#years = ['2018']
 #years = ['2017']
-years = ['2022']
-#years = ['2011']
-#years = ['2011','2016']
-#years = ['2013','2014']
+#years = ['2016']
+#years = ['2015']
+#years = ['2014']
+#years = ['2013']
+years = ['2012']
 
-#all_months = ['09']
-#all_months = ['12']
-all_months = ['01','02','03','04','05']
-#all_months = ['01','02','03']
-#all_months = ['04','05','06']
-#all_months = ['07','08','09']
-#all_months = ['10','11','12']
-#all_months = ['06','07']
-#all_months = ['10']
-#all_months = ['11','12']
+#all_months = ['04']
 
-#all_months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+all_months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+#all_months = ['01', '02', '03', '04', '05', '06']
+#all_months = ['07', '08', '09', '10', '11', '12']
 
 #days = ['07', '16', ,'17', '21', '23', '24', '25', '26', '28', '30', '31']
 #days = ['17']
@@ -128,34 +128,37 @@ for year in years:
     print('year: ' + year)
 
     for month in get_month(year):
-        print('month: ' + month)
-
+        l1b_root_path = l1b_root_dir + '/' + year + '/' + month
+        print('l1b_root_path: ' + l1b_root_path)
         if os.path.exists(l1b_root_dir + '/' + year + '/' + month):
 
             num_month_days = monthrange(int(year), int(month))[1]
             print('num_month_days: ' + str(num_month_days))
 
             #for day in days:
-            #for iday in range(16, 17):
+            #for iday in range(13, 17):
             #for iday in range(1, 2):
             for iday in range(1, num_month_days+1):
                 day = str(iday).zfill(2)
-                print('day: ' + day)
 
                 tcwv_dir = wvcci_root_dir + '/Tcwv/' + sensor + '/' + year + '/' + month + '/' + str(day).zfill(2)
 
-                if os.path.exists(l1b_root_dir + '/' + year + '/' + month + '/' + str(day).zfill(2)):
+                l1b_dir = l1b_root_dir + '/' + year + '/' + month + '/' + str(day).zfill(2)
+                if os.path.exists(l1b_dir):
+
                     l1b_files_raw = os.listdir(l1b_root_dir + '/' + year + '/' + month + '/' + str(day).zfill(2))
                     # remove possible duplicate files at same time:
                     l1b_files = get_cleaned_list(l1b_files_raw)
 
                     if len(l1b_files) > 0:
+
                         for index in range(0, len(l1b_files)):
                             lab_path = l1b_root_dir + '/' + year + '/' + month + '/' + str(day).zfill(2) + '/' + l1b_files[index]
 
 			    # TEST: do only 1 product, 1030
                             #if l1b_files[index].endswith(".hdf") and l1b_files[index].startswith("MYD021KM.A2022213.0410"):
                             if l1b_files[index].startswith("MYD021KM") and l1b_files[index].endswith(".hdf"):
+
                                 # MODIS only
                                 # MOD021KM or MYD021KM product e.g. MOD021KM.A2015196.1855.061.2017321064215.hdf
                                 date_time_string = l1b_files[index][9:22]  # A2015196.1855
@@ -165,25 +168,32 @@ for year in years:
                                 l1b_file_base = os.path.splitext(l1b_files[index])[0]
 
                                 # cloud product e.g. MOD35_L2.A2015196.1855.061.2017321064215.hdf
-                                modis_cloud_mask_files = fnmatch.filter(os.listdir(modis_cloud_mask_root_dir + '/' + year + '/' + month + '/' + str(day).zfill(2)), file_filter)
-                                if len(modis_cloud_mask_files) > 0:
-                                    modis_cloud_mask_path = modis_cloud_mask_root_dir + '/' + year + '/' + month + '/' + str(day).zfill(2) + '/' + modis_cloud_mask_files[0]
+                                modis_cloud_mask_dir = modis_cloud_mask_root_dir + '/' + year + '/' + month + '/' + str(day).zfill(2)
+                                if os.path.exists(modis_cloud_mask_dir):
+                                    modis_cloud_mask_files = fnmatch.filter(os.listdir(modis_cloud_mask_dir), file_filter)
 
-                                    if os.path.exists(modis_cloud_mask_path):
+                                    if len(modis_cloud_mask_files) > 0:
+                                        print('len(modis_cloud_mask_files) > 0...')
+                                        modis_cloud_mask_path = modis_cloud_mask_root_dir + '/' + year + '/' + month + '/' + str(day).zfill(2) + '/' + modis_cloud_mask_files[0]
 
-                                        # =============== Merge MODIS L1b with ERA-INTERIM, then TCWV from Idepix-ERA-INTERIM merge product  =======================
+                                        if os.path.exists(modis_cloud_mask_path):
+                                            # =============== Merge MODIS L1b with ERA-INTERIM, then TCWV from Idepix-ERA-INTERIM merge product  =======================
 
-                                        hhmm_era5 = get_era5_timestamp(hhmm)
-                                        yyyymmdd = year + month + str(day).zfill(2) 
-                                        era5_path = era5_root_dir + '/' + year + '/' + month + '/' + str(day).zfill(2) + '/era5_' + yyyymmdd + '_' + hhmm_era5 + '.nc'
+                                            hhmm_era5 = get_era5_timestamp(hhmm)
+                                            yyyymmdd = year + month + str(day).zfill(2) 
+                                            era5_path = era5_root_dir + '/' + year + '/' + month + '/' + str(day).zfill(2) + '/era5_' + yyyymmdd + '_' + hhmm_era5 + '.nc'
 
-                                        l1b_era_file = l1b_file_base + '_l1b-era-interim.nc'
+                                            l1b_era_file = l1b_file_base + '_l1b-era-interim.nc'
 
-                                        job = Job('test-' + date_time_string, 'wvcci-l2-tcwv-modis-aqua-era5-step-slurm.sh', 
+                                            job = Job('test-' + date_time_string, 'wvcci-l2-tcwv-modis-aqua-era5-step-slurm.sh', 
                                                  ['dummy'], [l1b_era_file], 
                                                  [lab_path,l1b_files[index],modis_cloud_mask_path,era5_path,sensor,year,month,day,hhmm,wvcci_root_dir])
-                                        #print('call mon.execute...')
-                                        mon.execute(job)
+                                            #print('call mon.execute...')
+                                            mon.execute(job)
 
-mon.wait_for_completion()
+#mon.wait_for_completion()
+try:
+    mon.wait_for_completion()
+except OSError as err:
+    print('OS error: ', err)
 
