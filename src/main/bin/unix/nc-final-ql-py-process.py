@@ -18,7 +18,7 @@ import os
 import sys
 
 default_cmap = 'gist_stern'
-creation_year = '2020'
+creation_year = '2023'
 
 
 def plot_image(array, out_png, date):
