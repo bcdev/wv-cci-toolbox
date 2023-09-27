@@ -846,7 +846,9 @@ def get_relevant_l1l2_data(oll1, idp, config, cmi=True):
         dok = dok & (rad[b] >= config['PROCESSING']['min_norm_rad'])
 
     # data for land processing
-    dfl = dok & (lsm | (sct & (rad[21] > config['PROCESSING']['min_coast_norm_rad'])))
+    # dfl = dok & (lsm | (sct & (rad[21] > config['PROCESSING']['min_coast_norm_rad'])))
+    # Interpret seaice pixels as land in order to use the land LUT later on (RP/OD 20230927):
+    dfl = dok & (idepix_masks['seaice'] | lsm | (sct & (rad[21] > config['PROCESSING']['min_coast_norm_rad'])))
     # data for ocean processing
     dfo = dok & ~dfl
 
