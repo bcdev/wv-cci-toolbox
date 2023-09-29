@@ -68,52 +68,6 @@ def update_errors_for_hoaps(dst, src):
     set_ocean_wvpa_errors(dst.variables['tcwv_ran'], wvpa_ran_arr)
 
 
-def reset_ocean_cdr1(dst_var, surface_type_array, reset_value):
-    """
-    Resets everything to nan over ocean, seaice, coastlines in case of CDR-1 (no HOAPS, only land)
-    :param dst_var:
-    :param surface_type_array:
-    :param reset_value:
-    :return:
-    """
-    dst_var_arr = np.array(dst_var)
-    tmp_array = np.copy(dst_var_arr)
-    tmp_array[np.where((surface_type_array == 1) |
-                       (surface_type_array == 4) |
-                       (surface_type_array == 5) |
-                       (surface_type_array == 7))] = reset_value
-    dst_var[0, :, :] = tmp_array[0, :, :]
-
-
-def cleanup_inconsistencies(dst, sensor):
-    """
-    Final cleanup of inconsistencies caused by L3 resampling problems such as Moiree effects, distortion near poles etc.
-    :param dst:
-    :param sensor:
-    :return:
-    todo: do we need this at all in monthly final processing?
-    """
-    var_surface_type = dst.variables['surface_type_flag']
-    surface_type_arr = np.array(var_surface_type)
-    var_tcwv = dst.variables['tcwv']
-    tcwv_arr = np.array(var_tcwv)
-    var_lat = dst.variables['lat']
-    lat_arr = np.array(var_lat)
-    lat_arr_3d = np.zeros((tcwv_arr.shape))
-    for i in range(len(lat_arr)):
-        lat_arr_3d[0][:][i] = lat_arr[i]
-
-    # remove all HOAPS (everything over ocean, coastal, seaice) in case of CDR-1
-    # todo: clarify what we want to do over ocean in highres processing! For the moment consider land only. (20230713)
-    if is_cdr_1(sensor):
-        # set num_obs to 0:
-        reset_ocean_cdr1(dst.variables['num_obs'], surface_type_arr, 0)
-        # set tcwv, stdv, and error terms to nan:
-        reset_ocean_cdr1(dst.variables['tcwv'], surface_type_arr, np.nan)
-        reset_ocean_cdr1(dst.variables['stdv'], surface_type_arr, np.nan)
-        reset_ocean_cdr1(dst.variables['tcwv_err'], surface_type_arr, np.nan)
-        reset_ocean_cdr1(dst.variables['tcwv_ran'], surface_type_arr, np.nan)
-
 def get_iteritems(iterable_obj):
     """
     Wraps Python2/3 difference for iterable objects
@@ -287,6 +241,25 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon):
             copy_variable_attributes_from_source(variable, dstvar)
             set_variable_long_name_and_unit_attributes(dstvar, 'Random retrieval uncertainty', 'kg/m2')
             dstvar[0, :, :] = variable[:, :]
+
+        if name == 'tcwv_ocean_hoaps_mean':
+            dstvar = dst.createVariable('tcwv_ocean_hoaps', variable.datatype, ('time', 'lat', 'lon'), zlib=True,
+                                        fill_value=np.nan)
+            copy_variable_attributes_from_source(variable, dstvar)
+            set_variable_long_name_and_unit_attributes(dstvar, 'Total Column of Water', 'kg/m2')
+            dstvar.setncattr('standard_name', 'atmosphere_water_vapor_content ')
+            tcwv_arr = np.array(variable)
+            tcwv_min_valid = 0.0
+            tcwv_max_valid = 70.0
+            # tcwv_arr[np.where(tcwv_arr < tcwv_min_valid)] = tcwv_min_valid
+            tcwv_arr[np.where(tcwv_arr < tcwv_min_valid)] = np.nan
+            tcwv_arr[np.where(tcwv_arr > tcwv_max_valid)] = tcwv_max_valid
+            tcwv_min = np.nanmin(tcwv_arr)
+            tcwv_max = np.nanmax(tcwv_arr)
+            dstvar.setncattr('actual_range', np.array([tcwv_min, tcwv_max], 'f4'))
+            dstvar.setncattr('valid_range', np.array([tcwv_min_valid, tcwv_max_valid], 'f4'))
+            dstvar[0, :, :] = tcwv_arr[:, :]
+
         if name == 'crs':
             dstvar = dst.createVariable(name, variable.datatype, variable.dimensions, zlib=True)
             copy_variable_attributes_from_source(variable, dstvar)
@@ -741,8 +714,6 @@ def run(args):
 
     set_surface_type_flag(dst, src)
 
-    # Cleanup inconsistencies of final arrays at this point:
-    cleanup_inconsistencies(dst, sensor)
     var_tcwv_arr = np.array(dst.variables['tcwv'])
     dst.variables['tcwv'].setncattr('actual_range', np.array([np.nanmin(var_tcwv_arr), np.nanmax(var_tcwv_arr)], 'f4'))
 

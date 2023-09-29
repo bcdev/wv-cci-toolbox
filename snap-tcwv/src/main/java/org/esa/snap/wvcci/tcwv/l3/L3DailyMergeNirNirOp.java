@@ -133,6 +133,9 @@ public class L3DailyMergeNirNirOp extends PixelOperator {
                 mergeTcwv(srcTcwvSumsSum, srcTcwvUncertaintyCounts, srcTcwvNodata, srcTcwvCountsNodata);
         final double[] tcwvSumsSumSqMerge =
                 mergeTcwv(srcTcwvSumsSumSq, srcTcwvUncertaintyCounts, srcTcwvNodata, srcTcwvCountsNodata);
+        if (x == 1300 && y == 1700) {
+            System.out.println("x,y = " + x + ", " + y);
+        }
         final int qualityFlagMajorityMerge = mergeFlag(srcQualityFlagsMajority, srcTcwvUncertaintyCounts, srcTcwvNodata);
         final int qualityFlagMinMerge = mergeFlag(srcQualityFlagsMin, srcTcwvUncertaintyCounts, srcTcwvNodata);
         final int qualityFlagMaxMerge = mergeFlag(srcQualityFlagsMax, srcTcwvUncertaintyCounts, srcTcwvNodata);
@@ -157,28 +160,28 @@ public class L3DailyMergeNirNirOp extends PixelOperator {
         final Product targetProduct = productConfigurer.getTargetProduct();
 
         targetProduct.addBand(TcwvConstants.NUM_OBS_L3_BAND_NAME,
-                              mergeInputProducts[0].getBand(TcwvConstants.NUM_OBS_L3_BAND_NAME).getDataType());
+                mergeInputProducts[0].getBand(TcwvConstants.NUM_OBS_L3_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.TCWV_L3_BAND_NAME,
-                              mergeInputProducts[0].getBand(TcwvConstants.TCWV_L3_BAND_NAME).
-                                      getDataType());
+                mergeInputProducts[0].getBand(TcwvConstants.TCWV_L3_BAND_NAME).
+                        getDataType());
         targetProduct.addBand(TcwvConstants.TCWV_SIGMA_L3_BAND_NAME,
-                              mergeInputProducts[0].getBand(TcwvConstants.TCWV_SIGMA_L3_BAND_NAME).getDataType());
+                mergeInputProducts[0].getBand(TcwvConstants.TCWV_SIGMA_L3_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.TCWV_UNCERTAINTY_L3_BAND_NAME,
-                              mergeInputProducts[0].getBand(TcwvConstants.TCWV_UNCERTAINTY_L3_BAND_NAME).getDataType());
+                mergeInputProducts[0].getBand(TcwvConstants.TCWV_UNCERTAINTY_L3_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.TCWV_UNCERTAINTY_COUNTS_L3_BAND_NAME,
-                              mergeInputProducts[0].getBand(TcwvConstants.TCWV_UNCERTAINTY_COUNTS_L3_BAND_NAME).getDataType());
+                mergeInputProducts[0].getBand(TcwvConstants.TCWV_UNCERTAINTY_COUNTS_L3_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.TCWV_SUMS_SUM_L3_BAND_NAME,
-                              mergeInputProducts[0].getBand(TcwvConstants.TCWV_SUMS_SUM_L3_BAND_NAME).getDataType());
+                mergeInputProducts[0].getBand(TcwvConstants.TCWV_SUMS_SUM_L3_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.TCWV_SUMS_SUM_SQ_L3_BAND_NAME,
-                              mergeInputProducts[0].getBand(TcwvConstants.TCWV_SUMS_SUM_SQ_L3_BAND_NAME).getDataType());
+                mergeInputProducts[0].getBand(TcwvConstants.TCWV_SUMS_SUM_SQ_L3_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.TCWV_QUALITY_FLAG_MAJORITY_L3_BAND_NAME,
-                              mergeInputProducts[0].getBand(TcwvConstants.TCWV_QUALITY_FLAG_MAJORITY_L3_BAND_NAME).getDataType());
+                mergeInputProducts[0].getBand(TcwvConstants.TCWV_QUALITY_FLAG_MAJORITY_L3_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.TCWV_QUALITY_FLAG_MIN_L3_BAND_NAME,
-                              mergeInputProducts[0].getBand(TcwvConstants.TCWV_QUALITY_FLAG_MIN_L3_BAND_NAME).getDataType());
+                mergeInputProducts[0].getBand(TcwvConstants.TCWV_QUALITY_FLAG_MIN_L3_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.TCWV_QUALITY_FLAG_MAX_L3_BAND_NAME,
-                              mergeInputProducts[0].getBand(TcwvConstants.TCWV_QUALITY_FLAG_MAX_L3_BAND_NAME).getDataType());
+                mergeInputProducts[0].getBand(TcwvConstants.TCWV_QUALITY_FLAG_MAX_L3_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.SURFACE_TYPE_FLAG_L3_BAND_NAME,
-                              mergeInputProducts[0].getBand(TcwvConstants.SURFACE_TYPE_FLAG_L3_BAND_NAME).getDataType());
+                mergeInputProducts[0].getBand(TcwvConstants.SURFACE_TYPE_FLAG_L3_BAND_NAME).getDataType());
 
         for (Band b : targetProduct.getBands()) {
             final Band sourceBand = mergeInputProducts[0].getBand(b.getName());
@@ -205,27 +208,27 @@ public class L3DailyMergeNirNirOp extends PixelOperator {
 
         for (int i = 0; i < 2; i++) {
             configurator.defineSample(SRC_NUM_OBS[i], TcwvConstants.NUM_OBS_L3_BAND_NAME,
-                                      mergeInputProducts[i]);
+                    mergeInputProducts[i]);
             configurator.defineSample(SRC_TCWV_MEAN[i], TcwvConstants.TCWV_L3_BAND_NAME,
-                                      mergeInputProducts[i]);
+                    mergeInputProducts[i]);
             configurator.defineSample(SRC_TCWV_SIGMA[i], TcwvConstants.TCWV_SIGMA_L3_BAND_NAME,
-                                      mergeInputProducts[i]);
+                    mergeInputProducts[i]);
             configurator.defineSample(SRC_TCWV_UNCERTAINTY_MEAN[i], TcwvConstants.TCWV_UNCERTAINTY_L3_BAND_NAME,
-                                      mergeInputProducts[i]);
+                    mergeInputProducts[i]);
             configurator.defineSample(SRC_TCWV_UNCERTAINTY_COUNTS[i], TcwvConstants.TCWV_UNCERTAINTY_COUNTS_L3_BAND_NAME,
-                                      mergeInputProducts[i]);
+                    mergeInputProducts[i]);
             configurator.defineSample(SRC_TCWV_SUMS_SUM[i], TcwvConstants.TCWV_SUMS_SUM_L3_BAND_NAME,
-                                      mergeInputProducts[i]);
+                    mergeInputProducts[i]);
             configurator.defineSample(SRC_TCWV_SUMS_SUM_SQ[i], TcwvConstants.TCWV_SUMS_SUM_SQ_L3_BAND_NAME,
-                                      mergeInputProducts[i]);
+                    mergeInputProducts[i]);
             configurator.defineSample(SRC_TCWV_QUALITY_FLAGS_MAJORITY[i], TcwvConstants.TCWV_QUALITY_FLAG_MAJORITY_L3_BAND_NAME,
-                                      mergeInputProducts[i]);
+                    mergeInputProducts[i]);
             configurator.defineSample(SRC_TCWV_QUALITY_FLAGS_MIN[i], TcwvConstants.TCWV_QUALITY_FLAG_MIN_L3_BAND_NAME,
-                                      mergeInputProducts[i]);
+                    mergeInputProducts[i]);
             configurator.defineSample(SRC_TCWV_QUALITY_FLAGS_MAX[i], TcwvConstants.TCWV_QUALITY_FLAG_MAX_L3_BAND_NAME,
-                                      mergeInputProducts[i]);
+                    mergeInputProducts[i]);
             configurator.defineSample(SRC_TCWV_SURFACE_TYPE_FLAGS_MAJORITY[i], TcwvConstants.SURFACE_TYPE_FLAG_L3_BAND_NAME,
-                                      mergeInputProducts[i]);
+                    mergeInputProducts[i]);
         }
     }
 
@@ -273,13 +276,13 @@ public class L3DailyMergeNirNirOp extends PixelOperator {
     }
 
     private static int mergeFlag(int[] srcFlags, double[] srcTcwvCounts, double[] srcTcwvCountsNodata) {
-        int majorityIndex = srcTcwvCounts[0] >= srcTcwvCounts[1] ? 0 : 1;
-        int minorityIndex = srcTcwvCounts[0] >= srcTcwvCounts[1] ? 1 : 0;
-        if (srcFlags[majorityIndex] >= 0 && srcTcwvCounts[majorityIndex] != srcTcwvCountsNodata[majorityIndex]) {
-            return srcFlags[majorityIndex];
-        } else {
-            return srcFlags[minorityIndex];
+        for (int i = 0; i <= 1; i++) {
+            if (Double.isNaN(srcTcwvCounts[i]) || (srcTcwvCounts[i] == srcTcwvCountsNodata[i])) {
+                return srcFlags[1 - i];
+            }
         }
+        final int majorityIndex = srcTcwvCounts[0] >= srcTcwvCounts[1] ? 0 : 1;
+        return srcFlags[majorityIndex];
     }
 
     private void validate() {
@@ -288,7 +291,7 @@ public class L3DailyMergeNirNirOp extends PixelOperator {
         final int height2 = mergeInputProducts[1].getSceneRasterHeight();
         if (width != width2 || height != height2) {
             throw new OperatorException("Dimension of first source product (" + width + "/" + height +
-                                                ") differs from second source product (" + width2 + "/" + height2 + ").");
+                    ") differs from second source product (" + width2 + "/" + height2 + ").");
         }
 
         // band names
