@@ -188,7 +188,7 @@ def cleanup_inconsistencies(dst, src_hoaps, sensor, res):
         reset_ocean_cdr1(dst.variables['tcwv_quality_flag'], surface_type_arr, 3)
     else:
         wvpa_arr_src = np.array(src_hoaps.variables['wvpa'])
-        wvpa_arr = rescale_hoaps(wvpa_arr_src, res)
+        wvpa_arr = rescale_auxdata(wvpa_arr_src, res)
         # set num_obs to 0:
         reset_ocean_cdr2(dst.variables['num_obs'], wvpa_arr, surface_type_arr, 0)
         # set tcwv, stdv, and error terms to nan:
@@ -210,7 +210,7 @@ def update_tcwv_quality_flag_for_hoaps(dst, src_hoaps, sensor, res):
     """
     dstvar = dst.variables['tcwv_quality_flag']
     tcwv_qual_arr_hoaps_src = np.array(src_hoaps.variables['tcwv_quality_flag'])
-    tcwv_qual_arr_hoaps = rescale_hoaps(tcwv_qual_arr_hoaps_src, res)
+    tcwv_qual_arr_hoaps = rescale_auxdata(tcwv_qual_arr_hoaps_src, res)
     tcwv_qual_arr_dst = np.array(dstvar).astype(int)
 
     # tcwv_qual_arr_src = np.array(dstvar).astype(int)
@@ -260,9 +260,9 @@ def set_ocean_wvpa_errors(dst_var, surface_type_array, tcwv_array, wvpa_error_ar
     dst_var[0, :, :] = dst_var_arr_0[:, :]
 
 
-def rescale_hoaps(src_arr, res):
+def rescale_auxdata(src_arr, res):
     """
-    Rescales 0.5 deg hoaps array to target resolution
+    Rescales 0.5 deg auxdata array (landmask, landcover) to target resolution
 
     :param src_arr:
     :param res:
@@ -295,12 +295,12 @@ def set_errors_for_hoaps(dst, src, res):
             has_wvpa_errors = True
             # wvpa_err_arr = np.array(src.variables['wvpa_err'])
             wvpa_err_arr_src = np.array(src.variables['wvpa_err'])
-            wvpa_err_arr = rescale_hoaps(wvpa_err_arr_src, res)
+            wvpa_err_arr = rescale_auxdata(wvpa_err_arr_src, res)
         if name == 'wvpa_ran':
             has_wvpa_errors = True
             # wvpa_ran_arr = np.array(src.variables['wvpa_ran'])
             wvpa_ran_arr_src = np.array(src.variables['wvpa_ran'])
-            wvpa_ran_arr = rescale_hoaps(wvpa_ran_arr_src, res)
+            wvpa_ran_arr = rescale_auxdata(wvpa_ran_arr_src, res)
 
     # if no wvpa errors available, set to NaN over ocean (should no longer happen for latest HOAPS L3 products)
     set_ocean_wvpa_errors(dst.variables['tcwv_err'],
@@ -324,7 +324,7 @@ def update_num_hours_tcwv_for_hoaps(dst, src_hoaps, sensor, res):
     """
     if is_cdr_2(sensor):
         num_hours_tcwv_arr_src = np.array(src_hoaps.variables['numh'])
-        num_hours_tcwv_arr = rescale_hoaps(num_hours_tcwv_arr_src, res)
+        num_hours_tcwv_arr = rescale_auxdata(num_hours_tcwv_arr_src, res)
         num_hours_tcwv_arr[np.where(num_hours_tcwv_arr <= 0.0)] = -1
         dst_var = dst.variables['num_hours_tcwv']
         dst_var[0, :, :] = num_hours_tcwv_arr[:, :]
@@ -361,7 +361,7 @@ def set_num_obs_variable(dst, src, sensor):
     dstvar[0, :, :] = tmparr[:, :]
 
 
-def set_surface_type_flag(dst, src, day, res, ds_hoaps, ds_landmask, ds_landcover, ds_seaice):
+def set_surface_type_flag(dst, src, day, res, ds_landmask, ds_landcover, ds_seaice):
     """
     Sets 'surface_type_flag' variable and its attributes.
     Do here: LAND OCEAN INLAND_WATER PERMANENT_WETLANDS SEA_ICE COAST PARTLY_SEA_ICE
@@ -375,7 +375,6 @@ def set_surface_type_flag(dst, src, day, res, ds_hoaps, ds_landmask, ds_landcove
     :param src:
     :param day:
     :param res:
-    :param ds_hoaps:
     :param ds_landmask:
     :param ds_landcover:
     :param ds_seaice:
@@ -385,107 +384,92 @@ def set_surface_type_flag(dst, src, day, res, ds_hoaps, ds_landmask, ds_landcove
     set_variable_long_name_and_unit_attributes(variable, 'Surface type flag', ' ')
     variable.setncattr('standard_name', 'status_flag ')
     min_valid = 0
-    max_valid = 7
+    max_valid = 6
     variable.setncattr('valid_range', np.array([min_valid, max_valid], 'b'))
-    variable.setncattr('flag_values', np.array([0, 1, 2, 3, 4, 5, 6, 7], 'b'))  # TODO: introduce constants for these!
-    variable.setncattr('flag_meanings',
-                       'LAND OCEAN CLOUD_OVER_LAND HEAVY_PRECIP_OVER_OCEAN SEA_ICE COAST PARTLY_CLOUDY_OVER_LAND PARTLY_SEA_ICE')
+    variable.setncattr('flag_values', np.array([0, 1, 2, 3, 4, 5, 6], 'b'))
+    variable.setncattr('flag_meanings', 'LAND OCEAN INLAND_WATER PERMANENT_WETLANDS SEA_ICE COAST PARTLY_SEA_ICE')
 
     # in original L3 we can have LAND (1), OCEAN (2), SEAICE (4), LAND+CLOUD (9), OCEAN+CLOUD (10), SEAICE+CLOUD (12):
     # but we want (see PSD v2.1):
-    # LAND (0), OCEAN (1), CLOUD_OVER_LAND (2), HEAVY_PRECIP_OVER_OCEAN (3), SEA_ICE (4), COAST (5),
-    # PARTLY_CLOUDY_OVER_LAND (6), PARTLY_SEA_ICE (7)
+    # LAND (0), OCEAN (1), INLAND_WATER (2), PERMANENT_WETLANDS (3), SEA_ICE (4), COAST (5), PARTLY_SEA_ICE (6)
     # (invalid is i.e. outside any swaths in daily L3)
     surface_type_flag_arr_src = np.array(src.variables['surface_type_flags_majority'])
     hoaps_surface_type_flag_arr_src = np.array(ds_landmask.variables['mask'])
+    modis_landcover_flag_arr_src = np.array(ds_landcover.variables['Majority_Land_Cover_Type_1'])
     tcwv_quality_flag_min_arr_src = np.array(src.variables['tcwv_quality_flags_min'])
     tcwv_arr_src = np.array(src.variables['tcwv_mean'])
     tcwv_arr = np.copy(tcwv_arr_src)
     tcwv_quality_flag_min_arr = np.copy(tcwv_quality_flag_min_arr_src)
     tcwv_quality_flag_min_arr[np.where(np.isnan(tcwv_quality_flag_min_arr))] = -128  # make NaN to INVALID
 
-    # hoaps_surface_type_flag_arr = np.copy(hoaps_surface_type_flag_arr_src[0])
-    # if res == '005':
-    #     hoaps_surface_type_flag_arr = scipy.ndimage.zoom(hoaps_surface_type_flag_arr, 10, order=0)
-    #     hoaps_surface_type_flag_arr[np.where(np.isnan(hoaps_surface_type_flag_arr))] = 0  # make NaN to water
-
-    hoaps_surface_type_flag_arr = rescale_hoaps(hoaps_surface_type_flag_arr_src, res)
+    hoaps_surface_type_flag_arr = rescale_auxdata(hoaps_surface_type_flag_arr_src, res)
     hoaps_surface_type_flag_arr[np.where(np.isnan(hoaps_surface_type_flag_arr))] = 0  # make NaN to water
 
     # make ocean + tcwv_quality_flag.TCWV_INVALID + tcwv = NaN to INVALID (fix of originally L2 bug)):
     tmparr = np.copy(surface_type_flag_arr_src)
     tmparr[np.where(np.isnan(tmparr))] = -128  # make NaN to INVALID
     tmparr[np.where((tmparr > 1) & (tmparr < 3) & (tcwv_quality_flag_min_arr > 2) & (np.isnan(tcwv_arr)))] = -128
-    tmparr[np.where(tmparr == 9)] = 4  # make land+cloud to CLOUD OVER LAND
     tmparr[np.where(tmparr == 10)] = 2  # make ocean + cloud to OCEAN
-    tmparr[np.where(tmparr == 12)] = 4  # make seaice+cloud to SEA_ICE
+    tmparr[np.where(tmparr == 12)] = 16  # make seaice+cloud to SEA_ICE
     tmparr[np.where(hoaps_surface_type_flag_arr < 1)] = 2  # make hoaps water to OCEAN
     tmparr[np.where(hoaps_surface_type_flag_arr > 1)] = 32  # make hoaps coast to COAST
-    tmparr[np.where((hoaps_surface_type_flag_arr == 1) & (tmparr != 4))] = 1  # make hoaps land to LAND if not cloudy
+    tmparr[np.where(hoaps_surface_type_flag_arr == 1)] = 1  # make hoaps land to LAND
+
+    # MODIS landcover info (MCD12C1.A2022001.061.05deg.nc):
+    # https://lpdaac.usgs.gov/documents/101/MCD12_User_Guide_V6.pdf
+    
+    # --> INLAND_WATER (2): ds_landmask = 1 && ds_landcover = 0:
+    tmparr[np.where((hoaps_surface_type_flag_arr == 1) & (modis_landcover_flag_arr_src == 0))] = 4
+    # --> PERMANENT_WETLANDS (8): ds_landmask = 1 && ds_landcover = 11
+    tmparr[np.where((hoaps_surface_type_flag_arr == 1) & (modis_landcover_flag_arr_src == 11))] = 8
 
     if ds_seaice:
         seaice_arr_src = np.array(ds_seaice.variables['mask'])
         seaice_frac_arr_src = np.array(ds_seaice.variables['icec'])
         day_index = int(day.zfill(1)) - 1
 
-        seaice_arr_src_day = rescale_hoaps(seaice_arr_src[day_index], res)
-        seaice_frac_arr_src_day = rescale_hoaps(seaice_frac_arr_src[day_index], res)
+        seaice_arr_src_day = rescale_auxdata(seaice_arr_src[day_index], res)
+        seaice_frac_arr_src_day = rescale_auxdata(seaice_frac_arr_src[day_index], res)
 
         seaice_frac_arr_src_day[np.where(np.isnan(seaice_frac_arr_src_day))] = 0  # make NaN to 0
         tmparr[np.where(seaice_arr_src_day == 11)] = 16  # make hoaps seaice to SEA_ICE
-        # tmparr[np.where(seaice_arr_src_day == 12)] = 64 # make hoaps seaice edge to PARTLY_SEA_ICE
         # requested by DWD instead: make hoaps seaice > 0% and < 100% to PARTLY_SEA_ICE
         tmparr[
             np.where(
-                (seaice_arr_src_day >= 11) & (seaice_frac_arr_src_day > 0) & (seaice_frac_arr_src_day < 100))] = 128
+                (seaice_arr_src_day >= 11) & (seaice_frac_arr_src_day > 0) & (seaice_frac_arr_src_day < 100))] = 64
 
-    if ds_hoaps:
-        hoaps_scat_ratio_arr_src = np.array(ds_hoaps.variables['scat_ratio'])
-        # tmparr[np.where(hoaps_scat_ratio_arr_src[0] > 0.2)] = 8  # hoaps heavy precipitation criterion (MS, 202012)
-        # hoaps_scat_ratio_arr = np.copy(hoaps_scat_ratio_arr_src[0])
-        # if res == '005':
-        #     hoaps_scat_ratio_arr = scipy.ndimage.zoom(hoaps_scat_ratio_arr, 10, order=0)
-        hoaps_scat_ratio_arr = rescale_hoaps(hoaps_scat_ratio_arr_src, res)
-        tmparr[np.where(hoaps_scat_ratio_arr > 0.2)] = 8  # hoaps heavy precipitation criterion (MS, 202012)
-
-    # set PARTLY_CLOUDY_OVER_LAND: must be the pixels identified in majority as CLOUD, but have a valid TCWV:
-    tmparr[np.where((np.isfinite(tcwv_arr)) & (tmparr == 4))] = 64
     surface_type_flag_arr = np.log2(tmparr)
     variable[0, :, :] = surface_type_flag_arr[:, :]
 
-def set_atmospheric_conditions_flag(dst, src, day, res, ds_hoaps, ds_landmask, ds_landcover, ds_seaice):
+def set_atmospheric_conditions_flag(dst, src, day, res, ds_hoaps, ds_landmask):
     """
     Sets 'surface_type_flag' variable and its attributes.
     Do here: CLOUD_OVER_LAND HEAVY_PRECIP_OVER_OCEAN PARTLY_CLOUDY_OVER_LAND
-    --> : CLOUD_OVER_LAND: land+cloud || inlandwater+cloud || permanentwetlands+cloud
-    --> : PARTLY_CLOUDY_OVER_LAND: CLOUD_OVER_LAND && valid tcwv
-    --> : HEAVY_PRECIP_OVER_OCEAN: hoaps_scat_ratio_arr > 0.2
+    --> : CLOUD_OVER_LAND (1): land+cloud || inlandwater+cloud || permanentwetlands+cloud
+    --> : PARTLY_CLOUDY_OVER_LAND (2): CLOUD_OVER_LAND && valid tcwv
+    --> : HEAVY_PRECIP_OVER_OCEAN (3): hoaps_scat_ratio_arr > 0.2
+    --> : CLEAR (0): none of those
     :param dst:
     :param src:
     :param day:
     :param res:
     :param ds_hoaps:
     :param ds_landmask:
-    :param ds_landcover:
-    :param ds_seaice:
     :return:
     """
-    variable = dst.variables['surface_type_flag']
-    set_variable_long_name_and_unit_attributes(variable, 'Surface type flag', ' ')
+    variable = dst.variables['atmospheric_conditions_flag']
+    set_variable_long_name_and_unit_attributes(variable, 'Atmospheric conditions flag', ' ')
     variable.setncattr('standard_name', 'status_flag ')
     min_valid = 0
-    max_valid = 7
+    max_valid = 3
     variable.setncattr('valid_range', np.array([min_valid, max_valid], 'b'))
-    variable.setncattr('flag_values', np.array([0, 1, 2, 3, 4, 5, 6, 7], 'b'))  # TODO: introduce constants for these!
-    variable.setncattr('flag_meanings',
-                       'LAND OCEAN CLOUD_OVER_LAND HEAVY_PRECIP_OVER_OCEAN SEA_ICE COAST PARTLY_CLOUDY_OVER_LAND PARTLY_SEA_ICE')
+    variable.setncattr('flag_values', np.array([0, 1, 2, 3], 'b'))
+    variable.setncattr('flag_meanings', 'CLEAR PARTLY_CLOUDY_OVER_LAND CLOUD_OVER_LAND HEAVY_PRECIP_OVER_OCEAN')
 
     # in original L3 we can have LAND (1), OCEAN (2), SEAICE (4), LAND+CLOUD (9), OCEAN+CLOUD (10), SEAICE+CLOUD (12):
-    # but we want (see PSD v2.1):
-    # LAND (0), OCEAN (1), CLOUD_OVER_LAND (2), HEAVY_PRECIP_OVER_OCEAN (3), SEA_ICE (4), COAST (5),
-    # PARTLY_CLOUDY_OVER_LAND (6), PARTLY_SEA_ICE (7)
-    # (invalid is i.e. outside any swaths in daily L3)
-    surface_type_flag_arr_src = np.array(src.variables['surface_type_flags_majority'])
+    # but we want (see PSD Vx.y):
+    # CLEAR (0), PARTLY_CLOUDY_OVER_LAND (1), CLOUD_OVER_LAND (2), HEAVY_PRECIP_OVER_OCEAN (3)
+    ac_flag_arr_src = np.array(src.variables['surface_type_flags_majority'])
     hoaps_surface_type_flag_arr_src = np.array(ds_landmask.variables['mask'])
     tcwv_quality_flag_min_arr_src = np.array(src.variables['tcwv_quality_flags_min'])
     tcwv_arr_src = np.array(src.variables['tcwv_mean'])
@@ -493,55 +477,29 @@ def set_atmospheric_conditions_flag(dst, src, day, res, ds_hoaps, ds_landmask, d
     tcwv_quality_flag_min_arr = np.copy(tcwv_quality_flag_min_arr_src)
     tcwv_quality_flag_min_arr[np.where(np.isnan(tcwv_quality_flag_min_arr))] = -128  # make NaN to INVALID
 
-    # hoaps_surface_type_flag_arr = np.copy(hoaps_surface_type_flag_arr_src[0])
-    # if res == '005':
-    #     hoaps_surface_type_flag_arr = scipy.ndimage.zoom(hoaps_surface_type_flag_arr, 10, order=0)
-    #     hoaps_surface_type_flag_arr[np.where(np.isnan(hoaps_surface_type_flag_arr))] = 0  # make NaN to water
-
-    hoaps_surface_type_flag_arr = rescale_hoaps(hoaps_surface_type_flag_arr_src, res)
+    hoaps_surface_type_flag_arr = rescale_auxdata(hoaps_surface_type_flag_arr_src, res)
     hoaps_surface_type_flag_arr[np.where(np.isnan(hoaps_surface_type_flag_arr))] = 0  # make NaN to water
 
-    # make ocean + tcwv_quality_flag.TCWV_INVALID + tcwv = NaN to INVALID (fix of originally L2 bug)):
-    tmparr = np.copy(surface_type_flag_arr_src)
-    tmparr[np.where(np.isnan(tmparr))] = -128  # make NaN to INVALID
-    tmparr[np.where((tmparr > 1) & (tmparr < 3) & (tcwv_quality_flag_min_arr > 2) & (np.isnan(tcwv_arr)))] = -128
-    tmparr[np.where(tmparr == 9)] = 4  # make land+cloud to CLOUD OVER LAND
-    tmparr[np.where(tmparr == 10)] = 2  # make ocean + cloud to OCEAN
-    tmparr[np.where(tmparr == 12)] = 4  # make seaice+cloud to SEA_ICE
-    tmparr[np.where(hoaps_surface_type_flag_arr < 1)] = 2  # make hoaps water to OCEAN
-    tmparr[np.where(hoaps_surface_type_flag_arr > 1)] = 32  # make hoaps coast to COAST
-    tmparr[np.where((hoaps_surface_type_flag_arr == 1) & (tmparr != 4))] = 1  # make hoaps land to LAND if not cloudy
+    tmparr = np.copy(ac_flag_arr_src)
 
-    if ds_seaice:
-        seaice_arr_src = np.array(ds_seaice.variables['mask'])
-        seaice_frac_arr_src = np.array(ds_seaice.variables['icec'])
-        day_index = int(day.zfill(1)) - 1
-
-        seaice_arr_src_day = rescale_hoaps(seaice_arr_src[day_index], res)
-        seaice_frac_arr_src_day = rescale_hoaps(seaice_frac_arr_src[day_index], res)
-
-        seaice_frac_arr_src_day[np.where(np.isnan(seaice_frac_arr_src_day))] = 0  # make NaN to 0
-        tmparr[np.where(seaice_arr_src_day == 11)] = 16  # make hoaps seaice to SEA_ICE
-        # tmparr[np.where(seaice_arr_src_day == 12)] = 64 # make hoaps seaice edge to PARTLY_SEA_ICE
-        # requested by DWD instead: make hoaps seaice > 0% and < 100% to PARTLY_SEA_ICE
-        tmparr[
-            np.where(
-                (seaice_arr_src_day >= 11) & (seaice_frac_arr_src_day > 0) & (seaice_frac_arr_src_day < 100))] = 128
+    # make original OCEAN (2), SEAICE (4), OCEAN+CLOUD (10), SEAICE+CLOUD (12) to 'CLEAR' :
+    tmparr[np.where((tmparr == 2) | (tmparr == 4) | (tmparr == 10) | (tmparr == 12))] = 1
+    # make land+cloud to CLOUD OVER LAND:
+    tmparr[np.where(tmparr == 9)] = 4
 
     if ds_hoaps:
         hoaps_scat_ratio_arr_src = np.array(ds_hoaps.variables['scat_ratio'])
-        # tmparr[np.where(hoaps_scat_ratio_arr_src[0] > 0.2)] = 8  # hoaps heavy precipitation criterion (MS, 202012)
-        # hoaps_scat_ratio_arr = np.copy(hoaps_scat_ratio_arr_src[0])
-        # if res == '005':
-        #     hoaps_scat_ratio_arr = scipy.ndimage.zoom(hoaps_scat_ratio_arr, 10, order=0)
-        hoaps_scat_ratio_arr = rescale_hoaps(hoaps_scat_ratio_arr_src, res)
+        hoaps_scat_ratio_arr = rescale_auxdata(hoaps_scat_ratio_arr_src, res)
         tmparr[np.where(hoaps_scat_ratio_arr > 0.2)] = 8  # hoaps heavy precipitation criterion (MS, 202012)
 
     # set PARTLY_CLOUDY_OVER_LAND: must be the pixels identified in majority as CLOUD, but have a valid TCWV:
-    tmparr[np.where((np.isfinite(tcwv_arr)) & (tmparr == 4))] = 64
-    surface_type_flag_arr = np.log2(tmparr)
-    variable[0, :, :] = surface_type_flag_arr[:, :]
+    tmparr[np.where((np.isfinite(tcwv_arr)) & (tmparr == 4))] = 2
 
+    # set flag to CLEAR for all remaining others (no cloud over land, no cloud obs over ocean, no precip over ocean):
+    tmparr[np.where((tmparr != 2) & (tmparr != 4) & (tmparr != 8))] = 1
+
+    atm_cond_flag_arr = np.log2(tmparr)
+    variable[0, :, :] = atm_cond_flag_arr[:, :]
 
 
 def set_tcwv_quality_flag(dst, src):
@@ -1163,6 +1121,9 @@ def run(args):
     dst.createVariable('surface_type_flag', 'b', ('time', dst.dimensions['lat'].name, dst.dimensions['lon'].name),
                        zlib=True,
                        fill_value=np.array([-128], 'b'))
+    dst.createVariable('atmospheric_conditions_flag', 'b', ('time', dst.dimensions['lat'].name, dst.dimensions['lon'].name),
+                       zlib=True,
+                       fill_value=np.array([-128], 'b'))
 
     # Copy variables from source product and rename to correct names. Set attributes and data...
     copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor)
@@ -1177,10 +1138,10 @@ def run(args):
     reset_var_to_nan(dst.variables['tcwv_ran'], indices)
 
     # Set atmospheric conditions flag...
-    set_surface_type_flag(dst, src, day, res, ds_hoaps, ds_landmask, ds_landcover, ds_seaice)
+    set_atmospheric_conditions_flag(dst, src, day, res, ds_hoaps, ds_landmask)
 
     # Set final surface type flag...
-    set_surface_type_flag(dst, src, day, res, ds_hoaps, ds_landmask, ds_landcover, ds_seaice)
+    set_surface_type_flag(dst, src, day, res, ds_landmask, ds_landcover, ds_seaice)
 
     # Set num_obs variable...
     set_num_obs_variable(dst, src, sensor)
