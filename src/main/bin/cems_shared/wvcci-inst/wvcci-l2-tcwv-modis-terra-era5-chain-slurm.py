@@ -16,10 +16,11 @@ __author__ = 'olafd'
 sensor = 'MODIS_TERRA'
 platform_id = 'MOD'
 
-# done: 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013 
-#years = ['2020']
-#years = ['2021']
+# done: 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013, 2012, 2011, 2010, 2009, 2008, 2007, 2006, xxxx, 2004, 2003, 2002, 2001, 2000 
+years = ['2023']
 #years = ['2022']
+#years = ['2021']
+#years = ['2020']
 #years = ['2019']
 #years = ['2018']
 #years = ['2017']
@@ -27,15 +28,29 @@ platform_id = 'MOD'
 #years = ['2015']
 #years = ['2014']
 #years = ['2013']
-years = ['2012']
+#years = ['2012']
+#years = ['2011']
+#years = ['2010']
+#years = ['2009']
+#years = ['2008']
+#years = ['2007']
+#years = ['2007', '2008']
+#years = ['2006']
+#years = ['2005']
+#years = ['2004']
+#years = ['2003']
+#years = ['2002']
+#years = ['2000', '2001']
 
-#all_months = ['07']
+all_months = ['01']
 
-all_months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+#all_months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
 #all_months = ['01', '02', '03', '04', '05', '06']
-#all_months = ['07', '08', '09', '10', '11', '12']
+#all_months = ['07', '08', '09']
+#all_months = ['10', '11', '12']
+#all_months = ['02']
 
-#days = ['17']
+#days = ['18']
 
 #################################################################
 
@@ -44,21 +59,21 @@ def get_month(year):
 
 def get_era5_timestamp(hhmm):
     # provide Era5 for 03, 09, 15, 21 and use:
-    # hhmm <= 0600: 030000 
-    # 0600 < hhmm <= 1200: 090000 
-    # 1200 < hhmm <= 1800: 150000 
-    # hhmm > 1800: 210000 
+    # hhmm <= 0600: 0300 
+    # 0600 < hhmm <= 1200: 0900 
+    # 1200 < hhmm <= 1800: 1500 
+    # hhmm > 1800: 2100 
 
     #print('hhmm in get_era5_timestamp: ' + hhmm)
     ihhmm = int(hhmm)
     if ihhmm <= 600:
-        return '030000'
+        return '0300'
     elif ihhmm > 600 and ihhmm <= 1200:
-        return '090000'
+        return '0900'
     elif ihhmm > 1200 and ihhmm <= 1800:
-        return '150000'
+        return '1500'
     else:
-        return '210000'
+        return '2100'
 
 
 def is_daily_product(hdf_filename):
@@ -111,7 +126,9 @@ def get_cleaned_list(orig_list):
 ######################## L1b --> Idepix --> IdepixEraInterim --> TCWV: ###########################
 
 wvcci_root_dir = '/gws/nopw/j04/esacci_wv/odanne/WvcciRoot'
-era5_root_dir = wvcci_root_dir + '/auxiliary/era5-t2m-mslp-tcwv-u10-v10'
+
+#era5_root_dir = wvcci_root_dir + '/auxiliary/era5-t2m-mslp-tcwv-u10-v10'
+era5_root_dir = wvcci_root_dir + '/auxiliary/era5_badc'  # new, used for 2023
 
 inputs = ['dummy']
 
@@ -119,7 +136,7 @@ inputs = ['dummy']
 mon = Monitor(inputs,
              'wvcci-l2-tcwv-modis-terra-era5-chain-slurm',
              [('localhost',512)],
-             [('wvcci-l2-tcwv-modis-terra-era5-step-slurm.sh', 512)],
+             [('wvcci-l2-tcwv-modis-era5-step-slurm.sh', 512)],
              'log',
              False)
 
@@ -128,6 +145,7 @@ for year in years:
     l1b_root_dir = wvcci_root_dir + '/L1b/' + sensor
     modis_land_mask_root_dir = wvcci_root_dir + '/ModisLandMask/' + platform_id + '03'
     modis_cloud_mask_root_dir = wvcci_root_dir + '/ModisCloudMask/' + platform_id + '35_L2'
+#    modis_cloud_mask_root_dir = wvcci_root_dir + '/ModisCloudMask/' + platform_id + '35_L2_LAADS'  # manually downloaded, was used for 2005
     print('year: ' + year)
 
     for month in get_month(year):
@@ -139,11 +157,12 @@ for year in years:
             print('num_month_days: ' + str(num_month_days))
 
             #for day in days:
-            #for iday in range(15, 16):
-            #for iday in range(1, 2):
+            #for iday in range(30, 31):
+            #for iday in range(4, 5):
+            #for iday in range(16, 17):
             for iday in range(1, num_month_days+1):
                 day = str(iday).zfill(2)
-                print('day: ' + day)
+                #print('day: ' + day)
 
                 tcwv_dir = wvcci_root_dir + '/Tcwv/' + sensor + '/' + year + '/' + month + '/' + str(day).zfill(2)
 
@@ -154,7 +173,7 @@ for year in years:
 
                     if len(l1b_files) > 0:
                         for index in range(0, len(l1b_files)):
-                            lab_path = l1b_root_dir + '/' + year + '/' + month + '/' + str(day).zfill(2) + '/' + l1b_files[index]
+                            l1b_path = l1b_root_dir + '/' + year + '/' + month + '/' + str(day).zfill(2) + '/' + l1b_files[index]
 
 			    # TEST: do only 1 product, 1030
                             #if l1b_files[index].endswith(".hdf") and l1b_files[index].startswith("MOD021KM.A2022213.0410"):
@@ -184,17 +203,20 @@ for year in years:
 
                                         if os.path.exists(modis_cloud_mask_path):
 
-                                            # =============== Merge MODIS L1b with ERA-INTERIM, then TCWV from Idepix-ERA-INTERIM merge product  =======================
+                                            # =============== Merge MODIS L1b with ERA-5, then TCWV from Idepix-ERA5 merge product  =======================
 
                                             hhmm_era5 = get_era5_timestamp(hhmm)
                                             yyyymmdd = year + month + str(day).zfill(2) 
-                                            era5_path = era5_root_dir + '/' + year + '/' + month + '/' + str(day).zfill(2) + '/era5_' + yyyymmdd + '_' + hhmm_era5 + '.nc'
+                                            
+                                            #era5_path = era5_root_dir + '/' + year + '/' + month + '/' + str(day).zfill(2) + '/era5_' + yyyymmdd + '_' + hhmm_era5 + '.nc'
+                                            # new, used for 2023:
+                                            era5_path = era5_root_dir + '/' + year + '/' + month + '/' + str(day).zfill(2) + '/ecmwf-era5_oper_an_sfc_' + yyyymmdd + get_era5_timestamp(hhmm) + '.nc'
+                                            #l1b_era_file = l1b_file_base + '_l1b-era-interim.nc
+                                            l1b_era_file = l1b_file_base + '_l1b-era5.nc'
 
-                                            l1b_era_file = l1b_file_base + '_l1b-era-interim.nc'
-
-                                            job = Job('test-' + date_time_string, 'wvcci-l2-tcwv-modis-terra-era5-step-slurm.sh', 
+                                            job = Job('test-' + date_time_string, 'wvcci-l2-tcwv-modis-era5-step-slurm.sh', 
                                                      ['dummy'], [l1b_era_file], 
-                                                     [lab_path,l1b_files[index],modis_cloud_mask_path,era5_path,sensor,year,month,day,hhmm,wvcci_root_dir])
+                                                     [l1b_path,l1b_files[index],modis_cloud_mask_path,era5_path,sensor,year,month,day,hhmm,wvcci_root_dir])
                                             mon.execute(job)
 
 #mon.wait_for_completion()

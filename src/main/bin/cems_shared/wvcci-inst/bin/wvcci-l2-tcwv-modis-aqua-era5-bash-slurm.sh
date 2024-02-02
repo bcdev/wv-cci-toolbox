@@ -19,7 +19,8 @@ set -e
 l1bPath=$1
 l1bName=$2            # MOD021KM.A2008016.1540.006.2012066182519.hdf
 cloudMaskPath=$3      # path to cloud product, e.g. MOD35_L2.A2008016.1540.006.2012066182519.hdf
-era5Path=$4           # path to ERA5 product, e.g. era5_20220801_060000.nc
+#era5Path=$4           # path to ERA5 product, e.g. era5_20220801_060000.nc
+era5Path=$4           # badc path to ERA5 products, without var and nc extension, e.g. /badc/ecmwf-era5/data/oper/an_sfc/2023/01/16/ecmwf-era5_oper_an_sfc_202301160300
 sensor=$5
 year=$6
 month=$7
@@ -27,12 +28,6 @@ day=$8
 wvcciRootDir=$9
 
 modisstem=${l1bName%.hdf}
-hour=${l1bName:18:2}
-minute=${l1bName:20:2}
-date_in_seconds=$(($(date +%s -u -d "$year-01-01 $hour:$minute:00") + ( 1$doy - 1000 ) * 86400 - 86400))
-month=$(date --date "@$date_in_seconds" +%m)
-day=$(date --date "@$date_in_seconds" +%d)
-acquisitionTime=$year$month$day
 
 # replace 'L1b' by 'L1bEra5':
 l1bDir=`dirname $l1bPath`
@@ -67,23 +62,28 @@ echo "eramodis: $eramodis"
 # was PROCESS step on Calvalus:
 ###############################
 
-auxroot=$wvcciRootDir/auxiliary
-let day_before_in_seconds="date_in_seconds - 86400"
-let day_after_in_seconds="date_in_seconds + 86400"
-date_before=`date +%Y-%m-%d -u -d @$day_before_in_seconds`
-date_after=`date +%Y-%m-%d -u -d @$day_after_in_seconds`
-
 # merge/collocate L1b with Era5:
-l1bEra5Merge=$l1bEra5Dir/${modisstem}_l1b-era5.nc
-if [ -f $era5Path ]; then
+if [ -f ${era5Path}.10u.nc ] && [ -f ${era5Path}.10v.nc ] && [ -f ${era5Path}.2t.nc ] && [ -f ${era5Path}.msl.nc ] && [ -f ${era5Path}.tcwv.nc ]; then
+    # merge the single nc files of each variable to one nc:
+    era5Name=$(basename ${era5Path})
+    era5BadcDir=$wvcciRootDir/auxiliary/era5_badc/$year/$month/$day
+    mkdir -p $era5BadcDir
+    chmod a+w $era5BadcDir
+    if [ ! -f ${era5BadcDir}/${era5Name}.nc ]; then
+      module load jaspy
+      module load jasmin-sci
+      # MY_CDO=/apps/jasmin/jaspy/mambaforge_envs/jaspy3.10/mf-22.11.1-4/envs/jaspy3.10-mf-22.11.1-4-r20230718/bin/cdo
+      cdo merge ${era5Path}.10u.nc ${era5Path}.10v.nc ${era5Path}.2t.nc ${era5Path}.msl.nc ${era5Path}.tcwv.nc ${era5BadcDir}/${era5Name}.nc
+    fi
+
+    l1bEra5Merge=$l1bEra5Dir/${modisstem}_l1b-era5.nc
     echo "START gpt Merge/Collocate - wallclock time is: `date`"
-    $SNAP_HOME/bin/gpt Collocate -q 1 -Smaster=$l1bPath -Sslave=$era5Path -PrenameMasterComponents=false -PrenameSlaveComponents=false -PresamplingType=BILINEAR_INTERPOLATION -f Netcdf4-BEAM -t $l1bEra5Merge
+    $SNAP_HOME/bin/gpt Collocate -q 1 -Smaster=$l1bPath -Sslave=${tmpdir}/${era5Name}.nc -PrenameMasterComponents=false -PrenameSlaveComponents=false -PresamplingType=BILINEAR_INTERPOLATION -f Netcdf4-BEAM -t $l1bEra5Merge
     echo "END gpt Merge/Collocate - wallclock time is: `date`"
 else
-    echo "ERA5 auxdata $era5Path does not exist - cannot generate reliable TCWV product."    
+    echo "ERA5 auxdata $era5Path does not exist - cannot generate reliable TCWV product."
     exit -1
 fi
-
 
 ## TCWV
 if [ -f $l1bEra5Merge ] && [ -f $l1bEra5Merge ]; then
