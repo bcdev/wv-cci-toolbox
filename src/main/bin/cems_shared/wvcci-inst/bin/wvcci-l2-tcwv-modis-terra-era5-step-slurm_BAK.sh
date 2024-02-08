@@ -2,7 +2,7 @@
 
 . ${WVCCI_INST}/bin/wvcci-env-slurm.sh   # this script shall now be used for everything!
 
-echo "entered NEW wvcci-l2-tcwv-modis-era5-step-slurm..."
+echo "entered NEW wvcci-l2-tcwv-modis-terra-era5-step-slurm..."
 l1bPath=$1
 l1bFile=$2
 cloudMaskPath=$3
@@ -14,14 +14,9 @@ day=$8
 hhmm=$9
 wvcciRootDir=${10}
 
-tmp=${sensor/"_"/"-"}
-sensor2=${tmp,,}
-
-#task="wvcci-l2-tcwv-modis-terra-era5"
-task="wvcci-l2-tcwv-${sensor2}-era5"
+task="wvcci-l2-tcwv-modis-terra-era5"
 jobname="${task}-${year}-${month}-${day}-${hhmm}"
-#command0="./bin/${task}-bash-slurm.sh"
-command0="./bin/wvcci-l2-tcwv-modis-era5-bash-slurm.sh"
+command0="./bin/${task}-bash-slurm.sh"
 command="${command0} ${l1bPath} ${l1bFile} ${cloudMaskPath} ${era5Path} ${sensor} ${year} ${month} ${day} ${wvcciRootDir}"
 
 echo "jobname: $jobname"

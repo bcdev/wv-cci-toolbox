@@ -19,8 +19,7 @@ set -e
 l1bPath=$1
 l1bName=$2            # MOD021KM.A2008016.1540.006.2012066182519.hdf
 cloudMaskPath=$3      # path to cloud product, e.g. MOD35_L2.A2008016.1540.006.2012066182519.hdf
-#era5Path=$4           # path to ERA5 product, e.g. era5_20220801_060000.nc
-era5Path=$4           # badc path to ERA5 products, without var and nc extension, e.g. /badc/ecmwf-era5/data/oper/an_sfc/2023/01/16/ecmwf-era5_oper_an_sfc_202301160300
+era5Path=$4           # path to ERA5 product, e.g. era5_20220801_060000.nc
 sensor=$5
 year=$6
 month=$7
@@ -28,6 +27,12 @@ day=$8
 wvcciRootDir=$9
 
 modisstem=${l1bName%.hdf}
+hour=${l1bName:18:2}
+minute=${l1bName:20:2}
+date_in_seconds=$(($(date +%s -u -d "$year-01-01 $hour:$minute:00") + ( 1$doy - 1000 ) * 86400 - 86400))
+month=$(date --date "@$date_in_seconds" +%m)
+day=$(date --date "@$date_in_seconds" +%d)
+acquisitionTime=$year$month$day
 
 # replace 'L1b' by 'L1bEra5':
 l1bDir=`dirname $l1bPath`
@@ -62,16 +67,23 @@ echo "eramodis: $eramodis"
 # was PROCESS step on Calvalus:
 ###############################
 
+auxroot=$wvcciRootDir/auxiliary
+let day_before_in_seconds="date_in_seconds - 86400"
+let day_after_in_seconds="date_in_seconds + 86400"
+date_before=`date +%Y-%m-%d -u -d @$day_before_in_seconds`
+date_after=`date +%Y-%m-%d -u -d @$day_after_in_seconds`
+
 # merge/collocate L1b with Era5:
-if [ -f ${era5Path} ]; then
-    l1bEra5Merge=$l1bEra5Dir/${modisstem}_l1b-era5.nc
+l1bEra5Merge=$l1bEra5Dir/${modisstem}_l1b-era5.nc
+if [ -f $era5Path ]; then
     echo "START gpt Merge/Collocate - wallclock time is: `date`"
-    $SNAP_HOME/bin/gpt Collocate -q 1 -Smaster=$l1bPath -Sslave=${era5Path} -PrenameMasterComponents=false -PrenameSlaveComponents=false -PresamplingType=BILINEAR_INTERPOLATION -f Netcdf4-BEAM -t $l1bEra5Merge
+    $SNAP_HOME/bin/gpt Collocate -q 1 -Smaster=$l1bPath -Sslave=$era5Path -PrenameMasterComponents=false -PrenameSlaveComponents=false -PresamplingType=BILINEAR_INTERPOLATION -f Netcdf4-BEAM -t $l1bEra5Merge
     echo "END gpt Merge/Collocate - wallclock time is: `date`"
 else
     echo "ERA5 auxdata $era5Path does not exist - cannot generate reliable TCWV product."    
     exit -1
 fi
+
 
 ## TCWV
 if [ -f $l1bEra5Merge ] && [ -f $l1bEra5Merge ]; then
