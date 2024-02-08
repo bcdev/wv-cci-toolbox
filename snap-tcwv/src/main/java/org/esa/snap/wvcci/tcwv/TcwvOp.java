@@ -274,7 +274,7 @@ public class TcwvOp extends Operator {
                 atmTempBands[i] = sourceProduct.getRasterDataNode(bandName);
             }
         }
-        if (sensor == Sensor.OLCI) {
+        if (sensor == Sensor.OLCI || sensor == Sensor.OLCI_A || sensor == Sensor.OLCI_B) {
             atmTempBands = new RasterDataNode[TcwvConstants.OLCI_REF_PRESSURE_LEVELS.length];
             // OLCI: ordered from bottom to top!
             for (int i = 0; i < atmTempBands.length; i++) {
@@ -526,7 +526,8 @@ public class TcwvOp extends Operator {
                     double priorAl0 = TcwvConstants.AL0_INIT_VALUE;
                     double priorAl1 = TcwvConstants.AL1_INIT_VALUE;
                     if (isLand) {
-                        if (sensor == Sensor.MERIS || sensor == Sensor.OLCI) {
+                        if (sensor == Sensor.MERIS || sensor == Sensor.OLCI ||
+                                sensor == Sensor.OLCI_A || sensor == Sensor.OLCI_B) {
                             // for MERIS, set to rad * PI / csza = refl_input*flux (RP 20200316):
                             priorAl0 = winBandData[0] * Math.PI / csza;
                             priorAl1 = winBandData[1] * Math.PI / csza;
@@ -660,7 +661,7 @@ public class TcwvOp extends Operator {
         if (sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA) {
             // this was wrong before!
             return spectralBandTile.getSampleDouble(x, y) / Math.PI;
-        } else if (sensor == Sensor.OLCI) {
+        } else if (sensor == Sensor.OLCI || sensor == Sensor.OLCI_A || sensor == Sensor.OLCI_B) {
             // this was already correct before
             return spectralBandTile.getSampleDouble(x, y) * csza / Math.PI;  // PI was missing!! (OD, 20200318)
         } else {

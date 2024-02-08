@@ -203,14 +203,15 @@ public class TcwvUtils {
 
     public static double getSurfaceTemperature(Sensor sensor, double[] atmTempData,
                                                double surfacePress) throws IOException {
-        if (!(sensor == Sensor.MERIS) && !(sensor == Sensor.OLCI)) {
+        if (!(sensor == Sensor.MERIS) && !(sensor == Sensor.OLCI) && !(sensor == Sensor.OLCI_A) && !(sensor == Sensor.OLCI_B)) {
             throw new IOException("getSurfaceTemperature: sensor '" + sensor.getName() + "' not supported");
         }
 
         final double[] refPressLevels = sensor == Sensor.MERIS ? TcwvConstants.MERIS_REF_PRESSURE_LEVELS :
                 TcwvConstants.OLCI_REF_PRESSURE_LEVELS;
 
-        double surfaceTemp = sensor == Sensor.OLCI ? atmTempData[0] : atmTempData[atmTempData.length - 1];
+        final boolean isOlci = sensor == Sensor.OLCI || sensor == Sensor.OLCI_A || sensor == Sensor.OLCI_B;
+        double surfaceTemp = isOlci ? atmTempData[0] : atmTempData[atmTempData.length - 1];
 
         for (int i = 0; i < atmTempData.length - 1; i++) {
             if (refPressLevels[i] >= surfacePress && refPressLevels[i + 1] < surfacePress) {

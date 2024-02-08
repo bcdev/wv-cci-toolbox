@@ -20,7 +20,7 @@ public class TcwvConstants {
     public static final String TCWV_UNCERTAINTY_TARGET_BAND_NAME = "tcwv_uncertainty";
     public static final String TCWV_COUNTS_TARGET_BAND_NAME = "tcwv_counts";
 
-    public static final String NIUM_OBS_HOAPS_BAND_NAME = "numo";
+    public static final String NUM_OBS_HOAPS_BAND_NAME = "numo";
     public static final String TCWV_HOAPS_BAND_NAME = "wvpa";
     public static final String TCWV_SIGMA_HOAPS_BAND_NAME = "stdv";
     public static final String TCWV_PROPAG_ERR_HOAPS_BAND_NAME = "wvpa_err";

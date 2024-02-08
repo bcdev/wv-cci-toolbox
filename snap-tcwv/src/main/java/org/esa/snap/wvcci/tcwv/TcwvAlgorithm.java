@@ -75,7 +75,7 @@ public class TcwvAlgorithm {
             mes[i] = input.getRhoToaWin()[i];
         }
         for (int i = 0; i < input.getRhoToaAbs().length; i++) {
-            if (sensor == Sensor.MERIS || sensor == Sensor.OLCI ||
+            if (sensor == Sensor.MERIS || sensor == Sensor.OLCI || sensor == Sensor.OLCI_A || sensor == Sensor.OLCI_B ||
                     sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA) {
                 // run this also for MODIS land !! (RP 20190410)
                 // for ocean it makes no difference as a,b are always 0,1
@@ -147,7 +147,7 @@ public class TcwvAlgorithm {
             mes[i] = input.getRhoToaWin()[i];
         }
         for (int i = 0; i < input.getRhoToaAbs().length; i++) {
-            if (sensor == Sensor.MERIS || sensor == Sensor.OLCI ||
+            if (sensor == Sensor.MERIS || sensor == Sensor.OLCI || sensor == Sensor.OLCI_A || sensor == Sensor.OLCI_B ||
                     sensor == Sensor.MODIS_TERRA || sensor == Sensor.MODIS_AQUA) {
 //                if (sensor == Sensor.MERIS || sensor == Sensor.OLCI) {
                 mes[input.getRhoToaWin().length + i] = rectifyAndO2Correct(sensor, input.getRhoToaWin(),

@@ -33,11 +33,11 @@ public class L3SsmiPostProcessOp extends L3PostProcessOp {
 
         tcwvSourceBand = sourceProduct.getBand(TcwvConstants.TCWV_HOAPS_BAND_NAME);
         tcwvUncertaintySourceBand = sourceProduct.getBand(TcwvConstants.TCWV_SIGMA_HOAPS_BAND_NAME);
-        tcwvCountsSourceBand = sourceProduct.getBand(TcwvConstants.NIUM_OBS_HOAPS_BAND_NAME);
+        tcwvCountsSourceBand = sourceProduct.getBand(TcwvConstants.NUM_OBS_HOAPS_BAND_NAME);
 
         createTargetProduct(TcwvConstants.TCWV_HOAPS_BAND_NAME,
                             TcwvConstants.TCWV_SIGMA_HOAPS_BAND_NAME,
-                            TcwvConstants.NIUM_OBS_HOAPS_BAND_NAME);
+                            TcwvConstants.NUM_OBS_HOAPS_BAND_NAME);
     }
 
     public static class Spi extends OperatorSpi {

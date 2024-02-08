@@ -1,7 +1,9 @@
 package org.esa.snap.wvcci.tcwv.l3;
 
+import org.apache.commons.lang.StringUtils;
 import org.esa.snap.core.datamodel.Band;
 import org.esa.snap.core.datamodel.Product;
+import org.esa.snap.core.datamodel.ProductData;
 import org.esa.snap.core.gpf.OperatorException;
 import org.esa.snap.core.gpf.OperatorSpi;
 import org.esa.snap.core.gpf.annotations.OperatorMetadata;
@@ -20,17 +22,21 @@ import org.esa.snap.wvcci.tcwv.util.TcwvUtils;
  *
  * @author Olaf Danne
  */
-@OperatorMetadata(alias = "ESACCI.Tcwv.L3.Merge.Nir.Hoaps", version = "0.8",
+@OperatorMetadata(alias = "ESACCI.Tcwv.L3.Merge.Nir.Hoaps.Phase2", version = "0.8",
         authors = "O.Danne",
         internal = true,
-        description = "Operator for merge of TCWV L3 NIR and HOAPS daily products.")
-public class L3DailyMergeNirHoapsOp extends PixelOperator {
+        description = "Operator for merge of TCWV L3 NIR and HOAPS daily products, for Phase 2.")
+public class L3DailyMergeNirHoapsPhase2Op extends PixelOperator {
+
+    @Parameter(description = "First sensor: can be a combination from previous merge " +
+            "of up to 4 sensors (e.g. MODIS_TERRA-MODIS_AQUA-OLCI_A-OLCI_B.")
+    private String sensor1Name;
 
     @Parameter(interval = "[1, 31]", defaultValue = "15",
             description = "Day of month")
     private int dayOfMonth;
     
-    @SourceProduct(description = "NIR product (MERIS, MODIS or OLCI)")
+    @SourceProduct(description = "NIR product (MERIS, MODIS, OLCI, or merge)")
     private Product nirProduct;
     @SourceProduct(description = "HOAPS product")
     private Product hoapsProduct;
@@ -49,45 +55,49 @@ public class L3DailyMergeNirHoapsOp extends PixelOperator {
     private int width;
     private int height;
 
-    private static final int SRC_NIR_NUM_OBS = 1;
-    private static final int SRC_NIR_TCWV_MEAN = 2;
-    private static final int SRC_NIR_TCWV_SIGMA = 3;
-    private static final int SRC_NIR_TCWV_UNCERTAINTY_MEAN = 4;
-    private static final int SRC_NIR_TCWV_UNCERTAINTY_COUNTS = 5;
-    private static final int SRC_NIR_TCWV_SUMS_SUM = 6;
-    private static final int SRC_NIR_TCWV_SUMS_SUM_SQ = 7;
-    private static final int SRC_NIR_TCWV_QUALITY_FLAGS_MAJORITY = 8;
-    private static final int SRC_NIR_TCWV_QUALITY_FLAGS_MIN = 9;
-    private static final int SRC_NIR_TCWV_QUALITY_FLAGS_MAX = 10;
-    private static final int SRC_NIR_TCWV_SURFACE_TYPE_FLAGS_MAJORITY = 11;
+    private static final String sensor2Name = "CMSAF_HOAPS";
 
-    private static final int SRC_HOAPS_NUM_OBS = 12;
-    private static final int SRC_HOAPS_TCWV = 13;
-    private static final int SRC_HOAPS_TCWV_SIGMA = 14;
-    private static final int SRC_HOAPS_TCWV_PROPAG_ERR = 15;
-    private static final int SRC_HOAPS_TCWV_RANDOM_ERR = 16;
+//    private static final int SRC_NIR_NUM_OBS = 1;
+    private int[] SRC_NIR_NUM_OBS;  // we can have num_obs_<sensor> from up to 4 sensors
+    private static final int SRC_NIR_TCWV_MEAN = 5;
+    private static final int SRC_NIR_TCWV_SIGMA = 6;
+    private static final int SRC_NIR_TCWV_UNCERTAINTY_MEAN = 7;
+    private static final int SRC_NIR_TCWV_UNCERTAINTY_COUNTS = 8;
+    private static final int SRC_NIR_TCWV_SUMS_SUM = 9;
+    private static final int SRC_NIR_TCWV_SUMS_SUM_SQ = 10;
+    private static final int SRC_NIR_TCWV_QUALITY_FLAGS_MAJORITY = 11;
+    private static final int SRC_NIR_TCWV_QUALITY_FLAGS_MIN = 12;
+    private static final int SRC_NIR_TCWV_QUALITY_FLAGS_MAX = 13;
+    private static final int SRC_NIR_TCWV_SURFACE_TYPE_FLAGS_MAJORITY = 14;
 
-    private static final int SRC_LANDMASK_MASK = 17;
-    private static final int SRC_SEAICE_MASK = 18;
+    private static final int SRC_HOAPS_NUM_OBS = 15;
+    private static final int SRC_HOAPS_TCWV = 16;
+    private static final int SRC_HOAPS_TCWV_SIGMA = 17;
+    private static final int SRC_HOAPS_TCWV_PROPAG_ERR = 18;
+    private static final int SRC_HOAPS_TCWV_RANDOM_ERR = 19;
 
-    private static final int TRG_NUM_OBS = 0;
-    private static final int TRG_TCWV_MEAN = 1;
-    private static final int TRG_TCWV_SIGMA = 2;
-    private static final int TRG_TCWV_UNCERTAINTY_MEAN = 3;
-    private static final int TRG_TCWV_UNCERTAINTY_COUNTS = 4;
-    private static final int TRG_TCWV_SUMS_SUM = 5;
-    private static final int TRG_TCWV_SUMS_SUM_SQ = 6;
-    private static final int TRG_TCWV_QUALITY_FLAGS_MAJORITY = 7;
-    private static final int TRG_TCWV_QUALITY_FLAGS_MIN = 8;
-    private static final int TRG_TCWV_QUALITY_FLAGS_MAX = 9;
-    private static final int TRG_TCWV_SURFACE_TYPE_FLAGS_MAJORITY = 10;
-    private static final int TRG_TCWV_PROPAG_ERR = 11;
-    private static final int TRG_TCWV_RANDOM_ERR = 12;
+    private static final int SRC_LANDMASK_MASK = 20;
+    private static final int SRC_SEAICE_MASK = 21;
+
+    private String[] srcNumObsBandNames;
+
+    private static final int[] TRG_NUM_OBS = {0, 1, 2, 3, 4};
+    private static final int TRG_TCWV_MEAN = 5;
+    private static final int TRG_TCWV_SIGMA = 6;
+    private static final int TRG_TCWV_UNCERTAINTY_MEAN = 7;
+    private static final int TRG_TCWV_UNCERTAINTY_COUNTS = 8;
+    private static final int TRG_TCWV_SUMS_SUM = 9;
+    private static final int TRG_TCWV_SUMS_SUM_SQ = 10;
+    private static final int TRG_TCWV_QUALITY_FLAGS_MAJORITY = 11;
+    private static final int TRG_TCWV_QUALITY_FLAGS_MIN = 12;
+    private static final int TRG_TCWV_QUALITY_FLAGS_MAX = 13;
+    private static final int TRG_TCWV_SURFACE_TYPE_FLAGS_MAJORITY = 14;
+    private static final int TRG_TCWV_PROPAG_ERR = 15;
+    private static final int TRG_TCWV_RANDOM_ERR = 16;
 
 
     @Override
     protected void prepareInputs() throws OperatorException {
-//        super.prepareInputs();
 
         mergeInputProducts = new Product[]{nirProduct, hoapsProduct};
 
@@ -95,6 +105,10 @@ public class L3DailyMergeNirHoapsOp extends PixelOperator {
         height = mergeInputProducts[0].getSceneRasterHeight();
 
         validate();
+
+        srcNumObsBandNames = getNumObsSrcBandNames(sensor1Name);
+
+        SRC_NIR_NUM_OBS = new int[srcNumObsBandNames.length];
 
         if (landmaskProduct.getSceneRasterWidth() != width || landmaskProduct.getSceneRasterHeight() != height) {
             landMaskProductToUse = getResampledProduct(landmaskProduct);
@@ -123,7 +137,13 @@ public class L3DailyMergeNirHoapsOp extends PixelOperator {
     @Override
     protected void computePixel(int x, int y, Sample[] sourceSamples, WritableSample[] targetSamples) {
 
-        final int srcNirNumObs = sourceSamples[SRC_NIR_NUM_OBS].getInt();
+//        final int srcNirNumObs = sourceSamples[SRC_NIR_NUM_OBS].getInt();
+
+        final int[] srcNirNumObs = new int[srcNumObsBandNames.length];
+        for (int i = 0; i < srcNumObsBandNames.length; i++) {
+            srcNirNumObs[i] = sourceSamples[SRC_NIR_NUM_OBS[i]].getInt();
+        }
+
         final double srcNirTcwvMean = sourceSamples[SRC_NIR_TCWV_MEAN].getDouble();
         final double srcNirTcwvNodata = nirProduct.getBand(TcwvConstants.TCWV_MEAN_BAND_NAME).getNoDataValue();
         final double srcNirTcwvSigma = sourceSamples[SRC_NIR_TCWV_SIGMA].getDouble();
@@ -156,7 +176,7 @@ public class L3DailyMergeNirHoapsOp extends PixelOperator {
         final int srcLandMask = sourceSamples[SRC_LANDMASK_MASK].getInt();
         final int srcSeaiceMask = seaiceProduct != null ? sourceSamples[SRC_SEAICE_MASK].getInt() : -1;
 
-        final int numObsMerge = mergeNumObs(srcNirNumObs, srcHoapsNumObs, srcHoapsNumObsNodata);
+//        final int numObsMerge = mergeNumObs(srcNirNumObs, srcHoapsNumObs, srcHoapsNumObsNodata);
         final double tcwvMerge =
                 merge(srcNirTcwvMean, srcNirTcwvNodata, srcHoapsTcwv, srcHoapsTcwvNodata,
                       srcHoapsNumObs, srcHoapsNumObsNodata, srcLandMask, srcSeaiceMask);
@@ -175,7 +195,23 @@ public class L3DailyMergeNirHoapsOp extends PixelOperator {
         final int qualityFlagMinMerge = mergeQualityFlag(srcNirQualityMinFlag, srcHoapsNumObs, srcHoapsNumObsNodata);
         final int qualityFlagMaxMerge = mergeQualityFlag(srcNirQualityMaxFlag, srcHoapsNumObs, srcHoapsNumObsNodata);
 
-        targetSamples[TRG_NUM_OBS].set(numObsMerge);
+        targetSamples[TRG_NUM_OBS[0]].set(srcNirNumObs[0]);
+        if (srcNumObsBandNames.length == 5) {
+            targetSamples[TRG_NUM_OBS[1]].set(srcNirNumObs[1]);
+            targetSamples[TRG_NUM_OBS[2]].set(srcNirNumObs[2]);
+            targetSamples[TRG_NUM_OBS[3]].set(srcNirNumObs[3]);
+            targetSamples[TRG_NUM_OBS[4]].set(Math.max(0, srcNirNumObs[4]));
+        } else if (srcNumObsBandNames.length == 4) {
+            targetSamples[TRG_NUM_OBS[1]].set(srcNirNumObs[1]);
+            targetSamples[TRG_NUM_OBS[2]].set(srcNirNumObs[2]);
+            targetSamples[TRG_NUM_OBS[4]].set(Math.max(0, srcNirNumObs[3]));
+        } else if (srcNumObsBandNames.length == 3) {
+            targetSamples[TRG_NUM_OBS[1]].set(srcNirNumObs[1]);
+            targetSamples[TRG_NUM_OBS[4]].set(Math.max(0, srcNirNumObs[2]));
+        } else {
+            targetSamples[TRG_NUM_OBS[4]].set(Math.max(0, srcNirNumObs[1]));
+        }
+
         targetSamples[TRG_TCWV_MEAN].set(tcwvMerge);
         targetSamples[TRG_TCWV_SIGMA].set(tcwvSigmaMerge);
         targetSamples[TRG_TCWV_UNCERTAINTY_MEAN].set(tcwvUncertaintyMeanMerge);
@@ -193,8 +229,18 @@ public class L3DailyMergeNirHoapsOp extends PixelOperator {
         super.configureTargetProduct(productConfigurer);
         final Product targetProduct = productConfigurer.getTargetProduct();
 
-        targetProduct.addBand(TcwvConstants.NUM_OBS_L3_BAND_NAME,
-                              nirProduct.getBand(TcwvConstants.NUM_OBS_L3_BAND_NAME).getDataType());
+        if (srcNumObsBandNames.length == 2) {
+            targetProduct.addBand(TcwvConstants.NUM_OBS_L3_BAND_NAME + "_" + sensor1Name, ProductData.TYPE_INT32);
+            targetProduct.addBand(TcwvConstants.NUM_OBS_L3_BAND_NAME + "_" + sensor2Name, ProductData.TYPE_INT32);
+        } else if (srcNumObsBandNames.length == 3 || srcNumObsBandNames.length == 4 || srcNumObsBandNames.length == 5) {
+            for (int i = 0; i < srcNumObsBandNames.length - 1; i++) {
+                targetProduct.addBand(srcNumObsBandNames[i], ProductData.TYPE_INT32);
+            }
+            targetProduct.addBand(TcwvConstants.NUM_OBS_L3_BAND_NAME + "_" + sensor2Name, ProductData.TYPE_INT32);
+        } else {
+            throw new OperatorException("Invalid number of 'num_obs_*' variables in first source product");
+        }
+
         targetProduct.addBand(TcwvConstants.TCWV_L3_BAND_NAME,
                               nirProduct.getBand(TcwvConstants.TCWV_L3_BAND_NAME).
                                       getDataType());
@@ -227,6 +273,12 @@ public class L3DailyMergeNirHoapsOp extends PixelOperator {
             Band sourceBand = nirProduct.getBand(b.getName());
             if (sourceBand != null) {
                 TcwvUtils.copyBandProperties(b, sourceBand);
+                if (b.getName().startsWith(TcwvConstants.NUM_OBS_L3_BAND_NAME)) {
+                    b.setNoDataValue(-1);
+                    b.setNoDataValueUsed(true);
+                } else {
+                    TcwvUtils.copyBandProperties(b, sourceBand);
+                }
             } else {
                 sourceBand = hoapsProduct.getBand(b.getName());
                 if (sourceBand != null) {
@@ -239,7 +291,23 @@ public class L3DailyMergeNirHoapsOp extends PixelOperator {
 
     @Override
     protected void configureSourceSamples(SourceSampleConfigurer configurator) throws OperatorException {
-        configurator.defineSample(SRC_NIR_NUM_OBS, TcwvConstants.NUM_OBS_L3_BAND_NAME, nirProduct);
+
+        final int index = srcNumObsBandNames.length;
+        for (int i = 0; i < index; i++) {
+            SRC_NIR_NUM_OBS[i] = i;
+        }
+        if (index == 2) {
+            configurator.defineSample(SRC_NIR_NUM_OBS[0], srcNumObsBandNames[0], mergeInputProducts[0]);
+            configurator.defineSample(SRC_NIR_NUM_OBS[1], srcNumObsBandNames[1], mergeInputProducts[1]);
+        } else if (index == 3 || index == 4 || index == 5) {
+            for (int i = 0; i < index - 1; i++) {
+                configurator.defineSample(SRC_NIR_NUM_OBS[i], srcNumObsBandNames[i], mergeInputProducts[0]);
+            }
+            configurator.defineSample(SRC_NIR_NUM_OBS[index - 1], srcNumObsBandNames[index - 1], mergeInputProducts[1]);
+        } else {
+            throw new OperatorException("Invalid number of 'num_obs_*' variables in first sozrce product");
+        }
+
         configurator.defineSample(SRC_NIR_TCWV_MEAN, TcwvConstants.TCWV_L3_BAND_NAME, nirProduct);
         configurator.defineSample(SRC_NIR_TCWV_SIGMA, TcwvConstants.TCWV_SIGMA_L3_BAND_NAME, nirProduct);
         configurator.defineSample(SRC_NIR_TCWV_UNCERTAINTY_MEAN, TcwvConstants.TCWV_UNCERTAINTY_L3_BAND_NAME, nirProduct);
@@ -269,7 +337,9 @@ public class L3DailyMergeNirHoapsOp extends PixelOperator {
 
     @Override
     protected void configureTargetSamples(TargetSampleConfigurer configurator) throws OperatorException {
-        configurator.defineSample(TRG_NUM_OBS, TcwvConstants.NUM_OBS_L3_BAND_NAME);
+//        configurator.defineSample(TRG_NUM_OBS, TcwvConstants.NUM_OBS_L3_BAND_NAME);
+        configureTargetNumObsSamples(configurator);
+
         configurator.defineSample(TRG_TCWV_MEAN, TcwvConstants.TCWV_L3_BAND_NAME);
         configurator.defineSample(TRG_TCWV_SIGMA, TcwvConstants.TCWV_SIGMA_L3_BAND_NAME);
         configurator.defineSample(TRG_TCWV_UNCERTAINTY_MEAN, TcwvConstants.TCWV_UNCERTAINTY_L3_BAND_NAME);
@@ -286,17 +356,15 @@ public class L3DailyMergeNirHoapsOp extends PixelOperator {
         }
     }
 
-    private static int mergeNumObs(int srcNirNumObs, int srcHoapsNumObs, int srcHoapsNumObsNodata) {
-        final boolean hoapsAvailable = srcHoapsNumObs > 0 && srcHoapsNumObs != srcHoapsNumObsNodata;
-        if (hoapsAvailable) {
-            // HOAPS samples available
-            return srcHoapsNumObs;
-        } else {
-            // only NIR samples, no HOAPS samples (land, coastal, sea ice)
-            // todo: ingest coastal zone mask when available. Then set to srcNirNumObsNodata if no HOAPS,
-            // no land, no coast no seaice --> this condition only applies for gaps in SSMI swaths
-            return srcNirNumObs;
+    private void configureTargetNumObsSamples(TargetSampleConfigurer configurator) {
+        if (srcNumObsBandNames.length == 5 || srcNumObsBandNames.length == 4 || srcNumObsBandNames.length == 3) {
+            for (int i=0; i < srcNumObsBandNames.length - 1; i++) {
+                configurator.defineSample(TRG_NUM_OBS[i], srcNumObsBandNames[i]);
+            }
+        } else if (srcNumObsBandNames.length == 2) {
+            configurator.defineSample(TRG_NUM_OBS[0], TcwvConstants.NUM_OBS_L3_BAND_NAME + "_" + sensor1Name);
         }
+        configurator.defineSample(TRG_NUM_OBS[4], TcwvConstants.NUM_OBS_L3_BAND_NAME + "_" + sensor2Name);
     }
 
     private static double useOriginal(double srcValue, double srcNodataValue) {
@@ -358,10 +426,34 @@ public class L3DailyMergeNirHoapsOp extends PixelOperator {
         // todo
     }
 
+    static String[] getNumObsSrcBandNames(String sensor1Name) {
+        // e.g. MODIS_TERRA and CMSAF_HOAPS: --> ["num_obs", "numo"]
+        // e.g. MODIS_TERRA-MODIS_AQUA and CMSAF_HOAPS: --> ["num_obs_MODIS_TERRA", "num_obs_MODIS_AQUA", "numo"]
+        // e.g. MODIS_TERRA-MODIS_AQUA-OLCI_A and CMSAF_HOAPS:
+        //       --> ["num_obs_MODIS_TERRA", "num_obs_MODIS_AQUA", "num_obs_OLCI_A", "numo"]
+        // e.g. MODIS_TERRA-MODIS_AQUA-OLCI_A-OLCI-B and CMSAF_HOAPS:
+        //       --> ["num_obs_MODIS_TERRA", "num_obs_MODIS_AQUA", "num_obs_OLCI_A", "num_obs_OLCI_B", "numo"]
+
+        final int numMergesInSensor1 = StringUtils.countMatches(sensor1Name, "-");
+        if (numMergesInSensor1 > 0) {
+            final String prefix = TcwvConstants.NUM_OBS_L3_BAND_NAME + "_";
+            final String[] sensor1SingleSensorNames = sensor1Name.split("-");
+            String[] numObsSrcBandNames = new String[sensor1SingleSensorNames.length + 1];
+            for (int i = 0; i < sensor1SingleSensorNames.length; i++) {
+                numObsSrcBandNames[i] = prefix + sensor1SingleSensorNames[i];
+            }
+            numObsSrcBandNames[sensor1SingleSensorNames.length] = TcwvConstants.NUM_OBS_HOAPS_BAND_NAME;
+            return numObsSrcBandNames;
+        } else {
+            return new String[]{TcwvConstants.NUM_OBS_L3_BAND_NAME, TcwvConstants.NUM_OBS_HOAPS_BAND_NAME};
+        }
+    }
+
+
     public static class Spi extends OperatorSpi {
 
         public Spi() {
-            super(L3DailyMergeNirHoapsOp.class);
+            super(L3DailyMergeNirHoapsPhase2Op.class);
         }
     }
 }

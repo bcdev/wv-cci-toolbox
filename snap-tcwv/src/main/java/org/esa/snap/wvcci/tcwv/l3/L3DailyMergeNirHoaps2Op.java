@@ -21,6 +21,9 @@ import java.util.Map;
 /**
  * Operator for sensor merging of TCWV L3 products of 2 or 3 sensors.
  * We have MERIS/MODIS (land) and HOAPS SSM/I (water).
+ *
+ * TEST VERSION using tile instead of pixel operator-
+ *
  * <p>
  * <p/>
  *
@@ -124,7 +127,7 @@ public class L3DailyMergeNirHoaps2Op extends Operator {
         tcwvQualityFlagMaxL3Band = nirProduct.getBand(TcwvConstants.TCWV_QUALITY_FLAG_MAX_L3_BAND_NAME);
         surfaceTypeL3Band = nirProduct.getBand(TcwvConstants.SURFACE_TYPE_FLAG_L3_BAND_NAME);
 
-        numObsHoapsBand = hoapsProduct.getBand(TcwvConstants.NIUM_OBS_HOAPS_BAND_NAME);
+        numObsHoapsBand = hoapsProduct.getBand(TcwvConstants.NUM_OBS_HOAPS_BAND_NAME);
         tcwvHoapsBand = hoapsProduct.getBand(TcwvConstants.TCWV_HOAPS_BAND_NAME);
         tcwvSigmaHoapsBand = hoapsProduct.getBand(TcwvConstants.TCWV_SIGMA_HOAPS_BAND_NAME);
         if (hoapsProduct.getBand(TcwvConstants.TCWV_PROPAG_ERR_HOAPS_BAND_NAME) != null) {
