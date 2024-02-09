@@ -119,6 +119,27 @@ public class L3DailyMergeNirNirPhase2Op extends PixelOperator {
         for (int i = 0; i < srcNumObsBandNames.length; i++) {
             srcNumObs[i] = sourceSamples[SRC_NUM_OBS[i]].getInt();
         }
+
+        for (int i = 0; i < srcNumObsBandNames.length; i++) {
+            if (srcNumObsBandNames.length == 2) {
+                // no previous merge: we need to pass as 'number of observations' the number of TCWV retrievals
+                // in the L3 grid cell (see PUG). This is implicitly given in the 'tcwv_uncertainty_counts' variable.
+                // We do NOT want the 'num_obs' variable, which gives the total number of observations, including
+                // the ones without a successful TCWV retrieval.
+                srcNumObs[i] = (int) sourceSamples[SRC_TCWV_UNCERTAINTY_COUNTS[i]].getDouble();
+            } else {
+                // There was a previous merge, so we already have the 'correct' number of observations (see above)
+                // in the first source product.
+                if (i == srcNumObsBandNames.length - 1) {
+                    // second source product
+                    srcNumObs[i] = (int) sourceSamples[SRC_TCWV_UNCERTAINTY_COUNTS[1]].getDouble();
+                } else {
+                    // first source product
+                    srcNumObs[i] = sourceSamples[SRC_NUM_OBS[i]].getInt();
+                }
+            }
+        }
+
         for (int i = 0; i < 2; i++) {
             srcTcwvMean[i] = sourceSamples[SRC_TCWV_MEAN[i]].getDouble();
             srcTcwvNodata[i] = mergeInputProducts[i].getBand(TcwvConstants.TCWV_MEAN_BAND_NAME).getNoDataValue();

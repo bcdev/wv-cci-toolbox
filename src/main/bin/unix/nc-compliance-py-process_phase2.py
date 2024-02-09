@@ -144,7 +144,7 @@ def reset_polar(dst_var, tcwv_arr, tcwv_quality_arr, lat_arr, surface_type_array
     dst_var[0, :, :] = tmp_array[0, :, :]
 
 
-def cleanup_inconsistencies(dst, src_hoaps, sensor, res):
+def cleanup_inconsistencies(dst, src_hoaps, sensor, res, single_sensors_list):
     """
     Final cleanup of inconsistencies caused by L3 resampling problems such as Moiree effects, distortion near poles etc.
     :param dst:
@@ -165,8 +165,11 @@ def cleanup_inconsistencies(dst, src_hoaps, sensor, res):
 
     # cleanup polar regions
     # set num_obs to 0:
-    reset_polar(dst.variables['num_obs'], tcwv_arr, tcwv_quality_arr, lat_arr_3d, surface_type_arr, 0)
-    # set tcwv, stdv, and error terms to nan:
+    # reset_polar(dst.variables['num_obs'], tcwv_arr, tcwv_quality_arr, lat_arr_3d, surface_type_arr, 0)
+    for single_sensor in single_sensors_list:
+        reset_polar(dst.variables['num_obs_' + single_sensor], tcwv_arr, tcwv_quality_arr, lat_arr_3d, surface_type_arr, 0)
+
+# set tcwv, stdv, and error terms to nan:
     reset_polar(dst.variables['tcwv'], tcwv_arr, tcwv_quality_arr, lat_arr_3d, surface_type_arr, np.nan)
     reset_polar(dst.variables['stdv'], tcwv_arr, tcwv_quality_arr, lat_arr_3d, surface_type_arr, np.nan)
     reset_polar(dst.variables['tcwv_err'], tcwv_arr, tcwv_quality_arr, lat_arr_3d, surface_type_arr, np.nan)
@@ -178,7 +181,9 @@ def cleanup_inconsistencies(dst, src_hoaps, sensor, res):
     # clean everything remaining over ocean where we have no HOAPS (wvpa) over water in case of CDR-2
     if is_cdr_1(sensor):
         # set num_obs to 0:
-        reset_ocean_cdr1(dst.variables['num_obs'], surface_type_arr, 0)
+        # reset_ocean_cdr1(dst.variables['num_obs'], surface_type_arr, 0)
+        for single_sensor in single_sensors_list:
+            reset_ocean_cdr1(dst.variables['num_obs_' + single_sensor], surface_type_arr, 0)
         # set tcwv, stdv, and error terms to nan:
         reset_ocean_cdr1(dst.variables['tcwv'], surface_type_arr, np.nan)
         reset_ocean_cdr1(dst.variables['stdv'], surface_type_arr, np.nan)
@@ -190,7 +195,9 @@ def cleanup_inconsistencies(dst, src_hoaps, sensor, res):
         wvpa_arr_src = np.array(src_hoaps.variables['wvpa'])
         wvpa_arr = rescale_auxdata(wvpa_arr_src, res)
         # set num_obs to 0:
-        reset_ocean_cdr2(dst.variables['num_obs'], wvpa_arr, surface_type_arr, 0)
+        # reset_ocean_cdr2(dst.variables['num_obs'], wvpa_arr, surface_type_arr, 0)
+        for single_sensor in single_sensors_list:
+            reset_ocean_cdr2(dst.variables['num_obs_' + single_sensor], wvpa_arr, surface_type_arr, 0)
         # set tcwv, stdv, and error terms to nan:
         reset_ocean_cdr2(dst.variables['tcwv'], wvpa_arr, surface_type_arr, np.nan)
         reset_ocean_cdr2(dst.variables['stdv'], wvpa_arr, surface_type_arr, np.nan)
@@ -538,12 +545,12 @@ def set_tcwv_quality_flag(dst, src):
     return indices
 
 
-def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor):
+def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, single_sensors_list):
     """
     Copies variables from source product, renames to correct names, and sets attributes and data...
     For daily non-merged we need to
            - copy 'tcwv_mean' into 'tcwv'
-           - copy 'num_obs' into 'num_obs'
+           - for all contributing sensors copy 'num_obs_<sensor>' into 'num_obs_<sensor>'
            - copy 'tcwv_sigma' into 'stdv'
            - copy 'tcwv_uncertainty_mean' into 'tcwv_ran'
            - compute and write 'tcwv_err' from 'tcwv_uncertainty_sums_sum_sq'
@@ -558,16 +565,21 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor):
     :return:
     """
     for name, variable in get_iteritems(src.variables):
-        if name == 'num_obs':
-            dstvar = dst.createVariable('num_obs', variable.datatype, ('time', 'lat', 'lon'), zlib=True,
-                                        fill_value=getattr(variable, '_FillValue'))
-            copy_variable_attributes_from_source(variable, dstvar)
-            set_variable_long_name_and_unit_attributes(dstvar,
-                                                       'Number of Total Column of Water Vapour retrievals contributing '
-                                                       'to L3 grid cell',
-                                                       ' ')
-            dstvar.setncattr('coordinates', 'lat lon')
 
+        for single_sensor in single_sensors_list:
+            if name == 'num_obs_' + single_sensor:
+                dstvar = dst.createVariable('num_obs_' + single_sensor, variable.datatype, ('time', 'lat', 'lon'),
+                                            zlib=True, fill_value=getattr(variable, '_FillValue'))
+                copy_variable_attributes_from_source(variable, dstvar)
+                set_variable_long_name_and_unit_attributes(dstvar,
+                                                           'Number of Total Column of Water Vapour retrievals '
+                                                           'from sensor ' + single_sensor + ' contributing '
+                                                           'to L3 grid cell',
+                                                           ' ')
+                dstvar.setncattr('coordinates', 'lat lon')
+                dstvar[0, :, :] = variable[:, :]
+
+        if name == 'tcwv_mean':
             # in case of CDR-2, add variable 'num_hours_tcwv' ('numh' in new HOAPS products, set to -1 over land)
             if is_cdr_2(sensor):
                 dstvar = dst.createVariable('num_hours_tcwv', variable.datatype, ('time', 'lat', 'lon'), zlib=True,
@@ -580,7 +592,6 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor):
                 dstvar.setncattr('units', ' ')
                 dstvar[0, :, :] = -1
 
-        if name == 'tcwv_mean':
             dstvar = dst.createVariable('tcwv', variable.datatype, ('time', 'lat', 'lon'), zlib=True,
                                         fill_value=getattr(variable, '_FillValue'))
             copy_variable_attributes_from_source(variable, dstvar)
@@ -622,7 +633,11 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor):
             set_variable_long_name_and_unit_attributes(dstvar, 'Propagated retrieval uncertainty', 'kg/m2')
 
             uncert_sum_sqr_arr = np.array(src.variables['tcwv_uncertainty_sums_sum_sq'])
-            num_obs_arr = np.array(src.variables['num_obs'])
+            # num_obs_arr = np.array(src.variables['num_obs'])
+            num_obs_arr = np.array(src.variables['num_obs_' + single_sensors_list[0]])
+            for i in range(1, len(single_sensors_list)):
+                num_obs_arr = num_obs_arr + np.array(src.variables['num_obs_' + single_sensors_list[i]])
+
             uncert_sum_sqr_arr_norm = uncert_sum_sqr_arr / num_obs_arr  # this is eq. (3) !
             # now sqrt, see PSD v2.0 section 3.1.4:
             uncert_sum_sqr_arr_psd = np.sqrt(uncert_sum_sqr_arr_norm)  # PSD v2.0 section 3.1.4
@@ -1079,6 +1094,7 @@ def run(args):
     landmask_file = args[2]
     landcover_file = args[3]
     sensor = args[4].replace('-', '_')
+    single_sensors_list = args[4].upper().split("-")
     year = args[5]
     month = args[6]
     day = args[7]
@@ -1126,7 +1142,7 @@ def run(args):
                        fill_value=np.array([-128], 'b'))
 
     # Copy variables from source product and rename to correct names. Set attributes and data...
-    copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor)
+    copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, single_sensors_list)
 
     # Set TCWV final quality flag. Get back indices of finally invalid pixels...
     indices = set_tcwv_quality_flag(dst, src)
@@ -1144,7 +1160,8 @@ def run(args):
     set_surface_type_flag(dst, src, day, res, ds_landmask, ds_landcover, ds_seaice)
 
     # Set num_obs variable...
-    set_num_obs_variable(dst, src, sensor)
+    # todo: check
+    # set_num_obs_variable(dst, src, sensor)
 
     if ds_hoaps:
         # Set tcwv_err and tcwv_ran in case of existing HOAPS...
@@ -1157,7 +1174,7 @@ def run(args):
         set_errors_for_hoaps(dst, src, res)
 
     # Cleanup inconsistencies of final arrays at this point:
-    cleanup_inconsistencies(dst, ds_hoaps, sensor, res)
+    cleanup_inconsistencies(dst, ds_hoaps, sensor, res, single_sensors_list)
     var_tcwv_arr = np.array(dst.variables['tcwv'])
     dst.variables['tcwv'].setncattr('actual_range', np.array([np.nanmin(var_tcwv_arr), np.nanmax(var_tcwv_arr)], 'f4'))
 
