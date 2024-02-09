@@ -90,7 +90,7 @@ def reset_var_to_nan(dst_var, dst_indices):
 
 def reset_ocean_cdr1(dst_var, surface_type_array, reset_value):
     """
-    Resets everything to nan over ocean, seaice, coastlines in case of CDR-1 (no HOAPS, only land)
+    Resets everything to nan over ocean, seaice, coastlines, partly seaice in case of CDR-1 (no HOAPS, only land)
     :param dst_var:
     :param surface_type_array:
     :param reset_value:
@@ -131,13 +131,14 @@ def reset_polar(dst_var, tcwv_arr, tcwv_quality_arr, lat_arr, surface_type_array
     dst_var_arr = np.array(dst_var)
     tmp_array = np.copy(dst_var_arr)
     # identify inconsistent pixel over non-land
+    # heavy precip, seaice, partly cloudy:
     tmp_array[np.where((tcwv_arr > 20.0) & (np.abs(lat_arr) > 70.0) &
                        # tmp_array[np.where((tcwv_quality_arr > 1) & (np.abs(lat_arr[0]) > 75.0) &
                        ((surface_type_array == 3) |
                         (surface_type_array == 4) |
                         (surface_type_array == 6)))] = reset_value
     # identify inconsistent pixel over land
-    # tmp_array[np.where((tcwv_arr > 20.0) & (np.abs(lat_arr[0]) > 75.0) & (surface_type_array == 0))] = reset_value
+    # land, cloudy, coast:
     tmp_array[np.where((tcwv_arr > 20.0) & (np.abs(lat_arr) > 70.0) &
                        ((surface_type_array == 0) | (surface_type_array == 2) | (
                                    surface_type_array == 5)))] = reset_value
