@@ -57,43 +57,44 @@ public class L3DailyMergeNirHoapsPhase2Op extends PixelOperator {
 
     private static final String sensor2Name = "CMSAF_HOAPS";
 
-    //    private static final int SRC_NIR_NUM_OBS = 1;
     private int[] SRC_NIR_NUM_OBS;  // we can have num_obs_<sensor> from up to 4 sensors
-    private static final int SRC_NIR_TCWV_MEAN = 5;
-    private static final int SRC_NIR_TCWV_SIGMA = 6;
-    private static final int SRC_NIR_TCWV_UNCERTAINTY_MEAN = 7;
-    private static final int SRC_NIR_TCWV_UNCERTAINTY_COUNTS = 8;
-    private static final int SRC_NIR_TCWV_SUMS_SUM = 9;
-    private static final int SRC_NIR_TCWV_SUMS_SUM_SQ = 10;
-    private static final int SRC_NIR_TCWV_QUALITY_FLAGS_MAJORITY = 11;
-    private static final int SRC_NIR_TCWV_QUALITY_FLAGS_MIN = 12;
-    private static final int SRC_NIR_TCWV_QUALITY_FLAGS_MAX = 13;
-    private static final int SRC_NIR_TCWV_SURFACE_TYPE_FLAGS_MAJORITY = 14;
+    private static final int SRC_NIR_POSSIBLE_NUM_OBS = 5;
+    private static final int SRC_NIR_TCWV_MEAN = 6;
+    private static final int SRC_NIR_TCWV_SIGMA = 7;
+    private static final int SRC_NIR_TCWV_UNCERTAINTY_MEAN = 8;
+    private static final int SRC_NIR_TCWV_UNCERTAINTY_COUNTS = 9;
+    private static final int SRC_NIR_TCWV_SUMS_SUM = 10;
+    private static final int SRC_NIR_TCWV_SUMS_SUM_SQ = 11;
+    private static final int SRC_NIR_TCWV_QUALITY_FLAGS_MAJORITY = 12;
+    private static final int SRC_NIR_TCWV_QUALITY_FLAGS_MIN = 13;
+    private static final int SRC_NIR_TCWV_QUALITY_FLAGS_MAX = 14;
+    private static final int SRC_NIR_TCWV_SURFACE_TYPE_FLAGS_MAJORITY = 15;
 
-    private static final int SRC_HOAPS_NUM_OBS = 15;
-    private static final int SRC_HOAPS_TCWV = 16;
-    private static final int SRC_HOAPS_TCWV_SIGMA = 17;
-    private static final int SRC_HOAPS_TCWV_PROPAG_ERR = 18;
-    private static final int SRC_HOAPS_TCWV_RANDOM_ERR = 19;
+    private static final int SRC_HOAPS_NUM_OBS = 16;
+    private static final int SRC_HOAPS_TCWV = 17;
+    private static final int SRC_HOAPS_TCWV_SIGMA = 18;
+    private static final int SRC_HOAPS_TCWV_PROPAG_ERR = 19;
+    private static final int SRC_HOAPS_TCWV_RANDOM_ERR = 20;
 
-    private static final int SRC_LANDMASK_MASK = 20;
-    private static final int SRC_SEAICE_MASK = 21;
+    private static final int SRC_LANDMASK_MASK = 21;
+    private static final int SRC_SEAICE_MASK = 22;
 
     private String[] srcNirNumObsBandNames;
 
     private static final int[] TRG_NUM_OBS = {0, 1, 2, 3, 4};
-    private static final int TRG_TCWV_MEAN = 5;
-    private static final int TRG_TCWV_SIGMA = 6;
-    private static final int TRG_TCWV_UNCERTAINTY_MEAN = 7;
-    private static final int TRG_TCWV_UNCERTAINTY_COUNTS = 8;
-    private static final int TRG_TCWV_SUMS_SUM = 9;
-    private static final int TRG_TCWV_SUMS_SUM_SQ = 10;
-    private static final int TRG_TCWV_QUALITY_FLAGS_MAJORITY = 11;
-    private static final int TRG_TCWV_QUALITY_FLAGS_MIN = 12;
-    private static final int TRG_TCWV_QUALITY_FLAGS_MAX = 13;
-    private static final int TRG_TCWV_SURFACE_TYPE_FLAGS_MAJORITY = 14;
-    private static final int TRG_TCWV_PROPAG_ERR = 15;
-    private static final int TRG_TCWV_RANDOM_ERR = 16;
+    private static final int TRG_POSSIBLE_NUM_OBS = 5;
+    private static final int TRG_TCWV_MEAN = 6;
+    private static final int TRG_TCWV_SIGMA = 7;
+    private static final int TRG_TCWV_UNCERTAINTY_MEAN = 8;
+    private static final int TRG_TCWV_UNCERTAINTY_COUNTS = 9;
+    private static final int TRG_TCWV_SUMS_SUM = 10;
+    private static final int TRG_TCWV_SUMS_SUM_SQ = 11;
+    private static final int TRG_TCWV_QUALITY_FLAGS_MAJORITY = 12;
+    private static final int TRG_TCWV_QUALITY_FLAGS_MIN = 13;
+    private static final int TRG_TCWV_QUALITY_FLAGS_MAX = 14;
+    private static final int TRG_TCWV_SURFACE_TYPE_FLAGS_MAJORITY = 15;
+    private static final int TRG_TCWV_PROPAG_ERR = 16;
+    private static final int TRG_TCWV_RANDOM_ERR = 17;
 
 
     @Override
@@ -153,6 +154,8 @@ public class L3DailyMergeNirHoapsPhase2Op extends PixelOperator {
             }
         }
 
+        final int srcPossibleNirNumObs = sourceSamples[SRC_NIR_POSSIBLE_NUM_OBS].getInt();
+        final int srcPossibleNirNumObsNodata = (int) nirProduct.getBand(TcwvConstants.NUM_OBS_L3_BAND_NAME).getNoDataValue();
         final double srcNirTcwvMean = sourceSamples[SRC_NIR_TCWV_MEAN].getDouble();
         final double srcNirTcwvNodata = nirProduct.getBand(TcwvConstants.TCWV_MEAN_BAND_NAME).getNoDataValue();
         final double srcNirTcwvSigma = sourceSamples[SRC_NIR_TCWV_SIGMA].getDouble();
@@ -185,6 +188,8 @@ public class L3DailyMergeNirHoapsPhase2Op extends PixelOperator {
         final int srcLandMask = sourceSamples[SRC_LANDMASK_MASK].getInt();
         final int srcSeaiceMask = seaiceProduct != null ? sourceSamples[SRC_SEAICE_MASK].getInt() : -1;
 
+        final int possibleNirNumObsMerge =
+                mergePossibleNumObs(srcPossibleNirNumObs, srcPossibleNirNumObsNodata, srcHoapsNumObsNodata);
         final double tcwvMerge = merge(srcNirTcwvMean, srcNirTcwvNodata, srcHoapsTcwv, srcHoapsTcwvNodata,
                 srcHoapsNumObs, srcHoapsNumObsNodata, srcLandMask, srcSeaiceMask);
         final double tcwvSigmaMerge = merge(srcNirTcwvSigma, srcNirTcwvNodata, srcHoapsTcwvSigma, srcHoapsTcwvNodata,
@@ -214,6 +219,7 @@ public class L3DailyMergeNirHoapsPhase2Op extends PixelOperator {
             targetSamples[TRG_NUM_OBS[4]].set(Math.max(0, srcHoapsNumObs));
         }
 
+        targetSamples[TRG_POSSIBLE_NUM_OBS].set(possibleNirNumObsMerge);
         targetSamples[TRG_TCWV_MEAN].set(tcwvMerge);
         targetSamples[TRG_TCWV_SIGMA].set(tcwvSigmaMerge);
         targetSamples[TRG_TCWV_UNCERTAINTY_MEAN].set(tcwvUncertaintyMeanMerge);
@@ -243,6 +249,8 @@ public class L3DailyMergeNirHoapsPhase2Op extends PixelOperator {
             throw new OperatorException("Invalid number of 'num_obs_*' variables in first source product");
         }
 
+        targetProduct.addBand(TcwvConstants.NUM_OBS_L3_BAND_NAME,
+                nirProduct.getBand(TcwvConstants.NUM_OBS_L3_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.TCWV_L3_BAND_NAME,
                 nirProduct.getBand(TcwvConstants.TCWV_L3_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.TCWV_SIGMA_L3_BAND_NAME,
@@ -305,6 +313,7 @@ public class L3DailyMergeNirHoapsPhase2Op extends PixelOperator {
             throw new OperatorException("Invalid number of 'num_obs_*' variables in first source product");
         }
 
+        configurator.defineSample(SRC_NIR_POSSIBLE_NUM_OBS, TcwvConstants.NUM_OBS_L3_BAND_NAME, nirProduct);
         configurator.defineSample(SRC_NIR_TCWV_MEAN, TcwvConstants.TCWV_L3_BAND_NAME, nirProduct);
         configurator.defineSample(SRC_NIR_TCWV_SIGMA, TcwvConstants.TCWV_SIGMA_L3_BAND_NAME, nirProduct);
         configurator.defineSample(SRC_NIR_TCWV_UNCERTAINTY_MEAN, TcwvConstants.TCWV_UNCERTAINTY_L3_BAND_NAME, nirProduct);
@@ -334,9 +343,9 @@ public class L3DailyMergeNirHoapsPhase2Op extends PixelOperator {
 
     @Override
     protected void configureTargetSamples(TargetSampleConfigurer configurator) throws OperatorException {
-//        configurator.defineSample(TRG_NUM_OBS, TcwvConstants.NUM_OBS_L3_BAND_NAME);
         configureTargetNumObsSamples(configurator);
 
+        configurator.defineSample(TRG_POSSIBLE_NUM_OBS, TcwvConstants.NUM_OBS_L3_BAND_NAME);
         configurator.defineSample(TRG_TCWV_MEAN, TcwvConstants.TCWV_L3_BAND_NAME);
         configurator.defineSample(TRG_TCWV_SIGMA, TcwvConstants.TCWV_SIGMA_L3_BAND_NAME);
         configurator.defineSample(TRG_TCWV_UNCERTAINTY_MEAN, TcwvConstants.TCWV_UNCERTAINTY_L3_BAND_NAME);
@@ -365,6 +374,20 @@ public class L3DailyMergeNirHoapsPhase2Op extends PixelOperator {
         }
         configurator.defineSample(TRG_NUM_OBS[4], TcwvConstants.NUM_OBS_L3_BAND_NAME + "_" + sensor2Name);
     }
+
+    private static int mergePossibleNumObs(int srcNirNumObs, int srcHoapsNumObs, int srcHoapsNumObsNodata) {
+        final boolean hoapsAvailable = srcHoapsNumObs > 0 && srcHoapsNumObs != srcHoapsNumObsNodata;
+        if (hoapsAvailable) {
+            // HOAPS samples available
+            return srcHoapsNumObs;
+        } else {
+            // only NIR samples, no HOAPS samples (land, coastal, sea ice)
+            // todo: ingest coastal zone mask when available. Then set to srcNirNumObsNodata if no HOAPS,
+            // no land, no coast no seaice --> this condition only applies for gaps in SSMI swaths
+            return srcNirNumObs;
+        }
+    }
+
 
     private static double useOriginal(double srcValue, double srcNodataValue) {
         if (!Double.isNaN(srcValue) && srcValue != srcNodataValue) {

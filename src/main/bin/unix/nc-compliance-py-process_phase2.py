@@ -120,7 +120,7 @@ def reset_ocean_cdr2(dst_var, wvpa_hoaps_array, surface_type_array, reset_value)
     dst_var[0, :, :] = tmp_array[0, :, :]
 
 
-def reset_polar(dst_var, tcwv_arr, lat_arr, surface_type_array, reset_value):
+def reset_polar(dst_var, tcwv_arr, lat_arr, surface_type_array, atm_cond_arr, reset_value):
     """
     Resets everything to nan everywhere except ocean for tcwv > 10 and abs(lat) > 75
     :param dst_var:
@@ -133,18 +133,18 @@ def reset_polar(dst_var, tcwv_arr, lat_arr, surface_type_array, reset_value):
     dst_var_arr = np.array(dst_var)
     tmp_array = np.copy(dst_var_arr)
     # identify inconsistent pixel over non-land
-    # heavy precip, seaice, partly cloudy:
+    # heavy precip, partly cloudy, seaice :
     # todo: pass new atmos cond flag to adapt this
     tmp_array[np.where((tcwv_arr > 20.0) & (np.abs(lat_arr) > 70.0) &
-                       ((surface_type_array == 3) |
-                        (surface_type_array == 4) |
-                        (surface_type_array == 6)))] = reset_value
+                       ((atm_cond_arr == 3) |
+                        (atm_cond_arr == 1) |
+                        (surface_type_array == 4)))] = reset_value
     # identify inconsistent pixel over land
-    # land, cloudy, coast:
+    # land, coast, cloudy:
     # todo: pass new atmos cond flag to adapt this
     tmp_array[np.where((tcwv_arr > 20.0) & (np.abs(lat_arr) > 70.0) &
-                       ((surface_type_array == 0) | (surface_type_array == 2) | (
-                               surface_type_array == 5)))] = reset_value
+                       ((surface_type_array == 0) | (surface_type_array == 5) | (
+                               atm_cond_arr == 2)))] = reset_value
     dst_var[0, :, :] = tmp_array[0, :, :]
 
 
@@ -160,6 +160,8 @@ def cleanup_inconsistencies(dst, src_hoaps, sensor, res, single_sensors_list):
     """
     var_surface_type = dst.variables['surface_type_flag']
     surface_type_arr = np.array(var_surface_type)
+    var_atm_cond = dst.variables['atmospheric_conditions_flag']
+    atm_cond_arr = np.array(var_surface_type)
     var_tcwv = dst.variables['tcwv']
     tcwv_arr = np.array(var_tcwv)
     var_lat = dst.variables['lat']
@@ -172,15 +174,15 @@ def cleanup_inconsistencies(dst, src_hoaps, sensor, res, single_sensors_list):
     # set num_obs to 0:
     # reset_polar(dst.variables['num_obs'], tcwv_arr, tcwv_quality_arr, lat_arr_3d, surface_type_arr, 0)
     for single_sensor in single_sensors_list:
-        reset_polar(dst.variables['num_obs_' + single_sensor], tcwv_arr, lat_arr_3d, surface_type_arr, 0)
+        reset_polar(dst.variables['num_obs_' + single_sensor], tcwv_arr, lat_arr_3d, surface_type_arr, atm_cond_arr, 0)
 
     # set tcwv, stdv, and error terms to nan:
-    reset_polar(dst.variables['tcwv'], tcwv_arr, lat_arr_3d, surface_type_arr, np.nan)
-    reset_polar(dst.variables['stdv'], tcwv_arr, lat_arr_3d, surface_type_arr, np.nan)
-    reset_polar(dst.variables['tcwv_err'], tcwv_arr, lat_arr_3d, surface_type_arr, np.nan)
-    reset_polar(dst.variables['tcwv_ran'], tcwv_arr, lat_arr_3d, surface_type_arr, np.nan)
+    reset_polar(dst.variables['tcwv'], tcwv_arr, lat_arr_3d, surface_type_arr, atm_cond_arr, np.nan)
+    reset_polar(dst.variables['stdv'], tcwv_arr, lat_arr_3d, surface_type_arr, atm_cond_arr, np.nan)
+    reset_polar(dst.variables['tcwv_err'], tcwv_arr, lat_arr_3d, surface_type_arr, atm_cond_arr, np.nan)
+    reset_polar(dst.variables['tcwv_ran'], tcwv_arr, lat_arr_3d, surface_type_arr, atm_cond_arr, np.nan)
     # set tcwv_quality_flag to 3:
-    reset_polar(dst.variables['tcwv_quality_flag'], tcwv_arr, lat_arr_3d, surface_type_arr, 3)
+    reset_polar(dst.variables['tcwv_quality_flag'], tcwv_arr, lat_arr_3d, surface_type_arr, atm_cond_arr, 3)
 
     # remove all HOAPS (everything over ocean, coastal, seaice) in case of CDR-1
     # clean everything remaining over ocean where we have no HOAPS (wvpa) over water in case of CDR-2
@@ -608,13 +610,7 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, 
             set_variable_long_name_and_unit_attributes(dstvar, 'Propagated retrieval uncertainty', 'kg/m2')
 
             uncert_sum_sqr_arr = np.array(src.variables['tcwv_uncertainty_sums_sum_sq'])
-            # num_obs_arr = np.array(src.variables['num_obs'])
-            num_obs_arr = np.array(src.variables['num_obs_' + single_sensors_list[0]])
-            for i in range(1, len(single_sensors_list)):
-                num_obs_arr = num_obs_arr + np.array(src.variables['num_obs_' + single_sensors_list[i]])
-
-            # todo: there are diffs to loop 1, whereas tcwv_err is ok
-            # check this for ESACCI-WATERVAPOUR-L3C-TCWV-modis_terra_modis_aqua_olci_a_olci_b-05deg-20220815-fv4.1.nc!
+            num_obs_arr = np.array(src.variables['num_obs'])
             uncert_sum_sqr_arr_norm = uncert_sum_sqr_arr / num_obs_arr  # this is eq. (3) !
             # now sqrt, see PSD v2.0 section 3.1.4:
             uncert_sum_sqr_arr_psd = np.sqrt(uncert_sum_sqr_arr_norm)  # PSD v2.0 section 3.1.4

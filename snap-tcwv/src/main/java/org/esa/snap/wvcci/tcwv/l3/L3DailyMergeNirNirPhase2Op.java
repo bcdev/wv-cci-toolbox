@@ -44,6 +44,7 @@ public class L3DailyMergeNirNirPhase2Op extends PixelOperator {
     private int width;
     private int height;
 
+    private int[] SRC_POSSIBLE_NUM_OBS;
     private int[] SRC_NUM_OBS;
     private int[] SRC_TCWV_MEAN;
     private int[] SRC_TCWV_SIGMA;
@@ -59,16 +60,17 @@ public class L3DailyMergeNirNirPhase2Op extends PixelOperator {
     private String[] srcNumObsBandNames;
 
     private static final int[] TRG_NUM_OBS = {0, 1, 2, 3};
-    private static final int TRG_TCWV_MEAN = 4;
-    private static final int TRG_TCWV_SIGMA = 5;
-    private static final int TRG_TCWV_UNCERTAINTY_MEAN = 6;
-    private static final int TRG_TCWV_UNCERTAINTY_COUNTS = 7;
-    private static final int TRG_TCWV_SUMS_SUM = 8;
-    private static final int TRG_TCWV_SUMS_SUM_SQ = 9;
-    private static final int TRG_TCWV_QUALITY_FLAGS_MAJORITY = 10;
-    private static final int TRG_TCWV_QUALITY_FLAGS_MIN = 11;
-    private static final int TRG_TCWV_QUALITY_FLAGS_MAX = 12;
-    private static final int TRG_TCWV_SURFACE_TYPE_FLAGS_MAJORITY = 13;
+    private static final int TRG_POSSIBLE_NUM_OBS = 4;
+    private static final int TRG_TCWV_MEAN = 5;
+    private static final int TRG_TCWV_SIGMA = 6;
+    private static final int TRG_TCWV_UNCERTAINTY_MEAN = 7;
+    private static final int TRG_TCWV_UNCERTAINTY_COUNTS = 8;
+    private static final int TRG_TCWV_SUMS_SUM = 9;
+    private static final int TRG_TCWV_SUMS_SUM_SQ = 10;
+    private static final int TRG_TCWV_QUALITY_FLAGS_MAJORITY = 11;
+    private static final int TRG_TCWV_QUALITY_FLAGS_MIN = 12;
+    private static final int TRG_TCWV_QUALITY_FLAGS_MAX = 13;
+    private static final int TRG_TCWV_SURFACE_TYPE_FLAGS_MAJORITY = 14;
 
 
     @Override
@@ -86,6 +88,7 @@ public class L3DailyMergeNirNirPhase2Op extends PixelOperator {
 
         SRC_NUM_OBS = new int[srcNumObsBandNames.length];
 
+        SRC_POSSIBLE_NUM_OBS = new int[2];
         SRC_TCWV_MEAN = new int[2];
         SRC_TCWV_SIGMA = new int[2];
         SRC_TCWV_UNCERTAINTY_MEAN = new int[2];
@@ -101,7 +104,8 @@ public class L3DailyMergeNirNirPhase2Op extends PixelOperator {
 
     @Override
     protected void computePixel(int x, int y, Sample[] sourceSamples, WritableSample[] targetSamples) {
-
+        final int[] srcPossibleNumObs = new int[2];
+        final int[] srcPossibleNumObsNodata = new int[2];
         final double[] srcTcwvMean = new double[2];
         final double[] srcTcwvNodata = new double[2];
         final double[] srcTcwvSigma = new double[2];
@@ -115,10 +119,11 @@ public class L3DailyMergeNirNirPhase2Op extends PixelOperator {
         final int[] srcQualityFlagsMax = new int[2];
         final int[] srcSurfaceTypeFlag = new int[2];
 
+//        if (x == 400 && y == 120) {
+//            System.out.println("x,y  = " + x + ", " + y);
+//        }
+
         final int[] srcNumObs = new int[srcNumObsBandNames.length];
-        for (int i = 0; i < srcNumObsBandNames.length; i++) {
-            srcNumObs[i] = sourceSamples[SRC_NUM_OBS[i]].getInt();
-        }
 
         for (int i = 0; i < srcNumObsBandNames.length; i++) {
             if (srcNumObsBandNames.length == 2) {
@@ -141,6 +146,8 @@ public class L3DailyMergeNirNirPhase2Op extends PixelOperator {
         }
 
         for (int i = 0; i < 2; i++) {
+            srcPossibleNumObs[i] = sourceSamples[SRC_POSSIBLE_NUM_OBS[i]].getInt();
+            srcPossibleNumObsNodata[i] = (int) mergeInputProducts[i].getBand(TcwvConstants.NUM_OBS_L3_BAND_NAME).getNoDataValue();
             srcTcwvMean[i] = sourceSamples[SRC_TCWV_MEAN[i]].getDouble();
             srcTcwvNodata[i] = mergeInputProducts[i].getBand(TcwvConstants.TCWV_MEAN_BAND_NAME).getNoDataValue();
             srcTcwvSigma[i] = sourceSamples[SRC_TCWV_SIGMA[i]].getDouble();
@@ -155,6 +162,7 @@ public class L3DailyMergeNirNirPhase2Op extends PixelOperator {
             srcSurfaceTypeFlag[i] = sourceSamples[SRC_TCWV_SURFACE_TYPE_FLAGS_MAJORITY[i]].getInt();
         }
 
+        final int possibleNumObsMerge = mergePossibeNumObs(srcPossibleNumObs, srcPossibleNumObsNodata);
         final double[] tcwvMeanMerge =
                 mergeTcwv(srcTcwvMean, srcTcwvUncertaintyCounts, srcTcwvNodata, srcTcwvCountsNodata);
         final double[] tcwvSigmaMerge =
@@ -184,6 +192,7 @@ public class L3DailyMergeNirNirPhase2Op extends PixelOperator {
             targetSamples[TRG_NUM_OBS[3]].set(srcNumObs[1]);
         }
 
+        targetSamples[TRG_POSSIBLE_NUM_OBS].set(possibleNumObsMerge);
         targetSamples[TRG_TCWV_MEAN].set(tcwvMeanMerge[0]);
         targetSamples[TRG_TCWV_SIGMA].set(tcwvSigmaMerge[0]);
         targetSamples[TRG_TCWV_UNCERTAINTY_MEAN].set(tcwvUncertaintyMeanMerge[0]);
@@ -213,9 +222,9 @@ public class L3DailyMergeNirNirPhase2Op extends PixelOperator {
             throw new OperatorException("Invalid number of 'num_obs_*' variables in first source product");
         }
 
+        targetProduct.addBand(TcwvConstants.NUM_OBS_L3_BAND_NAME, ProductData.TYPE_INT32);
         targetProduct.addBand(TcwvConstants.TCWV_L3_BAND_NAME,
-                mergeInputProducts[0].getBand(TcwvConstants.TCWV_L3_BAND_NAME).
-                        getDataType());
+                mergeInputProducts[0].getBand(TcwvConstants.TCWV_L3_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.TCWV_SIGMA_L3_BAND_NAME,
                 mergeInputProducts[0].getBand(TcwvConstants.TCWV_SIGMA_L3_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.TCWV_UNCERTAINTY_L3_BAND_NAME,
@@ -254,16 +263,17 @@ public class L3DailyMergeNirNirPhase2Op extends PixelOperator {
             SRC_NUM_OBS[i] = i;
         }
         for (int i = 0; i < 2; i++) {
-            SRC_TCWV_MEAN[i] = i + index;
-            SRC_TCWV_SIGMA[i] = i + index + 2;
-            SRC_TCWV_UNCERTAINTY_MEAN[i] = i + index + 4;
-            SRC_TCWV_UNCERTAINTY_COUNTS[i] = i + index + 6;
-            SRC_TCWV_SUMS_SUM[i] = i + index + 8;
-            SRC_TCWV_SUMS_SUM_SQ[i] = i + index + 10;
-            SRC_TCWV_QUALITY_FLAGS_MAJORITY[i] = i + index + 12;
-            SRC_TCWV_QUALITY_FLAGS_MIN[i] = i + index + 14;
-            SRC_TCWV_QUALITY_FLAGS_MAX[i] = i + index + 16;
-            SRC_TCWV_SURFACE_TYPE_FLAGS_MAJORITY[i] = i + index + 18;
+            SRC_POSSIBLE_NUM_OBS[i] = i + index;
+            SRC_TCWV_MEAN[i] = i + index + 2;
+            SRC_TCWV_SIGMA[i] = i + index + 4;
+            SRC_TCWV_UNCERTAINTY_MEAN[i] = i + index + 6;
+            SRC_TCWV_UNCERTAINTY_COUNTS[i] = i + index + 8;
+            SRC_TCWV_SUMS_SUM[i] = i + index + 10;
+            SRC_TCWV_SUMS_SUM_SQ[i] = i + index + 12;
+            SRC_TCWV_QUALITY_FLAGS_MAJORITY[i] = i + index + 14;
+            SRC_TCWV_QUALITY_FLAGS_MIN[i] = i + index + 16;
+            SRC_TCWV_QUALITY_FLAGS_MAX[i] = i + index + 18;
+            SRC_TCWV_SURFACE_TYPE_FLAGS_MAJORITY[i] = i + index + 20;
         }
 
         if (index == 2) {
@@ -279,6 +289,8 @@ public class L3DailyMergeNirNirPhase2Op extends PixelOperator {
         }
 
         for (int i = 0; i < 2; i++) {
+            configurator.defineSample(SRC_POSSIBLE_NUM_OBS[i], TcwvConstants.NUM_OBS_L3_BAND_NAME,
+                    mergeInputProducts[i]);
             configurator.defineSample(SRC_TCWV_MEAN[i], TcwvConstants.TCWV_L3_BAND_NAME,
                     mergeInputProducts[i]);
             configurator.defineSample(SRC_TCWV_SIGMA[i], TcwvConstants.TCWV_SIGMA_L3_BAND_NAME,
@@ -306,6 +318,7 @@ public class L3DailyMergeNirNirPhase2Op extends PixelOperator {
     protected void configureTargetSamples(TargetSampleConfigurer configurator) throws OperatorException {
         configureTargetNumObsSamples(configurator);
 
+        configurator.defineSample(TRG_POSSIBLE_NUM_OBS, TcwvConstants.NUM_OBS_L3_BAND_NAME);
         configurator.defineSample(TRG_TCWV_MEAN, TcwvConstants.TCWV_L3_BAND_NAME);
         configurator.defineSample(TRG_TCWV_SIGMA, TcwvConstants.TCWV_SIGMA_L3_BAND_NAME);
         configurator.defineSample(TRG_TCWV_UNCERTAINTY_MEAN, TcwvConstants.TCWV_UNCERTAINTY_L3_BAND_NAME);
@@ -330,6 +343,16 @@ public class L3DailyMergeNirNirPhase2Op extends PixelOperator {
             configurator.defineSample(TRG_NUM_OBS[0], TcwvConstants.NUM_OBS_L3_BAND_NAME + "_" + sensor1Name);
         }
         configurator.defineSample(TRG_NUM_OBS[3], TcwvConstants.NUM_OBS_L3_BAND_NAME + "_" + sensor2Name);
+    }
+
+    private static int mergePossibeNumObs(int[] srcNumObs, int[] srcTcwvNumObsNodata) {
+        int numObs = 0;
+        for (int i = 0; i < 2; i++) {
+            if (srcNumObs[i] != srcTcwvNumObsNodata[i]) {
+                numObs += srcNumObs[i];
+            }
+        }
+        return numObs;
     }
 
     private static double[] mergeTcwv(double[] srcTcwv, double[] srcTcwvCounts,
