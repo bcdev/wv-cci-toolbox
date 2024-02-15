@@ -82,7 +82,7 @@ with Dataset(nc_infile) as src, Dataset(outpath, 'w', format='NETCDF4') as dst:
     dst.setncattr('title', 'Water Vapour CCI Total Column of Water Vapour Product')
     dst.setncattr('institution', 'Brockmann Consult GmbH; EUMETSAT/CMSAF')
     dst.setncattr('source', 'MERIS RR L1B 3rd Reprocessing; MODIS MOD021KM L1B; HOAPS-S version 4.0')
-    dst.setncattr('history', 'python nc-compliance-py-process.py ' + nc_infile)
+    dst.setncattr('history', 'python nc-compliance-py-process_phase1.py ' + nc_infile)
     dst.setncattr('references', 'WV_cci D2.2: ATBD Part 1 - MERIS-MODIS-OLCI L2 Products, Issue 1.1, 3 April 2019; WV_cci D4.2: CRDP Issue 1.0, 13 June 2019 ')
     dst.setncattr('tracking_id', str(uuid.uuid1()))
     dst.setncattr('Conventions', 'CF-1.7')

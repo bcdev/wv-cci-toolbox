@@ -1,7 +1,7 @@
 __author__ = 'olafd'
 
 # Generates final CF- and CCI-compliant TCWV L3 daily non-merged products ready for delivery.
-# Usage: python nc-compliance-py-process.py ./${nc_infile} ${sensor} ${year} ${month} ${day} ${resolution} ${version}
+# Usage: python nc-compliance-py-process_phase1.py ./${nc_infile} ${sensor} ${year} ${month} ${day} ${resolution} ${version}
 # Example: python nc-compliance-py-daily-non-merged-process.py l3_tcwv_olci_005deg_2018-07-25_2018-07-25.nc olci 2018 07 25 005 2.0
 
 # NOTE: now we directly use the originally generated L3, rename bands where necessary, and provide the required uncertainty terms here.
@@ -46,7 +46,7 @@ def setVariableLongNameAndUnitAttributes(variable, long_name_string, unit_string
             
 ########## initialize input parameters ######################
 if len(sys.argv) != 9 and len(sys.argv) != 10:
-    print ('Usage:  python nc-compliance-py-process.py <nc_infile> <landmask_file> <sensor> <year> <month> <day> <resolution> < product version> [<seaice_mask_file>] ')
+    print ('Usage:  python nc-compliance-py-process_phase1.py <nc_infile> <landmask_file> <sensor> <year> <month> <day> <resolution> < product version> [<seaice_mask_file>] ')
     sys.exit(-1)
 
 nc_infile = sys.argv[1]
@@ -128,7 +128,7 @@ with Dataset(nc_infile) as src, Dataset(landmask_file) as ds_landmask, Dataset(o
     dst.setncattr('title', 'Water Vapour CCI Total Column of Water Vapour Product')
     dst.setncattr('institution', 'Brockmann Consult GmbH; EUMETSAT/CMSAF')
     dst.setncattr('source', 'MERIS RR L1B 3rd Reprocessing; MODIS MOD021KM L1B; HOAPS-S version 4.0 released by CM SAF')
-    dst.setncattr('history', 'python nc-compliance-py-process.py ' + nc_infile)
+    dst.setncattr('history', 'python nc-compliance-py-process_phase1.py ' + nc_infile)
     dst.setncattr('references', 'WV_cci D2.2: ATBD Part 1 - MERIS-MODIS-OLCI L2 Products, Issue 1.1, 3 April 2019; WV_cci D4.2: CRDP Issue 1.0, 13 June 2019 ')
     dst.setncattr('tracking_id', str(uuid.uuid1()))
     dst.setncattr('Conventions', 'CF-1.7')

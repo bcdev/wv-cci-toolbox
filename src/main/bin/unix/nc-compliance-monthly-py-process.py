@@ -598,7 +598,7 @@ def set_global_attributes(sensor, datestring, dst, month, year, res, version, nc
     dst.setncattr('publisher_email', get_global_attr_publisher_email(sensor))
     dst.setncattr('publisher_url', get_global_attr_publisher_url(sensor))
     dst.setncattr('source', get_global_attr_source(sensor))
-    dst.setncattr('history', 'python nc-compliance-py-process.py ' + nc_infile)
+    dst.setncattr('history', 'python nc-compliance-py-process_phase1.py ' + nc_infile)
     dst.setncattr('references',
                   'WV_cci D2.2: ATBD Part 1 - MERIS-MODIS-OLCI L2 Products, Issue 2.1, 21 January 2021; WV_cci D4.2: '
                   'CRDP Issue 3.0, 11 August 2021 ')

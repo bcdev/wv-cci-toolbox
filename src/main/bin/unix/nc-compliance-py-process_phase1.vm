@@ -1,0 +1,148 @@
+#!/bin/bash
+set -x
+set -e
+set -m
+
+##########################################################################
+# Calvalus processing script for the final NetCDF and CCI compliance step.
+##########################################################################
+
+function copy_file_from_hdfs {
+  local filePath=$1
+  result=1
+  echo "checking HDFS ${filePath}"
+  local hadoopLsResult=$(hadoop fs -ls ${filePath})
+  if [[ ${hadoopLsResult} ]]; then
+    echo "copy to CWD: ${filePath}"
+    /opt/hadoop/bin/hadoop fs -copyToLocal $filePath ${pwd}
+    result=0
+  fi
+  return $result
+}
+
+sensor="$parameters.get('sensor')"
+res="$parameters.get('res')"
+year="$parameters.get('year')"
+month="$parameters.get('month')"
+day="$parameters.get('day')"
+version="$parameters.get('version')"
+
+#[[
+
+#nc_gz_infile=$1
+#nc_infile=`basename ${nc_gz_infile} .gz`
+#gunzip -c ${nc_gz_infile} > ./${nc_infile}
+nc_infile=`basename $1`
+echo "nc_infile: ${nc_infile}"
+
+# copy landmask file from HDFS to current dir:
+# TODO: DWD mask provides land, water coast. Maybe we should use land and water from LC CCI 0.5deg mask.
+landmaskFilePath="/calvalus/projects/wvcci/auxdata/landmask/kosh/kosh.r30.lmask.nc"
+#landmaskFilePath="/calvalus/projects/wvcci/auxdata/landmask/kosh/$res/$year/$month/$day/kosh.r30.lmask.nc"
+echo "KOSH landmask HDFS file path: '${landmaskFilePath}'"
+if ! copy_file_from_hdfs ${landmaskFilePath}; then
+  echo "failed to get KOSH landmask file '${landmaskFilePath}'"
+  exit 1
+fi
+landmaskFile="kosh.r30.lmask.nc"
+
+# copy seaice file from HDFS to current dir:
+seaiceFilePath="/calvalus/projects/wvcci/auxdata/seaice/${year}/hoaps-g.r30.d01.icec.${year}-${month}.nc"
+echo "Seaice HDFS file path: '${seaiceFilePath}'"
+if ! copy_file_from_hdfs ${seaiceFilePath}; then
+  echo "failed to get seaice file '${seaiceFilePath}' - will exit..."
+  exit 1
+fi
+seaiceFile="hoaps-g.r30.d01.icec.${year}-${month}.nc"
+
+# in case of CDR-2 processing, copy original HOAPS file from HDFS to current dir (in case for final fixes):
+if [[ $sensor == *"cmsaf_hoaps"* ]]; then
+  # e.g. origHoapsFilePath="/calvalus/projects/wvcci/tcwv/cmsaf_hoaps/l3-daily/005/2011/07/15-L3-1/hoaps-g.r03.d01.wvpa.2011-07-15.nc"
+  #if [ "$res" == "005" ]
+  #then
+  #  resHoaps="r03"
+  #else
+  #  resHoaps="r30"
+  #fi
+  resHoaps="r30"  # always use low res in line with land mask to ensure same kind of upscaling (scipy.ndimage), OD 20221215
+  #origHoapsFilePath="/calvalus/projects/wvcci/tcwv/cmsaf_hoaps/l3-daily/05/${year}/${month}/${day}-L3-1/hoaps-g.${resHoaps}.d01.wvpa.${year}-${month}-${day}.nc"
+  # PHASE 2: switch to async processing: no 'L3-1' substrings anymore!! 20230306
+  origHoapsFilePath="/calvalus/projects/wvcci/tcwv/cmsaf_hoaps/l3-daily/05/${year}/${month}/${day}/hoaps-g.${resHoaps}.d01.wvpa.${year}-${month}-${day}.nc"
+  echo "Original HOAPS file path: '${origHoapsFilePath}'"
+  if ! copy_file_from_hdfs ${origHoapsFilePath}; then
+    echo "failed to get original HOAPS file '${origHoapsFilePath}'"
+    exit 1
+  fi
+  origHoapsFile="hoaps-g.${resHoaps}.d01.wvpa.${year}-${month}-${day}.nc"
+fi
+
+# now process:
+echo "Directory listing before processing:"
+echo "`ls -la $(pwd)`"
+
+### For wvcci postprocessing in 2.x instance, we need a python3 from a Miniconda which has netCDF4, numpy, scipy, matplotlib
+# (the miniconda package taken from conda-xarray-1.0 instance does the job...): 
+wvcci_py_dir=$(ls -ld miniconda3-wvcci |awk '{print $11}')
+CURRENT_LINK=$(ls -ld /home/yarn/opt/miniconda3-wvcci|awk '{print $11}')
+if [ "$CURRENT_LINK" != "${wvcci_py_dir}" ]; then
+  mkdir -p /home/yarn/opt
+  ln -s -f -T ${wvcci_py_dir} /home/yarn/opt/miniconda3-wvcci
+fi
+echo "`ls -la ${wvcci_py_dir}/bin/python*`"
+
+#/usr/bin/python --version
+#/usr/bin/python3 --version
+${wvcci_py_dir}/bin/python3.9 --version
+
+if [[ -f "$(pwd)/${origHoapsFile}" ]]; then
+  #echo "/usr/bin/python $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${sensor} ${year} ${month} ${day} ${res} ${version} $(pwd)/${seaiceFile} $(pwd)/${origHoapsFile}"
+  #/usr/bin/python $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${sensor} ${year} ${month} ${day} ${res} ${version} $(pwd)/${seaiceFile} $(pwd)/${origHoapsFile}
+  echo "${wvcci_py_dir}/bin/python3.9 $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${sensor} ${year} ${month} ${day} ${res} ${version} $(pwd)/${seaiceFile} $(pwd)/${origHoapsFile}"
+  ${wvcci_py_dir}/bin/python3.9 $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${sensor} ${year} ${month} ${day} ${res} ${version} $(pwd)/${seaiceFile} $(pwd)/${origHoapsFile}
+else
+  #echo "/usr/bin/python $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${sensor} ${year} ${month} ${day} ${res} ${version} $(pwd)/${seaiceFile}"
+  #/usr/bin/python $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${sensor} ${year} ${month} ${day} ${res} ${version} $(pwd)/${seaiceFile}
+  echo "${wvcci_py_dir}/bin/python3.9 $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${sensor} ${year} ${month} ${day} ${res} ${version} $(pwd)/${seaiceFile}"
+  ${wvcci_py_dir}/bin/python3.9 $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${sensor} ${year} ${month} ${day} ${res} ${version} $(pwd)/${seaiceFile}
+fi
+
+status=$?
+echo "Status: $status"
+
+if [ $status = 0 ]
+then
+    echo "NetCDF compliance file created."
+    echo "Status: $status"
+    rm -f ./${nc_infile}
+fi
+
+## filename following CCI standards:
+# use underscore for two sensors, request of AW, Nov. 2021:
+sensor=${sensor/"-"/"_"}
+if [ "$day" == "0" ]
+then
+  # monthly products
+  if [[ $sensor == *"-"* ]]; then
+    # merged product
+    nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor}-${res}deg-${year}${month}-fv${version}.nc"
+  else
+    # single sensor
+    nc_outfile="ESACCI-WATERVAPOUR-L3C-TCWV-${sensor}-${res}deg-${year}${month}-fv${version}.nc"
+  fi
+else
+  # daily products
+  if [[ $sensor == *"-"* ]]; then
+    # merged product
+    nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor}-${res}deg-${year}${month}${day}-fv${version}.nc"
+  else
+    # single sensor
+    nc_outfile="ESACCI-WATERVAPOUR-L3C-TCWV-${sensor}-${res}deg-${year}${month}${day}-fv${version}.nc"
+  fi
+fi
+
+echo CALVALUS_OUTPUT_PRODUCT ${nc_outfile}
+echo "Directory listing AFTER processing:"
+echo "`ls -la $(pwd)`"
+
+]]#
+
