@@ -34,6 +34,10 @@ def is_cdr_2(sensor):
     return sensor.find("hoaps") != -1
 
 
+def is_tcwv_l3_unmerged_product(sensor):
+    return sensor.find("-") == -1
+
+
 def get_iteritems(iterable_obj):
     """
     Wraps Python2/3 difference for iterable objects
@@ -542,8 +546,8 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, 
     for name, variable in get_iteritems(src.variables):
 
         for single_sensor in single_sensors_list:
-            if name == 'num_obs_' + single_sensor:
-                # fill_val=getattr(variable, '_FillValue')
+            if name == 'num_obs_' + single_sensor or (
+                    is_tcwv_l3_unmerged_product(sensor) and name == 'tcwv_uncertainty_counts'):
                 fill_val = -1
                 dstvar = dst.createVariable('num_obs_' + single_sensor, variable.datatype, ('time', 'lat', 'lon'),
                                             zlib=True, fill_value=fill_val)
