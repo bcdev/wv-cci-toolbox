@@ -112,13 +112,14 @@ then
     echo "`ls -la $(pwd)`"
     # make sure that we have enough memory for SNAP 8 (2048M as for SNAP 7 is not sufficient when dealing with HOAPS products! (20220916)
     # just in case, also make sure to set hdf library paths 
-    /usr/lib/jvm/default-java/bin/java -Xmx6G -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Hoaps \
+    /usr/lib/jvm/default-java/bin/java -Xmx6G -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Hoaps.Phase2 \
         -Dncsa.hdf.hdflib.HDFLibrary.hdflib=$(pwd)/libjhdf.so \
         -Dncsa.hdf.hdf5lib.H5.hdf5lib=$(pwd)/libjhdf5.so \
         -Dsnap.home=$(pwd) \
         -Dsnap.userdir=$(pwd) \
         -Djava.io.tmpdir=$(pwd) \
         -SnirProduct=${sensor1_infile} -ShoapsProduct=$(pwd)/${sensor2_infile_name}3 \
+        -Psensor1Name=${sensor1^^} \
         -SlandmaskProduct=$(pwd)/${landmaskFile} \
         -PdayOfMonth=$iday \
         -f NetCDF4-WVCCI -t ./${outfile}.nc
@@ -128,7 +129,7 @@ then
     echo "`ls -la $(pwd)`"
     # make sure that we have enough memory for SNAP 8 (2048M as for SNAP 7 is not sufficient when dealing with HOAPS products! (20220916)
     # just in case, also make sure to set hdf library paths 
-    /usr/lib/jvm/default-java/bin/java -Xmx6G -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Hoaps \
+    /usr/lib/jvm/default-java/bin/java -Xmx6G -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Hoaps.Phase2 \
         -Dncsa.hdf.hdflib.HDFLibrary.hdflib=$(pwd)/libjhdf.so \
         -Dncsa.hdf.hdf5lib.H5.hdf5lib=$(pwd)/libjhdf5.so \
         -Dsnap.home=$(pwd) \
@@ -137,12 +138,13 @@ then
         -SnirProduct=${sensor1_infile} -ShoapsProduct=$(pwd)/${sensor2_infile_name}3 \
         -SlandmaskProduct=$(pwd)/${landmaskFile} \
         -SseaiceProduct=$(pwd)/${seaiceFile} \
+        -Psensor1Name=${sensor1^^} \
         -PdayOfMonth=$iday \
         -f NetCDF4-WVCCI -t ./${outfile}.nc
   fi
 else
-  echo "/usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Nir -Ssensor1Product=${sensor1_infile} -Ssensor2Product=$(pwd)/${sensor2_infile_name} -f NetCDF4-WVCCI -t ./${outfile}.nc"
-  /usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Nir -Ssensor1Product=${sensor1_infile} -Ssensor2Product=$(pwd)/${sensor2_infile_name} -f NetCDF4-WVCCI -t ./${outfile}.nc
+  echo "/usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Nir.Phase2 -Ssensor1Product=${sensor1_infile} -Ssensor2Product=$(pwd)/${sensor2_infile_name} -Psensor1Name=${sensor1^^} -Psensor2Name=${sensor2^^} -f NetCDF4-WVCCI -t ./${outfile}.nc"
+  /usr/lib/jvm/default-java/bin/java -Xmx2048M -classpath ${jars} ${class} ESACCI.Tcwv.L3.Merge.Nir.Nir.Phase2 -Ssensor1Product=${sensor1_infile} -Ssensor2Product=$(pwd)/${sensor2_infile_name} -Psensor1Name=${sensor1^^} -Psensor2Name=${sensor2^^} -f NetCDF4-WVCCI -t ./${outfile}.nc
 fi
 
 status=$?
