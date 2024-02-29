@@ -118,7 +118,7 @@ then
         -Dsnap.home=$(pwd) \
         -Dsnap.userdir=$(pwd) \
         -Djava.io.tmpdir=$(pwd) \
-        -SnirProduct=${sensor1_infile} -ShoapsProduct=$(pwd)/${sensor2_infile_name}3 \
+        -SsourceProduct=${sensor1_infile} -ShoapsProduct=$(pwd)/${sensor2_infile_name}3 \
         -Psensor1Name=${sensor1^^} \
         -SlandmaskProduct=$(pwd)/${landmaskFile} \
         -PdayOfMonth=$iday \
@@ -135,7 +135,7 @@ then
         -Dsnap.home=$(pwd) \
         -Dsnap.userdir=$(pwd) \
         -Djava.io.tmpdir=$(pwd) \
-        -SnirProduct=${sensor1_infile} -ShoapsProduct=$(pwd)/${sensor2_infile_name}3 \
+        -SsourceProduct=${sensor1_infile} -ShoapsProduct=$(pwd)/${sensor2_infile_name}3 \
         -SlandmaskProduct=$(pwd)/${landmaskFile} \
         -SseaiceProduct=$(pwd)/${seaiceFile} \
         -Psensor1Name=${sensor1^^} \
