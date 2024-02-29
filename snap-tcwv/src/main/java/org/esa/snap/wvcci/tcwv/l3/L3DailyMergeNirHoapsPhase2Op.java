@@ -36,8 +36,13 @@ public class L3DailyMergeNirHoapsPhase2Op extends PixelOperator {
             description = "Day of month")
     private int dayOfMonth;
 
+    // call the NIR product 'sourceProduct' to make sure that this is used to configure the target product.
+    // Otherwise, one of the other sources, which may have a different resolution, might accidentially be used.
+    // See Operator --> getSourceProduct()
+    // OD, 20240229
     @SourceProduct(description = "NIR product (MERIS, MODIS, OLCI, or merge)")
-    private Product nirProduct;
+    private Product sourceProduct;
+
     @SourceProduct(description = "HOAPS product")
     private Product hoapsProduct;
 
@@ -101,8 +106,8 @@ public class L3DailyMergeNirHoapsPhase2Op extends PixelOperator {
     @Override
     protected void prepareInputs() throws OperatorException {
 
-        width = nirProduct.getSceneRasterWidth();
-        height = nirProduct.getSceneRasterHeight();
+        width = sourceProduct.getSceneRasterWidth();
+        height = sourceProduct.getSceneRasterHeight();
 
         // from 2017 onwards we only have Hoaps 05deg products, so resample here in case of 005deg
         if (hoapsProduct.getSceneRasterWidth() != width || hoapsProduct.getSceneRasterHeight() != height) {
@@ -111,7 +116,7 @@ public class L3DailyMergeNirHoapsPhase2Op extends PixelOperator {
             hoapsProductToUse = hoapsProduct;
         }
 
-        mergeInputProducts = new Product[]{nirProduct, hoapsProductToUse};
+        mergeInputProducts = new Product[]{sourceProduct, hoapsProductToUse};
 
         validate();
 
@@ -163,13 +168,13 @@ public class L3DailyMergeNirHoapsPhase2Op extends PixelOperator {
         }
 
         final int srcPossibleNirNumObs = sourceSamples[SRC_NIR_POSSIBLE_NUM_OBS].getInt();
-        final int srcPossibleNirNumObsNodata = (int) nirProduct.getBand(TcwvConstants.NUM_OBS_L3_BAND_NAME).getNoDataValue();
+        final int srcPossibleNirNumObsNodata = (int) sourceProduct.getBand(TcwvConstants.NUM_OBS_L3_BAND_NAME).getNoDataValue();
         final double srcNirTcwvMean = sourceSamples[SRC_NIR_TCWV_MEAN].getDouble();
-        final double srcNirTcwvNodata = nirProduct.getBand(TcwvConstants.TCWV_MEAN_BAND_NAME).getNoDataValue();
+        final double srcNirTcwvNodata = sourceProduct.getBand(TcwvConstants.TCWV_MEAN_BAND_NAME).getNoDataValue();
         final double srcNirTcwvSigma = sourceSamples[SRC_NIR_TCWV_SIGMA].getDouble();
         final double srcNirTcwvUncertaintyMean = sourceSamples[SRC_NIR_TCWV_UNCERTAINTY_MEAN].getDouble();
         final double srcNirTcwvUncertaintyCounts = sourceSamples[SRC_NIR_TCWV_UNCERTAINTY_COUNTS].getDouble();
-        final double srcNirTcwvCountsNodata = nirProduct.getBand(TcwvConstants.TCWV_UNCERTAINTY_COUNTS_L3_BAND_NAME).getNoDataValue();
+        final double srcNirTcwvCountsNodata = sourceProduct.getBand(TcwvConstants.TCWV_UNCERTAINTY_COUNTS_L3_BAND_NAME).getNoDataValue();
         final double srcNirTcwvSumsSum = sourceSamples[SRC_NIR_TCWV_SUMS_SUM].getDouble();
         final double srcNirTcwvSumsSumSq = sourceSamples[SRC_NIR_TCWV_SUMS_SUM_SQ].getDouble();
         final int srcNirQualityMajorityFlag = sourceSamples[SRC_NIR_TCWV_QUALITY_FLAGS_MAJORITY].getInt();
@@ -258,27 +263,27 @@ public class L3DailyMergeNirHoapsPhase2Op extends PixelOperator {
         }
 
         targetProduct.addBand(TcwvConstants.NUM_OBS_L3_BAND_NAME,
-                nirProduct.getBand(TcwvConstants.NUM_OBS_L3_BAND_NAME).getDataType());
+                sourceProduct.getBand(TcwvConstants.NUM_OBS_L3_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.TCWV_L3_BAND_NAME,
-                nirProduct.getBand(TcwvConstants.TCWV_L3_BAND_NAME).getDataType());
+                sourceProduct.getBand(TcwvConstants.TCWV_L3_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.TCWV_SIGMA_L3_BAND_NAME,
-                nirProduct.getBand(TcwvConstants.TCWV_SIGMA_L3_BAND_NAME).getDataType());
+                sourceProduct.getBand(TcwvConstants.TCWV_SIGMA_L3_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.TCWV_UNCERTAINTY_L3_BAND_NAME,
-                nirProduct.getBand(TcwvConstants.TCWV_UNCERTAINTY_L3_BAND_NAME).getDataType());
+                sourceProduct.getBand(TcwvConstants.TCWV_UNCERTAINTY_L3_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.TCWV_UNCERTAINTY_COUNTS_L3_BAND_NAME,
-                nirProduct.getBand(TcwvConstants.TCWV_UNCERTAINTY_COUNTS_L3_BAND_NAME).getDataType());
+                sourceProduct.getBand(TcwvConstants.TCWV_UNCERTAINTY_COUNTS_L3_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.TCWV_SUMS_SUM_L3_BAND_NAME,
-                nirProduct.getBand(TcwvConstants.TCWV_SUMS_SUM_L3_BAND_NAME).getDataType());
+                sourceProduct.getBand(TcwvConstants.TCWV_SUMS_SUM_L3_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.TCWV_SUMS_SUM_SQ_L3_BAND_NAME,
-                nirProduct.getBand(TcwvConstants.TCWV_SUMS_SUM_SQ_L3_BAND_NAME).getDataType());
+                sourceProduct.getBand(TcwvConstants.TCWV_SUMS_SUM_SQ_L3_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.TCWV_QUALITY_FLAG_MAJORITY_L3_BAND_NAME,
-                nirProduct.getBand(TcwvConstants.TCWV_QUALITY_FLAG_MAJORITY_L3_BAND_NAME).getDataType());
+                sourceProduct.getBand(TcwvConstants.TCWV_QUALITY_FLAG_MAJORITY_L3_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.TCWV_QUALITY_FLAG_MIN_L3_BAND_NAME,
-                nirProduct.getBand(TcwvConstants.TCWV_QUALITY_FLAG_MIN_L3_BAND_NAME).getDataType());
+                sourceProduct.getBand(TcwvConstants.TCWV_QUALITY_FLAG_MIN_L3_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.TCWV_QUALITY_FLAG_MAX_L3_BAND_NAME,
-                nirProduct.getBand(TcwvConstants.TCWV_QUALITY_FLAG_MAX_L3_BAND_NAME).getDataType());
+                sourceProduct.getBand(TcwvConstants.TCWV_QUALITY_FLAG_MAX_L3_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.SURFACE_TYPE_FLAG_L3_BAND_NAME,
-                nirProduct.getBand(TcwvConstants.SURFACE_TYPE_FLAG_L3_BAND_NAME).getDataType());
+                sourceProduct.getBand(TcwvConstants.SURFACE_TYPE_FLAG_L3_BAND_NAME).getDataType());
         if (hoapsProductToUse.getBand(TcwvConstants.TCWV_PROPAG_ERR_HOAPS_BAND_NAME) != null) {
             targetProduct.addBand(TcwvConstants.TCWV_PROPAG_ERR_HOAPS_BAND_NAME,
                                   hoapsProductToUse.getBand(TcwvConstants.TCWV_PROPAG_ERR_HOAPS_BAND_NAME).getDataType());
@@ -287,7 +292,7 @@ public class L3DailyMergeNirHoapsPhase2Op extends PixelOperator {
         }
 
         for (Band b : targetProduct.getBands()) {
-            Band sourceBand = nirProduct.getBand(b.getName());
+            Band sourceBand = sourceProduct.getBand(b.getName());
             if (sourceBand != null) {
                 TcwvUtils.copyBandProperties(b, sourceBand);
                 if (b.getName().startsWith(TcwvConstants.NUM_OBS_L3_BAND_NAME)) {
@@ -321,17 +326,17 @@ public class L3DailyMergeNirHoapsPhase2Op extends PixelOperator {
             throw new OperatorException("Invalid number of 'num_obs_*' variables in first source product");
         }
 
-        configurator.defineSample(SRC_NIR_POSSIBLE_NUM_OBS, TcwvConstants.NUM_OBS_L3_BAND_NAME, nirProduct);
-        configurator.defineSample(SRC_NIR_TCWV_MEAN, TcwvConstants.TCWV_L3_BAND_NAME, nirProduct);
-        configurator.defineSample(SRC_NIR_TCWV_SIGMA, TcwvConstants.TCWV_SIGMA_L3_BAND_NAME, nirProduct);
-        configurator.defineSample(SRC_NIR_TCWV_UNCERTAINTY_MEAN, TcwvConstants.TCWV_UNCERTAINTY_L3_BAND_NAME, nirProduct);
-        configurator.defineSample(SRC_NIR_TCWV_UNCERTAINTY_COUNTS, TcwvConstants.TCWV_UNCERTAINTY_COUNTS_L3_BAND_NAME, nirProduct);
-        configurator.defineSample(SRC_NIR_TCWV_SUMS_SUM, TcwvConstants.TCWV_SUMS_SUM_L3_BAND_NAME, nirProduct);
-        configurator.defineSample(SRC_NIR_TCWV_SUMS_SUM_SQ, TcwvConstants.TCWV_SUMS_SUM_SQ_L3_BAND_NAME, nirProduct);
-        configurator.defineSample(SRC_NIR_TCWV_QUALITY_FLAGS_MAJORITY, TcwvConstants.TCWV_QUALITY_FLAG_MAJORITY_L3_BAND_NAME, nirProduct);
-        configurator.defineSample(SRC_NIR_TCWV_QUALITY_FLAGS_MIN, TcwvConstants.TCWV_QUALITY_FLAG_MIN_L3_BAND_NAME, nirProduct);
-        configurator.defineSample(SRC_NIR_TCWV_QUALITY_FLAGS_MAX, TcwvConstants.TCWV_QUALITY_FLAG_MAX_L3_BAND_NAME, nirProduct);
-        configurator.defineSample(SRC_NIR_TCWV_SURFACE_TYPE_FLAGS_MAJORITY, TcwvConstants.SURFACE_TYPE_FLAG_L3_BAND_NAME, nirProduct);
+        configurator.defineSample(SRC_NIR_POSSIBLE_NUM_OBS, TcwvConstants.NUM_OBS_L3_BAND_NAME, sourceProduct);
+        configurator.defineSample(SRC_NIR_TCWV_MEAN, TcwvConstants.TCWV_L3_BAND_NAME, sourceProduct);
+        configurator.defineSample(SRC_NIR_TCWV_SIGMA, TcwvConstants.TCWV_SIGMA_L3_BAND_NAME, sourceProduct);
+        configurator.defineSample(SRC_NIR_TCWV_UNCERTAINTY_MEAN, TcwvConstants.TCWV_UNCERTAINTY_L3_BAND_NAME, sourceProduct);
+        configurator.defineSample(SRC_NIR_TCWV_UNCERTAINTY_COUNTS, TcwvConstants.TCWV_UNCERTAINTY_COUNTS_L3_BAND_NAME, sourceProduct);
+        configurator.defineSample(SRC_NIR_TCWV_SUMS_SUM, TcwvConstants.TCWV_SUMS_SUM_L3_BAND_NAME, sourceProduct);
+        configurator.defineSample(SRC_NIR_TCWV_SUMS_SUM_SQ, TcwvConstants.TCWV_SUMS_SUM_SQ_L3_BAND_NAME, sourceProduct);
+        configurator.defineSample(SRC_NIR_TCWV_QUALITY_FLAGS_MAJORITY, TcwvConstants.TCWV_QUALITY_FLAG_MAJORITY_L3_BAND_NAME, sourceProduct);
+        configurator.defineSample(SRC_NIR_TCWV_QUALITY_FLAGS_MIN, TcwvConstants.TCWV_QUALITY_FLAG_MIN_L3_BAND_NAME, sourceProduct);
+        configurator.defineSample(SRC_NIR_TCWV_QUALITY_FLAGS_MAX, TcwvConstants.TCWV_QUALITY_FLAG_MAX_L3_BAND_NAME, sourceProduct);
+        configurator.defineSample(SRC_NIR_TCWV_SURFACE_TYPE_FLAGS_MAJORITY, TcwvConstants.SURFACE_TYPE_FLAG_L3_BAND_NAME, sourceProduct);
 
         // todo: operator gets stuck here on Calvalus with SNAP 8. Seems that hoapsProduct cannot be accessed
         //  properly here. Everything is still fine locally or with SNAP 7 (snap-wvcci-1.2-SNAPSHOT instance).
