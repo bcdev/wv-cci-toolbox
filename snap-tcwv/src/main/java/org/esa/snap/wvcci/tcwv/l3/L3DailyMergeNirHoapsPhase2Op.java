@@ -49,6 +49,7 @@ public class L3DailyMergeNirHoapsPhase2Op extends PixelOperator {
 
     private Product[] mergeInputProducts;
 
+    private Product hoapsProductToUse;
     private Product landMaskProductToUse;
     private Product seaiceProductToUse;
 
@@ -100,10 +101,17 @@ public class L3DailyMergeNirHoapsPhase2Op extends PixelOperator {
     @Override
     protected void prepareInputs() throws OperatorException {
 
-        mergeInputProducts = new Product[]{nirProduct, hoapsProduct};
+        width = nirProduct.getSceneRasterWidth();
+        height = nirProduct.getSceneRasterHeight();
 
-        width = mergeInputProducts[0].getSceneRasterWidth();
-        height = mergeInputProducts[0].getSceneRasterHeight();
+        // from 2017 onwards we only have Hoaps 05deg products, so resample here in case of 005deg
+        if (hoapsProduct.getSceneRasterWidth() != width || hoapsProduct.getSceneRasterHeight() != height) {
+            hoapsProductToUse = getResampledProduct(hoapsProduct);
+        } else {
+            hoapsProductToUse = hoapsProduct;
+        }
+
+        mergeInputProducts = new Product[]{nirProduct, hoapsProductToUse};
 
         validate();
 
@@ -170,15 +178,15 @@ public class L3DailyMergeNirHoapsPhase2Op extends PixelOperator {
         final int srcNirSurfaceTypeFlag = sourceSamples[SRC_NIR_TCWV_SURFACE_TYPE_FLAGS_MAJORITY].getInt();
 
         final int srcHoapsNumObs = sourceSamples[SRC_HOAPS_NUM_OBS].getInt();
-        final int srcHoapsNumObsNodata = (int) hoapsProduct.getBand(TcwvConstants.NUM_OBS_HOAPS_BAND_NAME).getNoDataValue();
+        final int srcHoapsNumObsNodata = (int) hoapsProductToUse.getBand(TcwvConstants.NUM_OBS_HOAPS_BAND_NAME).getNoDataValue();
         final double srcHoapsTcwv = sourceSamples[SRC_HOAPS_TCWV].getDouble();
-        final double srcHoapsTcwvNodata = hoapsProduct.getBand(TcwvConstants.TCWV_HOAPS_BAND_NAME).getNoDataValue();
+        final double srcHoapsTcwvNodata = hoapsProductToUse.getBand(TcwvConstants.TCWV_HOAPS_BAND_NAME).getNoDataValue();
         final double srcHoapsTcwvSigma = sourceSamples[SRC_HOAPS_TCWV_SIGMA].getDouble();
-        if (hoapsProduct.getBand(TcwvConstants.TCWV_PROPAG_ERR_HOAPS_BAND_NAME) != null) {
+        if (hoapsProductToUse.getBand(TcwvConstants.TCWV_PROPAG_ERR_HOAPS_BAND_NAME) != null) {
             final double srcHoapsTcwvPropagErr = sourceSamples[SRC_HOAPS_TCWV_PROPAG_ERR].getDouble();
-            final double srcHoapsTcwvPropagErrNodata = hoapsProduct.getBand(TcwvConstants.TCWV_PROPAG_ERR_HOAPS_BAND_NAME).getNoDataValue();
+            final double srcHoapsTcwvPropagErrNodata = hoapsProductToUse.getBand(TcwvConstants.TCWV_PROPAG_ERR_HOAPS_BAND_NAME).getNoDataValue();
             final double srcHoapsTcwvRandomErr = sourceSamples[SRC_HOAPS_TCWV_RANDOM_ERR].getDouble();
-            final double srcHoapsTcwvRandomErrNodata = hoapsProduct.getBand(TcwvConstants.TCWV_RANDOM_ERR_HOAPS_BAND_NAME).getNoDataValue();
+            final double srcHoapsTcwvRandomErrNodata = hoapsProductToUse.getBand(TcwvConstants.TCWV_RANDOM_ERR_HOAPS_BAND_NAME).getNoDataValue();
             final double tcwvPropagErrMerge = useOriginal(srcHoapsTcwvPropagErr, srcHoapsTcwvPropagErrNodata);
             final double tcwvRandomErrMerge = useOriginal(srcHoapsTcwvRandomErr, srcHoapsTcwvRandomErrNodata);
             targetSamples[TRG_TCWV_PROPAG_ERR].set(tcwvPropagErrMerge);
@@ -271,11 +279,11 @@ public class L3DailyMergeNirHoapsPhase2Op extends PixelOperator {
                 nirProduct.getBand(TcwvConstants.TCWV_QUALITY_FLAG_MAX_L3_BAND_NAME).getDataType());
         targetProduct.addBand(TcwvConstants.SURFACE_TYPE_FLAG_L3_BAND_NAME,
                 nirProduct.getBand(TcwvConstants.SURFACE_TYPE_FLAG_L3_BAND_NAME).getDataType());
-        if (hoapsProduct.getBand(TcwvConstants.TCWV_PROPAG_ERR_HOAPS_BAND_NAME) != null) {
+        if (hoapsProductToUse.getBand(TcwvConstants.TCWV_PROPAG_ERR_HOAPS_BAND_NAME) != null) {
             targetProduct.addBand(TcwvConstants.TCWV_PROPAG_ERR_HOAPS_BAND_NAME,
-                    hoapsProduct.getBand(TcwvConstants.TCWV_PROPAG_ERR_HOAPS_BAND_NAME).getDataType());
+                                  hoapsProductToUse.getBand(TcwvConstants.TCWV_PROPAG_ERR_HOAPS_BAND_NAME).getDataType());
             targetProduct.addBand(TcwvConstants.TCWV_RANDOM_ERR_HOAPS_BAND_NAME,
-                    hoapsProduct.getBand(TcwvConstants.TCWV_RANDOM_ERR_HOAPS_BAND_NAME).getDataType());
+                                  hoapsProductToUse.getBand(TcwvConstants.TCWV_RANDOM_ERR_HOAPS_BAND_NAME).getDataType());
         }
 
         for (Band b : targetProduct.getBands()) {
@@ -289,7 +297,7 @@ public class L3DailyMergeNirHoapsPhase2Op extends PixelOperator {
                     TcwvUtils.copyBandProperties(b, sourceBand);
                 }
             } else {
-                sourceBand = hoapsProduct.getBand(b.getName());
+                sourceBand = hoapsProductToUse.getBand(b.getName());
                 if (sourceBand != null) {
                     TcwvUtils.copyBandProperties(b, sourceBand);
                 }
@@ -328,12 +336,12 @@ public class L3DailyMergeNirHoapsPhase2Op extends PixelOperator {
         // todo: operator gets stuck here on Calvalus with SNAP 8. Seems that hoapsProduct cannot be accessed
         //  properly here. Everything is still fine locally or with SNAP 7 (snap-wvcci-1.2-SNAPSHOT instance).
         //  CLARIFY!!
-        configurator.defineSample(SRC_HOAPS_NUM_OBS, TcwvConstants.NUM_OBS_HOAPS_BAND_NAME, hoapsProduct);
-        configurator.defineSample(SRC_HOAPS_TCWV, TcwvConstants.TCWV_HOAPS_BAND_NAME, hoapsProduct);
-        configurator.defineSample(SRC_HOAPS_TCWV_SIGMA, TcwvConstants.TCWV_SIGMA_HOAPS_BAND_NAME, hoapsProduct);
-        if (hoapsProduct.getBand(TcwvConstants.TCWV_PROPAG_ERR_HOAPS_BAND_NAME) != null) {
-            configurator.defineSample(SRC_HOAPS_TCWV_PROPAG_ERR, TcwvConstants.TCWV_PROPAG_ERR_HOAPS_BAND_NAME, hoapsProduct);
-            configurator.defineSample(SRC_HOAPS_TCWV_RANDOM_ERR, TcwvConstants.TCWV_RANDOM_ERR_HOAPS_BAND_NAME, hoapsProduct);
+        configurator.defineSample(SRC_HOAPS_NUM_OBS, TcwvConstants.NUM_OBS_HOAPS_BAND_NAME, hoapsProductToUse);
+        configurator.defineSample(SRC_HOAPS_TCWV, TcwvConstants.TCWV_HOAPS_BAND_NAME, hoapsProductToUse);
+        configurator.defineSample(SRC_HOAPS_TCWV_SIGMA, TcwvConstants.TCWV_SIGMA_HOAPS_BAND_NAME, hoapsProductToUse);
+        if (hoapsProductToUse.getBand(TcwvConstants.TCWV_PROPAG_ERR_HOAPS_BAND_NAME) != null) {
+            configurator.defineSample(SRC_HOAPS_TCWV_PROPAG_ERR, TcwvConstants.TCWV_PROPAG_ERR_HOAPS_BAND_NAME, hoapsProductToUse);
+            configurator.defineSample(SRC_HOAPS_TCWV_RANDOM_ERR, TcwvConstants.TCWV_RANDOM_ERR_HOAPS_BAND_NAME, hoapsProductToUse);
         }
         configurator.defineSample(SRC_LANDMASK_MASK, "mask", landMaskProductToUse);
         if (seaiceProduct != null) {
@@ -356,7 +364,7 @@ public class L3DailyMergeNirHoapsPhase2Op extends PixelOperator {
         configurator.defineSample(TRG_TCWV_QUALITY_FLAGS_MIN, TcwvConstants.TCWV_QUALITY_FLAG_MIN_L3_BAND_NAME);
         configurator.defineSample(TRG_TCWV_QUALITY_FLAGS_MAX, TcwvConstants.TCWV_QUALITY_FLAG_MAX_L3_BAND_NAME);
         configurator.defineSample(TRG_TCWV_SURFACE_TYPE_FLAGS_MAJORITY, TcwvConstants.SURFACE_TYPE_FLAG_L3_BAND_NAME);
-        if (hoapsProduct.getBand(TcwvConstants.TCWV_PROPAG_ERR_HOAPS_BAND_NAME) != null) {
+        if (hoapsProductToUse.getBand(TcwvConstants.TCWV_PROPAG_ERR_HOAPS_BAND_NAME) != null) {
             configurator.defineSample(TRG_TCWV_PROPAG_ERR, TcwvConstants.TCWV_PROPAG_ERR_HOAPS_BAND_NAME);
             configurator.defineSample(TRG_TCWV_RANDOM_ERR, TcwvConstants.TCWV_RANDOM_ERR_HOAPS_BAND_NAME);
         }
