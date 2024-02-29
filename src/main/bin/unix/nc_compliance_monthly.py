@@ -18,6 +18,8 @@ import calendar
 
 from netCDF4 import Dataset
 
+from src.main.bin.unix.py_utils import nc_compliance_utils as ncu
+
 LAT_MIN_VALID = -90.0
 LAT_MAX_VALID = 90.0
 LON_MIN_VALID = -180.0
@@ -25,120 +27,8 @@ LON_MAX_VALID = 180.0
 
 
 #############################################################################
-def is_py3():
-    return sys.version_info.major == 3
 
-
-def is_cdr_1(sensor):
-    return not is_cdr_2(sensor)
-
-
-def is_cdr_2(sensor):
-    return sensor.find("hoaps") != -1
-
-
-def set_ocean_wvpa_errors(dst_var, wvpa_error_array):
-    """
-    Sets HOAPS water vapour error terms over ocean.
-    :param dst_var:
-    :param wvpa_error_array:
-    :return:
-    """
-    dst_var_arr = np.array(dst_var)
-    dst_var_arr_0 = np.copy(dst_var_arr)[0]
-    wvpa_error_array_2d = wvpa_error_array[0]
-
-    do_use_hoaps = np.where(((~np.isnan(wvpa_error_array_2d)) & (wvpa_error_array_2d >= 0.0)))
-    dst_var_arr_0[do_use_hoaps] = wvpa_error_array_2d[do_use_hoaps]
-    dst_var[0, :, :] = dst_var_arr_0[:, :]
-
-
-def update_errors_for_hoaps(dst, src):
-    """
-    Wrapper function for setting HOAPS error terms over ocean.
-    :param dst:
-    :param src:
-    :return:
-    """
-    wvpa_err_arr = np.array(src.variables['wvpa_err'])
-    wvpa_ran_arr = np.array(src.variables['wvpa_ran'])
-
-    # if no wvpa errors available, set to NaN over ocean (should no longer happen for latest HOAPS L3 products)
-    set_ocean_wvpa_errors(dst.variables['tcwv_err'], wvpa_err_arr)
-    set_ocean_wvpa_errors(dst.variables['tcwv_ran'], wvpa_ran_arr)
-
-
-def reset_ocean_cdr1(dst_var, surface_type_array, reset_value):
-    """
-    Resets everything to nan over ocean, seaice, coastlines in case of CDR-1 (no HOAPS, only land)
-    :param dst_var:
-    :param surface_type_array:
-    :param reset_value:
-    :return:
-    """
-    dst_var_arr = np.array(dst_var)
-    tmp_array = np.copy(dst_var_arr)
-    tmp_array[np.where((surface_type_array == 1) |
-                       (surface_type_array == 4) |
-                       (surface_type_array == 5) |
-                       (surface_type_array == 7))] = reset_value
-    dst_var[0, :, :] = tmp_array[0, :, :]
-
-
-def reset_ocean_cdr2(dst_var, wvpa_hoaps_array, surface_type_array, reset_value):
-    """
-    Resets (cleans) everything to nan over ocean, seaice where we have no HOAPS (wvpa) over water in case of CDR-2
-    :param dst_var:
-    :param wvpa_hoaps_array:
-    :param surface_type_array:
-    :param reset_value:
-    :return:
-    """
-    dst_var_arr = np.array(dst_var)
-    tmp_array = np.copy(dst_var_arr)
-    tmp_array[np.where((surface_type_array == 1) & (wvpa_hoaps_array < 0.0))] = reset_value
-    dst_var[0, :, :] = tmp_array[0, :, :]
-
-
-def reset_polar(dst_var, tcwv_arr, lat_arr, surface_type_array, reset_value):
-    """
-    Resets everything to nan everywhere except ocean for tcwv > 10 and abs(lat) > 75
-    :param dst_var:
-    :param surface_type_array:
-    :param reset_value:
-    :return:
-    """
-    dst_var_arr = np.array(dst_var)
-    tmp_array = np.copy(dst_var_arr)
-    # identify inconsistent pixel over non-land
-    tmp_array[np.where((tcwv_arr > 20.0) & (np.abs(lat_arr) > 70.0) &
-                       ((surface_type_array == 3) |
-                        (surface_type_array == 4) |
-                        (surface_type_array == 6)))] = reset_value
-    # identify inconsistent pixel over land
-    tmp_array[np.where((tcwv_arr > 20.0) & (np.abs(lat_arr) > 70.0) &
-                       ((surface_type_array == 0) | (surface_type_array == 2) | (
-                               surface_type_array == 5)))] = reset_value
-    dst_var[0, :, :] = tmp_array[0, :, :]
-
-
-# def reset_ocean_for_cdr1(dst, sensor):
-#     """
-#     Wrapper function for resetting everything to nan over ocean in case of CDR-1 (no HOAPS, only land).
-#     :param dst:
-#     :param sensor:
-#     :return:
-#     """
-#     var_surface_type = dst.variables['surface_type_flag']
-#     surface_type_arr = np.array(var_surface_type)
-#     if is_cdr_1(sensor):
-#         # set num_obs to 0:
-#         reset_ocean_cdr1(dst.variables['num_obs'], surface_type_arr, 0)
-#         # set tcwv, stdv, and error terms to nan:
-#         reset_ocean_cdr1(dst.variables['tcwv'], surface_type_arr, np.nan)
-#         reset_ocean_cdr1(dst.variables['stdv'], surface_type_arr, np.nan)
-#         reset_ocean_cdr1(dst.variables['tcwv_err'], surface_type_arr, np.nan)
-#         reset_ocean_cdr1(dst.variables['tcwv_ran'], surface_type_arr, np.nan)
+# todo: continue!! (20240228)
 
 def cleanup_inconsistencies(dst, sensor):
     """
@@ -176,47 +66,6 @@ def cleanup_inconsistencies(dst, sensor):
         reset_ocean_cdr1(dst.variables['stdv'], surface_type_arr, np.nan)
         reset_ocean_cdr1(dst.variables['tcwv_err'], surface_type_arr, np.nan)
         reset_ocean_cdr1(dst.variables['tcwv_ran'], surface_type_arr, np.nan)
-
-def get_iteritems(iterable_obj):
-    """
-    Wraps Python2/3 difference for iterable objects
-    :param iterable_obj:
-    :return:
-    """
-    if is_py3():
-        return iterable_obj.items()
-    else:
-        return iterable_obj.iteritems()
-
-
-def copy_variable_attributes_from_source(srcvar, dst_var):
-    """
-    Copies variable attributes from source to destination nc4.
-    :param srcvar:
-    :param dst_var:
-    :return:
-    """
-    for attr in srcvar.ncattrs():
-        if getattr(srcvar, attr) and attr != '_FillValue':
-            if attr in dst_var.ncattrs():
-                dst_var.delncattr(attr)
-            dst_var.setncattr(attr, getattr(srcvar, attr))
-
-
-def set_variable_long_name_and_unit_attributes(dst_var, long_name_string, unit_string):
-    """
-    Sets variable long name and unit attributes in destination nc4.
-    :param dst_var:
-    :param long_name_string:
-    :param unit_string:
-    :return:
-    """
-    if 'long_name' in dst_var.ncattrs():
-        dst_var.delncattr('long_name')
-    if 'units' in dst_var.ncattrs():
-        dst_var.delncattr('units')
-    dst_var.setncattr('long_name', long_name_string)
-    dst_var.setncattr('units', unit_string)
 
 
 def set_surface_type_flag(dst, src, ds_landcover):
@@ -274,7 +123,7 @@ def set_surface_type_flag(dst, src, ds_landcover):
     variable[0, :, :] = tmparr[:, :]
 
 
-def set_atmospheric_conditions_flag(dst, src, ds_hoaps, ds_landmask):
+def set_atmospheric_conditions_flag(dst, src, res, ds_hoaps, ds_landmask):
     """
     Sets 'atmospheric_conditions' variable and its attributes.
     Do here: CLOUD_OVER_LAND HEAVY_PRECIP_OVER_OCEAN PARTLY_CLOUDY_OVER_LAND
@@ -284,13 +133,13 @@ def set_atmospheric_conditions_flag(dst, src, ds_hoaps, ds_landmask):
     --> : CLEAR (0): none of those
     :param dst:
     :param src:
+    :param res:
     :param ds_hoaps:
     :param ds_landmask:
     :return:
     """
-
     variable = dst.variables['atmospheric_conditions_flag']
-    set_variable_long_name_and_unit_attributes(variable, 'Atmospheric conditions flag', ' ')
+    ncu.set_variable_long_name_and_unit_attributes(variable, 'Atmospheric conditions flag', ' ')
     variable.setncattr('standard_name', 'status_flag ')
     min_valid = 0
     max_valid = 3
@@ -298,32 +147,40 @@ def set_atmospheric_conditions_flag(dst, src, ds_hoaps, ds_landmask):
     variable.setncattr('flag_values', np.array([0, 1, 2, 3], 'b'))
     variable.setncattr('flag_meanings', 'CLEAR PARTLY_CLOUDY_OVER_LAND CLOUD_OVER_LAND HEAVY_PRECIP_OVER_OCEAN')
 
-    # In Phase 2 we want (see PSD Vx.y):
+    # in original L3 we can have LAND (1), OCEAN (2), SEAICE (4), LAND+CLOUD (9), OCEAN+CLOUD (10), SEAICE+CLOUD (12):
+    # but we want (see PSD Vx.y):
     # CLEAR (0), PARTLY_CLOUDY_OVER_LAND (1), CLOUD_OVER_LAND (2), HEAVY_PRECIP_OVER_OCEAN (3)
+    ac_flag_arr_src = np.array(src.variables['surface_type_flags_majority'])
     hoaps_surface_type_flag_arr_src = np.array(ds_landmask.variables['mask'])
+    tcwv_quality_flag_min_arr_src = np.array(src.variables['tcwv_quality_flags_min'])
     tcwv_arr_src = np.array(src.variables['tcwv_mean'])
-    surface_type_flag_arr_maj = np.array(src.variables['surface_type_flag_majority'])
-    surface_type_flag_arr_max = np.array(src.variables['surface_type_flag_max'])
+    tcwv_arr = np.copy(tcwv_arr_src)
+    tcwv_quality_flag_min_arr = np.copy(tcwv_quality_flag_min_arr_src)
+    tcwv_quality_flag_min_arr[np.where(np.isnan(tcwv_quality_flag_min_arr))] = -128  # make NaN to INVALID
 
-    tmparr = np.copy(surface_type_flag_arr_maj)
+    hoaps_surface_type_flag_arr = ncu.rescale_auxdata(hoaps_surface_type_flag_arr_src, res)
+    hoaps_surface_type_flag_arr[np.where(np.isnan(hoaps_surface_type_flag_arr))] = 0  # make NaN to water
 
-    # set ocean to clear (no cloud obs):
-    tmparr[np.where(surface_type_flag_arr_maj == 1)] = 0
-    # set to cloudy if partly cloudy but no valid TCWV:
-    tmparr[np.where((surface_type_flag_arr_maj == 6) & (~np.isfinite(tcwv_arr_src)))] = 2
-    # set to partly cloudy  if cloudy but valid TCWV:
-    tmparr[np.where((surface_type_flag_arr_maj == 2) & (np.isfinite(tcwv_arr_src)))] = 1
-    # set to partly cloudy  if at least one daily sample is partly cloudy, and not already cloudy:
-    tmparr[np.where((surface_type_flag_arr_max == 6) & (tmparr != 2))] = 1
+    tmparr = np.copy(ac_flag_arr_src)
+
+    # make original OCEAN (2), SEAICE (4), OCEAN+CLOUD (10), SEAICE+CLOUD (12) to 'CLEAR' :
+    tmparr[np.where((tmparr == 2) | (tmparr == 4) | (tmparr == 10) | (tmparr == 12))] = 1
+    # make land+cloud to CLOUD OVER LAND:
+    tmparr[np.where(tmparr == 9)] = 4
 
     if ds_hoaps:
         hoaps_scat_ratio_arr_src = np.array(ds_hoaps.variables['scat_ratio'])
-        tmparr[np.where(hoaps_scat_ratio_arr_src[0] > 0.2)] = 3  # hoaps heavy precipitation criterion (MS, 202012)
+        hoaps_scat_ratio_arr = ncu.rescale_auxdata(hoaps_scat_ratio_arr_src, res)
+        tmparr[np.where(hoaps_scat_ratio_arr > 0.2)] = 8  # hoaps heavy precipitation criterion (MS, 202012)
+
+    # set PARTLY_CLOUDY_OVER_LAND: must be the pixels identified in majority as CLOUD, but have a valid TCWV:
+    tmparr[np.where((np.isfinite(tcwv_arr)) & (tmparr == 4))] = 2
 
     # set flag to CLEAR for all remaining others (no cloud over land, no cloud obs over ocean, no precip over ocean):
-    tmparr[np.where((tmparr != 1) & (tmparr != 2) & (tmparr != 3))] = 0
+    tmparr[np.where((tmparr != 2) & (tmparr != 4) & (tmparr != 8))] = 1
 
-    variable[0, :, :] = tmparr[:, :]
+    atm_cond_flag_arr = np.log2(tmparr)
+    variable[0, :, :] = atm_cond_flag_arr[:, :]
 
 
 
