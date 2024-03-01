@@ -425,6 +425,7 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, 
 
                 num_obs_arr = np.array(variable)
                 surface_type_flag_arr = np.array(src.variables['surface_type_flags_majority'])
+                # for NIR sensors, set num_obs to 0 over ocean:
                 if single_sensor != 'CMSAF_HOAPS':
                     num_obs_arr[np.where(surface_type_flag_arr == 2)] = 0
                 dstvar[0, :, :] = num_obs_arr[:, :]
