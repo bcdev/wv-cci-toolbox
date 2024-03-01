@@ -246,6 +246,38 @@ def set_lat_lon_variables(dst, res, src):
     return has_latlon, height, width
 
 
+def create_nc_lat_variable(dst, variable):
+    """
+    Creates lat variable in NetCDF destination dataset
+    :param dst: NetCDF destination dataset
+    :param variable: nc destination variable
+    :return:
+    """
+    dstvar = dst.createVariable('lat', variable.datatype, variable.dimensions, zlib=True)
+    set_variable_long_name_and_unit_attributes(dstvar, 'Latitude', 'degrees_north ')
+    dstvar.setncattr('standard_name', 'latitude')
+    dstvar.setncattr('valid_range', np.array([LAT_MIN_VALID, LAT_MAX_VALID], 'f4'))
+    dstvar.setncattr('reference_datum', 'geographical coordinates, WGS84 projection')
+    dstvar.setncattr('axis', 'Y')
+    dstvar.setncattr('bounds', 'lat_bnds')
+    dstvar[:] = variable[:]
+
+def create_nc_lon_variable(dst, variable):
+    """
+    Creates lon variable in NetCDF destination dataset
+    :param dst: NetCDF destination dataset
+    :param variable: nc destination variable
+    :return:
+    """
+    dstvar = dst.createVariable('lon', variable.datatype, variable.dimensions, zlib=True)
+    set_variable_long_name_and_unit_attributes(dstvar, 'Longitude', 'degrees_east')
+    dstvar.setncattr('standard_name', 'longitude')
+    dstvar.setncattr('valid_range', np.array([LON_MIN_VALID, LON_MAX_VALID], 'f4'))
+    dstvar.setncattr('reference_datum', 'geographical coordinates, WGS84 projection')
+    dstvar.setncattr('axis', 'X')
+    dstvar.setncattr('bounds', 'lon_bnds')
+    dstvar[:] = variable[:]
+
 def create_time_variables(dst, day, month, year):
     """
     Creates time related variables. Also sets the actual timevalue for this product (days since 19700101)

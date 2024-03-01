@@ -310,15 +310,8 @@ def set_atmospheric_conditions_flag(dst, src, res, ds_hoaps, ds_landmask):
     # but we want (see PSD Vx.y):
     # CLEAR (0), PARTLY_CLOUDY_OVER_LAND (1), CLOUD_OVER_LAND (2), HEAVY_PRECIP_OVER_OCEAN (3)
     ac_flag_arr_src = np.array(src.variables['surface_type_flags_majority'])
-    hoaps_surface_type_flag_arr_src = np.array(ds_landmask.variables['mask'])
-    tcwv_quality_flag_min_arr_src = np.array(src.variables['tcwv_quality_flags_min'])
     tcwv_arr_src = np.array(src.variables['tcwv_mean'])
     tcwv_arr = np.copy(tcwv_arr_src)
-    tcwv_quality_flag_min_arr = np.copy(tcwv_quality_flag_min_arr_src)
-    tcwv_quality_flag_min_arr[np.where(np.isnan(tcwv_quality_flag_min_arr))] = -128  # make NaN to INVALID
-
-    hoaps_surface_type_flag_arr = ncu.rescale_auxdata(hoaps_surface_type_flag_arr_src, res)
-    hoaps_surface_type_flag_arr[np.where(np.isnan(hoaps_surface_type_flag_arr))] = 0  # make NaN to water
 
     tmparr = np.copy(ac_flag_arr_src)
 
@@ -429,7 +422,14 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, 
                                                                                             'to L3 grid cell',
                                                            ' ')
                 dstvar.setncattr('coordinates', 'lat lon')
-                dstvar[0, :, :] = variable[:, :]
+
+                num_obs_arr = np.array(variable)
+                surface_type_flag_arr = np.array(src.variables['surface_type_flags_majority'])
+                if single_sensor != 'CMSAF_HOAPS':
+                    num_obs_arr[np.where(surface_type_flag_arr == 2)] = 0
+                dstvar[0, :, :] = num_obs_arr[:, :]
+
+
 
         if name == 'tcwv_mean':
             # in case of CDR-2, add variable 'num_hours_tcwv' ('numh' in new HOAPS products, set to -1 over land)
@@ -503,24 +503,11 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, 
             dstvar[:] = variable[:]
 
         if has_latlon:
-            if name == 'lat':
-                dstvar = dst.createVariable(name, variable.datatype, variable.dimensions, zlib=True)
-                ncu.set_variable_long_name_and_unit_attributes(dstvar, 'Latitude', 'degrees_north ')
-                dstvar.setncattr('standard_name', 'latitude')
-                dstvar.setncattr('valid_range', np.array([LAT_MIN_VALID, LAT_MAX_VALID], 'f4'))
-                dstvar.setncattr('reference_datum', 'geographical coordinates, WGS84 projection')
-                dstvar.setncattr('axis', 'Y')
-                dstvar.setncattr('bounds', 'lat_bnds')
-                dstvar[:] = variable[:]
+            if has_latlon:
+                if name == 'lat':
+                    ncu.create_nc_lat_variable(dst, variable)
             if name == 'lon':
-                dstvar = dst.createVariable(name, variable.datatype, variable.dimensions, zlib=True)
-                ncu.set_variable_long_name_and_unit_attributes(dstvar, 'Longitude', 'degrees_east')
-                dstvar.setncattr('standard_name', 'longitude')
-                dstvar.setncattr('valid_range', np.array([LON_MIN_VALID, LON_MAX_VALID], 'f4'))
-                dstvar.setncattr('reference_datum', 'geographical coordinates, WGS84 projection')
-                dstvar.setncattr('axis', 'X')
-                dstvar.setncattr('bounds', 'lon_bnds')
-                dstvar[:] = variable[:]
+                ncu.create_nc_lon_variable(dst, variable)
 
     # Finally, add the num_obs_* variables which should be in the source product according to observation date,
     # but maybe are not because single sensor(s) are missing.
