@@ -397,7 +397,7 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, 
         # If source product is unmegred, the num_obs we want is the 'tcwv_uncertainty_counts' from original L3
         if name == 'tcwv_uncertainty_counts' and ncu.is_tcwv_l3_unmerged_product(sensor):
             fill_val = -1
-            dstvar = dst.createVariable('num_obs_' + sensor.upper(), variable.datatype, ('time', 'lat', 'lon'),
+            dstvar = dst.createVariable('num_obs_' + sensor.upper(), np.int32, ('time', 'lat', 'lon'),
                                         zlib=True, fill_value=fill_val)
             ncu.copy_variable_attributes_from_source(variable, dstvar)
             ncu.set_variable_long_name_and_unit_attributes(dstvar,
@@ -412,7 +412,7 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, 
         for single_sensor in single_sensors_list:
             if name == 'num_obs_' + single_sensor:
                 fill_val = -1
-                dstvar = dst.createVariable('num_obs_' + single_sensor, variable.datatype, ('time', 'lat', 'lon'),
+                dstvar = dst.createVariable('num_obs_' + single_sensor, np.int32, ('time', 'lat', 'lon'),
                                             zlib=True, fill_value=fill_val)
                 ncu.copy_variable_attributes_from_source(variable, dstvar)
                 ncu.set_variable_long_name_and_unit_attributes(dstvar,

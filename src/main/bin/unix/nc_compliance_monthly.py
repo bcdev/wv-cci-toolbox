@@ -128,7 +128,7 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, single_s
             # - todo 20201109: per grid cell, we want to have number of days which have a TCWV value:
             # -->  take num_obs = 9*numDaysinMonth (e.g. 279) and 'tcwv_ran_counts' = x*num_obs/numDaysinMonth where x
             # is the number we want. ==> x = tcwv_ran_counts/9 . This is implemented in latest l3-tcwv-monthly.xml
-            dstvar = dst.createVariable('num_days_tcwv', variable.datatype, ('time', 'lat', 'lon'), zlib=True,
+            dstvar = dst.createVariable('num_days_tcwv', np.int32, ('time', 'lat', 'lon'), zlib=True,
                                         fill_value=getattr(variable, '_FillValue'))
             ncu.copy_variable_attributes_from_source(variable, dstvar)
             ncu.set_variable_long_name_and_unit_attributes(dstvar,
@@ -143,7 +143,7 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, single_s
 
         for single_sensor in single_sensors_list:
             if name == 'num_obs_' + single_sensor + '_sum':
-                dstvar = dst.createVariable('num_obs_' + single_sensor, variable.datatype, ('time', 'lat', 'lon'),
+                dstvar = dst.createVariable('num_obs_' + single_sensor, np.int32, ('time', 'lat', 'lon'),
                                             zlib=True,
                                             fill_value=getattr(variable, '_FillValue'))
                 ncu.copy_variable_attributes_from_source(variable, dstvar)
