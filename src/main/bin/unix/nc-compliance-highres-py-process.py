@@ -2,7 +2,7 @@
 # ! /usr/bin/env python
 from __future__ import print_function
 
-# Generates final CF- and CCI-compliant TCWV L3 daily highres products ready for delivery.
+# Generates final CF- and CCI-compliant TCWV L3 daily non-merged products ready for delivery.
 #
 __author__ = 'olafd'
 
@@ -88,9 +88,90 @@ def reset_var_to_nan(dst_var, dst_indices):
     dst_var[0, :, :] = dst_var_arr_0[:, :]
 
 
+def reset_ocean_cdr1(dst_var, surface_type_array, reset_value):
+    """
+    Resets everything to nan over ocean, seaice, coastlines in case of CDR-1 (no HOAPS, only land)
+    :param dst_var:
+    :param surface_type_array:
+    :param reset_value:
+    :return:
+    """
+    dst_var_arr = np.array(dst_var)
+    tmp_array = np.copy(dst_var_arr)
+    tmp_array[np.where((surface_type_array == 1) |
+                       (surface_type_array == 4) |
+                       (surface_type_array == 5) |
+                       (surface_type_array == 7))] = reset_value
+    dst_var[0, :, :] = tmp_array[0, :, :]
+
+
+def cleanup_inconsistencies(dst):
+    """
+    Final cleanup of inconsistencies caused by L3 resampling problems such as Moiree effects, distortion near poles etc.
+    :param dst:
+    :param sensor:
+    :return:
+    """
+    var_surface_type = dst.variables['surface_type_flag']
+    surface_type_arr = np.array(var_surface_type)
+    var_tcwv = dst.variables['tcwv']
+    tcwv_arr = np.array(var_tcwv)
+    var_lat = dst.variables['lat']
+    lat_arr = np.array(var_lat)
+    lat_arr_3d = np.zeros((tcwv_arr.shape))
+    for i in range(len(lat_arr)):
+        lat_arr_3d[0][:][i] = lat_arr[i]
+
+    # remove all HOAPS (everything over ocean, coastal, seaice) in case of CDR-1
+    # todo: clarify what we want to do over ocean in highres processing! For the moment consider land only. (20230713)
+    # clean everything remaining over ocean where we have no HOAPS (wvpa) over water in case of CDR-2
+    # set num_obs to 0:
+    reset_ocean_cdr1(dst.variables['num_obs'], surface_type_arr, 0)
+    # set tcwv, stdv, and error terms to nan:
+    reset_ocean_cdr1(dst.variables['tcwv'], surface_type_arr, np.nan)
+    reset_ocean_cdr1(dst.variables['stdv'], surface_type_arr, np.nan)
+    reset_ocean_cdr1(dst.variables['tcwv_err'], surface_type_arr, np.nan)
+    reset_ocean_cdr1(dst.variables['tcwv_ran'], surface_type_arr, np.nan)
+    # set tcwv_quality_flag to 3:
+    reset_ocean_cdr1(dst.variables['tcwv_quality_flag'], surface_type_arr, 3)
+
+
+def set_ocean_wvpa_errors(dst_var, surface_type_array, tcwv_array, wvpa_error_array, has_errors):
+    """
+    Sets HOAPS water vapour error terms over ocean.
+    :param dst_var:
+    :param surface_type_array:
+    :param tcwv_array:
+    :param wvpa_error_array:
+    :param has_errors:
+    :return:
+    """
+    dst_var_arr = np.array(dst_var)
+    dst_var_arr_0 = np.copy(dst_var_arr)[0]
+    if has_errors:
+        if len(wvpa_error_array.shape) == 3:
+            wvpa_error_array_2d = wvpa_error_array[0]
+        else:
+            wvpa_error_array_2d = wvpa_error_array
+
+        do_use_hoaps = np.where(
+            ((surface_type_array[0] == 1) | (surface_type_array[0] == 3) | (surface_type_array[0] == 4) | (
+                        surface_type_array[0] == 7)) & (
+                ~np.isnan(tcwv_array[0])) & (~np.isnan(wvpa_error_array_2d)) & (wvpa_error_array_2d >= 0.0))
+        dst_var_arr_0[do_use_hoaps] = wvpa_error_array_2d[do_use_hoaps]
+    else:
+        ocean_or_ice = np.where(
+            ((surface_type_array[0] == 1) | (surface_type_array[0] == 3) | (surface_type_array[0] == 4) | (
+                        surface_type_array[0] == 7)))
+        dst_var_arr_0[ocean_or_ice] = np.nan
+
+    dst_var_arr_0[np.where(np.isnan(tcwv_array[0]))] = np.nan
+    dst_var[0, :, :] = dst_var_arr_0[:, :]
+
+
 def rescale_hoaps(src_arr):
     """
-    Rescales 0.05 deg hoaps array to target resolution
+    Rescales 0.5 deg hoaps array to target resolution
 
     :param src_arr:
     :return:
@@ -100,6 +181,41 @@ def rescale_hoaps(src_arr):
         return scipy.ndimage.zoom(src_arr[0], 50, order=0)
     else:
         return scipy.ndimage.zoom(src_arr, 50, order=0)
+
+
+def set_errors_for_hoaps(dst, src):
+    """
+    Wrapper function for setting HOAPS error terms over ocean.
+    :param dst:
+    :param src:
+    :return:
+    """
+    has_wvpa_errors = False
+    wvpa_err_arr = None
+    wvpa_ran_arr = None
+    for name, variable in get_iteritems(src.variables):
+        if name == 'wvpa_err':
+            has_wvpa_errors = True
+            # wvpa_err_arr = np.array(src.variables['wvpa_err'])
+            wvpa_err_arr_src = np.array(src.variables['wvpa_err'])
+            wvpa_err_arr = rescale_hoaps(wvpa_err_arr_src)
+        if name == 'wvpa_ran':
+            has_wvpa_errors = True
+            # wvpa_ran_arr = np.array(src.variables['wvpa_ran'])
+            wvpa_ran_arr_src = np.array(src.variables['wvpa_ran'])
+            wvpa_ran_arr = rescale_hoaps(wvpa_ran_arr_src)
+
+    # if no wvpa errors available, set to NaN over ocean (should no longer happen for latest HOAPS L3 products)
+    set_ocean_wvpa_errors(dst.variables['tcwv_err'],
+                          np.array(dst.variables['surface_type_flag']),
+                          np.array(dst.variables['tcwv']),
+                          wvpa_err_arr,
+                          has_wvpa_errors)
+    set_ocean_wvpa_errors(dst.variables['tcwv_ran'],
+                          np.array(dst.variables['surface_type_flag']),
+                          np.array(dst.variables['tcwv']),
+                          wvpa_ran_arr,
+                          has_wvpa_errors)
 
 
 def set_num_obs_variable(dst, src):
@@ -304,24 +420,6 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor):
             dstvar[0, :, :] = uncert_sum_sqr_arr_psd[:, :]
             # todo: with this computation, tcwv_err and tcwv_ran are nearly identical over land,
             # whereas tcwv_err/tcwv_ran ~ 5 for HOAPS over water
-
-        if name == 'wvpa':
-            dstvar = dst.createVariable('tcwv_ocean_hoaps', variable.datatype, ('time', 'lat', 'lon'), zlib=True,
-                                        fill_value=np.nan)
-            copy_variable_attributes_from_source(variable, dstvar)
-            set_variable_long_name_and_unit_attributes(dstvar, 'Total Column of Water', 'kg/m2')
-            dstvar.setncattr('standard_name', 'atmosphere_water_vapor_content ')
-            tcwv_arr = np.array(variable)
-            tcwv_min_valid = 0.0
-            tcwv_max_valid = 70.0
-            # tcwv_arr[np.where(tcwv_arr < tcwv_min_valid)] = tcwv_min_valid
-            tcwv_arr[np.where(tcwv_arr < tcwv_min_valid)] = np.nan
-            tcwv_arr[np.where(tcwv_arr > tcwv_max_valid)] = tcwv_max_valid
-            tcwv_min = np.nanmin(tcwv_arr)
-            tcwv_max = np.nanmax(tcwv_arr)
-            dstvar.setncattr('actual_range', np.array([tcwv_min, tcwv_max], 'f4'))
-            dstvar.setncattr('valid_range', np.array([tcwv_min_valid, tcwv_max_valid], 'f4'))
-            dstvar[0, :, :] = tcwv_arr[:, :]
 
         if name == 'crs':
             dstvar = dst.createVariable(name, variable.datatype, variable.dimensions, zlib=True)
@@ -805,6 +903,10 @@ def run(args):
     # Set num_obs variable...
     set_num_obs_variable(dst, src)
 
+    set_errors_for_hoaps(dst, src)
+
+    # Cleanup inconsistencies of final arrays at this point:
+    cleanup_inconsistencies(dst)
     var_tcwv_arr = np.array(dst.variables['tcwv'])
     dst.variables['tcwv'].setncattr('actual_range', np.array([np.nanmin(var_tcwv_arr), np.nanmax(var_tcwv_arr)], 'f4'))
 

@@ -92,6 +92,26 @@ def reset_var_to_nan(dst_var, dst_indices):
     dst_var[0, :, :] = dst_var_arr_0[:, :]
 
 
+def reset_ocean_num_obs_nir(sensor, dst_var, surface_type_array, reset_value):
+    """
+    Resets everything to nan over ocean, seaice, coastlines, partly seaice in case of CDR-1 (no HOAPS, only land)
+    :param dst_var:
+    :param surface_type_array:
+    :param reset_value:
+    :return:
+    """
+    dst_var_arr = np.array(dst_var)
+    tmp_array = np.copy(dst_var_arr)
+    if is_cdr_1(sensor):
+        tmp_array[np.where((surface_type_array == 1) |
+                           (surface_type_array == 4) |
+                           (surface_type_array == 5) |
+                           (surface_type_array == 6))] = reset_value
+    else:
+        tmp_array[np.where(surface_type_array == 1)] = reset_value
+    dst_var[0, :, :] = tmp_array[0, :, :]
+
+
 def reset_ocean_cdr1(dst_var, surface_type_array, reset_value):
     """
     Resets everything to nan over ocean, seaice, coastlines, partly seaice in case of CDR-1 (no HOAPS, only land)
@@ -152,25 +172,46 @@ def reset_polar(dst_var, tcwv_arr, lat_arr, surface_type_array, atm_cond_arr, re
     dst_var[0, :, :] = tmp_array[0, :, :]
 
 
-def rescale_auxdata(src_arr, res):
+def upscale_auxdata(src_arr, target_res):
     """
-    Rescales 0.5 deg auxdata array (landmask, landcover) to target resolution
+    Rescales 0.5deg auxdata array (e.g. landmask) to 0.05deg target resolution
 
     :param src_arr:
-    :param res:
+    :param target_res:
     :return:
     """
-    if res == '005':
+    if target_res == '005':
         if len(src_arr.shape) == 3:
             return scipy.ndimage.zoom(src_arr[0], 10, order=0)
         else:
             return scipy.ndimage.zoom(src_arr, 10, order=0)
     else:
+        # no rescaling, target resolution already 0.5deg
         if len(src_arr.shape) == 3:
             return src_arr[0]
         else:
             return src_arr
 
+
+def downscale_auxdata(src_arr, target_res):
+    """
+    Rescales 0.05deg auxdata array (e.g. landcover) to 0.5deg target resolution
+
+    :param src_arr:
+    :param target_res:
+    :return:
+    """
+    if target_res == '05':
+        if len(src_arr.shape) == 3:
+            return scipy.ndimage.zoom(src_arr[0], 0.1, order=0)
+        else:
+            return scipy.ndimage.zoom(src_arr, 0.1, order=0)
+    else:
+        # no rescaling, target resolution already 0.05deg
+        if len(src_arr.shape) == 3:
+            return src_arr[0]
+        else:
+            return src_arr
 
 def set_lat_lon_variables(dst, res, src):
     """

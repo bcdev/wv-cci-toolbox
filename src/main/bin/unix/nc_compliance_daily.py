@@ -62,13 +62,14 @@ def cleanup_inconsistencies(dst, src_hoaps, sensor, res, single_sensors_list):
     # set tcwv_quality_flag to 3:
     ncu.reset_polar(dst.variables['tcwv_quality_flag'], tcwv_arr, lat_arr_3d, surface_type_arr, atm_cond_arr, 3)
 
+    # set num_obs to 0 over oceanfor NIR sensors:
+    for single_sensor in single_sensors_list:
+        if 'num_obs_' + single_sensor in dst.variables and single_sensor != 'CMSAF_HOAPS':
+            ncu.reset_ocean_num_obs_nir(sensor, dst.variables['num_obs_' + single_sensor], surface_type_arr, 0)
+
     # remove all HOAPS (everything over ocean, coastal, seaice) in case of CDR-1
     # clean everything remaining over ocean where we have no HOAPS (wvpa) over water in case of CDR-2
     if ncu.is_cdr_1(sensor):
-        # set num_obs to 0:
-        for single_sensor in single_sensors_list:
-            if 'num_obs_' + single_sensor in dst.variables:
-                ncu.reset_ocean_cdr1(dst.variables['num_obs_' + single_sensor], surface_type_arr, 0)
         # set tcwv, stdv, and error terms to nan:
         ncu.reset_ocean_cdr1(dst.variables['tcwv'], surface_type_arr, np.nan)
         ncu.reset_ocean_cdr1(dst.variables['stdv'], surface_type_arr, np.nan)
@@ -78,11 +79,9 @@ def cleanup_inconsistencies(dst, src_hoaps, sensor, res, single_sensors_list):
         ncu.reset_ocean_cdr1(dst.variables['tcwv_quality_flag'], surface_type_arr, 3)
     else:
         wvpa_arr_src = np.array(src_hoaps.variables['wvpa'])
-        wvpa_arr = ncu.rescale_auxdata(wvpa_arr_src, res)
+        wvpa_arr = ncu.upscale_auxdata(wvpa_arr_src, res)
         # set num_obs to 0:
-        for single_sensor in single_sensors_list:
-            if 'num_obs_' + single_sensor in dst.variables:
-                ncu.reset_ocean_cdr2(dst.variables['num_obs_' + single_sensor], wvpa_arr, surface_type_arr, 0)
+        # ncu.reset_ocean_cdr2(dst.variables['num_obs_CMSAF_HOAPS'], wvpa_arr, surface_type_arr, 0)
         # set tcwv, stdv, and error terms to nan:
         ncu.reset_ocean_cdr2(dst.variables['tcwv'], wvpa_arr, surface_type_arr, np.nan)
         ncu.reset_ocean_cdr2(dst.variables['stdv'], wvpa_arr, surface_type_arr, np.nan)
@@ -103,7 +102,7 @@ def update_tcwv_quality_flag_for_hoaps(dst, src_hoaps, sensor, res):
     """
     dstvar = dst.variables['tcwv_quality_flag']
     tcwv_qual_arr_hoaps_src = np.array(src_hoaps.variables['tcwv_quality_flag'])
-    tcwv_qual_arr_hoaps = ncu.rescale_auxdata(tcwv_qual_arr_hoaps_src, res)
+    tcwv_qual_arr_hoaps = ncu.upscale_auxdata(tcwv_qual_arr_hoaps_src, res)
     tcwv_qual_arr_dst = np.array(dstvar).astype(int)
 
     var_surface_type = dst.variables['surface_type_flag']
@@ -165,11 +164,11 @@ def set_errors_for_hoaps(dst, src, res):
         if name == 'wvpa_err':
             has_wvpa_errors = True
             wvpa_err_arr_src = np.array(src.variables['wvpa_err'])
-            wvpa_err_arr = ncu.rescale_auxdata(wvpa_err_arr_src, res)
+            wvpa_err_arr = ncu.upscale_auxdata(wvpa_err_arr_src, res)
         if name == 'wvpa_ran':
             has_wvpa_errors = True
             wvpa_ran_arr_src = np.array(src.variables['wvpa_ran'])
-            wvpa_ran_arr = ncu.rescale_auxdata(wvpa_ran_arr_src, res)
+            wvpa_ran_arr = ncu.upscale_auxdata(wvpa_ran_arr_src, res)
 
     # if no wvpa errors available, set to NaN over ocean (should no longer happen for latest HOAPS L3 products)
     set_ocean_wvpa_errors(dst.variables['tcwv_err'],
@@ -195,7 +194,7 @@ def update_num_hours_tcwv_for_hoaps(dst, src_hoaps, sensor, res):
     """
     if ncu.is_cdr_2(sensor):
         num_hours_tcwv_arr_src = np.array(src_hoaps.variables['numh'])
-        num_hours_tcwv_arr = ncu.rescale_auxdata(num_hours_tcwv_arr_src, res)
+        num_hours_tcwv_arr = ncu.upscale_auxdata(num_hours_tcwv_arr_src, res)
         num_hours_tcwv_arr[np.where(num_hours_tcwv_arr <= 0.0)] = -1
         dst_var = dst.variables['num_hours_tcwv']
         dst_var[0, :, :] = num_hours_tcwv_arr[:, :]
@@ -242,7 +241,7 @@ def set_surface_type_flag(dst, src, day, res, ds_landmask, ds_landcover, ds_seai
     tcwv_quality_flag_min_arr = np.copy(tcwv_quality_flag_min_arr_src)
     tcwv_quality_flag_min_arr[np.where(np.isnan(tcwv_quality_flag_min_arr))] = -128  # make NaN to INVALID
 
-    hoaps_surface_type_flag_arr = ncu.rescale_auxdata(hoaps_surface_type_flag_arr_src, res)
+    hoaps_surface_type_flag_arr = ncu.upscale_auxdata(hoaps_surface_type_flag_arr_src, res)
     hoaps_surface_type_flag_arr[np.where(np.isnan(hoaps_surface_type_flag_arr))] = 0  # make NaN to water
 
     # make ocean + tcwv_quality_flag.TCWV_INVALID + tcwv = NaN to INVALID (fix of originally L2 bug)):
@@ -268,8 +267,8 @@ def set_surface_type_flag(dst, src, day, res, ds_landmask, ds_landcover, ds_seai
         seaice_frac_arr_src = np.array(ds_seaice.variables['icec'])
         day_index = int(day.zfill(1)) - 1
 
-        seaice_arr_src_day = ncu.rescale_auxdata(seaice_arr_src[day_index], res)
-        seaice_frac_arr_src_day = ncu.rescale_auxdata(seaice_frac_arr_src[day_index], res)
+        seaice_arr_src_day = ncu.upscale_auxdata(seaice_arr_src[day_index], res)
+        seaice_frac_arr_src_day = ncu.upscale_auxdata(seaice_frac_arr_src[day_index], res)
 
         seaice_frac_arr_src_day[np.where(np.isnan(seaice_frac_arr_src_day))] = 0  # make NaN to 0
         tmparr[np.where(seaice_arr_src_day == 11)] = 16  # make hoaps seaice to SEA_ICE
@@ -322,7 +321,7 @@ def set_atmospheric_conditions_flag(dst, src, res, ds_hoaps, ds_landmask):
 
     if ds_hoaps:
         hoaps_scat_ratio_arr_src = np.array(ds_hoaps.variables['scat_ratio'])
-        hoaps_scat_ratio_arr = ncu.rescale_auxdata(hoaps_scat_ratio_arr_src, res)
+        hoaps_scat_ratio_arr = ncu.upscale_auxdata(hoaps_scat_ratio_arr_src, res)
         tmparr[np.where(hoaps_scat_ratio_arr > 0.2)] = 8  # hoaps heavy precipitation criterion (MS, 202012)
 
     # set PARTLY_CLOUDY_OVER_LAND: must be the pixels identified in majority as CLOUD, but have a valid TCWV:
@@ -515,7 +514,7 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, 
     # num_obs_* is set to 0 for these missing sensor(s)
     # This is done to keep product content a bit more consistent.
     for single_sensor in single_sensors_list:
-        if not 'num_obs_' + single_sensor in src.variables:
+        if not 'num_obs_' + single_sensor in src.variables and not 'num_obs_' + single_sensor in dst.variables:
             fill_val = -1
             dstvar = dst.createVariable('num_obs_' + single_sensor, np.int32, ('time', 'lat', 'lon'),
                                         zlib=True, fill_value=fill_val)
