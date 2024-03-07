@@ -50,6 +50,18 @@ if ! copy_file_from_hdfs ${landmaskFilePath}; then
 fi
 landmaskFile="${roi}_of_kosh.r30.lmask.nc"
 
+
+# copy MODIS landcover file from HDFS to current dir:
+# take 2020 product representing years 2017-2022, 005 deg will be resampled to 001 during processing
+landcoverFilePath="/calvalus/projects/wvcci/auxdata/landcover/MODIS_MCD12C1/2020/${roi}_of_MCD12C1.A2020001.061.005deg.nc"
+echo "MODIS landcover ile path: '${landcoverFilePath}'"
+if ! copy_file_from_hdfs ${landcoverFilePath}; then
+  echo "failed to get MODIS landcover file '${landcoverFilePath}'"
+  exit 1
+fi
+landcoverFile="${roi}_of_MCD12C1.A2020001.061.005deg.nc"
+
+
 # now process:
 echo "Directory listing before processing:"
 echo "`ls -la $(pwd)`"
@@ -68,10 +80,10 @@ echo "`ls -la ${wvcci_py_dir}/bin/python*`"
 #/usr/bin/python3 --version
 ${wvcci_py_dir}/bin/python3.9 --version
 
-#echo "/usr/bin/python $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${sensor} ${year} ${month} ${day} ${res} ${version} $(pwd)/${seaiceFile}"
-#/usr/bin/python $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${sensor} ${year} ${month} ${day} ${res} ${version} $(pwd)/${seaiceFile}
-echo "${wvcci_py_dir}/bin/python3.9 $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${roi} ${sensor} ${year} ${month} ${day} ${lat_min} ${lat_max} ${lon_min} ${lon_max}  ${version}"
-${wvcci_py_dir}/bin/python3.9 $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${roi} ${sensor} ${year} ${month} ${day} ${lat_min} ${lat_max} ${lon_min} ${lon_max}  ${version}
+#echo "${wvcci_py_dir}/bin/python3.9 $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${roi} ${sensor} ${year} ${month} ${day} ${lat_min} ${lat_max} ${lon_min} ${lon_max}  ${version}"
+#${wvcci_py_dir}/bin/python3.9 $(pwd)/process.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} ${roi} ${sensor} ${year} ${month} ${day} ${lat_min} ${lat_max} ${lon_min} ${lon_max}  ${version}
+echo "${wvcci_py_dir}/bin/python3.9 $(pwd)/tcwv_final_compliance/nc_compliance_daily_highres.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} $(pwd)/${landcoverFile} ${roi} ${sensor} ${year} ${month} ${day} ${lat_min} ${lat_max} ${lon_min} ${lon_max}  ${version}"
+${wvcci_py_dir}/bin/python3.9 $(pwd)/tcwv_final_compliance/nc_compliance_daily_highres.py $(pwd)/${nc_infile} $(pwd)/${landmaskFile} $(pwd)/${landcoverFile} ${roi} ${sensor} ${year} ${month} ${day} ${lat_min} ${lat_max} ${lon_min} ${lon_max}  ${version}
 
 status=$?
 echo "Status: $status"
@@ -85,25 +97,26 @@ fi
 
 ## filename following CCI standards:
 # use underscore for two sensors, request of AW, Nov. 2021:
-sensor=${sensor/"-"/"_"}
+sensor_final=${sensor//"-"/"_"}
+
 if [ "$day" == "0" ]
 then
   # monthly products
   if [[ $sensor == *"-"* ]]; then
     # merged product
-    nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor}-${res}deg-${roi}-${year}${month}-fv${version}.nc"
+    nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor_final}-${res}deg-${roi}-${year}${month}-fv${version}.nc"
   else
     # single sensor
-    nc_outfile="ESACCI-WATERVAPOUR-L3C-TCWV-${sensor}-${res}deg-${roi}-${year}${month}-fv${version}.nc"
+    nc_outfile="ESACCI-WATERVAPOUR-L3C-TCWV-${sensor_final}-${res}deg-${roi}-${year}${month}-fv${version}.nc"
   fi
 else
   # daily products
   if [[ $sensor == *"-"* ]]; then
     # merged product
-    nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor}-${res}deg-${roi}-${year}${month}${day}-fv${version}.nc"
+    nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor_final}-${res}deg-${roi}-${year}${month}${day}-fv${version}.nc"
   else
     # single sensor
-    nc_outfile="ESACCI-WATERVAPOUR-L3C-TCWV-${sensor}-${res}deg-${roi}-${year}${month}${day}-fv${version}.nc"
+    nc_outfile="ESACCI-WATERVAPOUR-L3C-TCWV-${sensor_final}-${res}deg-${roi}-${year}${month}${day}-fv${version}.nc"
   fi
 fi
 

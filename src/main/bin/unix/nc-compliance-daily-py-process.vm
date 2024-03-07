@@ -114,24 +114,26 @@ fi
 
 ## filename following CCI standards:
 # use underscore for two sensors, request of AW, Nov. 2021:
+sensor_final=${sensor//"-"/"_"}
+
 if [ "$day" == "0" ]
 then
   # monthly products
   if [[ $sensor == *"-"* ]]; then
     # merged product
-    nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor}-${res}deg-${year}${month}-fv${version}.nc"
+    nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor_final}-${res}deg-${year}${month}-fv${version}.nc"
   else
     # single sensor
-    nc_outfile="ESACCI-WATERVAPOUR-L3C-TCWV-${sensor}-${res}deg-${year}${month}-fv${version}.nc"
+    nc_outfile="ESACCI-WATERVAPOUR-L3C-TCWV-${sensor_final}-${res}deg-${year}${month}-fv${version}.nc"
   fi
 else
   # daily products
   if [[ $sensor == *"-"* ]]; then
     # merged product
-    nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor}-${res}deg-${year}${month}${day}-fv${version}.nc"
+    nc_outfile="ESACCI-WATERVAPOUR-L3S-TCWV-${sensor_final}-${res}deg-${year}${month}${day}-fv${version}.nc"
   else
     # single sensor
-    nc_outfile="ESACCI-WATERVAPOUR-L3C-TCWV-${sensor}-${res}deg-${year}${month}${day}-fv${version}.nc"
+    nc_outfile="ESACCI-WATERVAPOUR-L3C-TCWV-${sensor_final}-${res}deg-${year}${month}${day}-fv${version}.nc"
   fi
 fi
 
