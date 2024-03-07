@@ -115,10 +115,10 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, single_s
     for name, variable in src.variables.items():
 
         if name == 'num_obs':
-            # - todo 20201109: per grid cell, we want to have number of days which have a TCWV value:
-            # -->  take num_obs = 9*numDaysinMonth (e.g. 279) and 'tcwv_ran_counts' = x*num_obs/numDaysinMonth where x
-            # is the number we want. ==> x = tcwv_ran_counts/9 . The '9' comes from 3*3 (superSampling)
-            # This is implemented in latest tcwv-l3-monthly-template.json
+            # - 20201109: per grid cell, we want to have number of days which have a TCWV value:
+            # -->  take num_obs = 1*numDaysinMonth (e.g. 279) and 'tcwv_ran_counts' = x*num_obs/numDaysinMonth where x
+            # is the number we want. ==> x = tcwv_ran_counts/1 . The '1' comes from 1*1 (superSampling = 1 in highres)
+            # This is implemented in latest tcwv-l3-monthly-highres-template.json
             dstvar = dst.createVariable('num_days_tcwv', np.int32, ('time', 'lat', 'lon'), zlib=True,
                                         fill_value=getattr(variable, '_FillValue'))
             ncu.copy_variable_attributes_from_source(variable, dstvar)
@@ -129,7 +129,7 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, single_s
             dstvar.setncattr('coordinates', 'lat lon')
             dstvar.setncattr('units', ' ')
             tcwv_ran_counts_arr = np.array(src.variables['tcwv_ran_counts'])
-            super_sampling = 3.0
+            super_sampling = 1.0
             num_days_tcwv_arr = tcwv_ran_counts_arr * 1.0 / (super_sampling * super_sampling)
             dstvar[0, :, :] = num_days_tcwv_arr[:, :]
 
@@ -140,8 +140,7 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, single_s
                                             fill_value=getattr(variable, '_FillValue'))
                 ncu.copy_variable_attributes_from_source(variable, dstvar)
                 ncu.set_variable_long_name_and_unit_attributes(dstvar,
-                                                               'Number of Total Column of Water Vapour retrievals '
-                                                               'contributing '
+                                                               'Number of Total Column of Water Vapour retrievals contributing '
                                                                'to L3 grid cell',
                                                                ' ')
                 dstvar.setncattr('coordinates', 'lat lon')
@@ -208,7 +207,7 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, single_s
                 ncu.create_nc_lon_variable(dst, variable)
 
 
-def init_nc_compliant_product(datestring, res, sensor, version):
+def init_nc_compliant_product(datestring, roi, res, sensor, version):
     """
     Setup nc result file and dataset for input daily product.
     :param datestring:
@@ -224,8 +223,7 @@ def init_nc_compliant_product(datestring, res, sensor, version):
         l3_suffix = 'C'
     # final product name following CCI data standards v2.1 section 2.7:
     _sensor = sensor.replace('-', '_')
-    nc_outfile = 'ESACCI-WATERVAPOUR-L3' + l3_suffix + '-TCWV-' + _sensor + '-' + res + 'deg-' + roi + '-' + \
-                 datestring + '-fv' + version + '.nc'
+    nc_outfile = 'ESACCI-WATERVAPOUR-L3' + l3_suffix + '-TCWV-' + _sensor + '-' + res + 'deg-'  + roi + '-' + datestring + '-fv' + version + '.nc'
     outpath = os.getcwd() + os.sep + nc_outfile
     nc_compliant_ds = Dataset(outpath, 'w', format='NETCDF4')
 
@@ -241,17 +239,20 @@ def run(args):
 
     # Evaluate input parameters...
     nc_infile = args[1]
-    sensor = args[2]
-    year = args[3]
-    month = args[4]
-    res = args[5]
-    version = args[6]
+    roi = args[2]
+    sensor = args[3]
+    year = args[4]
+    month = args[5]
+    res = args[6]
+    lat_min = float(args[7])
+    lat_max = float(args[8])
+    lon_min = float(args[9])
+    lon_max = float(args[10])
+    version = args[11]
 
     # Maximum contributing sensors depending on observation date
     # (list contains sensors which SHOULD contribute, even if missing for particular day) :
     maximum_single_sensors_list = ncu.get_maximum_single_sensors_list(year, month)
-    if ncu.is_cdr_2(sensor):
-        maximum_single_sensors_list.append('CMSAF_HOAPS')
 
     # Source dataset...
     src = Dataset(nc_infile)
@@ -259,7 +260,7 @@ def run(args):
     # Initialize nc result file and dataset...
     # we have MONTHLY products:
     datestring = year + month
-    dst, nc_outfile = ncu.init_nc_compliant_product(datestring, res, sensor, version)
+    dst, nc_outfile = init_nc_compliant_product(datestring, roi, res, sensor, version)
 
     # Set dimensions...
     ncu.set_dimensions(dst, src)
@@ -272,7 +273,8 @@ def run(args):
     ncu.create_time_variables(dst, '15', month, year)
 
     # Create lat/lon variables...
-    has_latlon, height, width = ncu.set_lat_lon_variables_global(dst, res, src)
+    has_latlon, height, width = ncu.set_lat_lon_variables_regional(dst, float(lat_min), float(lat_max), float(lon_min),
+                                                                   float(lon_max), src)
 
     # Create final flag bands:
     # no quality flag in monthlies!
@@ -297,18 +299,18 @@ def run(args):
     print("Closing L3 input file...", file=sys.stderr)
     src.close()
 
-    print("FINISHED nc_compliance_monthly.py...", file=sys.stderr)
+    print("FINISHED nc_compliance_monthly_highres.py...", file=sys.stderr)
 
 
 if __name__ == "__main__":
 
-    print("STARTING nc-compliance-monthly-py-process.py", file=sys.stderr)
+    print("STARTING nc_compliance_monthly_highres.py", file=sys.stderr)
     print('Working dir: ', os.getcwd())
 
-    if len(sys.argv) != 7:
+    if len(sys.argv) != 12:
         print(
-            'Usage:  python nc-compliance-monthly-py-process.py <nc_infile> <sensor> ' +
-            '<year> <month> <resolution> < product version>')
+            'Usage:  python nc_compliance_monthly_highres.py <nc_infile> <sensor> <roi> ' +
+            '<year> <month> <resolution> <lat_min> <lat_max> <lon_min> <lon_max> < product version>')
         sys.exit(-1)
 
     run(sys.argv)

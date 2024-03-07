@@ -95,6 +95,7 @@ def reset_var_to_nan(dst_var, dst_indices):
 def reset_ocean_num_obs_nir(sensor, dst_var, surface_type_array, reset_value):
     """
     Resets everything to nan over ocean, seaice, coastlines, partly seaice in case of CDR-1 (no HOAPS, only land)
+    :param sensor:
     :param dst_var:
     :param surface_type_array:
     :param reset_value:
@@ -151,6 +152,7 @@ def reset_polar(dst_var, tcwv_arr, lat_arr, surface_type_array, atm_cond_arr, re
     :param tcwv_arr:
     :param lat_arr:
     :param surface_type_array:
+    :param atm_cond_arr:
     :param reset_value:
     :return:
     """
@@ -158,14 +160,12 @@ def reset_polar(dst_var, tcwv_arr, lat_arr, surface_type_array, atm_cond_arr, re
     tmp_array = np.copy(dst_var_arr)
     # identify inconsistent pixel over non-land
     # heavy precip, partly cloudy, seaice :
-    # todo: pass new atmos cond flag to adapt this
     tmp_array[np.where((tcwv_arr > 20.0) & (np.abs(lat_arr) > 70.0) &
                        ((atm_cond_arr == 3) |
                         (atm_cond_arr == 1) |
                         (surface_type_array == 4)))] = reset_value
     # identify inconsistent pixel over land
     # land, coast, cloudy:
-    # todo: pass new atmos cond flag to adapt this
     tmp_array[np.where((tcwv_arr > 20.0) & (np.abs(lat_arr) > 70.0) &
                        ((surface_type_array == 0) | (surface_type_array == 5) | (
                                atm_cond_arr == 2)))] = reset_value
@@ -213,7 +213,8 @@ def downscale_auxdata(src_arr, target_res):
         else:
             return src_arr
 
-def set_lat_lon_variables(dst, res, src):
+
+def set_lat_lon_variables_global(dst, res, src):
     """
     Sets latitude and longitude variables and their attributes.
     :param dst:
@@ -287,6 +288,85 @@ def set_lat_lon_variables(dst, res, src):
     return has_latlon, height, width
 
 
+def set_lat_lon_variables_regional(dst, lat_min, lat_max, lon_min, lon_max, src):
+    """
+    Sets latitude and longitude variables and their attributes.
+    :param dst:
+    :param lat_min:
+    :param lat_max:
+    :param lon_min:
+    :param lon_max:
+    :param src:
+    :return:
+    """
+    # if not present in source product, create lat/lon variables as 1D:
+    has_latlon = False
+    for name, variable in get_iteritems(src.variables):
+        # print('src variable: ' + name)
+        if name == 'lat' or name == 'lon':
+            has_latlon = True
+    # print('has_latlon: ' + str(has_latlon))
+    if not has_latlon:
+        incr = 0.01
+        lat_arr = np.arange(lat_max, lat_min, -incr) - incr / 2.0
+        lon_arr = np.arange(lon_min, lon_max, incr) + incr / 2.0
+        # set new lat/lon variables:
+        lat = dst.createVariable('lat', 'f4', 'lat', zlib=True)
+        lon = dst.createVariable('lon', 'f4', 'lon', zlib=True)
+        lat.setncattr('long_name', 'Latitude')
+        lat.setncattr('standard_name', 'latitude')
+        lat.setncattr('units', 'degrees_north')
+        lat.setncattr('valid_range', np.array([LAT_MIN_VALID, LAT_MAX_VALID], 'f4'))
+        lat.setncattr('reference_datum', 'geographical coordinates, WGS84 projection')
+        lat.setncattr('axis', 'Y')
+        lat.setncattr('bounds', 'lat_bnds')
+        lon.setncattr('long_name', 'Longitude')
+        lon.setncattr('standard_name', 'longitude')
+        lon.setncattr('units', 'degrees_east')
+        lon.setncattr('valid_range', np.array([LON_MIN_VALID, LON_MAX_VALID], 'f4'))
+        lon.setncattr('reference_datum', 'geographical coordinates, WGS84 projection')
+        lon.setncattr('axis', 'X')
+        lon.setncattr('bounds', 'lon_bnds')
+
+        lat[:] = lat_arr
+        lon[:] = lon_arr
+
+    width = len(dst.dimensions['lon'])
+    height = len(dst.dimensions['lat'])
+
+    # create 'lat_bnds' and 'lon_bnds' variables:
+    incr = 0.01
+    lat_bnds_arr_0 = np.arange(lat_max, lat_min, -incr)
+    # lat_bnds_arr_1 = np.arange(lat_max - incr, lat_min - incr, -incr) # why this? I don't remember (OD, 29230712)
+    lon_bnds_arr_0 = np.arange(lon_min, lon_max, incr)
+    # lon_bnds_arr_1 = np.arange(lon_min + incr, lon_max + incr, incr)  # s.a.
+    lat_bnds_arr = np.empty(shape=[height, 2])
+    lon_bnds_arr = np.empty(shape=[width, 2])
+    lat_bnds_arr[:, 0] = lat_bnds_arr_0
+    # lat_bnds_arr[:, 1] = lat_bnds_arr_1
+    lat_bnds_arr[:, 1] = lat_bnds_arr_0
+    lon_bnds_arr[:, 0] = lon_bnds_arr_0
+    # lon_bnds_arr[:, 1] = lon_bnds_arr_1
+    lon_bnds_arr[:, 1] = lon_bnds_arr_0
+    lat_bnds = dst.createVariable('lat_bnds', 'f4', ('lat', 'nv'), zlib=True)
+    lon_bnds = dst.createVariable('lon_bnds', 'f4', ('lon', 'nv'), zlib=True)
+    lat_bnds.setncattr('long_name', 'Latitude cell boundaries')
+    # CF compliance checker sometimes complains about units, sometimes not... leave them out for now
+    # lat_bnds.setncattr('units', 'degrees_north')
+    lat_bnds.setncattr('valid_range', np.array([LAT_MIN_VALID, LAT_MAX_VALID], 'f4'))
+    lat_bnds.setncattr('reference_datum', 'geographical coordinates, WGS84 projection')
+    lat_bnds.setncattr('comment', 'Contains the northern and southern boundaries of the grid cells.')
+    lon_bnds.setncattr('long_name', 'Longitude cell boundaries')
+    # lon_bnds.setncattr('units', 'degrees_east')
+    lon_bnds.setncattr('valid_range', np.array([LON_MIN_VALID, LON_MAX_VALID], 'f4'))
+    lon_bnds.setncattr('reference_datum', 'geographical coordinates, WGS84 projection')
+    lon_bnds.setncattr('comment', 'Contains the eastern and western boundaries of the grid cells.')
+    lat_bnds[:, :] = lat_bnds_arr
+    lon_bnds[:, :] = lon_bnds_arr
+
+    return has_latlon, height, width
+
+
 def create_nc_lat_variable(dst, variable):
     """
     Creates lat variable in NetCDF destination dataset
@@ -303,6 +383,7 @@ def create_nc_lat_variable(dst, variable):
     dstvar.setncattr('bounds', 'lat_bnds')
     dstvar[:] = variable[:]
 
+
 def create_nc_lon_variable(dst, variable):
     """
     Creates lon variable in NetCDF destination dataset
@@ -318,6 +399,7 @@ def create_nc_lon_variable(dst, variable):
     dstvar.setncattr('axis', 'X')
     dstvar.setncattr('bounds', 'lon_bnds')
     dstvar[:] = variable[:]
+
 
 def create_time_variables(dst, day, month, year):
     """
@@ -366,8 +448,8 @@ def init_nc_compliant_product(datestring, res, sensor, version):
         l3_suffix = 'C'
     # final product name following CCI data standards v2.1 section 2.7:
     _sensor = sensor.replace('-', '_')
-    nc_outfile = 'ESACCI-WATERVAPOUR-L3' + l3_suffix + '-TCWV-' + _sensor + '-' + res + 'deg-' + datestring + '-fv' + \
-                 version + '.nc'
+    nc_outfile = 'ESACCI-WATERVAPOUR-L3' + l3_suffix + '-TCWV-' + _sensor + '-' + res + 'deg-' + datestring + \
+                 '-fv' + version + '.nc'
     outpath = os.getcwd() + os.sep + nc_outfile
     nc_compliant_ds = Dataset(outpath, 'w', format='NETCDF4')
 

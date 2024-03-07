@@ -37,7 +37,6 @@ def cleanup_inconsistencies(dst, src_hoaps, sensor, res, single_sensors_list):
     """
     var_surface_type = dst.variables['surface_type_flag']
     surface_type_arr = np.array(var_surface_type)
-    var_atm_cond = dst.variables['atmospheric_conditions_flag']
     atm_cond_arr = np.array(var_surface_type)
     var_tcwv = dst.variables['tcwv']
     tcwv_arr = np.array(var_tcwv)
@@ -52,7 +51,8 @@ def cleanup_inconsistencies(dst, src_hoaps, sensor, res, single_sensors_list):
     # reset_polar(dst.variables['num_obs'], tcwv_arr, tcwv_quality_arr, lat_arr_3d, surface_type_arr, 0)
     for single_sensor in single_sensors_list:
         if 'num_obs_' + single_sensor in dst.variables:
-            ncu.reset_polar(dst.variables['num_obs_' + single_sensor], tcwv_arr, lat_arr_3d, surface_type_arr, atm_cond_arr, 0)
+            ncu.reset_polar(dst.variables['num_obs_' + single_sensor], tcwv_arr, lat_arr_3d, surface_type_arr,
+                            atm_cond_arr, 0)
 
     # set tcwv, stdv, and error terms to nan:
     ncu.reset_polar(dst.variables['tcwv'], tcwv_arr, lat_arr_3d, surface_type_arr, atm_cond_arr, np.nan)
@@ -281,7 +281,7 @@ def set_surface_type_flag(dst, src, day, res, ds_landmask, ds_landcover, ds_seai
     variable[0, :, :] = surface_type_flag_arr[:, :]
 
 
-def set_atmospheric_conditions_flag(dst, src, res, ds_hoaps, ds_landmask):
+def set_atmospheric_conditions_flag(dst, src, res, ds_hoaps):
     """
     Sets 'atmospheric_conditions' variable and its attributes.
     Do here: CLOUD_OVER_LAND HEAVY_PRECIP_OVER_OCEAN PARTLY_CLOUDY_OVER_LAND
@@ -293,7 +293,6 @@ def set_atmospheric_conditions_flag(dst, src, res, ds_hoaps, ds_landmask):
     :param src:
     :param res:
     :param ds_hoaps:
-    :param ds_landmask:
     :return:
     """
     variable = dst.variables['atmospheric_conditions_flag']
@@ -403,7 +402,7 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, 
             ncu.set_variable_long_name_and_unit_attributes(dstvar,
                                                            'Number of Total Column of Water Vapour retrievals '
                                                            'from sensor ' + sensor.upper() + ' contributing '
-                                                                                            'to L3 grid cell',
+                                                                                             'to L3 grid cell',
                                                            ' ')
             dstvar.setncattr('coordinates', 'lat lon')
             dstvar[0, :, :] = variable[:, :]
@@ -416,10 +415,10 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, 
                                             zlib=True, fill_value=fill_val)
                 ncu.copy_variable_attributes_from_source(variable, dstvar)
                 ncu.set_variable_long_name_and_unit_attributes(dstvar,
-                                                           'Number of Total Column of Water Vapour retrievals '
-                                                           'from sensor ' + single_sensor + ' contributing '
-                                                                                            'to L3 grid cell',
-                                                           ' ')
+                                                               'Number of Total Column of Water Vapour retrievals '
+                                                               'from sensor ' + single_sensor + ' contributing '
+                                                                                                'to L3 grid cell',
+                                                               ' ')
                 dstvar.setncattr('coordinates', 'lat lon')
 
                 num_obs_arr = np.array(variable)
@@ -429,17 +428,15 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, 
                     num_obs_arr[np.where(surface_type_flag_arr == 2)] = 0
                 dstvar[0, :, :] = num_obs_arr[:, :]
 
-
-
         if name == 'tcwv_mean':
             # in case of CDR-2, add variable 'num_hours_tcwv' ('numh' in new HOAPS products, set to -1 over land)
             if ncu.is_cdr_2(sensor):
                 dstvar = dst.createVariable('num_hours_tcwv', variable.datatype, ('time', 'lat', 'lon'), zlib=True,
                                             fill_value=getattr(variable, '_FillValue'))
                 ncu.set_variable_long_name_and_unit_attributes(dstvar,
-                                                           'Number of hours in day with a valid TCWV value '
-                                                           'in L3 grid cell',
-                                                           ' ')
+                                                               'Number of hours in day with a valid TCWV value '
+                                                               'in L3 grid cell',
+                                                               ' ')
                 dstvar.setncattr('coordinates', 'lat lon')
                 dstvar.setncattr('units', ' ')
                 dstvar[0, :, :] = -1
@@ -467,7 +464,7 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, 
                                         fill_value=getattr(variable, '_FillValue'))
             ncu.copy_variable_attributes_from_source(variable, dstvar)
             ncu.set_variable_long_name_and_unit_attributes(dstvar, 'Standard deviation of Total Column of Water Vapour',
-                                                       'kg/m2')
+                                                           'kg/m2')
             dstvar[0, :, :] = variable[:, :]
         if name == 'tcwv_uncertainty_mean':
             # Stengel et al., eq. (2):
@@ -527,7 +524,6 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, 
             dstvar[0, :, :] = 0
 
 
-
 def get_ds_seaice(args):
     """
     Returns seaice mask nc4 dataset
@@ -576,7 +572,6 @@ def run(args):
     nc_infile = args[1]
     landmask_file = args[2]
     landcover_file = args[3]
-    #sensor = args[4].replace('-', '_')
     sensor = args[4]
     year = args[5]
     month = args[6]
@@ -587,7 +582,7 @@ def run(args):
     # Maximum contributing sensors depending on observation date
     # (list contains sensors which SHOULD contribute, even if missing for particular day) :
     maximum_single_sensors_list = ncu.get_maximum_single_sensors_list(year, month)
-    if (ncu.is_cdr_2(sensor)):
+    if ncu.is_cdr_2(sensor):
         maximum_single_sensors_list.append('CMSAF_HOAPS')
 
     # Source dataset...
@@ -617,7 +612,7 @@ def run(args):
     ncu.create_time_variables(dst, day, month, year)
 
     # Create lat/lon variables...
-    has_latlon, height, width = ncu.set_lat_lon_variables(dst, res, src)
+    has_latlon, height, width = ncu.set_lat_lon_variables_global(dst, res, src)
 
     # Create final flag variables...
     dst.createVariable('tcwv_quality_flag', 'b', ('time', dst.dimensions['lat'].name, dst.dimensions['lon'].name),
@@ -644,7 +639,7 @@ def run(args):
     ncu.reset_var_to_nan(dst.variables['tcwv_ran'], indices)
 
     # Set atmospheric conditions flag...
-    set_atmospheric_conditions_flag(dst, src, res, ds_hoaps, ds_landmask)
+    set_atmospheric_conditions_flag(dst, src, res, ds_hoaps)
 
     # Set final surface type flag...
     set_surface_type_flag(dst, src, day, res, ds_landmask, ds_landcover, ds_seaice)
