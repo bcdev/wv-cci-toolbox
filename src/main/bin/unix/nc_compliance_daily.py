@@ -299,35 +299,38 @@ def set_atmospheric_conditions_flag(dst, src, res, ds_hoaps):
     ncu.set_variable_long_name_and_unit_attributes(variable, 'Atmospheric conditions flag', ' ')
     variable.setncattr('standard_name', 'status_flag ')
     min_valid = 0
-    max_valid = 3
+    max_valid = 4
     variable.setncattr('valid_range', np.array([min_valid, max_valid], 'b'))
-    variable.setncattr('flag_values', np.array([0, 1, 2, 3], 'b'))
-    variable.setncattr('flag_meanings', 'CLEAR PARTLY_CLOUDY_OVER_LAND CLOUD_OVER_LAND HEAVY_PRECIP_OVER_OCEAN')
+    variable.setncattr('flag_values', np.array([0, 1, 2, 3, 4], 'b'))
+    variable.setncattr('flag_meanings', 'NOT_CLASSIFIED CLEAR_OVER_LAND PARTLY_CLOUDY_OVER_LAND CLOUD_OVER_LAND HEAVY_PRECIP_OVER_OCEAN')
 
     # in original L3 we can have LAND (1), OCEAN (2), SEAICE (4), LAND+CLOUD (9), OCEAN+CLOUD (10), SEAICE+CLOUD (12):
     # but we want (see PSD Vx.y):
-    # CLEAR (0), PARTLY_CLOUDY_OVER_LAND (1), CLOUD_OVER_LAND (2), HEAVY_PRECIP_OVER_OCEAN (3)
+    # NOT_CLASSIFIED (0), CLEAR_OVER_LAND (1), PARTLY_CLOUDY_OVER_LAND (2), CLOUD_OVER_LAND (3), HEAVY_PRECIP_OVER_OCEAN (4)
     ac_flag_arr_src = np.array(src.variables['surface_type_flags_majority'])
     tcwv_arr_src = np.array(src.variables['tcwv_mean'])
     tcwv_arr = np.copy(tcwv_arr_src)
 
+    ac_flag_arr = np.copy(ac_flag_arr_src)
     tmparr = np.copy(ac_flag_arr_src)
+    tmparr[:, :] = 2  # init with 'CLEAR_OVER_LAND'
 
-    # make original OCEAN (2), SEAICE (4), OCEAN+CLOUD (10), SEAICE+CLOUD (12) to 'CLEAR' :
-    tmparr[np.where((tmparr == 2) | (tmparr == 4) | (tmparr == 10) | (tmparr == 12))] = 1
-    # make land+cloud to CLOUD OVER LAND:
-    tmparr[np.where(tmparr == 9)] = 4
+    # make original unclassified (0), OCEAN (2), OCEAN+CLOUD (10) to 'NOT_CLASSIFIED' :
+    tmparr[np.where((ac_flag_arr == 0) | (ac_flag_arr == 2) | (ac_flag_arr == 10))] = 1
+    # also set to NOT_CLASSIFIED if no valid TCWV:
+    tmparr[np.where(~np.isfinite(tcwv_arr_src))] = 1
+    # make original SEAICE (4) to 'CLEAR_OVER_LAND' :
+    # tmparr[np.where(ac_flag_arr == 4)] = 2
+    # make original LAND+CLOUD (9), SEAICE+CLOUD (12) to 'CLOUD OVER LAND' :
+    tmparr[np.where((ac_flag_arr == 9) | (ac_flag_arr == 12))] = 8
 
     if ds_hoaps:
         hoaps_scat_ratio_arr_src = np.array(ds_hoaps.variables['scat_ratio'])
         hoaps_scat_ratio_arr = ncu.upscale_auxdata(hoaps_scat_ratio_arr_src, res)
-        tmparr[np.where(hoaps_scat_ratio_arr > 0.2)] = 8  # hoaps heavy precipitation criterion (MS, 202012)
+        tmparr[np.where(hoaps_scat_ratio_arr > 0.2)] = 16  # hoaps heavy precipitation criterion (MS, 202012)
 
     # set PARTLY_CLOUDY_OVER_LAND: must be the pixels identified in majority as CLOUD, but have a valid TCWV:
-    tmparr[np.where((np.isfinite(tcwv_arr)) & (tmparr == 4))] = 2
-
-    # set flag to CLEAR for all remaining others (no cloud over land, no cloud obs over ocean, no precip over ocean):
-    tmparr[np.where((tmparr != 2) & (tmparr != 4) & (tmparr != 8))] = 1
+    tmparr[np.where((np.isfinite(tcwv_arr)) & (tmparr == 8))] = 4
 
     atm_cond_flag_arr = np.log2(tmparr)
     variable[0, :, :] = atm_cond_flag_arr[:, :]

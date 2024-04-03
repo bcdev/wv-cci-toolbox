@@ -49,7 +49,7 @@ def set_surface_type_flag(dst, src):
     variable[0, :, :] = surface_type_flag_arr_src[:, :]
 
 
-def set_atmospheric_conditions_flag(dst, src):
+def set_atmospheric_conditions_flag_OLD(dst, src):
     """
     Sets 'atmospheric_conditions_flag' variable and its attributes.:
     Just copy atmospheric_conditions_flag from raw monthly L3.
@@ -87,6 +87,55 @@ def set_atmospheric_conditions_flag(dst, src):
     tmparr[np.where((ac_flag_arr_src == 2) & (np.isfinite(tcwv_arr_src)))] = 1
 
     variable[0, :, :] = tmparr[:, :]
+
+def set_atmospheric_conditions_flag(dst, src):
+    """
+    Sets 'atmospheric_conditions_flag' variable and its attributes.:
+    Just copy atmospheric_conditions_flag from raw monthly L3.
+    :param dst:
+    :param src:
+    :return:
+    """
+    variable = dst.variables['atmospheric_conditions_flag']
+    ncu.set_variable_long_name_and_unit_attributes(variable, 'Atmospheric conditions flag', ' ')
+    variable.setncattr('standard_name', 'status_flag ')
+    min_valid = 0
+    max_valid = 4
+    variable.setncattr('valid_range', np.array([min_valid, max_valid], 'b'))
+    variable.setncattr('flag_values', np.array([0, 1, 2, 3, 4], 'b'))
+    variable.setncattr('flag_meanings', 'NO_OBSERVATION CLEAR PARTLY_CLOUDY_OVER_LAND CLOUD_OVER_LAND HEAVY_PRECIP_OVER_OCEAN')
+
+    ac_flag_arr_maj = np.array(src.variables['atmospheric_conditions_flag_majority'])
+    ac_flag_arr_max = np.array(src.variables['atmospheric_conditions_flag_max'])
+
+    # a) CLOUDY_OVER_LAND (2) in daily products: the pixels identified purely as CLOUD (all L2 samples), no valid TCWV
+    # b) PARTLY_CLOUDY_OVER_LAND (5) in daily products: the pixels identified in majority as CLOUD,
+    #    but have a valid TCWV
+    # c) CLOUDY_OVER_LAND (2) in monthly products: all daily aggregates are CLOUDY_OVER_LAND,
+    #    no valid TCWV (usually very few pixels)
+    # d) PARTLY_CLOUDY_OVER_LAND (5) in monthly products: at least 1 , but not all daily aggregates are
+    #    CLOUDY_OVER_LAND, valid TCWV
+    # -->
+    # 1. make cloud over land (2) if partly cloudy and no tcwv (refers to c)
+    # 2. then make cloud_over_land to partly_cloudy_over_land where we have tcwv
+
+    tcwv_arr_src = np.array(src.variables['tcwv_mean'])
+    tmparr = np.copy(ac_flag_arr_maj)
+    # set to 3 (cloudy) if partly cloudy but no valid TCWV:
+    tmparr[np.where((ac_flag_arr_maj == 2) & (~np.isfinite(tcwv_arr_src)))] = 3
+    # set to 2 (partly cloudy)  if cloudy but valid TCWV:
+    tmparr[np.where((ac_flag_arr_maj == 3) & (np.isfinite(tcwv_arr_src)))] = 2
+    # set to 1 (clear) if not cloudy or partly cloudy and valid TCWV:
+    tmparr[np.where((ac_flag_arr_maj < 2) & (np.isfinite(tcwv_arr_src)))] = 1
+    # set to 0 (no obs) if not cloudy or partly cloudy and no valid TCWV:
+    tmparr[np.where((ac_flag_arr_maj < 2) & (~np.isfinite(tcwv_arr_src)))] = 0
+
+    # we need to activate this to reproduce Phase 1 results!
+    # set to partly cloudy  if at least one daily sample is partly cloudy, and not already cloudy:
+    tmparr[np.where((ac_flag_arr_max == 2) & (tmparr != 3))] = 2
+
+    variable[0, :, :] = tmparr[:, :]
+
 
 
 def copy_and_rename_variables_from_source_product(dst, src, has_latlon, single_sensors_list):
@@ -286,6 +335,7 @@ def run(args):
 
     # Set atmospheric conditions flag...
     set_atmospheric_conditions_flag(dst, src)
+    # set_atmospheric_conditions_flag_OLD(dst, src)
 
     # Set final surface type flag...
     set_surface_type_flag(dst, src)
