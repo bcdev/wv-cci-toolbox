@@ -132,7 +132,7 @@ def set_atmospheric_conditions_flag(dst, src):
 
     # we need to activate this to reproduce Phase 1 results!
     # set to partly cloudy  if at least one daily sample is partly cloudy, and not already cloudy:
-    tmparr[np.where((ac_flag_arr_max == 2) & (tmparr != 3))] = 2
+    tmparr[np.where((ac_flag_arr_max >= 2) & (ac_flag_arr_maj > 0) & (ac_flag_arr_maj < 4) & (tmparr != 3))] = 2
 
     variable[0, :, :] = tmparr[:, :]
 
