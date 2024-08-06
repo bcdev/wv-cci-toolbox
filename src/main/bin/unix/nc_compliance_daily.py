@@ -636,10 +636,10 @@ def run(args):
     indices = set_tcwv_quality_flag(dst, src)
 
     # In case there are remaining 'valid' values for invalid pixels, reset to nan...
-    ncu.reset_var_to_nan(dst.variables['tcwv'], indices)
-    ncu.reset_var_to_nan(dst.variables['stdv'], indices)
-    ncu.reset_var_to_nan(dst.variables['tcwv_err'], indices)
-    ncu.reset_var_to_nan(dst.variables['tcwv_ran'], indices)
+    ncu.reset_var_to_value(dst.variables['tcwv'], indices, np.nan)
+    ncu.reset_var_to_value(dst.variables['stdv'], indices, np.nan)
+    ncu.reset_var_to_value(dst.variables['tcwv_err'], indices, np.nan)
+    ncu.reset_var_to_value(dst.variables['tcwv_ran'], indices, np.nan)
 
     # Set atmospheric conditions flag...
     set_atmospheric_conditions_flag(dst, src, res, ds_hoaps)

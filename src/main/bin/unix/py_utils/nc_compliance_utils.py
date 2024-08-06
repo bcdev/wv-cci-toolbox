@@ -80,15 +80,16 @@ def set_variable_long_name_and_unit_attributes(dst_var, long_name_string, unit_s
     dst_var.setncattr('units', unit_string)
 
 
-def reset_var_to_nan(dst_var, dst_indices):
+def reset_var_to_value(dst_var, dst_indices, value):
     """
-    Resets array values to nan at given indices for given variable in destination nc4.
+    Resets array values to value at given indices for given variable in destination nc4.
     :param dst_var:
     :param dst_indices:
+    :param value: the new value
     :return:
     """
     dst_var_arr_0 = np.array(dst_var)[0]
-    dst_var_arr_0[dst_indices] = np.nan
+    dst_var_arr_0[dst_indices] = value
     dst_var[0, :, :] = dst_var_arr_0[:, :]
 
 
@@ -727,3 +728,21 @@ def get_maximum_single_sensors_list(year, month):
         return ['MODIS_TERRA', 'MODIS_AQUA', 'OLCI_A']
     if int(year) >= 2019:
         return ['MODIS_TERRA', 'MODIS_AQUA', 'OLCI_A', 'OLCI_B']
+
+def get_cloud_buffer(cld_arr, cld_val=1, buf=1):
+    cld_buf = np.copy(cld_arr)
+
+    ind_x, ind_y = np.where(cld_arr == cld_val)
+
+    for p in range(len(ind_x)):
+        left_border = np.maximum(ind_x[p] - buf, 0)
+        right_border = np.minimum(ind_x[p] + buf, cld_arr.shape[0] - 1)
+        top_border = np.maximum(ind_y[p] - buf, 0)
+        bottom_border = np.minimum(ind_y[p] + buf, cld_arr.shape[1] - 1)
+
+        for i in range(left_border, right_border + 1):
+            for j in range(top_border, bottom_border + 1):
+                cld_buf[i, j] = 1
+
+    indices = np.where(cld_buf == 1)
+    return cld_buf, indices
