@@ -746,3 +746,19 @@ def get_cloud_buffer(cld_arr, cld_val=1, buf=1):
 
     indices = np.where(cld_buf == 1)
     return cld_buf, indices
+
+
+def apply_cloud_buffer(dst, maximum_single_sensors_list):
+    partly_cldbuf, partly_indices = \
+        get_cloud_buffer(np.array(dst.variables['atmospheric_conditions_flag'])[0], cld_val=1)
+    total_cldbuf, total_indices = \
+        get_cloud_buffer(np.array(dst.variables['atmospheric_conditions_flag'])[0], cld_val=2)
+    reset_var_to_value(dst.variables['tcwv'], partly_indices, np.nan)
+    reset_var_to_value(dst.variables['tcwv'], total_indices, np.nan)
+    reset_var_to_value(dst.variables['tcwv_quality_flag'], partly_indices, 3)
+    reset_var_to_value(dst.variables['tcwv_quality_flag'], total_indices, 3)
+    for name, variable in get_iteritems(dst.variables):
+        for single_sensor in maximum_single_sensors_list:
+            if name == 'num_obs_' + single_sensor:
+                reset_var_to_value(dst.variables[name], partly_indices, 0)
+                reset_var_to_value(dst.variables[name], total_indices, 0)

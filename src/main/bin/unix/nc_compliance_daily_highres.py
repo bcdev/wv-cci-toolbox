@@ -614,20 +614,7 @@ def run(args):
     set_atmospheric_conditions_flag(dst, src, '001')
 
     # compute 1-pixel cloud buffer for both total and partly cloudy pixels
-    partly_cldbuf, partly_indices = \
-        ncu.get_cloud_buffer(np.array(dst.variables['atmospheric_conditions_flag'])[0], cld_val=1)
-    total_cldbuf, total_indices = \
-        ncu.get_cloud_buffer(np.array(dst.variables['atmospheric_conditions_flag'])[0], cld_val=2)
-
-    ncu.reset_var_to_value(dst.variables['tcwv'], partly_indices, np.nan)
-    ncu.reset_var_to_value(dst.variables['tcwv'], total_indices, np.nan)
-    ncu.reset_var_to_value(dst.variables['tcwv_quality_flag'], partly_indices, 3)
-    ncu.reset_var_to_value(dst.variables['tcwv_quality_flag'], total_indices, 3)
-    for name, variable in ncu.get_iteritems(dst.variables):
-        for single_sensor in maximum_single_sensors_list:
-            if name == 'num_obs_' + single_sensor:
-                ncu.reset_var_to_value(dst.variables[name], partly_indices, 0)
-                ncu.reset_var_to_value(dst.variables[name], total_indices, 0)
+    ncu.apply_cloud_buffer(dst, maximum_single_sensors_list)
 
     # Set final surface type flag...
     set_surface_type_flag(dst, src, ds_landmask, ds_landcover)
