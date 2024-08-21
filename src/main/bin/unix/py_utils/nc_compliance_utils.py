@@ -729,7 +729,7 @@ def get_maximum_single_sensors_list(year, month):
     if int(year) >= 2019:
         return ['MODIS_TERRA', 'MODIS_AQUA', 'OLCI_A', 'OLCI_B']
 
-def get_cloud_buffer(cld_arr, cld_val=1, buf=1):
+def get_cloud_buffer(cld_arr, cld_val=1, buf=3):
     cld_buf = np.copy(cld_arr)
 
     ind_x, ind_y = np.where(cld_arr == cld_val)
