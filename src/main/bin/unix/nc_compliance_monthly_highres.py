@@ -191,6 +191,25 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, single_s
             ncu.copy_variable_attributes_from_source(variable, dstvar)
             ncu.set_variable_long_name_and_unit_attributes(dstvar, 'Random retrieval uncertainty', 'kg/m2')
             dstvar[0, :, :] = variable[:, :]
+
+        if name == 'tcwv_ocean_hoaps_mean':
+            dstvar = dst.createVariable('tcwv_ocean_hoaps', variable.datatype, ('time', 'lat', 'lon'), zlib=True,
+                                        fill_value=np.nan)
+            ncu.copy_variable_attributes_from_source(variable, dstvar)
+            ncu.set_variable_long_name_and_unit_attributes(dstvar, 'Total Column of Water', 'kg/m2')
+            dstvar.setncattr('standard_name', 'atmosphere_water_vapor_content ')
+            tcwv_arr = np.array(variable)
+            tcwv_min_valid = 0.0
+            tcwv_max_valid = 70.0
+            # tcwv_arr[np.where(tcwv_arr < tcwv_min_valid)] = tcwv_min_valid
+            tcwv_arr[np.where(tcwv_arr < tcwv_min_valid)] = np.nan
+            tcwv_arr[np.where(tcwv_arr > tcwv_max_valid)] = tcwv_max_valid
+            tcwv_min = np.nanmin(tcwv_arr)
+            tcwv_max = np.nanmax(tcwv_arr)
+            dstvar.setncattr('actual_range', np.array([tcwv_min, tcwv_max], 'f4'))
+            dstvar.setncattr('valid_range', np.array([tcwv_min_valid, tcwv_max_valid], 'f4'))
+            dstvar[0, :, :] = tcwv_arr[:, :]
+
         if name == 'crs':
             dstvar = dst.createVariable(name, variable.datatype, variable.dimensions, zlib=True)
             ncu.copy_variable_attributes_from_source(variable, dstvar)
