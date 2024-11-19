@@ -371,38 +371,64 @@ def set_tcwv_quality_flag(dst, src):
 
     return indices
 
-def correct_olci_numobs(dst, ds_olci_a_tcwv_counts, ds_olci_b_tcwv_counts):
+def correct_olci_numobs(dst, src, ds_olci_tcwv_counts, sensor):
     """
 
     :param dst:
-    :param ds_olci_a_tcwv_counts:
-    :param ds_olci_b_tcwv_counts:
+    :param ds_olci_tcwv_counts:
+    :param sensor: OLCI_A or OLCI_B
     :return:
     """
-    if ds_olci_a_tcwv_counts != None:
-        num_obs_olci_a_orig_arr = np.array(dst.variables['num_obs_OLCI_A'])
+
+    num_obs_var_name = 'num_obs_' + sensor
+    if ds_olci_tcwv_counts != None:
+        num_obs_olci_orig_arr = np.array(dst.variables[num_obs_var_name])
         tcwv_mosaicking_arr = np.array(dst.variables['tcwv'])
-        tcwv_binning_arr = np.array(ds_olci_a_tcwv_counts.variables['tcwv_mean'])
-        tcwv_counts_arr = np.array(ds_olci_a_tcwv_counts.variables['tcwv_counts'])
+        tcwv_binning_arr = np.array(ds_olci_tcwv_counts.variables['tcwv_mean'])
+        tcwv_counts_arr = np.array(ds_olci_tcwv_counts.variables['tcwv_counts'])
 
         # Implement this condition:
         # not nan(tcwv_mean) and not nan(tcwv_binn) ? num_obs_binn : (not nan(tcwv_mean) and nan(tcwv_binn) ? 9.0 : NaN)
 
-        # data=np.where(data<=max[i], data, max[i])
-
         _cond1 = (~np.isnan(tcwv_mosaicking_arr)) & (~np.isnan(tcwv_binning_arr))
         _cond2 = (~np.isnan(tcwv_mosaicking_arr)) & (np.isnan(tcwv_binning_arr))
-        tmparr = np.where(_cond1, tcwv_counts_arr, num_obs_olci_a_orig_arr)
-        tmparr = np.where(_cond2 & ~_cond1, 9.0, tmparr)
-        tmparr = np.where(~_cond2 & ~_cond1, 0.0, tmparr)
+        num_obs_olci_corr_arr = np.where(_cond1, tcwv_counts_arr, num_obs_olci_orig_arr)
+        num_obs_olci_corr_arr = np.where(_cond2 & ~_cond1, 9.0, num_obs_olci_corr_arr)
+        num_obs_olci_corr_arr = np.where(~_cond2 & ~_cond1, 0.0, num_obs_olci_corr_arr)
 
-        dst.variables['num_obs_OLCI_A'][0, :, :] = tmparr[:, :]
+        dst.variables[num_obs_var_name][0, :, :] = num_obs_olci_corr_arr[:, :]
 
-        testval = np.array(dst.variables['num_obs_OLCI_A'])[0][1240][4760]
-        print('testval : ' + str(testval))
-        print('tmparr[0][1240][4760] : ' + str(tmparr[0][1240][4760]))
+        # testval = np.array(dst.variables['num_obs_OLCI_A'])[0][1240][4760]
+        # print('testval : ' + str(testval))
+        # print('tmparr[0][1240][4760] : ' + str(tmparr[0][1240][4760]))
+        # print('bla')
 
-        print('bla')
+def correct_tcwv_err(dst, src, single_sensors_list):
+    """
+
+    :param dst:
+    :param src:
+    :return:
+    """
+
+    var_tcwv = dst.variables['tcwv']
+    tcwv_arr = np.array(var_tcwv)
+    total_num_obs_arr = np.zeros((tcwv_arr.shape))
+    for name, variable in ncu.get_iteritems(dst.variables):
+        for single_sensor in single_sensors_list:
+            if name == 'num_obs_' + single_sensor:
+                num_obs_arr = np.array(variable)
+                total_num_obs_arr = total_num_obs_arr + num_obs_arr
+
+    # recompute tcwv_err:
+    uncert_sum_sqr_arr = np.array(src.variables['tcwv_uncertainty_sums_sum_sq'])
+    uncert_sum_sqr_arr_norm = uncert_sum_sqr_arr / total_num_obs_arr  # this is eq. (3) !
+    # now sqrt, see PSD v2.0 section 3.1.4:
+    uncert_sum_sqr_arr_psd = np.sqrt(uncert_sum_sqr_arr_norm)  # PSD v2.0 section 3.1.4
+    dst.variables['tcwv_err'][0, :, :] = uncert_sum_sqr_arr_psd[:, :]
+    # NOTE: with this computation, tcwv_err and tcwv_ran are nearly identical over land,
+    # whereas tcwv_err/tcwv_ran ~ 5 for HOAPS over water
+
 
 
 def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, single_sensors_list):
@@ -687,6 +713,14 @@ def run(args):
 
     # Copy variables from source product and rename to correct names. Set attributes and data...
     copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, maximum_single_sensors_list)
+
+    # Correct OLCI num_obs...
+    correct_olci_numobs(dst, src, ds_olci_a_tcwv_counts, 'OLCI_A')
+    correct_olci_numobs(dst, src, ds_olci_b_tcwv_counts, 'OLCI_B')
+
+    # Correct tcwv_err...
+    # Do we need this??
+    # correct_tcwv_err(dst, src, maximum_single_sensors_list)
 
     # Set TCWV final quality flag. Get back indices of finally invalid pixels...
     indices = set_tcwv_quality_flag(dst, src)
