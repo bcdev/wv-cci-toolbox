@@ -1,6 +1,7 @@
 package org.esa.snap.wvcci.tcwv;
 
 import com.bc.ceres.core.ProgressMonitor;
+import org.esa.snap.core.dataio.geocoding.ComponentGeoCoding;
 import org.esa.snap.core.datamodel.*;
 import org.esa.snap.core.gpf.Operator;
 import org.esa.snap.core.gpf.OperatorException;
@@ -845,7 +846,8 @@ public class TcwvOp extends Operator {
                     latBand.getProduct().getSceneRasterHeight() >= 2 &&
                     lonBand.getProduct().getSceneRasterWidth() >= 2 &&
                     lonBand.getProduct().getSceneRasterHeight() >= 2) {
-                targetProduct.setSceneGeoCoding(new PixelGeoCoding(latBand, lonBand, null, 5));
+//                targetProduct.setSceneGeoCoding(new PixelGeoCoding(latBand, lonBand, null, 5));
+                targetProduct.setSceneGeoCoding(sourceProduct.getSceneGeoCoding());
             }
         }
 
