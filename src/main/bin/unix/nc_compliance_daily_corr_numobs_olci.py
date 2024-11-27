@@ -302,11 +302,12 @@ def set_atmospheric_conditions_flag(dst, src, res, ds_hoaps):
     max_valid = 4
     variable.setncattr('valid_range', np.array([min_valid, max_valid], 'b'))
     variable.setncattr('flag_values', np.array([0, 1, 2, 3, 4], 'b'))
-    variable.setncattr('flag_meanings', 'NOT_CLASSIFIED CLEAR_OVER_LAND PARTLY_CLOUDY_OVER_LAND CLOUD_OVER_LAND HEAVY_PRECIP_OVER_OCEAN')
+    variable.setncattr('flag_meanings', 'NOT_CLASSIFIED CLEAR_OVER_LAND PARTLY_CLOUDY_OVER_LAND CLOUD_OVER_LAND '
+                                        'HEAVY_PRECIP_OVER_OCEAN')
 
     # in original L3 we can have LAND (1), OCEAN (2), SEAICE (4), LAND+CLOUD (9), OCEAN+CLOUD (10), SEAICE+CLOUD (12):
-    # but we want (see PSD Vx.y):
-    # NOT_CLASSIFIED (0), CLEAR_OVER_LAND (1), PARTLY_CLOUDY_OVER_LAND (2), CLOUD_OVER_LAND (3), HEAVY_PRECIP_OVER_OCEAN (4)
+    # but we want (see PSD Vx.y): NOT_CLASSIFIED (0), CLEAR_OVER_LAND (1), PARTLY_CLOUDY_OVER_LAND (2),
+    # CLOUD_OVER_LAND (3), HEAVY_PRECIP_OVER_OCEAN (4)
     ac_flag_arr_src = np.array(src.variables['surface_type_flags_majority'])
     tcwv_arr_src = np.array(src.variables['tcwv_mean'])
     tcwv_arr = np.copy(tcwv_arr_src)
@@ -371,9 +372,12 @@ def set_tcwv_quality_flag(dst, src):
 
     return indices
 
-def correct_olci_numobs(dst, src, ds_olci_tcwv_counts, sensor):
+def correct_olci_numobs(dst, ds_olci_tcwv_counts, sensor):
     """
-
+    Corrects wrong num_obs for OLCI: L3 step was done in MOSAICKING mode instead of BINNING mode.
+    This gave as num_obs the number of overpasses instead of the number of TCWV samplesd ber binning cell.
+    This function recovers the correct number from the new 'TCWV counts' L3 product which was correctly
+    computed with BINNING. These products are stored on Calvalus in folder ../wvcci/tcwv/olci_*/l3-daily-counts.
     :param dst:
     :param ds_olci_tcwv_counts:
     :param sensor: OLCI_A or OLCI_B
@@ -402,33 +406,6 @@ def correct_olci_numobs(dst, src, ds_olci_tcwv_counts, sensor):
         # print('testval : ' + str(testval))
         # print('tmparr[0][1240][4760] : ' + str(tmparr[0][1240][4760]))
         # print('bla')
-
-def correct_tcwv_err(dst, src, single_sensors_list):
-    """
-
-    :param dst:
-    :param src:
-    :return:
-    """
-
-    var_tcwv = dst.variables['tcwv']
-    tcwv_arr = np.array(var_tcwv)
-    total_num_obs_arr = np.zeros((tcwv_arr.shape))
-    for name, variable in ncu.get_iteritems(dst.variables):
-        for single_sensor in single_sensors_list:
-            if name == 'num_obs_' + single_sensor:
-                num_obs_arr = np.array(variable)
-                total_num_obs_arr = total_num_obs_arr + num_obs_arr
-
-    # recompute tcwv_err:
-    uncert_sum_sqr_arr = np.array(src.variables['tcwv_uncertainty_sums_sum_sq'])
-    uncert_sum_sqr_arr_norm = uncert_sum_sqr_arr / total_num_obs_arr  # this is eq. (3) !
-    # now sqrt, see PSD v2.0 section 3.1.4:
-    uncert_sum_sqr_arr_psd = np.sqrt(uncert_sum_sqr_arr_norm)  # PSD v2.0 section 3.1.4
-    dst.variables['tcwv_err'][0, :, :] = uncert_sum_sqr_arr_psd[:, :]
-    # NOTE: with this computation, tcwv_err and tcwv_ran are nearly identical over land,
-    # whereas tcwv_err/tcwv_ran ~ 5 for HOAPS over water
-
 
 
 def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, single_sensors_list):
@@ -715,12 +692,8 @@ def run(args):
     copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, maximum_single_sensors_list)
 
     # Correct OLCI num_obs...
-    correct_olci_numobs(dst, src, ds_olci_a_tcwv_counts, 'OLCI_A')
-    correct_olci_numobs(dst, src, ds_olci_b_tcwv_counts, 'OLCI_B')
-
-    # Correct tcwv_err...
-    # Do we need this??
-    # correct_tcwv_err(dst, src, maximum_single_sensors_list)
+    correct_olci_numobs(dst, ds_olci_a_tcwv_counts, 'OLCI_A')
+    correct_olci_numobs(dst, ds_olci_b_tcwv_counts, 'OLCI_B')
 
     # Set TCWV final quality flag. Get back indices of finally invalid pixels...
     indices = set_tcwv_quality_flag(dst, src)

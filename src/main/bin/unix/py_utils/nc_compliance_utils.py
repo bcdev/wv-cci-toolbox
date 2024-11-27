@@ -8,12 +8,18 @@ __author__ = 'olafd'
 
 import os
 import calendar
+import datetime
 import sys
 import uuid
 
 import numpy as np
 import scipy.ndimage
 from netCDF4 import Dataset
+
+from pvlib import solarposition, tracking
+import pandas as pd
+import matplotlib.pyplot as plt
+
 
 LAT_MIN_VALID = -90.0
 LAT_MAX_VALID = 90.0
@@ -763,3 +769,81 @@ def apply_cloud_buffer(dst, maximum_single_sensors_list):
             if name == 'num_obs_' + single_sensor:
                 # reset_var_to_value(dst.variables[name], partly_indices, 0)
                 reset_var_to_value(dst.variables[name], total_indices, 0)
+
+
+def get_sza_pvlib(yyyy, mm, dd, lat, lon):
+    datestring = yyyy + '-' + mm + '-' + dd + ' 12:00:00'
+    times = pd.date_range(start=datestring, periods=1)
+    return solarposition.get_solarposition(times, lat, lon)
+
+
+# /**
+# * Computes solar zenith angle at local noon as function of Geoposition and DoY
+# *
+# * @param geoPos - geoposition
+# * @param doy    - day of year
+# * @return sza - in degrees!!
+# */
+# public static double computeSza(GeoPos geoPos, int doy) {
+#
+#     final double latitude = geoPos.getLat() * MathUtils.DTOR;
+#
+# // # To emulate MODIS products, set fixed LST = 12.00
+# final double LST = 12.0;
+# // # Now we can calculate the Sun Zenith Angle (SZArad):
+# final double h = (12.0 - (LST)) / 12.0 * Math.PI;
+# final double delta = -23.45 * (Math.PI / 180.0) * Math.cos(2 * Math.PI / 365.0 * (doy + 10));
+# double SZArad = Math.acos(Math.sin(latitude) * Math.sin(delta) + Math.cos(latitude) * Math.cos(delta) * Math.cos(h));
+#
+# return SZArad * MathUtils.RTOD;
+# }
+
+def get_sza_from_doy(doy, lat):
+    """
+    Computes solar zenith angle at local noon as function of latitude and DoY
+    :param doy: day of year
+    :param lat: latitude in degrees
+    :return: sza in degrees
+    """
+    DTOR = 0.017453292519943295
+    RTOD = 57.29577951308232
+
+    latitude = lat * DTOR
+
+    # To emulate MODIS products, set fixed LST = 12.00:
+    LST = 12.0
+
+    # Now we can calculate the Sun Zenith Angle (SZArad):
+    h = (12.0 - (LST)) / 12.0 * np.pi
+    delta = -23.45 * (np.pi / 180.0) * np.cos(2 * np.pi / 365.0 * (doy + 10))
+    SZArad = np.acos(np.sin(latitude) * np.sin(delta) + np.cos(latitude) * np.cos(delta) * np.cos(h))
+
+    return SZArad * RTOD
+
+
+def get_sza_from_date(yyyy, mm, dd, lat):
+    """
+    Computes solar zenith angle at local noon as function of latitude and DoY
+    :param yyyy: year
+    :param mm: month
+    :param day: day
+    :param lat: latitude in degrees
+    :return: sza in degrees
+    """
+    DTOR = 0.017453292519943295
+    RTOD = 57.29577951308232
+
+    latitude = lat * DTOR
+
+    # To emulate MODIS products, set fixed LST = 12.00:
+    LST = 12.0
+
+    doy = (datetime.datetime(int(yyyy), int(mm), int(dd)) - datetime.datetime(yyyy, 1, 1)).days + 1
+
+    # Now we can calculate the Sun Zenith Angle (SZArad):
+    h = (12.0 - (LST)) / 12.0 * np.pi
+    delta = -23.45 * (np.pi / 180.0) * np.cos(2 * np.pi / 365.0 * (doy + 10))
+    SZArad = np.acos(np.sin(latitude) * np.sin(delta) + np.cos(latitude) * np.cos(delta) * np.cos(h))
+
+    return SZArad * RTOD
+
