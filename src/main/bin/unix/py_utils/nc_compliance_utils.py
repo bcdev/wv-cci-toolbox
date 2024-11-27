@@ -16,11 +16,6 @@ import numpy as np
 import scipy.ndimage
 from netCDF4 import Dataset
 
-from pvlib import solarposition, tracking
-import pandas as pd
-import matplotlib.pyplot as plt
-
-
 LAT_MIN_VALID = -90.0
 LAT_MAX_VALID = 90.0
 LON_MIN_VALID = -180.0
@@ -770,13 +765,6 @@ def apply_cloud_buffer(dst, maximum_single_sensors_list):
                 # reset_var_to_value(dst.variables[name], partly_indices, 0)
                 reset_var_to_value(dst.variables[name], total_indices, 0)
 
-
-def get_sza_pvlib(yyyy, mm, dd, lat, lon):
-    datestring = yyyy + '-' + mm + '-' + dd + ' 12:00:00'
-    times = pd.date_range(start=datestring, periods=1)
-    return solarposition.get_solarposition(times, lat, lon)
-
-
 # /**
 # * Computes solar zenith angle at local noon as function of Geoposition and DoY
 # *
@@ -827,8 +815,8 @@ def get_sza_from_date(yyyy, mm, dd, lat):
     :param yyyy: year
     :param mm: month
     :param day: day
-    :param lat: latitude in degrees
-    :return: sza in degrees
+    :param lat: latitude in degrees (can be a numpy array)
+    :return: sza in degrees (can be a numpy array)
     """
     DTOR = 0.017453292519943295
     RTOD = 57.29577951308232
