@@ -538,12 +538,12 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, 
                              'to real locations on the Earth\'s surface ')
             dstvar[:] = variable[:]
 
-        if has_latlon:
-            if has_latlon:
-                if name == 'lat':
-                    ncu.create_nc_lat_variable(dst, variable)
-            if name == 'lon':
-                ncu.create_nc_lon_variable(dst, variable)
+        # if has_latlon:
+        #     if has_latlon:
+        #         if name == 'lat':
+        #             ncu.create_nc_lat_variable(dst, variable)
+        #     if name == 'lon':
+        #         ncu.create_nc_lon_variable(dst, variable)
 
     # Finally, add the num_obs_* variables which should be in the source product according to observation date,
     # but maybe are not because single sensor(s) are missing.

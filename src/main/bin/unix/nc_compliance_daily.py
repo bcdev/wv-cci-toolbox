@@ -372,7 +372,7 @@ def set_tcwv_quality_flag(dst, src):
     return indices
 
 
-def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, single_sensors_list):
+def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sza_arr, sensor, single_sensors_list):
     """
     Copies variables from source product, renames to correct names, and sets attributes and data...
     For daily non-merged we need to
@@ -408,7 +408,12 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, 
                                                                                              'to L3 grid cell',
                                                            ' ')
             dstvar.setncattr('coordinates', 'lat lon')
-            dstvar[0, :, :] = variable[:, :]
+            # todo: check this!!
+            num_obs_arr = np.array(variable)
+            num_obs_arr2 = np.array(variable)
+            num_obs_arr[np.where(sza_arr > 75.0)] = 0
+            num_obs_arr[np.where(num_obs_arr2 < 0)] = 0
+            dstvar[0, :, :] = num_obs_arr[:, :]
 
         # copy the num_obs_* variables present in the source product:
         for single_sensor in single_sensors_list:
@@ -429,6 +434,7 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, 
                 # for NIR sensors, set num_obs to 0 over ocean:
                 if single_sensor != 'CMSAF_HOAPS':
                     num_obs_arr[np.where(surface_type_flag_arr == 2)] = 0
+                num_obs_arr[np.where(sza_arr > 75.0)] = 0
                 dstvar[0, :, :] = num_obs_arr[:, :]
 
         if name == 'tcwv_mean':
@@ -455,6 +461,7 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, 
             tcwv_max_valid = 70.0
             tcwv_arr[np.where(tcwv_arr < tcwv_min_valid)] = tcwv_min_valid
             tcwv_arr[np.where(tcwv_arr > tcwv_max_valid)] = tcwv_max_valid
+            tcwv_arr[np.where(sza_arr > 75.0)] = np.nan
             tcwv_min = np.nanmin(tcwv_arr)
             tcwv_max = np.nanmax(tcwv_arr)
             dstvar.setncattr('actual_range', np.array([tcwv_min, tcwv_max], 'f4'))
@@ -468,14 +475,18 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, 
             ncu.copy_variable_attributes_from_source(variable, dstvar)
             ncu.set_variable_long_name_and_unit_attributes(dstvar, 'Standard deviation of Total Column of Water Vapour',
                                                            'kg/m2')
-            dstvar[0, :, :] = variable[:, :]
+            stdv_arr = np.array(variable)
+            stdv_arr[np.where(sza_arr > 75.0)] = np.nan
+            dstvar[0, :, :] = stdv_arr[:, :]
         if name == 'tcwv_uncertainty_mean':
             # Stengel et al., eq. (2):
             dstvar = dst.createVariable('tcwv_err', variable.datatype, ('time', 'lat', 'lon'), zlib=True,
                                         fill_value=getattr(variable, '_FillValue'))
             ncu.copy_variable_attributes_from_source(variable, dstvar)
             ncu.set_variable_long_name_and_unit_attributes(dstvar, 'Average retrieval uncertainty', 'kg/m2')
-            dstvar[0, :, :] = variable[:, :]
+            tcwv_err_arr = np.array(variable)
+            tcwv_err_arr[np.where(sza_arr > 75.0)] = np.nan
+            dstvar[0, :, :] = tcwv_err_arr[:, :]
         if name == 'tcwv_uncertainty_sums_sum_sq':
             # Stengel et al., eq. (3):
             dstvar = dst.createVariable('tcwv_ran', variable.datatype, ('time', 'lat', 'lon'), zlib=True,
@@ -489,6 +500,7 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, 
             uncert_sum_sqr_arr_norm = uncert_sum_sqr_arr / num_obs_arr  # this is eq. (3) !
             # now sqrt, see PSD v2.0 section 3.1.4:
             uncert_sum_sqr_arr_psd = np.sqrt(uncert_sum_sqr_arr_norm)  # PSD v2.0 section 3.1.4
+            uncert_sum_sqr_arr_psd[np.where(sza_arr > 75.0)] = np.nan
             dstvar[0, :, :] = uncert_sum_sqr_arr_psd[:, :]
             # NOTE: with this computation, tcwv_err and tcwv_ran are nearly identical over land,
             # whereas tcwv_err/tcwv_ran ~ 5 for HOAPS over water
@@ -501,13 +513,6 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, 
                              'A coordinate reference system (CRS) defines how the georeferenced spatial data relates '
                              'to real locations on the Earth\'s surface ')
             dstvar[:] = variable[:]
-
-        if has_latlon:
-            if has_latlon:
-                if name == 'lat':
-                    ncu.create_nc_lat_variable(dst, variable)
-            if name == 'lon':
-                ncu.create_nc_lon_variable(dst, variable)
 
     # Finally, add the num_obs_* variables which should be in the source product according to observation date,
     # but maybe are not because single sensor(s) are missing.
@@ -629,8 +634,20 @@ def run(args):
                        zlib=True,
                        fill_value=np.array([-128], 'b'))
 
+    # get SZA array for tcwv filtering...
+    lat_arr = np.array(dst.variables['lat'])
+    lat_arr2d = np.empty([width, height])
+    lat_arr2d[:, :] = lat_arr[:]
+    sza_arr = ncu.get_sza_from_date(year, month, day, np.transpose(lat_arr2d))
+    # test: write SZA to final product
+    dstvar = dst.createVariable('SZA', np.float32, ('time', 'lat', 'lon'), zlib=True, fill_value=-999)
+    dstvar.setncattr('coordinates', 'lat lon')
+    dstvar.setncattr('units', 'deg')
+    dstvar[0, :, :] = sza_arr[:, :]
+    # end test
+
     # Copy variables from source product and rename to correct names. Set attributes and data...
-    copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, maximum_single_sensors_list)
+    copy_and_rename_variables_from_source_product(dst, src, has_latlon, sza_arr, sensor, maximum_single_sensors_list)
 
     # Set TCWV final quality flag. Get back indices of finally invalid pixels...
     indices = set_tcwv_quality_flag(dst, src)

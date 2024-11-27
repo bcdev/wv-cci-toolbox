@@ -228,8 +228,12 @@ def set_lat_lon_variables_global(dst, res, src):
     has_latlon = False
     for name, variable in get_iteritems(src.variables):
         # print('src variable: ' + name)
-        if name == 'lat' or name == 'lon':
+        if name == 'lat':
             has_latlon = True
+            create_nc_lat_variable(dst, variable)
+        if name == 'lon':
+            has_latlon = True
+            create_nc_lon_variable(dst, variable)
     # print('has_latlon: ' + str(has_latlon))
     if not has_latlon:
         incr = 0.05 if res == '005' else 0.5
@@ -826,7 +830,7 @@ def get_sza_from_date(yyyy, mm, dd, lat):
     # To emulate MODIS products, set fixed LST = 12.00:
     LST = 12.0
 
-    doy = (datetime.datetime(int(yyyy), int(mm), int(dd)) - datetime.datetime(yyyy, 1, 1)).days + 1
+    doy = (datetime.datetime(int(yyyy), int(mm), int(dd)) - datetime.datetime(int(yyyy), 1, 1)).days + 1
 
     # Now we can calculate the Sun Zenith Angle (SZArad):
     h = (12.0 - (LST)) / 12.0 * np.pi
