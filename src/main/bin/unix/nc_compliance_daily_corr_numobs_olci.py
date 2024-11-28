@@ -25,7 +25,7 @@ LON_MAX_VALID = 180.0
 #############################################################################
 
 
-def cleanup_inconsistencies(dst, src_hoaps, sensor, res, single_sensors_list):
+def cleanup_inconsistencies(dst, src_hoaps, sensor, res, year, month, day, single_sensors_list):
     """
     Final cleanup of inconsistencies caused by L3 resampling problems such as Moiree effects, distortion near poles etc.
     :param dst:
@@ -62,7 +62,7 @@ def cleanup_inconsistencies(dst, src_hoaps, sensor, res, single_sensors_list):
     # set tcwv_quality_flag to 3:
     ncu.reset_polar(dst.variables['tcwv_quality_flag'], tcwv_arr, lat_arr_3d, surface_type_arr, atm_cond_arr, 3)
 
-    # set num_obs to 0 over oceanfor NIR sensors:
+    # set num_obs to 0 over ocean for NIR sensors:
     for single_sensor in single_sensors_list:
         if 'num_obs_' + single_sensor in dst.variables and single_sensor != 'CMSAF_HOAPS':
             ncu.reset_ocean_num_obs_nir(sensor, dst.variables['num_obs_' + single_sensor], surface_type_arr, 0)
@@ -77,6 +77,8 @@ def cleanup_inconsistencies(dst, src_hoaps, sensor, res, single_sensors_list):
         ncu.reset_ocean_cdr1(dst.variables['tcwv_ran'], surface_type_arr, np.nan)
         # set tcwv_quality_flag to 3:
         ncu.reset_ocean_cdr1(dst.variables['tcwv_quality_flag'], surface_type_arr, 3)
+        # set atmospheric_conditions_flag to 0:
+        ncu.reset_ocean_cdr1(dst.variables['atmospheric_conditions_flag'], surface_type_arr, 0)
     else:
         wvpa_arr_src = np.array(src_hoaps.variables['wvpa'])
         wvpa_arr = ncu.upscale_auxdata(wvpa_arr_src, res)
@@ -89,7 +91,27 @@ def cleanup_inconsistencies(dst, src_hoaps, sensor, res, single_sensors_list):
         ncu.reset_ocean_cdr2(dst.variables['tcwv_ran'], wvpa_arr, surface_type_arr, np.nan)
         # set tcwv_quality_flag to 3:
         ncu.reset_ocean_cdr2(dst.variables['tcwv_quality_flag'], wvpa_arr, surface_type_arr, 3)
+        # set atmospheric_conditions_flag to 0:
+        ncu.reset_ocean_cdr2(dst.variables['atmospheric_conditions_flag'], wvpa_arr, surface_type_arr, 0)
 
+    # todo: reset tcwv, stdv, tcwv_err, tcwv_ran, num_obs_*, tcwv_quality_flag over land for SZA > 75.0
+    sza_arr = ncu.get_sza_from_date(year, month, day, lat_arr_3d)
+    tcwv_ran_arr = np.array(dst.variables['tcwv_ran'])
+
+    # set tcwv, stdv, and error terms to nan:
+    ncu.clean_known_artefacts(dst.variables['tcwv'], surface_type_arr, sza_arr, tcwv_ran_arr, np.nan, tcwv_ran_min=0.0)
+    ncu.clean_known_artefacts(dst.variables['stdv'], surface_type_arr, sza_arr, tcwv_ran_arr, np.nan, tcwv_ran_min=0.0)
+    ncu.clean_known_artefacts(dst.variables['tcwv_err'], surface_type_arr, sza_arr, tcwv_ran_arr, np.nan, tcwv_ran_min=0.0)
+    # set atmospheric_conditions_flag to 0:
+    ncu.clean_known_artefacts(dst.variables['atmospheric_conditions_flag'], surface_type_arr, sza_arr, tcwv_ran_arr, 0, tcwv_ran_min=0.0)
+    # set tcwv_quality_flag to 3:
+    ncu.clean_known_artefacts(dst.variables['tcwv_quality_flag'], surface_type_arr, sza_arr, tcwv_ran_arr, 3, tcwv_ran_min=0.0)
+    # set num_obs to 0 over ocean for NIR sensors:
+    for single_sensor in single_sensors_list:
+        if 'num_obs_' + single_sensor in dst.variables and single_sensor != 'CMSAF_HOAPS':
+            ncu.clean_known_artefacts(dst.variables['num_obs_' + single_sensor], surface_type_arr, sza_arr, tcwv_ran_arr, 0, tcwv_ran_min=0.0)
+
+    ncu.clean_known_artefacts(dst.variables['tcwv_ran'], surface_type_arr, sza_arr, tcwv_ran_arr, np.nan, tcwv_ran_min=0.0)
 
 def update_tcwv_quality_flag_for_hoaps(dst, src_hoaps, sensor, res):
     """
@@ -400,15 +422,7 @@ def correct_olci_numobs(dst, ds_olci_tcwv_counts, sensor):
         num_obs_olci_corr_arr = np.where(_cond2 & ~_cond1, 9.0, num_obs_olci_corr_arr)
         num_obs_olci_corr_arr = np.where(~_cond2 & ~_cond1, 0.0, num_obs_olci_corr_arr)
 
-        dst.variables[num_obs_var_name][0, :, :] = num_obs_olci_corr_arr[:, :]
-
-        # testval = np.array(dst.variables['num_obs_OLCI_A'])[0][1240][4760]
-        # print('testval : ' + str(testval))
-        # print('tmparr[0][1240][4760] : ' + str(tmparr[0][1240][4760]))
-        # print('bla')
-
-
-def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, single_sensors_list):
+def copy_and_rename_variables_from_source_product(dst, src, sensor, single_sensors_list):
     """
     Copies variables from source product, renames to correct names, and sets attributes and data...
     For daily non-merged we need to
@@ -537,13 +551,6 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, 
                              'A coordinate reference system (CRS) defines how the georeferenced spatial data relates '
                              'to real locations on the Earth\'s surface ')
             dstvar[:] = variable[:]
-
-        # if has_latlon:
-        #     if has_latlon:
-        #         if name == 'lat':
-        #             ncu.create_nc_lat_variable(dst, variable)
-        #     if name == 'lon':
-        #         ncu.create_nc_lon_variable(dst, variable)
 
     # Finally, add the num_obs_* variables which should be in the source product according to observation date,
     # but maybe are not because single sensor(s) are missing.
@@ -689,7 +696,7 @@ def run(args):
                        fill_value=np.array([-128], 'b'))
 
     # Copy variables from source product and rename to correct names. Set attributes and data...
-    copy_and_rename_variables_from_source_product(dst, src, has_latlon, sensor, maximum_single_sensors_list)
+    copy_and_rename_variables_from_source_product(dst, src, sensor, maximum_single_sensors_list)
 
     # Correct OLCI num_obs...
     correct_olci_numobs(dst, ds_olci_a_tcwv_counts, 'OLCI_A')
@@ -721,7 +728,7 @@ def run(args):
         set_errors_for_hoaps(dst, src, res)
 
     # Cleanup inconsistencies of final arrays at this point:
-    cleanup_inconsistencies(dst, ds_hoaps, sensor, res, maximum_single_sensors_list)
+    cleanup_inconsistencies(dst, ds_hoaps, sensor, res, year, month, day, maximum_single_sensors_list)
     var_tcwv_arr = np.array(dst.variables['tcwv'])
     dst.variables['tcwv'].setncattr('actual_range', np.array([np.nanmin(var_tcwv_arr), np.nanmax(var_tcwv_arr)], 'f4'))
 

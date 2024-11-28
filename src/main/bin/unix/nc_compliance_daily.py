@@ -677,15 +677,6 @@ def run(args):
     var_tcwv_arr = np.array(dst.variables['tcwv'])
     dst.variables['tcwv'].setncattr('actual_range', np.array([np.nanmin(var_tcwv_arr), np.nanmax(var_tcwv_arr)], 'f4'))
 
-    # test:
-    # dstvar = dst.variables['num_obs_MODIS_TERRA']
-    # arr = np.array(dstvar)
-    # surface_type_flag_arr = np.array(src.variables['surface_type_flags_majority'])
-    # arr[0][np.where((sza_arr > 75.0) & (surface_type_flag_arr != 2))] = 0
-    #arr[0][41][275] = 66666  # 0,y,x
-    # dstvar[:, :] = arr
-    # end test
-
     # Close files...
     print("Closing L3 input file...", file=sys.stderr)
     src.close()
@@ -698,7 +689,7 @@ def run(args):
         print("Closing HOAPS L3 file...", file=sys.stderr)
         ds_hoaps.close()
 
-    print("FINISHED nc-compliance-py-process_phase1.py...", file=sys.stderr)
+    print("FINISHED nc-compliance-daily.py...", file=sys.stderr)
 
 
 if __name__ == "__main__":
