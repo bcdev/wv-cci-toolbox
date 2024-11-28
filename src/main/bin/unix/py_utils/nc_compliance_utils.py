@@ -807,7 +807,7 @@ def get_sza_from_doy(doy, lat):
     # Now we can calculate the Sun Zenith Angle (SZArad):
     h = (12.0 - (LST)) / 12.0 * np.pi
     delta = -23.45 * (np.pi / 180.0) * np.cos(2 * np.pi / 365.0 * (doy + 10))
-    SZArad = np.acos(np.sin(latitude) * np.sin(delta) + np.cos(latitude) * np.cos(delta) * np.cos(h))
+    SZArad = np.arccos(np.sin(latitude) * np.sin(delta) + np.cos(latitude) * np.cos(delta) * np.cos(h))
 
     return SZArad * RTOD
 
@@ -834,7 +834,7 @@ def get_sza_from_date(yyyy, mm, dd, lat):
     # Now we can calculate the Sun Zenith Angle (SZArad):
     h = (12.0 - (LST)) / 12.0 * np.pi
     delta = -23.45 * (np.pi / 180.0) * np.cos(2 * np.pi / 365.0 * (doy + 10))
-    SZArad = np.acos(np.sin(latitude) * np.sin(delta) + np.cos(latitude) * np.cos(delta) * np.cos(h))
+    SZArad = np.arccos(np.sin(latitude) * np.sin(delta) + np.cos(latitude) * np.cos(delta) * np.cos(h))
 
     return SZArad * RTOD
 
