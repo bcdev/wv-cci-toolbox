@@ -115,6 +115,25 @@ def reset_ocean_num_obs_nir(sensor, dst_var, surface_type_array, reset_value):
     dst_var[0, :, :] = tmp_array[0, :, :]
 
 
+def clean_known_artefacts(dst_var, surface_type_array, sza_array, tcwv_ran_arr, reset_value, sza_max=75.0, tcwv_ran_min=0.05):
+    """
+    Resets known artefacts :
+      - remaining TCWV NIR values for SZA > 75.0 because of MODIS input with locally missing geolocation
+      - remaining TCWV NIR values anywhere because of MODIS input with locally missing geolocation:
+        identify by very small tcwv_ran (todo: to be confirmed)
+    :param dst_var:
+    :param surface_type_array:
+    :param sza_array:
+    :param tcwv_ran_arr:
+    :param reset_value:
+    :return:
+    """
+    dst_var_arr = np.array(dst_var)
+    tmp_array = np.copy(dst_var_arr)
+    tmp_array[np.where(((sza_array > sza_max) | (tcwv_ran_arr < tcwv_ran_min)) & (surface_type_array != 1))] = reset_value
+    dst_var[0, :, :] = tmp_array[0, :, :]
+
+
 def reset_ocean_cdr1(dst_var, surface_type_array, reset_value):
     """
     Resets everything to nan over ocean, seaice, coastlines, partly seaice in case of CDR-1 (no HOAPS, only land)
@@ -769,26 +788,6 @@ def apply_cloud_buffer(dst, maximum_single_sensors_list):
                 # reset_var_to_value(dst.variables[name], partly_indices, 0)
                 reset_var_to_value(dst.variables[name], total_indices, 0)
 
-# /**
-# * Computes solar zenith angle at local noon as function of Geoposition and DoY
-# *
-# * @param geoPos - geoposition
-# * @param doy    - day of year
-# * @return sza - in degrees!!
-# */
-# public static double computeSza(GeoPos geoPos, int doy) {
-#
-#     final double latitude = geoPos.getLat() * MathUtils.DTOR;
-#
-# // # To emulate MODIS products, set fixed LST = 12.00
-# final double LST = 12.0;
-# // # Now we can calculate the Sun Zenith Angle (SZArad):
-# final double h = (12.0 - (LST)) / 12.0 * Math.PI;
-# final double delta = -23.45 * (Math.PI / 180.0) * Math.cos(2 * Math.PI / 365.0 * (doy + 10));
-# double SZArad = Math.acos(Math.sin(latitude) * Math.sin(delta) + Math.cos(latitude) * Math.cos(delta) * Math.cos(h));
-#
-# return SZArad * MathUtils.RTOD;
-# }
 
 def get_sza_from_doy(doy, lat):
     """
