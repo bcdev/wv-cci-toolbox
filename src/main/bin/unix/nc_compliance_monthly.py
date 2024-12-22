@@ -250,12 +250,6 @@ def copy_and_rename_variables_from_source_product(dst, src, has_latlon, single_s
                              'to real locations on the Earth\'s surface ')
             dstvar[:] = variable[:]
 
-        if has_latlon:
-            if name == 'lat':
-                ncu.create_nc_lat_variable(dst, variable)
-            if name == 'lon':
-                ncu.create_nc_lon_variable(dst, variable)
-
 
 def init_nc_compliant_product(datestring, res, sensor, version):
     """
