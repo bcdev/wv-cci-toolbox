@@ -422,6 +422,8 @@ def correct_olci_numobs(dst, ds_olci_tcwv_counts, sensor):
         num_obs_olci_corr_arr = np.where(_cond2 & ~_cond1, 9.0, num_obs_olci_corr_arr)
         num_obs_olci_corr_arr = np.where(~_cond2 & ~_cond1, 0.0, num_obs_olci_corr_arr)
 
+        dst.variables[num_obs_var_name][0, :, :] = num_obs_olci_corr_arr[:, :]
+
 def copy_and_rename_variables_from_source_product(dst, src, sensor, single_sensors_list):
     """
     Copies variables from source product, renames to correct names, and sets attributes and data...
