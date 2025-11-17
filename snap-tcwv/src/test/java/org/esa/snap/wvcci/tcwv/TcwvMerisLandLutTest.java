@@ -87,7 +87,7 @@ public class TcwvMerisLandLutTest {
         assertEquals(5, dimensions.get(10).getLength());
         assertEquals("jaco", dimensions.get(11).getFullName());
         assertEquals(2, dimensions.get(11).getLength());
-        assertEquals("cor_two", dimensions.get(12).getFullName());
+        assertEquals("cor/cor_two", dimensions.get(12).getFullName());
         assertEquals(2, dimensions.get(12).getLength());
 
         assertNotNull(variables);

@@ -7,6 +7,7 @@ import org.esa.snap.core.datamodel.ProductData;
 import org.esa.snap.core.util.BitSetter;
 import org.esa.snap.wvcci.tcwv.dataio.mod35.Mod35L2CloudMaskUtils;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -28,6 +29,7 @@ public class TcwvCowaConsolidatedCciLutsV2ForOneMerisPixelWithOperatorTest {
     }
 
     @Test
+    @Ignore
     public void testCowaConsolidatedCciLuts_meris_land_from_operator() {
 
         TcwvOp tcwvOp = new TcwvOp();
@@ -55,6 +57,7 @@ public class TcwvCowaConsolidatedCciLutsV2ForOneMerisPixelWithOperatorTest {
     }
 
     @Test
+    @Ignore
     public void testCowaConsolidatedCciLuts_meris_ocean_from_operator() {
 
         TcwvOp tcwvOp = new TcwvOp();

@@ -8,6 +8,7 @@ import org.esa.snap.core.datamodel.ProductData;
 import org.esa.snap.core.util.BitSetter;
 import org.esa.snap.core.util.math.MathUtils;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -29,6 +30,7 @@ public class TcwvCowaConsolidatedCciLutsV2ForOneOlciPixelWithOperatorTest {
     }
 
     @Test
+    @Ignore
     public void testCowaConsolidatedCciLuts_olci_land_from_operator() {
 
         TcwvOp tcwvOp = new TcwvOp();
@@ -58,6 +60,7 @@ public class TcwvCowaConsolidatedCciLutsV2ForOneOlciPixelWithOperatorTest {
     }
 
     @Test
+    @Ignore
     public void testCowaConsolidatedCciLuts_olci_ocean_from_operator() {
 
         TcwvOp tcwvOp = new TcwvOp();

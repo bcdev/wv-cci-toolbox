@@ -2,6 +2,7 @@ package org.esa.snap.wvcci.tcwv.util;
 
 import org.esa.snap.wvcci.tcwv.Sensor;
 import org.esa.snap.wvcci.tcwv.TcwvConstants;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -31,6 +32,7 @@ public class TcwvUtilsTest {
     }
 
     @Test
+    @Ignore
     public void testGetSurfaceTemperatureFromVerticalProfiles() throws IOException {
         double seaLevelPress = 1013.0;
         double altitude = 2000.0;

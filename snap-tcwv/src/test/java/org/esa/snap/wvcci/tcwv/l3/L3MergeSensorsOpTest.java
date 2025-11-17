@@ -37,12 +37,6 @@ public class L3MergeSensorsOpTest {
         assertEquals("ESACCI.Tcwv.L3.Merge.Nir.Hoaps2", operatorSpi.getOperatorAlias());
         assertNotNull(operatorSpi.getOperatorDescriptor());
         assertSame(operatorSpi.getOperatorClass(), operatorSpi.getOperatorDescriptor().getOperatorClass());
-
-        operatorSpi = registry.getOperatorSpi("ESACCI.Tcwv.L3.Merge.Nir.Hoaps.TEST");
-        assertNotNull(operatorSpi);
-        assertEquals("ESACCI.Tcwv.L3.Merge.Nir.Hoaps.TEST", operatorSpi.getOperatorAlias());
-        assertNotNull(operatorSpi.getOperatorDescriptor());
-        assertSame(operatorSpi.getOperatorClass(), operatorSpi.getOperatorDescriptor().getOperatorClass());
     }
 
     @Test

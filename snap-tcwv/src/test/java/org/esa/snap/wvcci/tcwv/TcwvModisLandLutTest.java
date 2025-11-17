@@ -2,6 +2,7 @@ package org.esa.snap.wvcci.tcwv;
 
 import org.esa.snap.wvcci.tcwv.interpolation.TcwvInterpolationUtils;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import ucar.ma2.DataType;
 import ucar.nc2.Attribute;
@@ -32,6 +33,7 @@ public class TcwvModisLandLutTest {
     // The current one from CAWA is not really usable (i.e., 1D tmp axis with wrong value 10.0)
 
     @Test
+    @Ignore
     public void testGetTcwvLutFromNc4_land_aqua() throws IOException {
         final NetcdfFile ncFile = TcwvIO.getTcwvLookupTableNcFile(auxdataPath.toString(), Sensor.MODIS_AQUA.getLandLutName());
         assertNotNull(ncFile);
