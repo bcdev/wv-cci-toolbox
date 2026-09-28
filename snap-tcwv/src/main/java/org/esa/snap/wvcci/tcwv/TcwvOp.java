@@ -15,6 +15,7 @@ import org.esa.snap.wvcci.tcwv.dataio.mod35.ModisMod35L2Constants;
 import org.esa.snap.wvcci.tcwv.interpolation.JacobiFunction;
 import org.esa.snap.wvcci.tcwv.interpolation.TcwvInterpolation;
 import org.esa.snap.wvcci.tcwv.util.TcwvUtils;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
 
 import java.awt.*;
 import java.io.IOException;
@@ -831,23 +832,24 @@ public class TcwvOp extends Operator {
 
         ProductUtils.copyTiePointGrids(sourceProduct, targetProduct);
 
-        final TiePointGrid latTpg = targetProduct.getTiePointGrid(sensor.getTpgNames()[4]);
-        final TiePointGrid lonTpg = targetProduct.getTiePointGrid(sensor.getTpgNames()[5]);
-        if (latTpg != null && lonTpg != null) {
-            final TiePointGeoCoding tiePointGeoCoding = new TiePointGeoCoding(latTpg, lonTpg);
-            targetProduct.setSceneGeoCoding(tiePointGeoCoding);
-        } else {
-            // MODIS
-            final Band latBand = sourceProduct.getBand(sensor.getTpgNames()[4]);
-            final Band lonBand = sourceProduct.getBand(sensor.getTpgNames()[5]);
-            if (latBand != null && lonBand != null &&
-                    latBand.getProduct().getSceneRasterWidth() >= 2 &&
-                    latBand.getProduct().getSceneRasterHeight() >= 2 &&
-                    lonBand.getProduct().getSceneRasterWidth() >= 2 &&
-                    lonBand.getProduct().getSceneRasterHeight() >= 2) {
-                targetProduct.setSceneGeoCoding(new PixelGeoCoding(latBand, lonBand, null, 5));
-            }
-        }
+//        final TiePointGrid latTpg = targetProduct.getTiePointGrid(sensor.getTpgNames()[4]);
+//        final TiePointGrid lonTpg = targetProduct.getTiePointGrid(sensor.getTpgNames()[5]);
+//        if (latTpg != null && lonTpg != null) {
+//            final TiePointGeoCoding tiePointGeoCoding = new TiePointGeoCoding(latTpg, lonTpg);
+//            targetProduct.setSceneGeoCoding(tiePointGeoCoding);
+//        } else {
+//            // MODIS
+//            final Band latBand = sourceProduct.getBand(sensor.getTpgNames()[4]);
+//            final Band lonBand = sourceProduct.getBand(sensor.getTpgNames()[5]);
+//            if (latBand != null && lonBand != null &&
+//                    latBand.getProduct().getSceneRasterWidth() >= 2 &&
+//                    latBand.getProduct().getSceneRasterHeight() >= 2 &&
+//                    lonBand.getProduct().getSceneRasterWidth() >= 2 &&
+//                    lonBand.getProduct().getSceneRasterHeight() >= 2) {
+//                targetProduct.setSceneGeoCoding(new PixelGeoCoding(latBand, lonBand, null, 5));
+//            }
+//        }
+        ProductUtils.copyGeoCoding(sourceProduct, targetProduct);
 
         setTargetProduct(targetProduct);
     }
