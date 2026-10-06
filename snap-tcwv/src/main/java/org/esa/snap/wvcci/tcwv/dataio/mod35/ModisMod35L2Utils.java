@@ -1,22 +1,29 @@
 package org.esa.snap.wvcci.tcwv.dataio.mod35;
 
-import ncsa.hdf.hdflib.HDFException;
-import ncsa.hdf.object.Attribute;
-import ncsa.hdf.object.Datatype;
-import ncsa.hdf.object.h4.H4Datatype;
-import ncsa.hdf.object.h4.H4Group;
-import ncsa.hdf.object.h4.H4SDS;
+//import ncsa.hdf.object.Attribute;
+//import ncsa.hdf.object.Datatype;
+//import ncsa.hdf.object.h4.H4Datatype;
+//import ncsa.hdf.object.h4.H4Group;
+//import ncsa.hdf.object.h4.H4SDS;
+
+import hdf.object.Attribute;
+import hdf.object.Datatype;
+import hdf.object.Group;
+import hdf.object.HObject;
+import hdf.object.h4.H4Datatype;
+import hdf.object.h4.H4Group;
+import hdf.object.h4.H4SDS;
 import org.esa.snap.core.datamodel.*;
+import org.esa.snap.core.gpf.OperatorException;
 import org.esa.snap.core.util.SystemUtils;
 
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.TreeNode;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * MODIS MOD35 utility methods
@@ -34,13 +41,14 @@ class ModisMod35L2Utils {
      */
     static double getDoubleAttributeValue(List<Attribute> metadata, String attributeName) {
         double doubleAttr = Double.NaN;
-        for (int i = 0; i < metadata.size(); i++) {
-            Attribute attribute = metadata.get(i);
-            if (attribute.getName().equals(attributeName)) {
+        for (Attribute attribute : metadata) {
+            if (attribute.getAttributeName().equals(attributeName)) {
                 try {
                     doubleAttr = Double.parseDouble(getAttributeValue(attribute));
                 } catch (NumberFormatException e) {
                     SystemUtils.LOG.log(Level.WARNING, "Cannot parse float attribute: " + e.getMessage());
+                } catch (Exception e2) {
+                    throw new RuntimeException(e2);
                 }
             }
         }
@@ -53,8 +61,8 @@ class ModisMod35L2Utils {
      * @param node - the data node
      * @return - the data set (H4SDS)
      */
-    static H4SDS getH4ScalarDS(TreeNode node) {
-        H4SDS scalarDS = (H4SDS) ((DefaultMutableTreeNode) node).getUserObject();
+    static H4SDS getH4ScalarDS(HObject node) {
+        H4SDS scalarDS = (H4SDS) node;
         scalarDS.open();
         scalarDS.init();
         return scalarDS;
@@ -63,66 +71,71 @@ class ModisMod35L2Utils {
     /**
      * Provides a HDF4 scalar dataset corresponding to 'Cloud_Mask' node
      *
-     * @param node - the data node
+     * @param node            - the data node
      * @param byteSegmentSize - number of byte segments needed (max. 6)
-     * @param productHeight - productHeight
-     * @param productWidth - productWidth
-     *
+     * @param productHeight   - productHeight
+     * @param productWidth    - productWidth
      * @return - the data set (H4SDS)
-     * @throws HDFException -
      */
-    static H4SDS getH4ScalarDSForCloudMask(TreeNode node,
-                                                  int byteSegmentSize,
-                                                  int productHeight, int productWidth) throws HDFException {
-        H4SDS scalarDS = (H4SDS) ((DefaultMutableTreeNode) node).getUserObject();
-        scalarDS.open();
-        scalarDS.init();
-        long[] selectedDims = scalarDS.getSelectedDims();
-        selectedDims[0] = byteSegmentSize;
-        selectedDims[1] = productHeight;
-        selectedDims[2] = productWidth;
-        scalarDS.read();
-        return scalarDS;
+    static H4SDS getH4ScalarDSForCloudMask(HObject node,
+                                           int byteSegmentSize,
+                                           int productHeight, int productWidth) {
+        try {
+            H4SDS scalarDS = (H4SDS) node;
+            scalarDS.open();
+            scalarDS.init();
+            long[] selectedDims = scalarDS.getSelectedDims();
+            selectedDims[0] = byteSegmentSize;
+            selectedDims[1] = productHeight;
+            selectedDims[2] = productWidth;
+            scalarDS.read();
+            return scalarDS;
+        } catch (Exception e) {
+            throw new OperatorException("Cannot read HDF dataset for cloud mask: " + node.toString());
+        }
     }
 
     /**
      * Provides a HDF4 scalar dataset corresponding to 'Quality_Assurance' node
      *
-     * @param node - the data node
+     * @param node                - the data node
      * @param qualityAssuranceDim - number of quality assurance dimensions needed (usually 10)
-     * @param productHeight - productHeight
-     * @param productWidth - productWidth
-     *
+     * @param productHeight       - productHeight
+     * @param productWidth        - productWidth
      * @return - the data set (H4SDS)
-     * @throws HDFException -
      */
-    static H4SDS getH4ScalarDSForQualityAssurance(TreeNode node,
+    static H4SDS getH4ScalarDSForQualityAssurance(HObject node,
                                                   int qualityAssuranceDim,
-                                                  int productHeight, int productWidth) throws HDFException {
-        H4SDS scalarDS = (H4SDS) ((DefaultMutableTreeNode) node).getUserObject();
-        scalarDS.open();
-        scalarDS.init();
-        long[] selectedDims = scalarDS.getSelectedDims();
-        selectedDims[0] = productHeight;
-        selectedDims[1] = productWidth;
-        selectedDims[2] = qualityAssuranceDim;
-        scalarDS.read();
-        return scalarDS;
+                                                  int productHeight, int productWidth) {
+        try {
+//            H4SDS scalarDS = (H4SDS) ((DefaultMutableTreeNode) node).getUserObject();
+            H4SDS scalarDS = (H4SDS) node;
+            scalarDS.open();
+            scalarDS.init();
+            long[] selectedDims = scalarDS.getSelectedDims();
+            selectedDims[0] = productHeight;
+            selectedDims[1] = productWidth;
+            selectedDims[2] = qualityAssuranceDim;
+            scalarDS.read();
+            return scalarDS;
+        } catch (Exception e) {
+            throw new OperatorException("Cannot read HDF dataset for quality assurance: " + node.toString());
+        }
     }
 
     /**
-     * Extracts a HDF metadata element and adds accordingly to given product
+     * Extracts an HDF metadata element and adds accordingly to given product
      *
      * @param metadataAttributes  - the HDF metadata attributes
      * @param parentElement       - the parent metadata element
      * @param metadataElementName - the element name
      */
     static void addMetadataElementWithAttributes(List<Attribute> metadataAttributes,
-                                                        final MetadataElement parentElement,
-                                                        String metadataElementName) {
+                                                 final MetadataElement parentElement,
+                                                 String metadataElementName) throws Exception {
         final MetadataElement metadataElement = new MetadataElement(metadataElementName);
         for (Attribute attribute : metadataAttributes) {
-            metadataElement.addAttribute(new MetadataAttribute(attribute.getName(),
+            metadataElement.addAttribute(new MetadataAttribute(attribute.getAttributeName(),
                     ProductData.createInstance(ModisMod35L2Utils.getAttributeValue(attribute)), true));
         }
         parentElement.addElement(metadataElement);
@@ -134,13 +147,16 @@ class ModisMod35L2Utils {
      * @param product     - the product
      * @param parentNode  - the HDF parent node
      * @param elementName - the metadata element name
-     * @throws HDFException -
      */
-    static void addRootMetadataElement(Product product, DefaultMutableTreeNode parentNode, String elementName)
-            throws HDFException {
-        final H4Group parentGeometryGroup = (H4Group) parentNode.getUserObject();
-        final List parentGeometryMetadata = parentGeometryGroup.getMetadata();
-        ModisMod35L2Utils.addMetadataElementWithAttributes(parentGeometryMetadata, product.getMetadataRoot(), elementName);
+    static void addRootMetadataElement(Product product, HObject parentNode, String elementName) {
+        try {
+            final Group parent = ((H4Group) parentNode).getParent();
+            final H4Group parentGeometryGroup = (H4Group) parent;
+            final List parentGeometryMetadata = parentGeometryGroup.getMetadata();
+            ModisMod35L2Utils.addMetadataElementWithAttributes(parentGeometryMetadata, product.getMetadataRoot(), elementName);
+        } catch (Exception e) {
+            Logger.getGlobal().log(Level.SEVERE, "Cannot add HDF root metadata element: " + elementName);
+        }
     }
 
     /**
@@ -164,14 +180,17 @@ class ModisMod35L2Utils {
      */
     static ProductData getDataBufferForH4DataRead(int datatypeClass, int width, int height) {
         switch (datatypeClass) {
-            case H4Datatype.CLASS_CHAR:
+            case H4Datatype.CLASS_CHAR -> {
                 return ProductData.createInstance(new byte[width * height]);
-            case H4Datatype.CLASS_FLOAT:
+            }
+            case H4Datatype.CLASS_FLOAT -> {
                 return ProductData.createInstance(new float[width * height]);
-            case H4Datatype.CLASS_INTEGER:
+            }
+            case H4Datatype.CLASS_INTEGER -> {
                 return ProductData.createInstance(new short[width * height]);
-            default:
-                break;
+            }
+            default -> {
+            }
         }
         return null;
     }
@@ -180,8 +199,7 @@ class ModisMod35L2Utils {
      * Provides the size of a HDF4 dimension from the StructMetadata.0 element
      *
      * @param structMetadata0String - the whole StructMetadata.0 as a string
-     * @param dimensionName - name of the dimension
-     *
+     * @param dimensionName         - name of the dimension
      * @return the dimension size (int)
      */
     static int getDimensionSizeFromMetadata(String structMetadata0String, String dimensionName) {
@@ -189,7 +207,7 @@ class ModisMod35L2Utils {
 
         for (int i = 0; i < lines.length - 1; i++) {
             if (lines[i].trim().equals("DimensionName=\"" + dimensionName + "\"")) { // e.g. "Cell_Across_Swath_1km"
-                return Integer.parseInt(lines[i+1].trim().substring(5));             // e.g. 'Size=1354'
+                return Integer.parseInt(lines[i + 1].trim().substring(5));             // e.g. 'Size=1354'
             }
         }
         return -1;
@@ -199,11 +217,10 @@ class ModisMod35L2Utils {
      * Provides the product date from year, doy, hour, min, sec
      *
      * @param year - year
-     * @param doy - day of year
+     * @param doy  - day of year
      * @param hour - hour
-     * @param min - minute
-     * @param sec - seconds
-     *
+     * @param min  - minute
+     * @param sec  - seconds
      * @return product date as {@link ProductData.UTC}
      */
     static ProductData.UTC getProductDate(int year, int doy, int hour, int min, int sec) {
@@ -220,22 +237,23 @@ class ModisMod35L2Utils {
         try {
             return ProductData.UTC.parse(stopFormatted, pattern);
         } catch (ParseException e) {
-            e.printStackTrace();
+            Logger.getGlobal().log(Level.SEVERE, "Cannot parse product date.");
         }
         return null;
     }
 
-    ////// private methods //////////////////////
+    /// /// private methods //////////////////////
 
     private static String getStringAttributeValue(List<Attribute> metadata, String attributeName) {
-        for (int i = 0; i < metadata.size(); i++) {
-            Attribute attribute = metadata.get(i);
-            if (attribute.getName().equals(attributeName)) {
+        for (Attribute attribute : metadata) {
+            if (attribute.getAttributeName().equals(attributeName)) {
                 try {
                     return getAttributeValue(attribute);
                 } catch (NumberFormatException e) {
                     SystemUtils.LOG.log(Level.WARNING, "Cannot parse string attribute: " +
                             e.getMessage());
+                } catch (Exception e2) {
+                    throw new RuntimeException(e2);
                 }
             }
         }
@@ -243,46 +261,47 @@ class ModisMod35L2Utils {
         return "N/A";
     }
 
-    private static String getAttributeValue(Attribute attribute) {
+    private static String getAttributeValue(Attribute attribute) throws Exception {
         String result = "";
-        switch (attribute.getType().getDatatypeClass()) {
+        final Object attributeData = attribute.getAttributeData();
+        switch (attribute.getAttributeDatatype().getDatatypeClass()) {
             case Datatype.CLASS_INTEGER:
-                if (attribute.getValue().getClass() == long[].class) {
-                    long[] ivals = (long[]) attribute.getValue();
+                if (attributeData.getClass() == long[].class) {
+                    long[] ivals = (long[]) attributeData;
                     for (long ival : ivals) {
-                        result = result.concat(Long.toString(ival) + " ");
+                        result = result.concat(ival + " ");
                     }
                 }
-                if (attribute.getValue().getClass() == int[].class) {
-                    int[] ivals = (int[]) attribute.getValue();
+                if (attributeData.getClass() == int[].class) {
+                    int[] ivals = (int[]) attributeData;
                     for (int ival : ivals) {
-                        result = result.concat(Integer.toString(ival) + " ");
+                        result = result.concat(ival + " ");
                     }
                 }
-                if (attribute.getValue().getClass() == short[].class) {
-                    short[] ivals = (short[]) attribute.getValue();
+                if (attributeData.getClass() == short[].class) {
+                    short[] ivals = (short[]) attributeData;
                     for (short ival : ivals) {
-                        result = result.concat(Short.toString(ival) + " ");
+                        result = result.concat(ival + " ");
                     }
                 }
                 break;
             case Datatype.CLASS_FLOAT:
-                if (attribute.getValue().getClass() == float[].class) {
-                    float[] fvals = (float[]) attribute.getValue();
+                if (attributeData.getClass() == float[].class) {
+                    float[] fvals = (float[]) attributeData;
                     for (float fval : fvals) {
-                        result = result.concat(Float.toString(fval) + " ");
+                        result = result.concat(fval + " ");
                     }
                 }
-                if (attribute.getValue().getClass() == double[].class) {
-                    double[] dvals = (double[]) attribute.getValue();
+                if (attributeData.getClass() == double[].class) {
+                    double[] dvals = (double[]) attributeData;
                     for (double dval : dvals) {
-                        result = result.concat(Double.toString(dval) + " ");
+                        result = result.concat(dval + " ");
                     }
                 }
                 break;
             case Datatype.CLASS_STRING:
             case Datatype.CLASS_CHAR:
-                String[] svals = (String[]) attribute.getValue();
+                String[] svals = (String[]) attributeData;
                 for (String sval : svals) {
                     result = result.concat(sval + " ");
                 }

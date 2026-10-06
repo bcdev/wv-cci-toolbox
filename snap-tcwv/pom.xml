@@ -88,18 +88,7 @@
             <groupId>ncsa.hdf</groupId>
             <artifactId>lib-hdf</artifactId>
         </dependency>
-        <dependency>
-            <groupId>ncsa.hdf</groupId>
-            <artifactId>jhdfobj</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ncsa.hdf</groupId>
-            <artifactId>jhdf4obj</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ncsa.hdf</groupId>
-            <artifactId>jhdf5obj</artifactId>
-        </dependency>
+
     </dependencies>
 
     <build>

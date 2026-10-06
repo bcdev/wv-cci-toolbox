@@ -14,11 +14,13 @@
 
 package org.esa.snap.wvcci.tcwv.dataio.mod35;
 
-import ncsa.hdf.object.Dataset;
-import ncsa.hdf.object.Datatype;
-import ncsa.hdf.object.FileFormat;
-import ncsa.hdf.object.Group;
-import ncsa.hdf.object.h4.H4File;
+import hdf.object.Dataset;
+import hdf.object.Datatype;
+import hdf.object.FileFormat;
+import hdf.object.Group;
+import hdf.object.h4.H4File;
+
+import javax.swing.tree.TreeNode;
 
 /**
  * <p>
@@ -40,10 +42,10 @@ import ncsa.hdf.object.h4.H4File;
  * @version 2.4
  */
 public class Hdf4ReadTestMain {
-    private static String fname  = "H4DatasetRead.hdf";
-    private static long[] dims2D = { 20, 10 };
+    private static final String fname  = "H4DatasetRead.hdf";
+    private static final long[] dims2D = { 20, 10 };
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
         // create the file and add groups and dataset into the file
         createFile();
 
@@ -65,11 +67,12 @@ public class Hdf4ReadTestMain {
 
         // open the file and retrieve the file structure
         testFile.open();
-        Group root = (Group) ((javax.swing.tree.DefaultMutableTreeNode) testFile.getRootNode()).getUserObject();
+        TreeNode testFileRootNode = (TreeNode) testFile.getRootObject();
+        Group root = (Group) testFileRootNode;
 
-        // retrieve athe dataset "2D 32-bit integer 20x10"
-        Dataset dataset = (Dataset) root.getMemberList().get(0);
-        dataset.hasAttribute();
+        // retrieve the dataset "2D 32-bit integer 20x10"
+        Dataset dataset = (Dataset) root.getMemberList().getFirst();
+//        dataset.hasAttribute();
         int[] dataRead = (int[]) dataset.read();
 
         // print out the data values
@@ -106,7 +109,7 @@ public class Hdf4ReadTestMain {
     }
 
     /**
-     * create the file and add groups ans dataset into the file, which is the
+     * create the file and add groups and dataset into the file, which is the
      * same as javaExample.H4DatasetCreate
      *
      * @throws Exception -
@@ -130,7 +133,8 @@ public class Hdf4ReadTestMain {
 
         // open the file and retrieve the root group
         testFile.open();
-        Group root = (Group) ((javax.swing.tree.DefaultMutableTreeNode) testFile.getRootNode()).getUserObject();
+        TreeNode testFileRootNode = (TreeNode) testFile.getRootObject();
+        Group root = (Group) testFileRootNode;
 
         // set the data values
         int[] dataIn = new int[20 * 10];
@@ -144,7 +148,6 @@ public class Hdf4ReadTestMain {
         Datatype dtype = testFile.createDatatype(Datatype.CLASS_INTEGER, 4, Datatype.NATIVE, Datatype.NATIVE);
         Dataset dataset = testFile
                 .createScalarDS("Latitude", root, dtype, dims2D, null, null, 0, dataIn);
-//                .createScalarDS("2D 32-bit integer 20x10", root, dtype, dims2D, null, null, 0, dataIn);
 
         // close file resource
         testFile.close();

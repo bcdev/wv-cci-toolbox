@@ -27,14 +27,13 @@ public class ModisMod35L2Constants {
     static final int GLINT_BIT_INDEX = 6;
     static final int WATER_BIT_INDEX = 8;
 
-    static final String CLOUD_MASK_BAND_NAME = "Cloud_Mask";
-    static final String QUALITY_ASSURANCE_BAND_NAME = "Quality_Assurance";
+    static final String CLOUD_MASK_BAND_NAME = "Cloud_Mask (dimension)";
+    static final String QUALITY_ASSURANCE_BAND_NAME = "Quality_Assurance (dimension)";
 
     static final String CELL_ACROSS_SWATH_1KM_DIM_NAME = "Cell_Across_Swath_1km";
     static final String CELL_ACROSS_SWATH_5KM_DIM_NAME = "Cell_Across_Swath_5km";
     static final String CELL_ALONG_SWATH_1KM_DIM_NAME = "Cell_Along_Swath_1km";
     static final String CELL_ALONG_SWATH_5KM_DIM_NAME = "Cell_Along_Swath_5km";
-    static final String BYTE_SEGMENT_DIM_NAME = "Byte_Segment";
     static final String QA_DIM_NAME = "QA_Dimension";
 
     static final String MOD35_l2_PRODUCT_TYPE = "MOD35_L2";

@@ -17,27 +17,29 @@
 package org.esa.snap.wvcci.tcwv.dataio.mod35;
 
 import com.bc.ceres.core.ProgressMonitor;
-import ncsa.hdf.object.Attribute;
-import ncsa.hdf.object.FileFormat;
-import ncsa.hdf.object.h4.H4Datatype;
-import ncsa.hdf.object.h4.H4Group;
-import ncsa.hdf.object.h4.H4SDS;
+import hdf.object.Attribute;
+import hdf.object.FileFormat;
+import hdf.object.Group;
+import hdf.object.HObject;
+import hdf.object.h4.H4Datatype;
+import hdf.object.h4.H4Group;
+import hdf.object.h4.H4SDS;
 import org.esa.snap.core.dataio.AbstractProductReader;
 import org.esa.snap.core.dataio.ProductReaderPlugIn;
+import org.esa.snap.core.dataio.geocoding.ComponentGeoCoding;
 import org.esa.snap.core.datamodel.*;
 import org.esa.snap.core.util.SystemUtils;
 import org.esa.snap.raster.gpf.FlipOp;
 
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.TreeNode;
 import java.io.File;
 import java.util.List;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Product reader responsible for reading MODIS MOD35 or MYD35 L2 cloud mask HDF products.
  * Example: MOD35_L2.A2011196.1055.061.2017325012717.hdf
- * See https://modis.gsfc.nasa.gov/data/dataprod/mod35.php
+ * See <a href="https://modis.gsfc.nasa.gov/data/dataprod/mod35.php">...</a>
  *
  * @author Olaf Danne
  */
@@ -53,8 +55,7 @@ public class ModisMod35L2ProductReader extends AbstractProductReader {
 
     private FileFormat h4File;
 
-    private TreeNode h4RootNode;
-    private TreeNode mod35Node;
+    private Group h4RootNode;
 
     /**
      * ModisMod35L2ProductReader constructor
@@ -81,16 +82,16 @@ public class ModisMod35L2ProductReader extends AbstractProductReader {
             try {
                 h4File = h4FileFormat.open(mod35File.getAbsolutePath(), FileFormat.READ);
                 h4File.open();
-                h4RootNode = h4File.getRootNode();         // 'MOD35_L2...'
-                mod35Node = h4RootNode.getChildAt(0);      // 'mod35'
+                h4RootNode = (Group) h4File.getRootObject();
 
-                final H4Group rootGroup = (H4Group) ((DefaultMutableTreeNode) h4RootNode).getUserObject();
+                final H4Group rootGroup = (H4Group) h4RootNode;
+
                 final List rootMetadata = rootGroup.getMetadata();
-                final String[] structMetadata0String = (String[]) ((Attribute) rootMetadata.get(1)).getValue();
+                final String[] structMetadata0String = (String[]) ((Attribute) rootMetadata.get(1)).getAttributeData();
                 setProductDimensions(structMetadata0String[0]);
                 targetProduct = createTargetProduct(mod35File);
             } catch (Exception e) {
-                e.printStackTrace();
+                Logger.getGlobal().log(Level.SEVERE, "Cannot read nodes of HDF input.");
             } finally {
                 if (h4File != null) {
                     try {
@@ -137,42 +138,47 @@ public class ModisMod35L2ProductReader extends AbstractProductReader {
     }
 
     private Product createTargetProduct(File inputFile) throws Exception {
-        mod35Node = h4RootNode.getChildAt(0);
+        final H4Group rootGroup = (H4Group) h4RootNode;
+        final List rootMetadata = rootGroup.getMetadata();
 
         Product targetProduct = new Product(inputFile.getName(),
                 ModisMod35L2Constants.MOD35_l2_PRODUCT_TYPE,
                 productWidth, productHeight);
-
-        final H4Group rootGroup = (H4Group) ((DefaultMutableTreeNode) h4RootNode).getUserObject();
-        final List rootMetadata = rootGroup.getMetadata();
 
         ModisMod35L2Utils.addMetadataElementWithAttributes(rootMetadata, targetProduct.getMetadataRoot(), ModisMod35L2Constants.MPH_NAME);
 
         targetProduct.setDescription(ModisMod35L2Constants.MOD35_l2_PRODUCT_DESCR);
         targetProduct.setFileLocation(inputFile);
 
-        for (int i = 0; i < mod35Node.getChildCount(); i++) {
-            // we have: 'Geolocation Fields', 'Data Fields'
-            final TreeNode fieldsNode = mod35Node.getChildAt(i);
-            final String fieldsNodeName = fieldsNode.toString();
+        final List<HObject> memberList = rootGroup.getMemberList();
+        if (memberList != null) {
+            for (HObject member : memberList) {
+                final List<HObject> mod35Node = ((H4Group) member).getMemberList();
+                for (final HObject fieldsNode : mod35Node) {
 
-            switch (fieldsNodeName) {
-                case ModisMod35L2Constants.GEOLOCATION_FIELDS_GROUP_NAME:
-                    ModisMod35L2Utils.addRootMetadataElement(targetProduct, (DefaultMutableTreeNode) fieldsNode,
-                            ModisMod35L2Constants.GEOLOCATION_FIELDS_GROUP_NAME);
-                    createGeolocationTpgs(targetProduct, fieldsNode);
-                    break;
+                    // we have: 'Geolocation Fields', 'Data Fields'
+                    final String fieldsNodeName = fieldsNode.getName();
 
-                case ModisMod35L2Constants.DATA_FIELDS_GROUP_NAME:
-                    ModisMod35L2Utils.addRootMetadataElement(targetProduct, (DefaultMutableTreeNode) fieldsNode,
-                            ModisMod35L2Constants.DATA_FIELDS_GROUP_NAME);
-                    createCloudMaskBands(targetProduct, fieldsNode);
-                    createQualityAssuranceBands(targetProduct, fieldsNode);
-                    createGeometryTpgs(targetProduct, fieldsNode);
-                    break;
+                    switch (fieldsNodeName) {
+                        case ModisMod35L2Constants.GEOLOCATION_FIELDS_GROUP_NAME:
+                            ModisMod35L2Utils.addRootMetadataElement(targetProduct, fieldsNode,
+                                    ModisMod35L2Constants.GEOLOCATION_FIELDS_GROUP_NAME);
+                            createGeolocationTpgs(targetProduct, fieldsNode);
+                            break;
 
-                default:
-                    break;
+                        case ModisMod35L2Constants.DATA_FIELDS_GROUP_NAME:
+                            ModisMod35L2Utils.addRootMetadataElement(targetProduct, fieldsNode,
+                                    ModisMod35L2Constants.DATA_FIELDS_GROUP_NAME);
+                            createCloudMaskBands(targetProduct, fieldsNode);
+                            createQualityAssuranceBands(targetProduct, fieldsNode);
+                            createGeometryTpgs(targetProduct, fieldsNode);
+                            break;
+
+                        default:
+                            break;
+                    }
+                }
+
             }
         }
 
@@ -222,7 +228,7 @@ public class ModisMod35L2ProductReader extends AbstractProductReader {
         }
     }
 
-    private void createGeolocationTpgs(Product product, TreeNode fieldsNode) throws Exception {
+    private void createGeolocationTpgs(Product product, HObject fieldsNode) throws Exception {
         // 'Latitude', 'Longitude' (both float32)
         final MetadataElement rootMetadataElement = product.getMetadataRoot().
                 getElement(ModisMod35L2Constants.GEOLOCATION_FIELDS_GROUP_NAME);
@@ -231,9 +237,9 @@ public class ModisMod35L2ProductReader extends AbstractProductReader {
         float[] lons = null;
         TiePointGrid latGrid = null;
         TiePointGrid lonGrid = null;
-        for (int j = 0; j < fieldsNode.getChildCount(); j++) {
-            final TreeNode geolocationChildNode = fieldsNode.getChildAt(j);
-            final String geolocationChildNodeName = geolocationChildNode.toString();
+        final List<HObject> memberList = ((H4Group) fieldsNode).getMemberList();
+        for (final HObject geolocationChildNode : memberList) {
+            final String geolocationChildNodeName = geolocationChildNode.getName();
 
             final H4SDS geolocationDS = ModisMod35L2Utils.getH4ScalarDS(geolocationChildNode);
             final List geolocationMetadata = geolocationDS.getMetadata();
@@ -244,14 +250,14 @@ public class ModisMod35L2ProductReader extends AbstractProductReader {
             }
 
             // add TPGs:
-            if (geolocationChildNodeName.equals("Latitude")) {
+            if (geolocationChildNodeName.startsWith("Latitude")) {
                 lats = (float[]) geolocationDS.getData();
                 if (lats != null) {
                     latGrid = new TiePointGrid("Latitude", tpWidth, tpHeight, 0, 0, 5.0, 5.0, lats);
                     ModisMod35L2Utils.setUnitAndDescription(geolocationMetadata, latGrid);
                     product.addTiePointGrid(latGrid);
                 }
-            } else if (geolocationChildNodeName.equals("Longitude")) {
+            } else if (geolocationChildNodeName.startsWith("Longitude")) {
                 lons = (float[]) geolocationDS.getData();
                 if (lons != null) {
                     lonGrid = new TiePointGrid("Longitude", tpWidth, tpHeight, 0, 0, 5.0, 5.0, lons);
@@ -273,14 +279,14 @@ public class ModisMod35L2ProductReader extends AbstractProductReader {
 
     }
 
-    private void createGeometryTpgs(Product product, TreeNode fieldsNode) throws Exception {
+    private void createGeometryTpgs(Product product, HObject fieldsNode) throws Exception {
         // 'Solar_Zenith', 'Solar_Azimuth', 'Sensor_Zenith', 'Sensor_Azimuth' (int16)
         final MetadataElement rootMetadataElement = product.getMetadataRoot().
                 getElement(ModisMod35L2Constants.DATA_FIELDS_GROUP_NAME);
 
-        for (int j = 0; j < fieldsNode.getChildCount(); j++) {
-            final TreeNode geometryChildNode = fieldsNode.getChildAt(j);
-            final String geometryChildNodeName = geometryChildNode.toString();
+        final List<HObject> memberList = ((H4Group) fieldsNode).getMemberList();
+        for (final HObject geometryChildNode : memberList) {
+            final String geometryChildNodeName = geometryChildNode.getName();
 
             H4SDS geometryDS = null;
             float[] geometryData = null;
@@ -321,15 +327,17 @@ public class ModisMod35L2ProductReader extends AbstractProductReader {
         }
     }
 
-    private void createCloudMaskBands(Product product, TreeNode fieldsNode) throws Exception {
+    private void createCloudMaskBands(Product product, HObject fieldsNode) throws Exception {
         // 'Cloud_Mask' (int8, 6 * productHeight * productWidth)
         final MetadataElement rootMetadataElement = product.getMetadataRoot().
                 getElement(ModisMod35L2Constants.DATA_FIELDS_GROUP_NAME);
 
         H4SDS cloudMaskDS = null;
-        for (int j = 0; j < fieldsNode.getChildCount(); j++) {
-            final TreeNode dataChildNode = fieldsNode.getChildAt(j);
-            final String dataChildNodeName = dataChildNode.toString();
+
+        final List<HObject> memberList = ((H4Group) fieldsNode).getMemberList();
+        for (final HObject dataChildNode : memberList) {
+            final String dataChildNodeName = dataChildNode.getName();
+
             if (dataChildNodeName.equals(ModisMod35L2Constants.CLOUD_MASK_BAND_NAME)) {
                 // we only need the first of six byte segment to build the cloud flag for our purpose:
                 final int requiredByteSegments = 1;
@@ -337,6 +345,7 @@ public class ModisMod35L2ProductReader extends AbstractProductReader {
                         requiredByteSegments, productHeight, productWidth);
             }
         }
+        assert cloudMaskDS != null;
         final List<Attribute> cloudMaskDSMetadata = cloudMaskDS.getMetadata();
 
         final byte[] cloudMaskData3DArr = (byte[]) cloudMaskDS.getData();
@@ -346,6 +355,7 @@ public class ModisMod35L2ProductReader extends AbstractProductReader {
             ProductData productData = ModisMod35L2Utils.getDataBufferForH4DataRead(H4Datatype.CLASS_CHAR,
                     productWidth, productHeight);
             final String cloudMaskByteBandName = ModisMod35L2Constants.CLOUD_MASK_BYTE_TARGET_BAND_NAME + (i + 1);
+            assert productData != null;
             final Band cloudMaskByteBand = createTargetBand(product,
                     cloudMaskDSMetadata,
                     cloudMaskByteBandName,
@@ -353,8 +363,7 @@ public class ModisMod35L2ProductReader extends AbstractProductReader {
             ModisMod35L2Utils.setUnitAndDescription(cloudMaskDSMetadata, cloudMaskByteBand);
             cloudMaskByteBand.setNoDataValue(ModisMod35L2Constants.CHAR_NO_DATA_VALUE);
             cloudMaskByteBand.setNoDataValueUsed(true);
-            final int offset = i * productWidth * productHeight;
-            System.arraycopy(cloudMaskData3DArr, offset, tmpArr, 0, tmpArr.length);
+            System.arraycopy(cloudMaskData3DArr, 0, tmpArr, 0, tmpArr.length);
             productData.setElems(tmpArr);
             cloudMaskByteBand.setRasterData(productData);
             if (cloudMaskDSMetadata != null) {
@@ -365,15 +374,17 @@ public class ModisMod35L2ProductReader extends AbstractProductReader {
         }
     }
 
-    private void createQualityAssuranceBands(Product product, TreeNode fieldsNode) throws Exception {
+    private void createQualityAssuranceBands(Product product, HObject fieldsNode) throws Exception {
         // 'Quality_Assurance' (int8, productHeight * productWidth * 10)
         final MetadataElement rootMetadataElement = product.getMetadataRoot().
                 getElement(ModisMod35L2Constants.DATA_FIELDS_GROUP_NAME);
 
         H4SDS qualityAssuranceDS = null;
-        for (int j = 0; j < fieldsNode.getChildCount(); j++) {
-            final TreeNode dataChildNode = fieldsNode.getChildAt(j);
-            final String dataChildNodeName = dataChildNode.toString();
+
+        final List<HObject> memberList = ((H4Group) fieldsNode).getMemberList();
+        for (final HObject dataChildNode : memberList) {
+            final String dataChildNodeName = dataChildNode.getName();
+
             if (dataChildNodeName.equals(ModisMod35L2Constants.QUALITY_ASSURANCE_BAND_NAME)) {
                 // we need to read all dimensions because the array nesting is different
                 // from the one for 'Cloud_Mask'
@@ -383,41 +394,41 @@ public class ModisMod35L2ProductReader extends AbstractProductReader {
                         productWidth);
             }
         }
+        assert qualityAssuranceDS != null;
         final List<Attribute> qualityAssuranceDSMetadata = qualityAssuranceDS.getMetadata();
 
         final byte[] qualityAssuranceData3DArr = (byte[]) qualityAssuranceDS.getData();
         byte[] tmpArr = new byte[productWidth * productHeight];
         // for confidence levels we need dimension 1 only:
-        for (int i = 0; i < 1; i++) {
-            ProductData productData = ModisMod35L2Utils.getDataBufferForH4DataRead(H4Datatype.CLASS_CHAR,
-                    productWidth, productHeight);
-            final String qualityAssuranceQaDimBandName = ModisMod35L2Constants.QUALITY_ASSURANCE_QA_DIMENSION_BAND_NAME + (i + 1);
-            final Band qualityAssuranceQaDimBand = createTargetBand(product,
-                    qualityAssuranceDSMetadata,
-                    qualityAssuranceQaDimBandName,
-                    productData.getType());
-            ModisMod35L2Utils.setUnitAndDescription(qualityAssuranceDSMetadata, qualityAssuranceQaDimBand);
-            qualityAssuranceQaDimBand.setNoDataValue(ModisMod35L2Constants.CHAR_NO_DATA_VALUE);
-            qualityAssuranceQaDimBand.setNoDataValueUsed(true);
+        ProductData productData = ModisMod35L2Utils.getDataBufferForH4DataRead(H4Datatype.CLASS_CHAR,
+                productWidth, productHeight);
+        final String qualityAssuranceQaDimBandName = ModisMod35L2Constants.QUALITY_ASSURANCE_QA_DIMENSION_BAND_NAME + (1);
+        assert productData != null;
+        final Band qualityAssuranceQaDimBand = createTargetBand(product,
+                qualityAssuranceDSMetadata,
+                qualityAssuranceQaDimBandName,
+                productData.getType());
+        ModisMod35L2Utils.setUnitAndDescription(qualityAssuranceDSMetadata, qualityAssuranceQaDimBand);
+        qualityAssuranceQaDimBand.setNoDataValue(ModisMod35L2Constants.CHAR_NO_DATA_VALUE);
+        qualityAssuranceQaDimBand.setNoDataValueUsed(true);
 
-            // we need to resort because the array nesting is different from the one for 'Cloud_Mask'
-            int tmpArrIndex = 0;
-            int qa3DArrIndex = i;
-            for (int j = 0; j < productHeight; j++) {
-                for (int k = 0; k < productWidth; k++) {
-                    tmpArr[tmpArrIndex] = qualityAssuranceData3DArr[qa3DArrIndex];
-                    tmpArrIndex++;
-                    qa3DArrIndex += qualityAssuranceDim;
-                }
+        // we need to resort because the array nesting is different from the one for 'Cloud_Mask'
+        int tmpArrIndex = 0;
+        int qa3DArrIndex = 0;
+        for (int j = 0; j < productHeight; j++) {
+            for (int k = 0; k < productWidth; k++) {
+                tmpArr[tmpArrIndex] = qualityAssuranceData3DArr[qa3DArrIndex];
+                tmpArrIndex++;
+                qa3DArrIndex += qualityAssuranceDim;
             }
+        }
 
-            productData.setElems(tmpArr);
-            qualityAssuranceQaDimBand.setRasterData(productData);
-            if (qualityAssuranceDSMetadata != null) {
-                ModisMod35L2Utils.addMetadataElementWithAttributes(qualityAssuranceDSMetadata,
-                        rootMetadataElement,
-                        qualityAssuranceQaDimBandName);
-            }
+        productData.setElems(tmpArr);
+        qualityAssuranceQaDimBand.setRasterData(productData);
+        if (qualityAssuranceDSMetadata != null) {
+            ModisMod35L2Utils.addMetadataElementWithAttributes(qualityAssuranceDSMetadata,
+                    rootMetadataElement,
+                    qualityAssuranceQaDimBandName);
         }
     }
 }
