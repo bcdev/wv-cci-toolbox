@@ -9,6 +9,7 @@ import org.esa.snap.wvcci.tcwv.dataio.mod35.ModisMod35L2Constants;
  */
 public class TcwvConstants {
 
+    public static final String[] SUPPORTED_NIR_SENSORS = {"MERIS", "MODIS_TERRA", "MODIS_AQUA", "OLCI_A", "OLCI_B"};
 
     static final String PIXEL_CLASSIF_BAND_NAME = "pixel_classif_flags";
 
