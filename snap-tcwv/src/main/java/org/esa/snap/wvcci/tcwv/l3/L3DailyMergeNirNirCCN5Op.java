@@ -1,6 +1,5 @@
 package org.esa.snap.wvcci.tcwv.l3;
 
-import org.apache.commons.lang3.StringUtils;
 import org.esa.snap.core.datamodel.Band;
 import org.esa.snap.core.datamodel.Product;
 import org.esa.snap.core.datamodel.ProductData;
@@ -159,7 +158,7 @@ public class L3DailyMergeNirNirCCN5Op extends PixelOperator {
             srcSurfaceTypeFlag[i] = sourceSamples[SRC_TCWV_SURFACE_TYPE_FLAGS_MAJORITY[i]].getInt();
         }
 
-        final int possibleNumObsMerge = mergePossibeNumObs(numSensors, srcPossibleNumObs, srcPossibleNumObsNodata);
+        final int possibleNumObsMerge = mergePossibeNumObs(srcPossibleNumObs, srcPossibleNumObsNodata);
         final double[] tcwvMeanMerge =
                 mergeTcwv(srcTcwvMean, srcTcwvUncertaintyCounts, srcTcwvNodata, srcTcwvCountsNodata);
         final double[] tcwvSigmaMerge =
@@ -318,9 +317,9 @@ public class L3DailyMergeNirNirCCN5Op extends PixelOperator {
         }
     }
 
-    static int mergePossibeNumObs(int numSensors, int[] srcNumObs, int[] srcTcwvNumObsNodata) {
+    static int mergePossibeNumObs(int[] srcNumObs, int[] srcTcwvNumObsNodata) {
         int numObs = 0;
-        for (int i = 0; i < numSensors; i++) {
+        for (int i = 0; i < srcNumObs.length; i++) {
             if (srcNumObs[i] != srcTcwvNumObsNodata[i]) {
                 numObs += srcNumObs[i];
             }
@@ -357,6 +356,18 @@ public class L3DailyMergeNirNirCCN5Op extends PixelOperator {
         return srcFlags[majorityIndex];
     }
 
+    static String[] getNumObsSrcBandNames(String[] sensorNames) {
+        //       e.g.["num_obs_MODIS_TERRA", "num_obs_MODIS_AQUA", "num_obs_OLCI_A", "num_obs"]
+        final String prefix = TcwvConstants.NUM_OBS_L3_BAND_NAME;
+        String[] numObsSrcBandNames = new String[sensorNames.length + 1];
+        for (int i = 0; i < sensorNames.length; i++) {
+            numObsSrcBandNames[i] = prefix + "_" + sensorNames[i];
+        }
+        numObsSrcBandNames[sensorNames.length] = prefix;
+
+        return numObsSrcBandNames;
+    }
+
     private void validate() {
         // sensors
         for (int i = 0; i < numSensors; i++) {
@@ -387,18 +398,6 @@ public class L3DailyMergeNirNirCCN5Op extends PixelOperator {
 
         // time ranges
         // todo
-    }
-
-    static String[] getNumObsSrcBandNames(String[] sensorNames) {
-        //       e.g.["num_obs_MODIS_TERRA", "num_obs_MODIS_AQUA", "num_obs_OLCI_A", "num_obs"]
-        final String prefix = TcwvConstants.NUM_OBS_L3_BAND_NAME;
-        String[] numObsSrcBandNames = new String[sensorNames.length + 1];
-        for (int i = 0; i < sensorNames.length; i++) {
-            numObsSrcBandNames[i] = prefix + "_" + sensorNames[i];
-        }
-        numObsSrcBandNames[sensorNames.length] = prefix;
-
-        return numObsSrcBandNames;
     }
 
     public static class Spi extends OperatorSpi {
