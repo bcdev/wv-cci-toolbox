@@ -11,7 +11,7 @@ public class L3MergeNirNirCCN5Test {
     @Test
     public void testGetNirNirNumObsSrcBandNames() {
         String[] s1 = new String[]{"MODIS_TERRA", "MODIS_AQUA"};
-        String[] numObsSrcBandNames = L3DailyMergeNirNirCCN5Op.getNumObsSrcBandNames(s1);
+        String[] numObsSrcBandNames = L3DailyMergeNirNirCCN5Op.getNumObsTargetBandNames(s1);
         assertNotNull(numObsSrcBandNames);
         assertEquals(3, numObsSrcBandNames.length);
         assertEquals("num_obs_MODIS_TERRA", numObsSrcBandNames[0]);
@@ -19,7 +19,7 @@ public class L3MergeNirNirCCN5Test {
         assertEquals("num_obs", numObsSrcBandNames[2]);
 
         s1 = new String[]{"MODIS_TERRA", "MODIS_AQUA", "OLCI_A"};
-        numObsSrcBandNames = L3DailyMergeNirNirCCN5Op.getNumObsSrcBandNames(s1);
+        numObsSrcBandNames = L3DailyMergeNirNirCCN5Op.getNumObsTargetBandNames(s1);
         assertNotNull(numObsSrcBandNames);
         assertEquals(4, numObsSrcBandNames.length);
         assertEquals("num_obs_MODIS_TERRA", numObsSrcBandNames[0]);
@@ -70,20 +70,26 @@ public class L3MergeNirNirCCN5Test {
 
     @Test
     public void testMergeFlags() {
-        int[] srcFlags = new int[]{3, 7};
+        double[] srcFlags = new double[]{3.0, 7.0};
         double[] srcTcwvCounts = new double[]{10.0, 5.0};
         double[] srcTcwvCountsNodata = new double[]{Double.NaN, Double.NaN};
-        int mergedFlag = L3DailyMergeNirNirCCN5Op.mergeFlag(srcFlags, srcTcwvCounts, srcTcwvCountsNodata);
-        assertEquals(3, mergedFlag);
+        double mergedFlag = L3DailyMergeNirNirCCN5Op.mergeFlag(srcFlags, srcTcwvCounts, srcTcwvCountsNodata);
+        assertEquals(3.0, mergedFlag, 1.E-10);
 
         srcTcwvCounts = new double[]{10.0, 25.0};
         mergedFlag = L3DailyMergeNirNirCCN5Op.mergeFlag(srcFlags, srcTcwvCounts, srcTcwvCountsNodata);
-        assertEquals(7, mergedFlag);
+        assertEquals(7.0, mergedFlag, 1.E-10);
 
-        srcFlags = new int[]{3, 7, 1, 5};
+        srcFlags = new double[]{3.0, 7.0, 1.0, 5.0};
         srcTcwvCounts = new double[]{10.0, 5.0, 100.0, Double.NaN};
         srcTcwvCountsNodata = new double[]{Double.NaN, Double.NaN, Double.NaN, Double.NaN};
         mergedFlag = L3DailyMergeNirNirCCN5Op.mergeFlag(srcFlags, srcTcwvCounts, srcTcwvCountsNodata);
-        assertEquals(1, mergedFlag);
+        assertEquals(1.0, mergedFlag, 1.E-10);
+
+        srcFlags = new double[]{Double.NaN, 10.0};
+        srcTcwvCounts = new double[]{Double.NaN, 0.0};
+        srcTcwvCountsNodata = new double[]{Double.NaN, Double.NaN};
+        mergedFlag = L3DailyMergeNirNirCCN5Op.mergeFlag(srcFlags, srcTcwvCounts, srcTcwvCountsNodata);
+        assertEquals(10.0, mergedFlag, 1.E-10);
     }
 }
