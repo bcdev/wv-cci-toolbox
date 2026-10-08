@@ -76,7 +76,7 @@ public class L3DailyMergeNirNirCCN5Op extends PixelOperator {
 
         validate();
 
-        numSensors = sourceProducts.length;
+        numSensors = sensorNames.length;
 
         numObsTargetBandNames = getNumObsTargetBandNames(sensorNames);
 
@@ -127,10 +127,6 @@ public class L3DailyMergeNirNirCCN5Op extends PixelOperator {
         final double[] srcQualityFlagsMax = new double[numSensors];
         final double[] srcSurfaceTypeFlag = new double[numSensors];
 
-        if (x == 659 && y == 209) {
-            System.out.println("x,y  = " + x + ", " + y);
-        }
-
         final int[] srcNumObs = new int[numSensors];
 
         for (int i = 0; i < numSensors; i++) {
@@ -156,6 +152,10 @@ public class L3DailyMergeNirNirCCN5Op extends PixelOperator {
             srcQualityFlagsMin[i] = sourceSamples[SRC_TCWV_QUALITY_FLAGS_MIN[i]].getDouble();
             srcQualityFlagsMax[i] = sourceSamples[SRC_TCWV_QUALITY_FLAGS_MAX[i]].getDouble();
             srcSurfaceTypeFlag[i] = sourceSamples[SRC_TCWV_SURFACE_TYPE_FLAGS_MAJORITY[i]].getDouble();
+        }
+
+        if (x == 450 && y == 209) {
+            System.out.println("x,y  = " + x + ", " + y);
         }
 
         final int possibleNumObsMerge = mergePossibeNumObs(srcPossibleNumObs, srcPossibleNumObsNodata);
@@ -367,6 +367,11 @@ public class L3DailyMergeNirNirCCN5Op extends PixelOperator {
 
     private void validate() {
         // sensors
+        if (sensorNames.length != sourceProducts.length) {
+            throw new OperatorException("Number of specified sensor names (" + numSensors + ") not " +
+                    "equal to number of input products (" + sourceProducts.length + ")");
+        }
+
         for (int i = 0; i < numSensors; i++) {
             boolean sensorOk = false;
             for (int j = 0; j < TcwvConstants.SUPPORTED_NIR_SENSORS.length; j++) {

@@ -162,6 +162,10 @@ public class L3DailyMergeNirNirPhase2Op extends PixelOperator {
             srcSurfaceTypeFlag[i] = sourceSamples[SRC_TCWV_SURFACE_TYPE_FLAGS_MAJORITY[i]].getInt();
         }
 
+        if (x == 450 && y == 209) {
+            System.out.println("x,y  = " + x + ", " + y);
+        }
+
         final int possibleNumObsMerge = mergePossibeNumObs(srcPossibleNumObs, srcPossibleNumObsNodata);
         final double[] tcwvMeanMerge =
                 mergeTcwv(srcTcwvMean, srcTcwvUncertaintyCounts, srcTcwvNodata, srcTcwvCountsNodata);
