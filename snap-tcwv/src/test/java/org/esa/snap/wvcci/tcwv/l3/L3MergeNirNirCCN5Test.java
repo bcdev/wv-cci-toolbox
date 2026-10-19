@@ -1,9 +1,14 @@
 package org.esa.snap.wvcci.tcwv.l3;
 
+import org.esa.snap.core.datamodel.Product;
+import org.esa.snap.wvcci.tcwv.dataio.nc4.SnapWvcciNc4WriterTest;
+import org.junit.Assert;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import java.io.File;
+import java.io.IOException;
+
+import static org.junit.Assert.*;
 
 public class L3MergeNirNirCCN5Test {
 
@@ -91,5 +96,65 @@ public class L3MergeNirNirCCN5Test {
         srcTcwvCountsNodata = new double[]{Double.NaN, Double.NaN};
         mergedFlag = L3DailyMergeNirNirCCN5Op.mergeFlag(srcFlags, srcTcwvCounts, srcTcwvCountsNodata);
         assertEquals(10.0, mergedFlag, 1.E-10);
+    }
+
+    @Test
+    public void testGetExistingSourceProducts() throws IOException {
+        Product input_1 = new Product("dummy-MODIS_TERRA.nc", "test");
+        input_1.setFileLocation(new File(getClass().getResource("dummy-MODIS_TERRA.nc").getPath()));
+        Product input_2 = new Product("dummy-MODIS_AQUA.nc", "test");
+        input_2.setFileLocation(new File(getClass().getResource("dummy-MODIS_TERRA.nc").getPath()));
+        Product[] inputProducts = new Product[]{input_1, input_2};
+
+        Product[]  existingSourceProducts = L3DailyMergeNirNirCCN5Op.getExistingSourceProducts(inputProducts);
+        assertNotNull(existingSourceProducts);
+        assertEquals(2, existingSourceProducts.length);
+        assertEquals("dummy-MODIS_TERRA.nc", existingSourceProducts[0].getName());
+        assertEquals("dummy-MODIS_AQUA.nc", existingSourceProducts[1].getName());
+
+        Product input_3 = new Product("dummy-MERIS.nc", "test");
+        inputProducts = new Product[]{input_1, input_2, input_3};
+        existingSourceProducts = L3DailyMergeNirNirCCN5Op.getExistingSourceProducts(inputProducts);
+        assertNotNull(existingSourceProducts);
+        assertEquals(2, existingSourceProducts.length);
+
+        inputProducts = new Product[]{input_3};
+
+        try {
+            existingSourceProducts = L3DailyMergeNirNirCCN5Op.getExistingSourceProducts(inputProducts);
+        } catch (IOException e) {
+            assertEquals("No existing source products found.", e.getMessage());
+        }
+
+    }
+
+    @Test
+    public void testGetSensorNames() throws IOException {
+        Product input_1 = new Product("dummy-MODIS_TERRA.nc", "test");
+        input_1.setFileLocation(new File(getClass().getResource("dummy-MODIS_TERRA.nc").getPath()));
+        Product input_2 = new Product("dummy-MODIS_AQUA.nc", "test");
+        input_2.setFileLocation(new File(getClass().getResource("dummy-MODIS_TERRA.nc").getPath()));
+        Product[] inputProducts = new Product[]{input_1, input_2};
+
+        String[]  sensorNames = L3DailyMergeNirNirCCN5Op.getSensorNames(inputProducts);
+        assertNotNull(sensorNames);
+        assertEquals(2, sensorNames.length);
+        assertEquals("MODIS_TERRA", sensorNames[0]);
+        assertEquals("MODIS_AQUA", sensorNames[1]);
+
+        Product input_3 = new Product("dummy-LANDSAT.nc", "test");
+        inputProducts = new Product[]{input_1, input_2, input_3};
+        sensorNames = L3DailyMergeNirNirCCN5Op.getSensorNames(inputProducts);
+        assertNotNull(sensorNames);
+        assertEquals(2, sensorNames.length);
+
+        inputProducts = new Product[]{input_3};
+
+        try {
+            sensorNames = L3DailyMergeNirNirCCN5Op.getSensorNames(inputProducts);
+        } catch (IOException e) {
+            assertEquals("No valid sensor names found.", e.getMessage());
+        }
+
     }
 }

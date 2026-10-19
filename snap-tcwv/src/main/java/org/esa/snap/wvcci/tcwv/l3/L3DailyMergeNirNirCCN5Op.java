@@ -6,11 +6,15 @@ import org.esa.snap.core.datamodel.ProductData;
 import org.esa.snap.core.gpf.OperatorException;
 import org.esa.snap.core.gpf.OperatorSpi;
 import org.esa.snap.core.gpf.annotations.OperatorMetadata;
-import org.esa.snap.core.gpf.annotations.Parameter;
 import org.esa.snap.core.gpf.annotations.SourceProducts;
 import org.esa.snap.core.gpf.pointop.*;
 import org.esa.snap.wvcci.tcwv.TcwvConstants;
 import org.esa.snap.wvcci.tcwv.util.TcwvUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Operator for sensor merging of TCWV L3 products of 2 or 3 sensors.
@@ -26,11 +30,11 @@ import org.esa.snap.wvcci.tcwv.util.TcwvUtils;
         description = "Operator for merge of up to 4 TCWV L3 NIR daily products, for CCN5.")
 public class L3DailyMergeNirNirCCN5Op extends PixelOperator {
 
-    @Parameter(description = "First sensor: combination from previous merge (e.g. MODIS_TERRA-OLCI_A), up to 3 single sensors.")
-    private String[] sensorNames;
+//    @Parameter(description = "First sensor: combination from previous merge (e.g. MODIS_TERRA-OLCI_A), up to 3 single sensors.")
+//    private String[] sensorNames;
 
     @SourceProducts(description = "Source products")
-    private Product[] sourceProducts;
+    private Product[] inputProducts;
 
     private int numSensors;
 
@@ -66,10 +70,20 @@ public class L3DailyMergeNirNirCCN5Op extends PixelOperator {
     private int TRG_TCWV_QUALITY_FLAGS_MAX;
     private int TRG_TCWV_SURFACE_TYPE_FLAGS_MAJORITY;
 
+    private Product[] sourceProducts;
+    private String[] sensorNames;
+
 
     @Override
     protected void prepareInputs() throws OperatorException {
         super.prepareInputs();
+
+        try {
+            sourceProducts = getExistingSourceProducts(inputProducts);
+            sensorNames = getSensorNames(sourceProducts);
+        } catch (IOException e) {
+            throw new OperatorException("Specified source products not found - cannot proceed.");
+        }
 
         width = sourceProducts[0].getSceneRasterWidth();
         height = sourceProducts[0].getSceneRasterHeight();
@@ -109,6 +123,46 @@ public class L3DailyMergeNirNirCCN5Op extends PixelOperator {
         SRC_TCWV_SURFACE_TYPE_FLAGS_MAJORITY = new int[numSensors];
 
     }
+
+    static String[] getSensorNames(Product[] sourceProducts) throws IOException {
+        List<String> sensorList = new ArrayList<>();
+        if (sourceProducts != null && sourceProducts.length > 0) {
+            for (int i = 0; i < sourceProducts.length; i++) {
+                Product sourceProduct = sourceProducts[i];
+                for (int j = 0; j < TcwvConstants.SUPPORTED_NIR_SENSORS.length; j++) {
+                    final String supportedNirSensor = TcwvConstants.SUPPORTED_NIR_SENSORS[j];
+                    if (sourceProduct.getName().toUpperCase().contains(supportedNirSensor)) {
+                        sensorList.add(supportedNirSensor);
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (sensorList.size() > 0) {
+            return sensorList.toArray(new String[0]);
+        } else {
+            throw new IOException("No valid sensor names found.");
+        }
+    }
+
+    static Product[] getExistingSourceProducts(Product[] sourceProducts) throws IOException {
+        List<Product> sourceFileList = new ArrayList<>();
+        for (int i = 0; i < sourceProducts.length; i++) {
+            Product sourceProduct = sourceProducts[i];
+            final File sourceFile = sourceProduct.getFileLocation();
+            if (sourceFile != null && sourceFile.exists()) {
+                sourceFileList.add(sourceProduct);
+            }
+        }
+
+        if (sourceFileList.size() > 0) {
+            return sourceFileList.toArray(new Product[0]);
+        } else {
+            throw new IOException("No existing source products found.");
+        }
+    }
+
 
     @Override
     protected void computePixel(int x, int y, Sample[] sourceSamples, WritableSample[] targetSamples) {
